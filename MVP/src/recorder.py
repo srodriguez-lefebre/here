@@ -1,3 +1,4 @@
+import os
 import tempfile
 from pathlib import Path
 
@@ -5,6 +6,8 @@ import numpy as np
 import sounddevice as sd
 import soundfile as sf
 from loguru import logger
+
+from .config.settings import get_settings
 
 
 def record_until_enter(sample_rate: int = 16000) -> Path:
@@ -17,6 +20,10 @@ def record_until_enter(sample_rate: int = 16000) -> Path:
     Returns:
         Path to a temporary WAV file with the recorded audio.
     """
+    pulse_server = get_settings().PULSE_SERVER
+    if pulse_server:
+        os.environ["PULSE_SERVER"] = pulse_server
+
     chunks: list[np.ndarray] = []
 
     def callback(
