@@ -3,7 +3,7 @@ from pathlib import Path
 from loguru import logger
 from openai import OpenAI
 
-from .config.settings import get_settings
+from here.config.settings import get_settings
 
 
 def transcribe(audio_path: Path) -> str:

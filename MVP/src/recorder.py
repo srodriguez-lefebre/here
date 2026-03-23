@@ -7,7 +7,7 @@ import sounddevice as sd
 import soundfile as sf
 from loguru import logger
 
-from .config.settings import get_settings
+from here.config.settings import get_settings
 
 
 def record_until_enter(sample_rate: int = 16000) -> Path:

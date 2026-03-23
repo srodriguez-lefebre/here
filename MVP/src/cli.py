@@ -4,9 +4,9 @@ from pathlib import Path
 import typer
 from loguru import logger
 
-from .config.settings import get_settings
-from .recorder import record_until_enter
-from .transcriber import transcribe
+from here.config.settings import get_settings
+from here.recorder import record_until_enter
+from here.transcriber import transcribe
 
 app = typer.Typer()
 
