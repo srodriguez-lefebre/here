@@ -18,6 +18,7 @@ dependencies = [
 
 [project.scripts]
 here = "here.cli:app"
+record = "here.cli:record_app"
 
 [build-system]
 requires = ["setuptools>=68"]
