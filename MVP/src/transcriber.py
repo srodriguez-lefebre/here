@@ -85,7 +85,7 @@ def _cleanup_transcript(client: OpenAI, raw_text: str, model: str) -> str:
             {
                 "role": "system",
                 "content": (
-                    "Restructura esta transcripcion a texto claro y legible en espanol. "
+                    "Reestructura esta transcripcion a texto claro y legible en espanol. "
                     "Corrige puntuacion y saltos de linea, sin inventar contenido nuevo."
                 ),
             },

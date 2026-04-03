@@ -93,7 +93,7 @@ record os
 
 ## Output
 
-Each run generates a UTF-8 text file in the configured transcription directory:
+Each run generates a UTF-8 with BOM (`utf-8-sig`) text file in the configured transcription directory:
 
 ```text
 transcriptions/YYYYMMDD_HHMMSS.txt

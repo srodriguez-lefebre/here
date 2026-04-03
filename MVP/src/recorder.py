@@ -55,39 +55,48 @@ def _setup_pulse() -> None:
         os.environ["PULSE_SERVER"] = pulse_server
 
 
-def _get_monitor_source_name() -> str | None:
-    """Find the PulseAudio monitor source name using pactl."""
+def _run_pactl(args: list[str]) -> subprocess.CompletedProcess[str]:
+    """Run pactl and raise a clear error if the command fails."""
     try:
-        result = subprocess.run(
-            ["pactl", "list", "sources", "short"],
+        return subprocess.run(
+            ["pactl", *args],
             capture_output=True,
             text=True,
             env=os.environ,
+            check=True,
         )
+    except FileNotFoundError as exc:
+        raise RuntimeError("pactl is not installed or not available in PATH.") from exc
+    except subprocess.CalledProcessError as exc:
+        details = (exc.stderr or exc.stdout or "").strip()
+        message = f"pactl {' '.join(args)} failed"
+        if details:
+            message = f"{message}: {details}"
+        raise RuntimeError(message) from exc
+
+
+def _get_monitor_source_name() -> str | None:
+    """Find the PulseAudio monitor source name using pactl."""
+    try:
+        result = _run_pactl(["list", "sources", "short"])
         for line in result.stdout.splitlines():
             if ".monitor" in line:
                 parts = line.split()
                 if len(parts) >= 2:
                     return parts[1]
-    except Exception as exc:
+    except RuntimeError as exc:
         logger.error("Failed to query PulseAudio sources: {exc}", exc=exc)
     return None
 
 
 def _get_default_source() -> str:
     """Return the current PulseAudio default source name."""
-    result = subprocess.run(
-        ["pactl", "get-default-source"],
-        capture_output=True,
-        text=True,
-        env=os.environ,
-    )
-    return result.stdout.strip()
+    return _run_pactl(["get-default-source"]).stdout.strip()
 
 
 def _set_default_source(source: str) -> None:
     """Set the PulseAudio default source."""
-    subprocess.run(["pactl", "set-default-source", source], env=os.environ)
+    _run_pactl(["set-default-source", source])
 
 
 def _record_os_linux(sample_rate: int) -> Path:
@@ -105,7 +114,8 @@ def _record_os_linux(sample_rate: int) -> Path:
     try:
         return _record_until_enter(sample_rate, channels=1, label="system audio")
     finally:
-        _set_default_source(previous_source)
+        if previous_source:
+            _set_default_source(previous_source)
 
 
 def _frames_to_audio(frames: list[bytes], channels: int, label: str) -> np.ndarray:
