@@ -177,6 +177,51 @@ def _capture_windows_stream(
         frames.append(data)
 
 
+def _safe_close_stream(stream: object | None) -> None:
+    if stream is None:
+        return
+
+    try:
+        stream.stop_stream()
+    except Exception:
+        pass
+
+    try:
+        stream.close()
+    except Exception:
+        pass
+
+
+def _get_default_windows_input_device() -> dict[str, object]:
+    import pyaudiowpatch as pyaudio
+
+    p = pyaudio.PyAudio()
+    try:
+        try:
+            return p.get_default_input_device_info()
+        except Exception as exc:
+            raise RuntimeError(
+                "No default microphone input device is available in Windows audio settings."
+            ) from exc
+    finally:
+        p.terminate()
+
+
+def _get_default_windows_loopback_device() -> dict[str, object]:
+    import pyaudiowpatch as pyaudio
+
+    p = pyaudio.PyAudio()
+    try:
+        try:
+            return p.get_default_wasapi_loopback()
+        except Exception as exc:
+            raise RuntimeError(
+                "No default WASAPI loopback device is available. Check the active Windows playback device."
+            ) from exc
+    finally:
+        p.terminate()
+
+
 def _open_windows_input_stream(
     p: object,
     pyaudio: object,
@@ -205,12 +250,21 @@ def _record_windows_device(label: str, device: dict[str, object]) -> Path:
     chunk = 1024
     p = pyaudio.PyAudio()
     stream: object | None = None
+    sample_rate = 0
+    channels = 0
+    frames: list[bytes] = []
+    errors: list[Exception] = []
+    stop_event = threading.Event()
+    reader: threading.Thread | None = None
     try:
         logger.info("Using {label} device: {name}", label=label, name=device["name"])
-        stream, sample_rate, channels = _open_windows_input_stream(p, pyaudio, device, chunk)
-        frames: list[bytes] = []
-        errors: list[Exception] = []
-        stop_event = threading.Event()
+        try:
+            stream, sample_rate, channels = _open_windows_input_stream(p, pyaudio, device, chunk)
+        except Exception as exc:
+            raise RuntimeError(
+                f"Failed to open {label} device '{device['name']}'."
+            ) from exc
+
         reader = threading.Thread(
             target=_capture_windows_stream,
             kwargs={
@@ -231,9 +285,10 @@ def _record_windows_device(label: str, device: dict[str, object]) -> Path:
         stop_event.set()
         reader.join()
     finally:
-        if stream is not None:
-            stream.stop_stream()
-            stream.close()
+        stop_event.set()
+        if reader is not None and reader.is_alive():
+            reader.join(timeout=2)
+        _safe_close_stream(stream)
         p.terminate()
 
     if errors:
@@ -245,26 +300,12 @@ def _record_windows_device(label: str, device: dict[str, object]) -> Path:
 
 
 def _record_mic_windows() -> Path:
-    import pyaudiowpatch as pyaudio
-
-    p = pyaudio.PyAudio()
-    try:
-        device = p.get_default_input_device_info()
-    finally:
-        p.terminate()
-
+    device = _get_default_windows_input_device()
     return _record_windows_device("microphone", device)
 
 
 def _record_os_windows() -> Path:
-    import pyaudiowpatch as pyaudio
-
-    p = pyaudio.PyAudio()
-    try:
-        device = p.get_default_wasapi_loopback()
-    finally:
-        p.terminate()
-
+    device = _get_default_windows_loopback_device()
     return _record_windows_device("system audio", device)
 
 
@@ -275,20 +316,32 @@ def _record_both_windows() -> Path:
     p = pyaudio.PyAudio()
     mic_stream: object | None = None
     os_stream: object | None = None
+    stop_event = threading.Event()
+    threads: list[threading.Thread] = []
+    mic_frames: list[bytes] = []
+    os_frames: list[bytes] = []
+    errors: list[Exception] = []
     try:
-        mic_device = p.get_default_input_device_info()
-        os_device = p.get_default_wasapi_loopback()
+        try:
+            mic_device = _get_default_windows_input_device()
+            os_device = _get_default_windows_loopback_device()
+        except RuntimeError:
+            raise
 
         logger.info("Using microphone device: {name}", name=mic_device["name"])
         logger.info("Using WASAPI loopback: {name}", name=os_device["name"])
 
-        mic_stream, mic_rate, mic_channels = _open_windows_input_stream(p, pyaudio, mic_device, chunk)
-        os_stream, os_rate, os_channels = _open_windows_input_stream(p, pyaudio, os_device, chunk)
-
-        mic_frames: list[bytes] = []
-        os_frames: list[bytes] = []
-        errors: list[Exception] = []
-        stop_event = threading.Event()
+        try:
+            mic_stream, mic_rate, mic_channels = _open_windows_input_stream(
+                p, pyaudio, mic_device, chunk
+            )
+            os_stream, os_rate, os_channels = _open_windows_input_stream(
+                p, pyaudio, os_device, chunk
+            )
+        except Exception as exc:
+            raise RuntimeError(
+                "Failed to open microphone + system audio capture streams in Windows."
+            ) from exc
 
         threads = [
             threading.Thread(
@@ -327,12 +380,12 @@ def _record_both_windows() -> Path:
         for thread in threads:
             thread.join()
     finally:
-        if mic_stream is not None:
-            mic_stream.stop_stream()
-            mic_stream.close()
-        if os_stream is not None:
-            os_stream.stop_stream()
-            os_stream.close()
+        stop_event.set()
+        for thread in threads:
+            if thread.is_alive():
+                thread.join(timeout=2)
+        _safe_close_stream(mic_stream)
+        _safe_close_stream(os_stream)
         p.terminate()
 
     if errors:
