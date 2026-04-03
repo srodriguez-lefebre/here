@@ -20,7 +20,7 @@ build/
 .env
 
 # Transcriptions
-MVP/transcriptions/
+transcriptions/
 
 # Editors
 .vscode/
