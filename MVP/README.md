@@ -13,7 +13,7 @@ The main goal is to validate a simple meeting capture workflow with the shortest
 
 ## Requirements
 
-- Python 3.12.6 or later
+- Python 3.10 or later
 - An OpenAI API key
 - Windows for combined `record` capture (`mic + os`)
 
