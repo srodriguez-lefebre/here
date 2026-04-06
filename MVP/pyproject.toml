@@ -25,11 +25,20 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["here", "here.config"]
+packages = [
+    "here",
+    "here.audio",
+    "here.config",
+    "here.recording",
+    "here.transcription",
+]
 
 [tool.setuptools.package-dir]
 "here" = "src"
+"here.audio" = "src/audio"
 "here.config" = "src/config"
+"here.recording" = "src/recording"
+"here.transcription" = "src/transcription"
 
 [dependency-groups]
 dev = [

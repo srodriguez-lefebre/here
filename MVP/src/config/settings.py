@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: SecretStr
     TRANSCRIPTIONS_DIR: Path = _PROJECT_ROOT / "transcriptions"
     PULSE_SERVER: str | None = None
-    TRANSCRIPTION_MODEL: str = "gpt-4o-transcribe"
+    TRANSCRIPTION_MODEL: str = "gpt-4o-transcribe-diarize"
     CLEANUP_MODEL: str = "gpt-4.1-mini"
     CLEANUP_ENABLED: bool = False
 

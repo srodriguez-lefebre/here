@@ -6,8 +6,8 @@ import typer
 from loguru import logger
 
 from here.config.settings import get_settings
-from here.recorder import record_both_until_enter, record_mic_until_enter, record_os_until_enter
-from here.transcriber import transcribe
+from here.recorder import RecordingSession, record_both_until_enter, record_mic_until_enter, record_os_until_enter
+from here.transcriber import transcribe_recording_session
 
 app = typer.Typer()
 record_app = typer.Typer(invoke_without_command=True)
@@ -15,14 +15,14 @@ app.add_typer(record_app, name="record")
 TRANSCRIPT_ENCODING = "utf-8-sig"
 
 
-def _save_transcription(audio_path: Path, target_dir: Path) -> None:
+def _save_transcription(session: RecordingSession, target_dir: Path) -> None:
     target_dir.mkdir(parents=True, exist_ok=True)
 
     try:
-        result = transcribe(audio_path)
+        result = transcribe_recording_session(session)
     finally:
-        audio_path.unlink(missing_ok=True)
-        logger.info("Temporary audio file deleted.")
+        session.cleanup()
+        logger.info("Temporary audio files deleted.")
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_file = target_dir / f"{timestamp}.txt"
@@ -30,10 +30,10 @@ def _save_transcription(audio_path: Path, target_dir: Path) -> None:
     logger.success("Saved to {path}", path=output_file)
 
 
-def _run_recording(capture_fn: Callable[[], Path], target_dir: Path) -> None:
+def _run_recording(capture_fn: Callable[[], RecordingSession], target_dir: Path) -> None:
     try:
-        audio_path = capture_fn()
-        _save_transcription(audio_path, target_dir)
+        session = capture_fn()
+        _save_transcription(session, target_dir)
     except RuntimeError as exc:
         logger.error(str(exc))
         raise typer.Exit(code=1) from exc

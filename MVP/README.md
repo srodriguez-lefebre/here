@@ -7,6 +7,7 @@ This MVP is intentionally narrow in scope:
 - `record` captures microphone + system audio together and saves a single transcript
 - `record mic` captures microphone only
 - `record os` captures system audio only
+- long recordings are chunked automatically before transcription
 
 The main goal is to validate a simple meeting capture workflow with the shortest possible path from audio to text.
 
@@ -45,7 +46,7 @@ Optional settings:
 ```env
 TRANSCRIPTIONS_DIR=transcriptions
 PULSE_SERVER=
-TRANSCRIPTION_MODEL=gpt-4o-transcribe
+TRANSCRIPTION_MODEL=gpt-4o-transcribe-diarize
 CLEANUP_MODEL=gpt-4.1-mini
 CLEANUP_ENABLED=false
 ```
@@ -55,7 +56,7 @@ CLEANUP_ENABLED=false
 - `OPENAI_API_KEY`: Required. OpenAI API key used for transcription.
 - `TRANSCRIPTIONS_DIR`: Output directory for generated `.txt` files. Defaults to `MVP/transcriptions`.
 - `PULSE_SERVER`: Optional PulseAudio server used for Linux/WSL microphone or system-audio capture.
-- `TRANSCRIPTION_MODEL`: Transcription model. Defaults to `gpt-4o-transcribe`.
+- `TRANSCRIPTION_MODEL`: Transcription model. Defaults to `gpt-4o-transcribe-diarize`.
 - `CLEANUP_MODEL`: Reserved for optional post-processing. Defaults to `gpt-4.1-mini`.
 - `CLEANUP_ENABLED`: Enables cleanup after transcription. Defaults to `false`.
 
@@ -101,6 +102,8 @@ transcriptions/YYYYMMDD_HHMMSS.txt
 
 Temporary WAV files are created during recording/transcription and deleted automatically after the transcript is written.
 
+Long recordings are chunked automatically during processing so the final transcript can exceed a single-upload audio limit while still producing one final `.txt` output.
+
 ## Platform Notes
 
 - `record` currently supports combined microphone + system audio capture on Windows only.
@@ -108,13 +111,3 @@ Temporary WAV files are created during recording/transcription and deleted autom
 - `record os` on Linux/WSL depends on PulseAudio monitor sources and local audio configuration.
 - `record mic` works on both Windows and Linux/WSL, but the underlying audio backend differs by platform.
 
-## Current MVP Boundaries
-
-This MVP does not yet include:
-
-- chunked recording for long meetings
-- speaker diarization
-- transcript search or retrieval
-- automatic mixed capture outside Windows
-
-Those are follow-up stages, not part of the current MVP target.
