@@ -92,6 +92,10 @@ def _uses_diarized_output(model: str) -> bool:
     return model.casefold().endswith("-diarize")
 
 
+def model_supports_prompt(model: str) -> bool:
+    return not _uses_diarized_output(model)
+
+
 def transcribe_audio_file(
     client: OpenAI,
     audio_path: Path,
@@ -129,8 +133,9 @@ def cleanup_transcript(client: OpenAI, raw_text: str, model: str) -> str:
             {
                 "role": "system",
                 "content": (
-                    "Reestructura esta transcripcion a texto claro y legible en espanol. "
-                    "Corrige puntuacion y saltos de linea, sin inventar contenido nuevo."
+                    "Rewrite this transcript into clear, readable text while preserving its "
+                    "original language. Correct punctuation and line breaks without "
+                    "inventing new content."
                 ),
             },
             {"role": "user", "content": raw_text},

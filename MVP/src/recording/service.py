@@ -9,8 +9,9 @@ def record_mic_until_enter(sample_rate: int = 16000) -> RecordingSession:
     """
     Record audio from the microphone until the user presses Enter.
 
-    On Windows: uses PyAudioWPatch.
-    On Linux/WSL2: uses sounddevice.
+    On Windows: uses PyAudioWPatch and ignores the requested sample_rate,
+    capturing at the device default sample rate.
+    On Linux/WSL2: uses sounddevice and honors the requested sample_rate.
     """
     if sys.platform == "win32":
         return record_mic_windows()
@@ -21,8 +22,10 @@ def record_os_until_enter(sample_rate: int = 16000) -> RecordingSession:
     """
     Record system audio until the user presses Enter.
 
-    On Windows: uses WASAPI loopback via PyAudioWPatch.
-    On Linux/WSL2: uses the PulseAudio monitor source.
+    On Windows: uses WASAPI loopback via PyAudioWPatch and ignores the
+    requested sample_rate, capturing at the device default sample rate.
+    On Linux/WSL2: uses the PulseAudio monitor source and honors the
+    requested sample_rate.
     """
     if sys.platform == "win32":
         return record_os_windows()

@@ -16,6 +16,7 @@ from here.transcription.client import (
     TranscriptionResult,
     build_client,
     finalize_transcription,
+    model_supports_prompt,
     resolve_transcription_models,
     transcribe_audio_file,
 )
@@ -106,7 +107,9 @@ def transcribe_recording_session(
             for index, window in enumerate(windows, start=1):
                 logger.info("Rendering chunk {index}/{total}...", index=index, total=len(windows))
                 chunk_path = render_chunk_window(normalized_session, window, working_dir, resolved_config)
-                prompt = build_chunk_prompt(merged_raw_text, resolved_config.prompt_tail_words)
+                prompt = None
+                if model_supports_prompt(resolved_transcription_model):
+                    prompt = build_chunk_prompt(merged_raw_text, resolved_config.prompt_tail_words)
 
                 logger.info("Transcribing chunk {index}/{total}...", index=index, total=len(windows))
                 try:

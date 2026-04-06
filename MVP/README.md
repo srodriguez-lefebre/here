@@ -110,4 +110,3 @@ Long recordings are chunked automatically during processing so the final transcr
 - `record os` on Windows uses WASAPI loopback.
 - `record os` on Linux/WSL depends on PulseAudio monitor sources and local audio configuration.
 - `record mic` works on both Windows and Linux/WSL, but the underlying audio backend differs by platform.
-
