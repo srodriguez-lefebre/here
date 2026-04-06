@@ -1,0 +1,59 @@
+[project]
+name = "here"
+version = "0.1.0"
+description = "CLI para grabar y transcribir audio"
+readme = "README.md"
+requires-python = ">=3.12.6"
+dependencies = [
+    "loguru>=0.7.3",
+    "numpy>=2.3.4",
+    "openai>=2.29.0",
+    "pydantic-settings>=2.13.1",
+    "python-dotenv>=1.2.2",
+    "sounddevice>=0.5.5",
+    "soundfile>=0.13.1",
+    "typer>=0.24.1",
+    "pyaudiowpatch>=0.2.12; sys_platform == 'win32'",
+]
+
+[project.scripts]
+here = "here.cli:app"
+record = "here.cli:record_app"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = [
+    "here",
+    "here.audio",
+    "here.config",
+    "here.recording",
+    "here.transcription",
+]
+
+[tool.setuptools.package-dir]
+"here" = "src"
+"here.audio" = "src/audio"
+"here.config" = "src/config"
+"here.recording" = "src/recording"
+"here.transcription" = "src/transcription"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.19.1",
+    "ruff>=0.15.7",
+]
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+strict_optional = true
+warn_return_any = true
+check_untyped_defs = true
