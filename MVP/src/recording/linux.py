@@ -111,6 +111,28 @@ def _get_monitor_source_name() -> str | None:
     return None
 
 
+def _get_default_monitor_source_name() -> str | None:
+    try:
+        default_sink = _run_pactl(["get-default-sink"]).stdout.strip()
+    except RuntimeError as exc:
+        logger.error("Failed to query the default PulseAudio sink: {exc}", exc=exc)
+        return _get_monitor_source_name()
+
+    if default_sink:
+        monitor_name = f"{default_sink}.monitor"
+        try:
+            result = _run_pactl(["list", "sources", "short"])
+            for line in result.stdout.splitlines():
+                parts = line.split()
+                if len(parts) >= 2 and parts[1] == monitor_name:
+                    return monitor_name
+        except RuntimeError as exc:
+            logger.error("Failed to query PulseAudio sources: {exc}", exc=exc)
+            return None
+
+    return _get_monitor_source_name()
+
+
 def _get_default_source() -> str:
     return _run_pactl(["get-default-source"]).stdout.strip()
 
@@ -235,7 +257,7 @@ def record_mic_linux(sample_rate: int = 16000) -> RecordingSession:
 def record_os_linux(sample_rate: int = 16000) -> RecordingSession:
     _setup_pulse()
 
-    monitor = _get_monitor_source_name()
+    monitor = _get_default_monitor_source_name()
     if not monitor:
         raise RuntimeError("No PulseAudio monitor source found. Is PulseAudio running?")
 
