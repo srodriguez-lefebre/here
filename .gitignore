@@ -7,8 +7,6 @@ __pycache__/
 # Virtual environment
 .venv/
 venv/
-
-# uv
 .python-version
 
 # Build
