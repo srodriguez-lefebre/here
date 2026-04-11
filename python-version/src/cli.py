@@ -11,15 +11,31 @@ from here.transcriber import transcribe_recording_session
 
 app = typer.Typer()
 record_app = typer.Typer(invoke_without_command=True)
+mic_app = typer.Typer(invoke_without_command=True)
+os_app = typer.Typer(invoke_without_command=True)
 app.add_typer(record_app, name="record")
+record_app.add_typer(mic_app, name="mic")
+record_app.add_typer(os_app, name="os")
 TRANSCRIPT_ENCODING = "utf-8-sig"
 
 
-def _save_transcription(session: RecordingSession, target_dir: Path) -> None:
+def _resolve_target_dir(output_dir: Path | None) -> Path:
+    return output_dir or get_settings().TRANSCRIPTIONS_DIR
+
+
+def _save_transcription(
+    session: RecordingSession,
+    target_dir: Path,
+    *,
+    use_alt_transcription_model: bool = False,
+) -> None:
     target_dir.mkdir(parents=True, exist_ok=True)
 
     try:
-        result = transcribe_recording_session(session)
+        result = transcribe_recording_session(
+            session,
+            use_alt_transcription_model=use_alt_transcription_model,
+        )
     finally:
         session.cleanup()
         logger.info("Temporary audio files deleted.")
@@ -30,10 +46,19 @@ def _save_transcription(session: RecordingSession, target_dir: Path) -> None:
     logger.success("Saved to {path}", path=output_file)
 
 
-def _run_recording(capture_fn: Callable[[], RecordingSession], target_dir: Path) -> None:
+def _run_recording(
+    capture_fn: Callable[[], RecordingSession],
+    target_dir: Path,
+    *,
+    use_alt_transcription_model: bool = False,
+) -> None:
     try:
         session = capture_fn()
-        _save_transcription(session, target_dir)
+        _save_transcription(
+            session,
+            target_dir,
+            use_alt_transcription_model=use_alt_transcription_model,
+        )
     except RuntimeError as exc:
         logger.error(str(exc))
         raise typer.Exit(code=1) from exc
@@ -61,12 +86,29 @@ def record_main(
     if ctx.invoked_subcommand is not None:
         return
 
-    target_dir = output_dir or get_settings().TRANSCRIPTIONS_DIR
-    _run_recording(record_both_until_enter, target_dir)
+    _run_recording(record_both_until_enter, _resolve_target_dir(output_dir))
 
 
-@record_app.command()
-def mic(
+@record_app.command("alt")
+def record_alt(
+    output_dir: Path | None = typer.Option(
+        None,
+        "--output-dir",
+        "-o",
+        help="Directory to save the transcription. Defaults to TRANSCRIPTIONS_DIR from settings.",
+    ),
+) -> None:
+    """Record microphone + system audio with the alternate transcription model."""
+    _run_recording(
+        record_both_until_enter,
+        _resolve_target_dir(output_dir),
+        use_alt_transcription_model=True,
+    )
+
+
+@mic_app.callback(invoke_without_command=True)
+def mic_main(
+    ctx: typer.Context,
     output_dir: Path | None = typer.Option(
         None,
         "--output-dir",
@@ -75,12 +117,32 @@ def mic(
     ),
 ) -> None:
     """Record audio from the microphone only."""
-    target_dir = output_dir or get_settings().TRANSCRIPTIONS_DIR
-    _run_recording(record_mic_until_enter, target_dir)
+    if ctx.invoked_subcommand is not None:
+        return
+
+    _run_recording(record_mic_until_enter, _resolve_target_dir(output_dir))
 
 
-@record_app.command()
-def os(
+@mic_app.command("alt")
+def mic_alt(
+    output_dir: Path | None = typer.Option(
+        None,
+        "--output-dir",
+        "-o",
+        help="Directory to save the transcription. Defaults to TRANSCRIPTIONS_DIR from settings.",
+    ),
+) -> None:
+    """Record microphone audio with the alternate transcription model."""
+    _run_recording(
+        record_mic_until_enter,
+        _resolve_target_dir(output_dir),
+        use_alt_transcription_model=True,
+    )
+
+
+@os_app.callback(invoke_without_command=True)
+def os_main(
+    ctx: typer.Context,
     output_dir: Path | None = typer.Option(
         None,
         "--output-dir",
@@ -89,5 +151,24 @@ def os(
     ),
 ) -> None:
     """Record system audio only."""
-    target_dir = output_dir or get_settings().TRANSCRIPTIONS_DIR
-    _run_recording(record_os_until_enter, target_dir)
+    if ctx.invoked_subcommand is not None:
+        return
+
+    _run_recording(record_os_until_enter, _resolve_target_dir(output_dir))
+
+
+@os_app.command("alt")
+def os_alt(
+    output_dir: Path | None = typer.Option(
+        None,
+        "--output-dir",
+        "-o",
+        help="Directory to save the transcription. Defaults to TRANSCRIPTIONS_DIR from settings.",
+    ),
+) -> None:
+    """Record system audio with the alternate transcription model."""
+    _run_recording(
+        record_os_until_enter,
+        _resolve_target_dir(output_dir),
+        use_alt_transcription_model=True,
+    )

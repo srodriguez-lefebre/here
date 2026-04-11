@@ -80,9 +80,13 @@ def resolve_transcription_models(
     transcription_model: str | None,
     cleanup_model: str | None,
     skip_cleanup: bool,
+    use_alt_transcription_model: bool = False,
 ) -> tuple[str, str, bool]:
     settings = get_settings()
-    resolved_transcription_model = transcription_model or settings.TRANSCRIPTION_MODEL
+    default_transcription_model = (
+        settings.ALT_TRANSCRIPTION_MODEL if use_alt_transcription_model else settings.TRANSCRIPTION_MODEL
+    )
+    resolved_transcription_model = transcription_model or default_transcription_model
     resolved_cleanup_model = cleanup_model or settings.CLEANUP_MODEL
     should_cleanup = settings.CLEANUP_ENABLED and not skip_cleanup
     return resolved_transcription_model, resolved_cleanup_model, should_cleanup

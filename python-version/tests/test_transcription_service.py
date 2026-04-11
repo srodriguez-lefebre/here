@@ -55,6 +55,33 @@ def test_transcribe_wraps_transcription_errors(monkeypatch: pytest.MonkeyPatch, 
         service_module.transcribe(audio_path)
 
 
+def test_transcribe_passes_alt_flag_to_model_resolution(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    audio_path = tmp_path / "audio.wav"
+    audio_path.write_bytes(b"audio")
+    captured: dict[str, object] = {}
+
+    monkeypatch.setattr(service_module, "build_client", lambda: object())
+
+    def _resolve_transcription_models(**kwargs: object) -> tuple[str, str, bool]:
+        captured.update(kwargs)
+        return ("alt-model", "cleanup-model", False)
+
+    monkeypatch.setattr(service_module, "resolve_transcription_models", _resolve_transcription_models)
+    monkeypatch.setattr(service_module, "transcribe_audio_file", lambda *args, **kwargs: "raw transcript")
+    monkeypatch.setattr(
+        service_module,
+        "finalize_transcription",
+        lambda **kwargs: TranscriptionResult(raw_text=kwargs["raw_text"], final_text="raw transcript"),
+    )
+
+    service_module.transcribe(audio_path, use_alt_transcription_model=True)
+
+    assert captured["use_alt_transcription_model"] is True
+
+
 def test_transcribe_recording_session_processes_chunks_in_order(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -122,15 +149,19 @@ def test_transcribe_recording_session_raises_when_no_chunk_windows(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     session = RecordingSession(sources=[])
+    captured: dict[str, object] = {}
 
     monkeypatch.setattr(service_module, "build_client", lambda: object())
-    monkeypatch.setattr(
-        service_module,
-        "resolve_transcription_models",
-        lambda **kwargs: ("transcribe-model", "cleanup-model", False),
-    )
+
+    def _resolve_transcription_models(**kwargs: object) -> tuple[str, str, bool]:
+        captured.update(kwargs)
+        return ("transcribe-model", "cleanup-model", False)
+
+    monkeypatch.setattr(service_module, "resolve_transcription_models", _resolve_transcription_models)
     monkeypatch.setattr(service_module, "materialize_normalized_session", lambda *args: RecordingSession(sources=[]))
     monkeypatch.setattr(service_module, "plan_chunk_windows", lambda *args: [])
 
     with pytest.raises(RuntimeError, match="Transcription failed"):
-        service_module.transcribe_recording_session(session)
+        service_module.transcribe_recording_session(session, use_alt_transcription_model=True)
+
+    assert captured["use_alt_transcription_model"] is True
