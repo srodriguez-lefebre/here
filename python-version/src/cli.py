@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
+from typing import Annotated
 
 import typer
 from loguru import logger
@@ -17,6 +18,14 @@ app.add_typer(record_app, name="record")
 record_app.add_typer(mic_app, name="mic")
 record_app.add_typer(os_app, name="os")
 TRANSCRIPT_ENCODING = "utf-8-sig"
+OutputDirOption = Annotated[
+    Path | None,
+    typer.Option(
+        "--output-dir",
+        "-o",
+        help="Directory to save the transcription. Defaults to TRANSCRIPTIONS_DIR from settings.",
+    ),
+]
 
 
 def _resolve_target_dir(output_dir: Path | None) -> Path:
@@ -75,12 +84,7 @@ def main() -> None:
 @record_app.callback(invoke_without_command=True)
 def record_main(
     ctx: typer.Context,
-    output_dir: Path | None = typer.Option(
-        None,
-        "--output-dir",
-        "-o",
-        help="Directory to save the transcription. Defaults to TRANSCRIPTIONS_DIR from settings.",
-    ),
+    output_dir: OutputDirOption = None,
 ) -> None:
     """Record audio from different sources and transcribe it."""
     if ctx.invoked_subcommand is not None:
@@ -91,12 +95,7 @@ def record_main(
 
 @record_app.command("alt")
 def record_alt(
-    output_dir: Path | None = typer.Option(
-        None,
-        "--output-dir",
-        "-o",
-        help="Directory to save the transcription. Defaults to TRANSCRIPTIONS_DIR from settings.",
-    ),
+    output_dir: OutputDirOption = None,
 ) -> None:
     """Record microphone + system audio with the alternate transcription model."""
     _run_recording(
@@ -109,12 +108,7 @@ def record_alt(
 @mic_app.callback(invoke_without_command=True)
 def mic_main(
     ctx: typer.Context,
-    output_dir: Path | None = typer.Option(
-        None,
-        "--output-dir",
-        "-o",
-        help="Directory to save the transcription. Defaults to TRANSCRIPTIONS_DIR from settings.",
-    ),
+    output_dir: OutputDirOption = None,
 ) -> None:
     """Record audio from the microphone only."""
     if ctx.invoked_subcommand is not None:
@@ -125,12 +119,7 @@ def mic_main(
 
 @mic_app.command("alt")
 def mic_alt(
-    output_dir: Path | None = typer.Option(
-        None,
-        "--output-dir",
-        "-o",
-        help="Directory to save the transcription. Defaults to TRANSCRIPTIONS_DIR from settings.",
-    ),
+    output_dir: OutputDirOption = None,
 ) -> None:
     """Record microphone audio with the alternate transcription model."""
     _run_recording(
@@ -143,12 +132,7 @@ def mic_alt(
 @os_app.callback(invoke_without_command=True)
 def os_main(
     ctx: typer.Context,
-    output_dir: Path | None = typer.Option(
-        None,
-        "--output-dir",
-        "-o",
-        help="Directory to save the transcription. Defaults to TRANSCRIPTIONS_DIR from settings.",
-    ),
+    output_dir: OutputDirOption = None,
 ) -> None:
     """Record system audio only."""
     if ctx.invoked_subcommand is not None:
@@ -159,12 +143,7 @@ def os_main(
 
 @os_app.command("alt")
 def os_alt(
-    output_dir: Path | None = typer.Option(
-        None,
-        "--output-dir",
-        "-o",
-        help="Directory to save the transcription. Defaults to TRANSCRIPTIONS_DIR from settings.",
-    ),
+    output_dir: OutputDirOption = None,
 ) -> None:
     """Record system audio with the alternate transcription model."""
     _run_recording(
