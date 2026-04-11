@@ -44,6 +44,7 @@ def test_resolve_transcription_models_respects_settings_and_skip_cleanup(monkeyp
         "get_settings",
         lambda: SimpleNamespace(
             TRANSCRIPTION_MODEL="default-transcribe",
+            ALT_TRANSCRIPTION_MODEL="alt-transcribe",
             CLEANUP_MODEL="default-cleanup",
             CLEANUP_ENABLED=True,
         ),
@@ -56,6 +57,28 @@ def test_resolve_transcription_models_respects_settings_and_skip_cleanup(monkeyp
     )
 
     assert models == ("default-transcribe", "default-cleanup", False)
+
+
+def test_resolve_transcription_models_can_use_alt_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        client_module,
+        "get_settings",
+        lambda: SimpleNamespace(
+            TRANSCRIPTION_MODEL="default-transcribe",
+            ALT_TRANSCRIPTION_MODEL="alt-transcribe",
+            CLEANUP_MODEL="default-cleanup",
+            CLEANUP_ENABLED=False,
+        ),
+    )
+
+    models = resolve_transcription_models(
+        transcription_model=None,
+        cleanup_model=None,
+        skip_cleanup=False,
+        use_alt_transcription_model=True,
+    )
+
+    assert models == ("alt-transcribe", "default-cleanup", False)
 
 
 def test_model_supports_prompt_is_false_for_diarized_models() -> None:

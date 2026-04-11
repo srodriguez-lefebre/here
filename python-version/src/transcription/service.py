@@ -28,6 +28,7 @@ def transcribe(
     transcription_model: str | None = None,
     cleanup_model: str | None = None,
     skip_cleanup: bool = False,
+    use_alt_transcription_model: bool = False,
     prompt: str | None = None,
 ) -> TranscriptionResult:
     """
@@ -38,6 +39,7 @@ def transcribe(
         transcription_model: Optional override for the transcription model.
         cleanup_model: Optional override for the cleanup model.
         skip_cleanup: When True, return the raw transcript without cleanup.
+        use_alt_transcription_model: When True, use the configured alternate transcription model.
         prompt: Optional transcript context for the current audio segment.
 
     Returns:
@@ -48,6 +50,7 @@ def transcribe(
         transcription_model=transcription_model,
         cleanup_model=cleanup_model,
         skip_cleanup=skip_cleanup,
+        use_alt_transcription_model=use_alt_transcription_model,
     )
 
     logger.info("Transcribing {path}...", path=audio_path.name)
@@ -77,6 +80,7 @@ def transcribe_recording_session(
     transcription_model: str | None = None,
     cleanup_model: str | None = None,
     skip_cleanup: bool = False,
+    use_alt_transcription_model: bool = False,
     chunking_config: ChunkingConfig | None = None,
 ) -> TranscriptionResult:
     """Transcribe a recorded session, chunking audio as needed for long recordings."""
@@ -87,6 +91,7 @@ def transcribe_recording_session(
         transcription_model=transcription_model,
         cleanup_model=cleanup_model,
         skip_cleanup=skip_cleanup,
+        use_alt_transcription_model=use_alt_transcription_model,
     )
 
     merged_raw_text = ""

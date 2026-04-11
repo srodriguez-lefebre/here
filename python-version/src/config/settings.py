@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     TRANSCRIPTIONS_DIR: Path = _PROJECT_ROOT / "transcriptions"
     PULSE_SERVER: str | None = None
     TRANSCRIPTION_MODEL: str = "gpt-4o-transcribe-diarize"
+    ALT_TRANSCRIPTION_MODEL: str = "gpt-4o-transcribe"
     CLEANUP_MODEL: str = "gpt-4.1-mini"
     CLEANUP_ENABLED: bool = False
 
