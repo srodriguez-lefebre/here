@@ -2,6 +2,7 @@ import os
 import queue
 import subprocess
 import threading
+from collections.abc import Callable
 
 import numpy as np
 import sounddevice as sd
@@ -12,7 +13,13 @@ from here.recording.models import RecordingSession
 from here.recording.shared import build_single_source_session, open_temp_soundfile
 
 
-def _record_to_disk_until_enter(sample_rate: int, channels: int, label: str) -> RecordingSession:
+def _record_to_disk_until_enter(
+    sample_rate: int,
+    channels: int,
+    label: str,
+    *,
+    block_sink: Callable[[str, np.ndarray, int, int], None] | None = None,
+) -> RecordingSession:
     path, writer = open_temp_soundfile(sample_rate, channels)
     audio_queue: queue.SimpleQueue[np.ndarray | None] = queue.SimpleQueue()
     writer_errors: list[Exception] = []
@@ -38,6 +45,8 @@ def _record_to_disk_until_enter(sample_rate: int, channels: int, label: str) -> 
                         break
                     writer.write(block)
                     written_frames[0] += int(block.shape[0])
+                    if block_sink is not None:
+                        block_sink(label, block, sample_rate, channels)
         except Exception as exc:
             writer_errors.append(exc)
 
@@ -116,12 +125,20 @@ def _set_default_source(source: str) -> None:
     _run_pactl(["set-default-source", source])
 
 
-def record_mic_linux(sample_rate: int = 16000) -> RecordingSession:
+def record_mic_linux(
+    sample_rate: int = 16000,
+    *,
+    block_sink: Callable[[str, np.ndarray, int, int], None] | None = None,
+) -> RecordingSession:
     _setup_pulse()
-    return _record_to_disk_until_enter(sample_rate, channels=1, label="mic")
+    return _record_to_disk_until_enter(sample_rate, channels=1, label="mic", block_sink=block_sink)
 
 
-def record_os_linux(sample_rate: int = 16000) -> RecordingSession:
+def record_os_linux(
+    sample_rate: int = 16000,
+    *,
+    block_sink: Callable[[str, np.ndarray, int, int], None] | None = None,
+) -> RecordingSession:
     _setup_pulse()
 
     monitor = _get_monitor_source_name()
@@ -134,7 +151,12 @@ def record_os_linux(sample_rate: int = 16000) -> RecordingSession:
     _set_default_source(monitor)
 
     try:
-        return _record_to_disk_until_enter(sample_rate, channels=1, label="system audio")
+        return _record_to_disk_until_enter(
+            sample_rate,
+            channels=1,
+            label="system audio",
+            block_sink=block_sink,
+        )
     finally:
         if previous_source:
             _set_default_source(previous_source)

@@ -13,13 +13,39 @@ from here.audio.mix import materialize_normalized_session
 from here.audio.models import ChunkingConfig
 from here.recording.models import RecordingSession
 from here.transcription.client import (
+    AudioTranscription,
     TranscriptionResult,
     build_client,
+    coerce_audio_transcription,
     finalize_transcription,
+    format_transcript_segments,
     model_supports_prompt,
     resolve_transcription_models,
     transcribe_audio_file,
 )
+from here.transcription.segments import SegmentTimeline, shift_segments
+
+
+def _merge_chunk_transcription(
+    merged_raw_text: str,
+    timeline: SegmentTimeline | None,
+    transcription: AudioTranscription,
+    *,
+    offset_seconds: float,
+    config: ChunkingConfig,
+) -> tuple[str, SegmentTimeline | None]:
+    if timeline is not None and transcription.segments:
+        timeline.extend(shift_segments(transcription.segments, offset_seconds))
+        return format_transcript_segments(timeline.to_list()), timeline
+
+    if timeline is not None and not transcription.segments:
+        timeline = None
+
+    merged_raw_text = merge_transcript_parts(
+        [merged_raw_text, transcription.text],
+        config,
+    )
+    return merged_raw_text, timeline
 
 
 def transcribe(
@@ -56,11 +82,13 @@ def transcribe(
     logger.info("Transcribing {path}...", path=audio_path.name)
 
     try:
-        raw_text = transcribe_audio_file(
-            client,
-            audio_path,
-            resolved_transcription_model,
-            prompt=prompt,
+        transcription = coerce_audio_transcription(
+            transcribe_audio_file(
+                client,
+                audio_path,
+                resolved_transcription_model,
+                prompt=prompt,
+            )
         )
     except Exception as exc:
         logger.error("Transcription failed: {exc}", exc=exc)
@@ -68,7 +96,7 @@ def transcribe(
 
     return finalize_transcription(
         client=client,
-        raw_text=raw_text,
+        raw_text=transcription.text,
         cleanup_model=resolved_cleanup_model,
         should_cleanup=should_cleanup,
     )
@@ -95,6 +123,7 @@ def transcribe_recording_session(
     )
 
     merged_raw_text = ""
+    segment_timeline: SegmentTimeline | None = SegmentTimeline()
 
     with TemporaryDirectory(prefix="here_chunks_") as temp_dir:
         working_dir = Path(temp_dir)
@@ -118,18 +147,23 @@ def transcribe_recording_session(
 
                 logger.info("Transcribing chunk {index}/{total}...", index=index, total=len(windows))
                 try:
-                    chunk_text = transcribe_audio_file(
-                        client,
-                        chunk_path,
-                        resolved_transcription_model,
-                        prompt=prompt,
+                    chunk_transcription = coerce_audio_transcription(
+                        transcribe_audio_file(
+                            client,
+                            chunk_path,
+                            resolved_transcription_model,
+                            prompt=prompt,
+                        )
                     )
                 finally:
                     chunk_path.unlink(missing_ok=True)
 
-                merged_raw_text = merge_transcript_parts(
-                    [merged_raw_text, chunk_text],
-                    resolved_config,
+                merged_raw_text, segment_timeline = _merge_chunk_transcription(
+                    merged_raw_text,
+                    segment_timeline,
+                    chunk_transcription,
+                    offset_seconds=window.start_frame / resolved_config.target_sample_rate,
+                    config=resolved_config,
                 )
         except Exception as exc:
             logger.error("Chunked transcription failed: {exc}", exc=exc)

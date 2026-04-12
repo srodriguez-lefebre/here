@@ -6,6 +6,7 @@ from loguru import logger
 from openai import OpenAI
 
 from here.config.settings import get_settings
+from here.transcription.segments import TranscriptSegment, parse_transcript_segments
 
 
 @dataclass(slots=True)
@@ -14,46 +15,70 @@ class TranscriptionResult:
     final_text: str
 
 
+@dataclass(slots=True)
+class AudioTranscription:
+    text: str
+    segments: list[TranscriptSegment]
+
+
+def coerce_audio_transcription(value: AudioTranscription | str) -> AudioTranscription:
+    if isinstance(value, AudioTranscription):
+        return value
+    if isinstance(value, str):
+        return AudioTranscription(text=value, segments=[])
+    raise TypeError("Unsupported transcription payload")
+
+
 def _value_from_payload(payload: object, key: str) -> object | None:
     if isinstance(payload, Mapping):
         return payload.get(key)
     return getattr(payload, key, None)
 
 
+def format_transcript_segments(segments: list[TranscriptSegment]) -> str:
+    lines: list[str] = []
+    has_speaker_labels = False
+    for segment in segments:
+        segment_text = segment.text.strip()
+        if not segment_text:
+            continue
+        if segment.speaker:
+            has_speaker_labels = True
+            lines.append(f"{segment.speaker}: {segment_text}")
+        else:
+            lines.append(segment_text)
+
+    if not lines:
+        return ""
+    if has_speaker_labels:
+        return "\n".join(lines)
+    return "\n".join(lines)
+
+
 def extract_transcript_text(payload: object) -> str:
-    segments = _value_from_payload(payload, "segments")
-    if isinstance(segments, list):
-        lines: list[str] = []
-        has_speaker_labels = False
-        for segment in segments:
-            segment_text = _value_from_payload(segment, "text")
-            if not isinstance(segment_text, str) or not segment_text.strip():
-                continue
-
-            speaker = _value_from_payload(segment, "speaker")
-            if isinstance(speaker, str) and speaker.strip():
-                has_speaker_labels = True
-                lines.append(f"{speaker.strip()}: {segment_text.strip()}")
-            else:
-                lines.append(segment_text.strip())
-
-        if lines and has_speaker_labels:
-            return "\n".join(lines)
+    parsed_segments = parse_transcript_segments(payload)
+    if parsed_segments:
+        rendered_segments = format_transcript_segments(parsed_segments)
+        if rendered_segments and any(segment.speaker for segment in parsed_segments):
+            return rendered_segments
 
     text = _value_from_payload(payload, "text")
     if isinstance(text, str) and text.strip():
         return text.strip()
 
-    if isinstance(segments, list):
-        lines = []
-        for segment in segments:
-            segment_text = _value_from_payload(segment, "text")
-            if isinstance(segment_text, str) and segment_text.strip():
-                lines.append(segment_text.strip())
-        if lines:
-            return "\n".join(lines)
+    if parsed_segments:
+        rendered_segments = format_transcript_segments(parsed_segments)
+        if rendered_segments:
+            return rendered_segments
 
     raise ValueError("No transcript text found in transcription response")
+
+
+def extract_audio_transcription(payload: object) -> AudioTranscription:
+    return AudioTranscription(
+        text=extract_transcript_text(payload),
+        segments=parse_transcript_segments(payload),
+    )
 
 
 def _extract_cleanup_text(payload: object) -> str:
@@ -106,16 +131,18 @@ def transcribe_audio_file(
     model: str,
     *,
     prompt: str | None = None,
-) -> str:
+) -> AudioTranscription:
     logger.info("Uploading audio with model {model}", model=model)
 
     use_diarized_output = _uses_diarized_output(model)
     request: dict[str, object] = {
         "model": model,
-        "response_format": "diarized_json" if use_diarized_output else "json",
+        "response_format": "diarized_json" if use_diarized_output else "verbose_json",
     }
     if use_diarized_output:
         request["chunking_strategy"] = "auto"
+    else:
+        request["timestamp_granularities"] = ["segment"]
     if prompt and not use_diarized_output:
         request["prompt"] = prompt
 
@@ -124,7 +151,7 @@ def transcribe_audio_file(
         response = client.audio.transcriptions.create(**request)
 
     logger.info("Transcription response received.")
-    return extract_transcript_text(response)
+    return extract_audio_transcription(response)
 
 
 def cleanup_transcript(client: OpenAI, raw_text: str, model: str) -> str:
