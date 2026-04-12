@@ -1,22 +1,17 @@
-import re
 from pathlib import Path
 
 import soundfile as sf
 
 from here.audio.mix import get_total_target_frames, mix_audio_blocks, read_source_block
 from here.audio.models import ChunkWindow, ChunkingConfig
+from here.audio.text_merge import (
+    TextMergeConfig,
+    dedupe_overlap as dedupe_text_overlap,
+    merge_transcript_parts as merge_text_parts,
+)
 from here.recording.models import RecordingSession
 
 PCM_16_BYTES_PER_FRAME = 2
-
-
-def _normalize_word(word: str) -> str:
-    return re.sub(r"[^\w]+", "", word, flags=re.UNICODE).casefold()
-
-
-def _non_empty_normalized_words(words: list[str]) -> list[str]:
-    return [normalized for normalized in (_normalize_word(word) for word in words) if normalized]
-
 
 def _chunk_frames_from_config(config: ChunkingConfig) -> int:
     frames = config.max_chunk_bytes // PCM_16_BYTES_PER_FRAME
@@ -103,48 +98,17 @@ def build_chunk_prompt(text: str, max_words: int) -> str | None:
     return " ".join(words[-max_words:]).strip()
 
 
-def dedupe_overlap(previous_text: str, next_text: str, config: ChunkingConfig | None = None) -> str:
+def _text_merge_config(config: ChunkingConfig | None) -> TextMergeConfig:
     resolved_config = config or ChunkingConfig()
-    previous_words = previous_text.split()
-    next_words = next_text.split()
-    if not previous_words or not next_words:
-        return next_text.strip()
-
-    previous_normalized = _non_empty_normalized_words(previous_words)
-    next_normalized = _non_empty_normalized_words(next_words)
-    if not previous_normalized or not next_normalized:
-        return next_text.strip()
-
-    max_overlap = min(
-        resolved_config.dedupe_max_words,
-        len(previous_normalized),
-        len(next_normalized),
-        len(next_words),
+    return TextMergeConfig(
+        min_overlap_words=resolved_config.dedupe_min_words,
+        max_overlap_words=resolved_config.dedupe_max_words,
     )
 
-    for overlap_size in range(max_overlap, resolved_config.dedupe_min_words - 1, -1):
-        if previous_normalized[-overlap_size:] == next_normalized[:overlap_size]:
-            trimmed_words = next_words[overlap_size:]
-            return " ".join(trimmed_words).strip()
 
-    return next_text.strip()
+def dedupe_overlap(previous_text: str, next_text: str, config: ChunkingConfig | None = None) -> str:
+    return dedupe_text_overlap(previous_text, next_text, _text_merge_config(config))
 
 
 def merge_transcript_parts(parts: list[str], config: ChunkingConfig | None = None) -> str:
-    resolved_config = config or ChunkingConfig()
-    merged_text = ""
-
-    for part in parts:
-        stripped_part = part.strip()
-        if not stripped_part:
-            continue
-        if not merged_text:
-            merged_text = stripped_part
-            continue
-
-        trimmed_part = dedupe_overlap(merged_text, stripped_part, resolved_config)
-        if not trimmed_part:
-            continue
-        merged_text = f"{merged_text.rstrip()}\n{trimmed_part}"
-
-    return merged_text.strip()
+    return merge_text_parts(parts, _text_merge_config(config))
