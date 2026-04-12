@@ -7,6 +7,7 @@ import pytest
 
 import here.transcription.client as client_module
 from here.transcription.client import (
+    AudioTranscription,
     cleanup_transcript,
     extract_transcript_text,
     finalize_transcription,
@@ -100,8 +101,9 @@ def test_transcribe_audio_file_passes_prompt_for_non_diarized_models(tmp_path: P
 
     result = transcribe_audio_file(client, audio_path, "gpt-4o-transcribe", prompt="tail context")
 
-    assert result == "done"
-    assert captured["response_format"] == "json"
+    assert result == AudioTranscription(text="done", segments=[])
+    assert captured["response_format"] == "verbose_json"
+    assert captured["timestamp_granularities"] == ["segment"]
     assert captured["prompt"] == "tail context"
     assert "chunking_strategy" not in captured
     assert Path(captured["file"].name) == audio_path
