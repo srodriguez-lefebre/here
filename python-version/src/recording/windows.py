@@ -1,5 +1,6 @@
 import threading
 import time
+from collections.abc import Callable
 from pathlib import Path
 
 import numpy as np
@@ -24,6 +25,7 @@ def _capture_windows_stream_to_file(
     label: str,
     written_frames: list[int],
     start_time: float | None = None,
+    block_sink: Callable[[str, np.ndarray, int, int], None] | None = None,
 ) -> None:
     chunk_duration = chunk / sample_rate
     silence_chunk = np.zeros((chunk, channels), dtype=np.int16)
@@ -62,6 +64,8 @@ def _capture_windows_stream_to_file(
 
             writer.write(frames)
             written_frames[0] += chunk
+            if block_sink is not None:
+                block_sink(label, frames, sample_rate, channels)
         except Exception as exc:
             errors.append(exc)
             logger.error("Failed to read {label}: {exc}", label=label, exc=exc)
@@ -138,7 +142,12 @@ def _open_windows_input_stream(
     return stream, sample_rate, channels
 
 
-def _record_windows_device(label: str, device: dict[str, object]) -> RecordingSession:
+def _record_windows_device(
+    label: str,
+    device: dict[str, object],
+    *,
+    block_sink: Callable[[str, np.ndarray, int, int], None] | None = None,
+) -> RecordingSession:
     import pyaudiowpatch as pyaudio
 
     chunk = WINDOWS_CAPTURE_CHUNK
@@ -174,6 +183,7 @@ def _record_windows_device(label: str, device: dict[str, object]) -> RecordingSe
                 "label": label,
                 "written_frames": written_frames,
                 "start_time": capture_start_time,
+                "block_sink": block_sink,
             },
             daemon=True,
         )
@@ -216,17 +226,17 @@ def _record_windows_device(label: str, device: dict[str, object]) -> RecordingSe
     )
 
 
-def record_mic_windows() -> RecordingSession:
+def record_mic_windows(*, block_sink: Callable[[str, np.ndarray, int, int], None] | None = None) -> RecordingSession:
     device = _get_default_windows_input_device()
-    return _record_windows_device("microphone", device)
+    return _record_windows_device("microphone", device, block_sink=block_sink)
 
 
-def record_os_windows() -> RecordingSession:
+def record_os_windows(*, block_sink: Callable[[str, np.ndarray, int, int], None] | None = None) -> RecordingSession:
     device = _get_default_windows_loopback_device()
-    return _record_windows_device("system audio", device)
+    return _record_windows_device("system audio", device, block_sink=block_sink)
 
 
-def record_both_windows() -> RecordingSession:
+def record_both_windows(*, block_sink: Callable[[str, np.ndarray, int, int], None] | None = None) -> RecordingSession:
     import pyaudiowpatch as pyaudio
 
     chunk = WINDOWS_CAPTURE_CHUNK
@@ -279,6 +289,7 @@ def record_both_windows() -> RecordingSession:
                     "label": "microphone",
                     "written_frames": mic_written_frames,
                     "start_time": capture_start_time,
+                    "block_sink": block_sink,
                 },
                 daemon=True,
             ),
@@ -295,6 +306,7 @@ def record_both_windows() -> RecordingSession:
                     "label": "system audio",
                     "written_frames": os_written_frames,
                     "start_time": capture_start_time,
+                    "block_sink": block_sink,
                 },
                 daemon=True,
             ),
