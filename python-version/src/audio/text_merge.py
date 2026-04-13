@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from difflib import SequenceMatcher
-import re
 
 _NON_WORD_RE = re.compile(r"[^\w]+", re.UNICODE)
 
@@ -22,6 +22,15 @@ def _normalize_word(word: str) -> str:
 
 def _normalized_words(words: list[str]) -> list[str]:
     return [normalized for normalized in (_normalize_word(word) for word in words) if normalized]
+
+
+def _normalized_word_positions(words: list[str]) -> list[tuple[int, str]]:
+    positions: list[tuple[int, str]] = []
+    for index, word in enumerate(words):
+        normalized = _normalize_word(word)
+        if normalized:
+            positions.append((index, normalized))
+    return positions
 
 
 def _canonical_line(line: str) -> str:
@@ -68,26 +77,24 @@ def _token_overlap_size(previous_text: str, next_text: str, config: TextMergeCon
     if not previous_words or not next_words:
         return 0
 
-    previous_normalized = _normalized_words(previous_words)
-    next_normalized = _normalized_words(next_words)
-    if not previous_normalized or not next_normalized:
+    previous_positions = _normalized_word_positions(previous_words)
+    next_positions = _normalized_word_positions(next_words)
+    if not previous_positions or not next_positions:
         return 0
 
     max_overlap = min(
         config.max_overlap_words,
-        len(previous_words),
-        len(next_words),
-        len(previous_normalized),
-        len(next_normalized),
+        len(previous_positions),
+        len(next_positions),
     )
     if max_overlap < config.min_overlap_words:
         return 0
 
     for overlap_size in range(max_overlap, config.min_overlap_words - 1, -1):
-        previous_window = previous_normalized[-overlap_size:]
-        next_window = next_normalized[:overlap_size]
+        previous_window = [normalized for _, normalized in previous_positions[-overlap_size:]]
+        next_window = [normalized for _, normalized in next_positions[:overlap_size]]
         if SequenceMatcher(None, previous_window, next_window).ratio() >= config.min_similarity:
-            return overlap_size
+            return next_positions[overlap_size - 1][0] + 1
 
     return 0
 

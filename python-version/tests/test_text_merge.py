@@ -30,6 +30,13 @@ def test_trim_overlapping_prefix_handles_small_word_variations() -> None:
     assert trim_overlapping_prefix(previous, next_text, config) == "and then notes"
 
 
+def test_trim_overlapping_prefix_keeps_alignment_when_punctuation_is_split_into_tokens() -> None:
+    previous = "alpha beta gamma theta"
+    next_text = "alpha beta , gamma theta delta"
+
+    assert trim_overlapping_prefix(previous, next_text) == "delta"
+
+
 def test_trim_overlapping_prefix_prefers_line_overlap_for_speaker_labels() -> None:
     previous = "Speaker 1: We should review the plan.\nSpeaker 2: Absolutely."
     next_text = "speaker 1: we should review the plan!\nSpeaker 2: Absolutely.\nSpeaker 2: I added logs."

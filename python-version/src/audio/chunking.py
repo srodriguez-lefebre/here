@@ -13,6 +13,7 @@ from here.recording.models import RecordingSession
 
 PCM_16_BYTES_PER_FRAME = 2
 
+
 def _chunk_frames_from_config(config: ChunkingConfig) -> int:
     frames = config.max_chunk_bytes // PCM_16_BYTES_PER_FRAME
     return max(1, frames)

@@ -64,7 +64,12 @@ def score_boundary_window(
 
     left = mono_audio[max(0, candidate_index - window_samples) : candidate_index]
     right = mono_audio[candidate_index : min(mono_audio.shape[0], candidate_index + window_samples)]
-    combined = mono_audio[max(0, candidate_index - window_samples) : min(mono_audio.shape[0], candidate_index + window_samples)]
+    combined = mono_audio[
+        max(0, candidate_index - window_samples) : min(
+            mono_audio.shape[0],
+            candidate_index + window_samples,
+        )
+    ]
 
     left_rms = window_rms(left)
     right_rms = window_rms(right)

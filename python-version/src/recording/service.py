@@ -23,7 +23,7 @@ def record_mic_until_enter(
     On Linux/WSL2: uses sounddevice and honors the requested sample_rate.
     """
     if sys.platform == "win32":
-        return record_mic_windows(block_sink=block_sink) if block_sink is not None else record_mic_windows()
+        return record_mic_windows(block_sink=block_sink)
     return record_mic_linux(sample_rate, block_sink=block_sink)
 
 
@@ -41,7 +41,7 @@ def record_os_until_enter(
     requested sample_rate.
     """
     if sys.platform == "win32":
-        return record_os_windows(block_sink=block_sink) if block_sink is not None else record_os_windows()
+        return record_os_windows(block_sink=block_sink)
     return record_os_linux(sample_rate, block_sink=block_sink)
 
 
@@ -51,4 +51,4 @@ def record_both_until_enter(*, block_sink: BlockSink | None = None) -> Recording
         raise RuntimeError(
             "`record` currently supports combined mic + system capture only on Windows."
         )
-    return record_both_windows(block_sink=block_sink) if block_sink is not None else record_both_windows()
+    return record_both_windows(block_sink=block_sink)

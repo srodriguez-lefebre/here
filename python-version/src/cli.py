@@ -9,6 +9,7 @@ from loguru import logger
 from here.config.settings import get_settings
 from here.live_processing import LiveTranscriptionController
 from here.recorder import RecordingSession, record_both_until_enter, record_mic_until_enter, record_os_until_enter
+from here.transcription.client import TranscriptionResult
 from here.transcriber import transcribe_recording_session
 
 app = typer.Typer()
@@ -107,7 +108,7 @@ def _transcribe_session(
     *,
     use_alt_transcription_model: bool = False,
     live_controller: LiveTranscriptionController | None = None,
-):
+) -> TranscriptionResult:
     if live_controller is not None:
         try:
             logger.info("Completing live transcription from background chunks.")

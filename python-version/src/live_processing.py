@@ -4,6 +4,7 @@ import queue
 import shutil
 import tempfile
 import threading
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -32,7 +33,7 @@ from here.transcription.client import (
     resolve_transcription_models,
     transcribe_audio_file,
 )
-from here.transcription.segments import SegmentTimeline, shift_segments
+from here.transcription.segments import SegmentTimeline, TranscriptSegment, shift_segments
 
 PCM_SUBTYPE = "PCM_16"
 
@@ -229,6 +230,7 @@ class LiveTranscriptionController:
         self._source_states: dict[str, BufferedSourceState] = {}
         self._capture_closed = False
         self._capture_lock = threading.Lock()
+        self._error_lock = threading.Lock()
         self._error: Exception | None = None
         self._result: TranscriptionResult | None = None
         self._client = build_client()
@@ -378,8 +380,9 @@ class LiveTranscriptionController:
             self._enqueue_live_job(segments)
 
     def _set_error(self, exc: Exception) -> None:
-        if self._error is None:
-            self._error = exc
+        with self._error_lock:
+            if self._error is None:
+                self._error = exc
 
     def _chunker_worker(self) -> None:
         try:
@@ -424,7 +427,7 @@ class LiveTranscriptionController:
         timeline: SegmentTimeline | None,
         *,
         chunk_text: str,
-        chunk_segments: list,
+        chunk_segments: Sequence[TranscriptSegment],
         offset_seconds: float,
     ) -> tuple[str, SegmentTimeline | None]:
         if timeline is not None and chunk_segments:

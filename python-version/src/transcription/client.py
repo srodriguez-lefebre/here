@@ -37,26 +37,24 @@ def _value_from_payload(payload: object, key: str) -> object | None:
 
 def format_transcript_segments(segments: list[TranscriptSegment]) -> str:
     lines: list[str] = []
-    has_speaker_labels = False
     for segment in segments:
         segment_text = segment.text.strip()
         if not segment_text:
             continue
         if segment.speaker:
-            has_speaker_labels = True
             lines.append(f"{segment.speaker}: {segment_text}")
         else:
             lines.append(segment_text)
 
     if not lines:
         return ""
-    if has_speaker_labels:
-        return "\n".join(lines)
     return "\n".join(lines)
 
 
-def extract_transcript_text(payload: object) -> str:
-    parsed_segments = parse_transcript_segments(payload)
+def _extract_transcript_text_from_parts(
+    payload: object,
+    parsed_segments: list[TranscriptSegment],
+) -> str:
     if parsed_segments:
         rendered_segments = format_transcript_segments(parsed_segments)
         if rendered_segments and any(segment.speaker for segment in parsed_segments):
@@ -74,10 +72,16 @@ def extract_transcript_text(payload: object) -> str:
     raise ValueError("No transcript text found in transcription response")
 
 
+def extract_transcript_text(payload: object) -> str:
+    parsed_segments = parse_transcript_segments(payload)
+    return _extract_transcript_text_from_parts(payload, parsed_segments)
+
+
 def extract_audio_transcription(payload: object) -> AudioTranscription:
+    parsed_segments = parse_transcript_segments(payload)
     return AudioTranscription(
-        text=extract_transcript_text(payload),
-        segments=parse_transcript_segments(payload),
+        text=_extract_transcript_text_from_parts(payload, parsed_segments),
+        segments=parsed_segments,
     )
 
 
