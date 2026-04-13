@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from loguru import logger
-from openai import OpenAI
+from openai import BadRequestError, OpenAI
 
 from here.config.settings import get_settings
 from here.transcription.segments import TranscriptSegment, parse_transcript_segments
@@ -125,8 +125,48 @@ def _uses_diarized_output(model: str) -> bool:
     return model.casefold().endswith("-diarize")
 
 
+def _uses_plain_json_output(model: str) -> bool:
+    normalized_model = model.casefold()
+    if normalized_model.endswith("-diarize"):
+        return False
+    return normalized_model.startswith("gpt-4o-transcribe") or normalized_model.startswith(
+        "gpt-4o-mini-transcribe"
+    )
+
+
 def model_supports_prompt(model: str) -> bool:
     return not _uses_diarized_output(model)
+
+
+def _build_transcription_request(model: str, *, prompt: str | None, response_format: str) -> dict[str, object]:
+    request: dict[str, object] = {
+        "model": model,
+        "response_format": response_format,
+    }
+    if response_format == "diarized_json":
+        request["chunking_strategy"] = "auto"
+    elif response_format == "verbose_json":
+        request["timestamp_granularities"] = ["segment"]
+
+    if prompt and response_format != "diarized_json":
+        request["prompt"] = prompt
+
+    return request
+
+
+def _is_unsupported_response_format_error(exc: BadRequestError) -> bool:
+    if exc.status_code != 400:
+        return False
+    error_payload = exc.body if isinstance(exc.body, Mapping) else {}
+    error = error_payload.get("error") if isinstance(error_payload, Mapping) else None
+    if isinstance(error, Mapping):
+        param = error.get("param")
+        code = error.get("code")
+        message = str(error.get("message", "")).casefold()
+        if param == "response_format" and code == "unsupported_value":
+            return True
+        return "response_format" in message and "not compatible" in message
+    return False
 
 
 def transcribe_audio_file(
@@ -139,20 +179,40 @@ def transcribe_audio_file(
     logger.info("Uploading audio with model {model}", model=model)
 
     use_diarized_output = _uses_diarized_output(model)
-    request: dict[str, object] = {
-        "model": model,
-        "response_format": "diarized_json" if use_diarized_output else "verbose_json",
-    }
     if use_diarized_output:
-        request["chunking_strategy"] = "auto"
+        request = _build_transcription_request(
+            model,
+            prompt=prompt,
+            response_format="diarized_json",
+        )
     else:
-        request["timestamp_granularities"] = ["segment"]
-    if prompt and not use_diarized_output:
-        request["prompt"] = prompt
+        preferred_format = "json" if _uses_plain_json_output(model) else "verbose_json"
+        request = _build_transcription_request(
+            model,
+            prompt=prompt,
+            response_format=preferred_format,
+        )
 
     with audio_path.open("rb") as audio_file:
         request["file"] = audio_file
-        response = client.audio.transcriptions.create(**request)
+        try:
+            response = client.audio.transcriptions.create(**request)
+        except BadRequestError as exc:
+            if request["response_format"] != "verbose_json" or not _is_unsupported_response_format_error(exc):
+                raise
+
+            logger.warning(
+                "Model {model} rejected verbose_json; retrying with json response format.",
+                model=model,
+            )
+            retry_request = _build_transcription_request(
+                model,
+                prompt=prompt,
+                response_format="json",
+            )
+            retry_request["file"] = audio_file
+            audio_file.seek(0)
+            response = client.audio.transcriptions.create(**retry_request)
 
     logger.info("Transcription response received.")
     return extract_audio_transcription(response)

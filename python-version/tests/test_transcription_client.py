@@ -3,11 +3,13 @@ from __future__ import annotations
 from pathlib import Path
 from types import SimpleNamespace
 
+import httpx
 import pytest
 
 import here.transcription.client as client_module
 from here.transcription.client import (
     AudioTranscription,
+    BadRequestError,
     cleanup_transcript,
     extract_transcript_text,
     finalize_transcription,
@@ -102,11 +104,53 @@ def test_transcribe_audio_file_passes_prompt_for_non_diarized_models(tmp_path: P
     result = transcribe_audio_file(client, audio_path, "gpt-4o-transcribe", prompt="tail context")
 
     assert result == AudioTranscription(text="done", segments=[])
-    assert captured["response_format"] == "verbose_json"
-    assert captured["timestamp_granularities"] == ["segment"]
+    assert captured["response_format"] == "json"
+    assert "timestamp_granularities" not in captured
     assert captured["prompt"] == "tail context"
     assert "chunking_strategy" not in captured
     assert Path(captured["file"].name) == audio_path
+
+
+def test_transcribe_audio_file_retries_with_json_when_verbose_json_is_rejected(tmp_path: Path) -> None:
+    audio_path = tmp_path / "audio.wav"
+    audio_path.write_bytes(b"audio")
+    captured_calls: list[dict[str, object]] = []
+
+    class _Transcriptions:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def create(self, **kwargs: object) -> dict[str, str]:
+            self.calls += 1
+            captured_calls.append(dict(kwargs))
+            if self.calls == 1:
+                raise BadRequestError(
+                    "unsupported response format",
+                    response=httpx.Response(
+                        400,
+                        request=httpx.Request("POST", "https://api.openai.com/v1/audio/transcriptions"),
+                    ),
+                    body={
+                        "error": {
+                            "message": "response_format 'verbose_json' is not compatible",
+                            "param": "response_format",
+                            "code": "unsupported_value",
+                        }
+                    },
+                )
+            return {"text": "done"}
+
+    client = SimpleNamespace(audio=SimpleNamespace(transcriptions=_Transcriptions()))
+
+    result = transcribe_audio_file(client, audio_path, "whisper-1", prompt="tail context")
+
+    assert result == AudioTranscription(text="done", segments=[])
+    assert len(captured_calls) == 2
+    assert captured_calls[0]["response_format"] == "verbose_json"
+    assert captured_calls[0]["timestamp_granularities"] == ["segment"]
+    assert captured_calls[1]["response_format"] == "json"
+    assert "timestamp_granularities" not in captured_calls[1]
+    assert captured_calls[1]["prompt"] == "tail context"
 
 
 def test_transcribe_audio_file_uses_diarized_request_shape(tmp_path: Path) -> None:
