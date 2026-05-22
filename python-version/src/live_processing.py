@@ -6,6 +6,7 @@ import tempfile
 import threading
 from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -22,6 +23,7 @@ from here.audio.mix import (
 )
 from here.audio.models import ChunkingConfig
 from here.audio.silence_boundaries import choose_silence_cut_index
+from here.output.metadata import ChunkMetadata
 from here.recording.models import RecordedAudioSource, RecordingSession
 from here.transcription.client import (
     TranscriptionResult,
@@ -233,6 +235,7 @@ class LiveTranscriptionController:
         self._error_lock = threading.Lock()
         self._error: Exception | None = None
         self._result: TranscriptionResult | None = None
+        self._chunks: list[ChunkMetadata] = []
         self._client = build_client()
         self._resolved_transcription_model, self._resolved_cleanup_model, self._should_cleanup = (
             resolve_transcription_models(
@@ -463,6 +466,7 @@ class LiveTranscriptionController:
                     prompt = build_chunk_prompt(merged_raw_text, self.config.prompt_tail_words)
 
                 normalized_session: RecordingSession | None = None
+                transcription_started_at = datetime.now().astimezone()
                 try:
                     logger.info("Normalizing live chunk {index}...", index=job.index)
                     normalized_session = materialize_normalized_session(
@@ -480,6 +484,20 @@ class LiveTranscriptionController:
                             prompt=prompt,
                         )
                     )
+                    transcription_finished_at = datetime.now().astimezone()
+                    self._chunks.append(
+                        ChunkMetadata(
+                            index=job.index,
+                            mode="live",
+                            start_seconds=job.start_offset_seconds,
+                            end_seconds=job.start_offset_seconds + job.session.duration_seconds,
+                            duration_seconds=job.session.duration_seconds,
+                            source_count=len(job.session.sources),
+                            transcription_started_at=transcription_started_at,
+                            transcription_finished_at=transcription_finished_at,
+                            status="completed",
+                        )
+                    )
                     merged_raw_text, segment_timeline = self._merge_chunk_transcription(
                         merged_raw_text,
                         segment_timeline,
@@ -489,6 +507,21 @@ class LiveTranscriptionController:
                     )
                     logger.info("Live chunk {index} transcribed.", index=job.index)
                 except Exception as exc:
+                    transcription_finished_at = datetime.now().astimezone()
+                    self._chunks.append(
+                        ChunkMetadata(
+                            index=job.index,
+                            mode="live",
+                            start_seconds=job.start_offset_seconds,
+                            end_seconds=job.start_offset_seconds + job.session.duration_seconds,
+                            duration_seconds=job.session.duration_seconds,
+                            source_count=len(job.session.sources),
+                            transcription_started_at=transcription_started_at,
+                            transcription_finished_at=transcription_finished_at,
+                            status="failed",
+                            error=str(exc),
+                        )
+                    )
                     logger.error("Live chunk transcription failed: {exc}", exc=exc)
                     self._set_error(exc)
                     failed = True
@@ -507,6 +540,7 @@ class LiveTranscriptionController:
                     raw_text=merged_raw_text,
                     cleanup_model=self._resolved_cleanup_model,
                     should_cleanup=self._should_cleanup,
+                    chunks=self._chunks,
                 )
                 logger.success("Live transcription complete.")
         except Exception as exc:
@@ -528,6 +562,9 @@ class LiveTranscriptionController:
         if self._result is None:
             raise RuntimeError("Live transcription did not produce a result")
         return self._result
+
+    def chunk_metadata(self) -> list[ChunkMetadata]:
+        return list(self._chunks)
 
     def abort(self) -> None:
         logger.warning("Aborting live transcription pipeline.")

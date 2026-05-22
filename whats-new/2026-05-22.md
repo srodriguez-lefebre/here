@@ -1,0 +1,19 @@
+# What's New: May 2026
+
+## A Cleaner Trail For Every Recording
+
+This update gives every recording a better afterlife.
+
+Instead of a single transcript file, `here` now saves a small session folder with
+the transcript, a readable Markdown version, session metadata, and chunk-level
+debugging details. It is still simple to read, but now much easier to trust,
+inspect, and build on.
+
+It also adds Windows audio diagnostics:
+
+- `here devices` shows the microphone and system-audio devices being used.
+- `here test mic` checks whether the microphone has signal.
+- `here test os` checks whether system audio loopback has signal.
+
+The goal is simple: make the recording pipeline feel less like a black box
+before we build bigger memory and retrieval features on top of it.

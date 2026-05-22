@@ -1,11 +1,12 @@
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from loguru import logger
 from openai import BadRequestError, OpenAI
 
 from here.config.settings import get_settings
+from here.output.metadata import ChunkMetadata
 from here.transcription.segments import TranscriptSegment, parse_transcript_segments
 
 
@@ -13,6 +14,7 @@ from here.transcription.segments import TranscriptSegment, parse_transcript_segm
 class TranscriptionResult:
     raw_text: str
     final_text: str
+    chunks: list[ChunkMetadata] = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -247,7 +249,8 @@ def finalize_transcription(
     raw_text: str,
     cleanup_model: str,
     should_cleanup: bool,
+    chunks: list[ChunkMetadata] | None = None,
 ) -> TranscriptionResult:
     final_text = cleanup_transcript(client, raw_text, cleanup_model) if should_cleanup else raw_text
     logger.success("Transcription complete.")
-    return TranscriptionResult(raw_text=raw_text, final_text=final_text)
+    return TranscriptionResult(raw_text=raw_text, final_text=final_text, chunks=chunks or [])
