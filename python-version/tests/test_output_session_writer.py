@@ -4,7 +4,9 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+from here.output.metadata import ChunkMetadata
 from here.output.session_writer import (
+    CHUNKS_FILE,
     MARKDOWN_FILE,
     METADATA_FILE,
     TRANSCRIPT_ENCODING,
@@ -45,12 +47,26 @@ def test_write_session_artifacts_creates_folder_text_markdown_and_metadata(
         live_pipeline_attempted=True,
         live_pipeline_used=True,
         fallback_used=False,
+        chunks=[
+            ChunkMetadata(
+                index=1,
+                mode="live",
+                start_seconds=0.0,
+                end_seconds=3.0,
+                duration_seconds=3.0,
+                source_count=1,
+                transcription_started_at=datetime(2026, 5, 22, 10, 29, 0),
+                transcription_finished_at=datetime(2026, 5, 22, 10, 29, 5),
+                status="completed",
+            )
+        ],
     )
 
     assert artifacts.session_dir.name == "20260522_103000"
     assert artifacts.transcript_path.name == TRANSCRIPT_FILE
     assert artifacts.markdown_path.name == MARKDOWN_FILE
     assert artifacts.metadata_path.name == METADATA_FILE
+    assert artifacts.chunks_path.name == CHUNKS_FILE
     assert artifacts.transcript_path.read_text(encoding=TRANSCRIPT_ENCODING) == "Speaker 1: hola"
 
     metadata = json.loads(artifacts.metadata_path.read_text(encoding="utf-8"))
@@ -66,8 +82,16 @@ def test_write_session_artifacts_creates_folder_text_markdown_and_metadata(
             "duration_seconds": 3.0,
         }
     ]
-    assert metadata["output_files"] == [TRANSCRIPT_FILE, MARKDOWN_FILE, METADATA_FILE]
+    assert metadata["output_files"] == [TRANSCRIPT_FILE, MARKDOWN_FILE, METADATA_FILE, CHUNKS_FILE]
     assert "source.wav" not in artifacts.metadata_path.read_text(encoding="utf-8")
+
+    chunks = json.loads(artifacts.chunks_path.read_text(encoding="utf-8"))
+    assert chunks["schema_version"] == 1
+    assert chunks["chunks"][0]["mode"] == "live"
+    assert chunks["chunks"][0]["source_count"] == 1
+    assert chunks["chunks"][0]["status"] == "completed"
+    assert "Speaker 1: hola" not in artifacts.chunks_path.read_text(encoding="utf-8")
+    assert "gpt-4o-transcribe-diarize" not in artifacts.chunks_path.read_text(encoding="utf-8")
 
     markdown = artifacts.markdown_path.read_text(encoding="utf-8")
     assert "# Recording 2026-05-22 10:30" in markdown
@@ -96,3 +120,5 @@ def test_write_session_artifacts_uses_unique_session_folder(tmp_path: Path) -> N
     assert artifacts.session_dir.name == "20260522_103000_2"
     metadata = json.loads(artifacts.metadata_path.read_text(encoding="utf-8"))
     assert metadata["session_id"] == "20260522_103000_2"
+    chunks = json.loads(artifacts.chunks_path.read_text(encoding="utf-8"))
+    assert chunks == {"schema_version": 1, "chunks": []}

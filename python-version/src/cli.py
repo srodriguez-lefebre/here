@@ -9,6 +9,7 @@ from loguru import logger
 
 from here.config.settings import get_settings
 from here.live_processing import LiveTranscriptionController
+from here.output.metadata import ChunkMetadata
 from here.output.session_writer import TRANSCRIPT_ENCODING, write_session_artifacts
 from here.recorder import RecordingSession, record_both_until_enter, record_mic_until_enter, record_os_until_enter
 from here.transcription.client import TranscriptionResult
@@ -89,6 +90,7 @@ def _save_transcription(
         live_pipeline_attempted=outcome.live_pipeline_attempted,
         live_pipeline_used=outcome.live_pipeline_used,
         fallback_used=outcome.fallback_used,
+        chunks=list(getattr(outcome.result, "chunks", [])),
     )
     logger.success("Saved to {path}", path=artifacts.session_dir)
 
@@ -147,6 +149,7 @@ def _transcribe_session_outcome(
     use_alt_transcription_model: bool = False,
     live_controller: LiveTranscriptionController | None = None,
 ) -> _TranscriptionOutcome:
+    failed_live_chunks: list[ChunkMetadata] = []
     if live_controller is not None:
         try:
             logger.info("Completing live transcription from background chunks.")
@@ -161,16 +164,30 @@ def _transcribe_session_outcome(
                 "Live transcription failed: {exc}. Falling back to offline post-processing.",
                 exc=exc,
             )
+            failed_live_chunks = _chunk_metadata_from_controller(live_controller)
+
+    result = transcribe_recording_session(
+        session,
+        use_alt_transcription_model=use_alt_transcription_model,
+    )
+    if failed_live_chunks:
+        result.chunks = failed_live_chunks + list(getattr(result, "chunks", []))
 
     return _TranscriptionOutcome(
-        result=transcribe_recording_session(
-            session,
-            use_alt_transcription_model=use_alt_transcription_model,
-        ),
+        result=result,
         live_pipeline_attempted=live_controller is not None,
         live_pipeline_used=False,
         fallback_used=live_controller is not None,
     )
+
+
+def _chunk_metadata_from_controller(
+    live_controller: LiveTranscriptionController,
+) -> list[ChunkMetadata]:
+    chunk_metadata = getattr(live_controller, "chunk_metadata", None)
+    if not callable(chunk_metadata):
+        return []
+    return list(chunk_metadata())
 
 
 @app.callback()

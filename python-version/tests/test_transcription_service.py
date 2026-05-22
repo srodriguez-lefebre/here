@@ -96,7 +96,7 @@ def test_transcribe_recording_session_processes_chunks_in_order(
     prompts: list[str | None] = []
     rendered_paths: list[Path] = []
     chunk_texts = iter(["chunk one", "chunk two"])
-    finalized: dict[str, str] = {}
+    finalized: dict[str, object] = {}
 
     monkeypatch.setattr(service_module, "build_client", lambda: object())
     monkeypatch.setattr(
@@ -131,7 +131,12 @@ def test_transcribe_recording_session_processes_chunks_in_order(
 
     def _finalize_transcription(**kwargs: object) -> TranscriptionResult:
         finalized["raw_text"] = str(kwargs["raw_text"])
-        return TranscriptionResult(raw_text=str(kwargs["raw_text"]), final_text="final transcript")
+        finalized["chunks"] = kwargs["chunks"]
+        return TranscriptionResult(
+            raw_text=str(kwargs["raw_text"]),
+            final_text="final transcript",
+            chunks=kwargs["chunks"],
+        )
 
     monkeypatch.setattr(service_module, "render_chunk_window", _render_chunk)
     monkeypatch.setattr(service_module, "transcribe_audio_file", _transcribe_audio_file)
@@ -143,6 +148,12 @@ def test_transcribe_recording_session_processes_chunks_in_order(
     assert prompts == [None, "prompt::chunk one"]
     assert finalized["raw_text"] == "chunk one | chunk two"
     assert result.final_text == "final transcript"
+    assert len(result.chunks) == 2
+    assert result.chunks[0].mode == "offline"
+    assert result.chunks[0].index == 1
+    assert result.chunks[0].start_seconds == 0.0
+    assert result.chunks[0].end_seconds == 10 / 16000
+    assert result.chunks[0].status == "completed"
     assert all(not path.exists() for path in rendered_paths)
 
 

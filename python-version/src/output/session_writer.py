@@ -5,7 +5,12 @@ from datetime import datetime
 from pathlib import Path
 
 from here.output.markdown import render_transcript_markdown
-from here.output.metadata import SessionMetadata, build_session_metadata
+from here.output.metadata import (
+    ChunkMetadata,
+    ChunkMetadataDocument,
+    SessionMetadata,
+    build_session_metadata,
+)
 from here.recording.models import RecordingSession
 
 TRANSCRIPT_ENCODING = "utf-8-sig"
@@ -14,6 +19,7 @@ MARKDOWN_ENCODING = "utf-8"
 TRANSCRIPT_FILE = "transcript.txt"
 MARKDOWN_FILE = "transcript.md"
 METADATA_FILE = "session.json"
+CHUNKS_FILE = "chunks.json"
 
 
 @dataclass(slots=True)
@@ -22,7 +28,9 @@ class SessionArtifactPaths:
     transcript_path: Path
     markdown_path: Path
     metadata_path: Path
+    chunks_path: Path
     metadata: SessionMetadata
+    chunks: ChunkMetadataDocument
 
 
 def _session_id_from_datetime(value: datetime) -> str:
@@ -54,10 +62,11 @@ def write_session_artifacts(
     live_pipeline_attempted: bool,
     live_pipeline_used: bool,
     fallback_used: bool,
+    chunks: list[ChunkMetadata] | None = None,
 ) -> SessionArtifactPaths:
     target_dir.mkdir(parents=True, exist_ok=True)
     session_id, session_dir = _reserve_session_dir(target_dir, _session_id_from_datetime(completed_at))
-    output_files = [TRANSCRIPT_FILE, MARKDOWN_FILE, METADATA_FILE]
+    output_files = [TRANSCRIPT_FILE, MARKDOWN_FILE, METADATA_FILE, CHUNKS_FILE]
     metadata = build_session_metadata(
         session_id=session_id,
         session=session,
@@ -75,6 +84,8 @@ def write_session_artifacts(
     transcript_path = session_dir / TRANSCRIPT_FILE
     markdown_path = session_dir / MARKDOWN_FILE
     metadata_path = session_dir / METADATA_FILE
+    chunks_path = session_dir / CHUNKS_FILE
+    chunks_document = ChunkMetadataDocument(chunks=chunks or [])
 
     transcript_path.write_text(transcript_text, encoding=TRANSCRIPT_ENCODING)
     markdown_path.write_text(
@@ -85,11 +96,17 @@ def write_session_artifacts(
         metadata.model_dump_json(indent=2),
         encoding=METADATA_ENCODING,
     )
+    chunks_path.write_text(
+        chunks_document.model_dump_json(indent=2),
+        encoding=METADATA_ENCODING,
+    )
 
     return SessionArtifactPaths(
         session_dir=session_dir,
         transcript_path=transcript_path,
         markdown_path=markdown_path,
         metadata_path=metadata_path,
+        chunks_path=chunks_path,
         metadata=metadata,
+        chunks=chunks_document,
     )

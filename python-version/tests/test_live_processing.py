@@ -27,7 +27,11 @@ def test_live_transcription_controller_processes_chunks_in_order(
     monkeypatch.setattr(
         live_module,
         "finalize_transcription",
-        lambda **kwargs: TranscriptionResult(raw_text=str(kwargs["raw_text"]), final_text=str(kwargs["raw_text"])),
+        lambda **kwargs: TranscriptionResult(
+            raw_text=str(kwargs["raw_text"]),
+            final_text=str(kwargs["raw_text"]),
+            chunks=kwargs["chunks"],
+        ),
     )
 
     def _transcribe_audio_file(client: object, audio_path: Path, model: str, *, prompt: str | None = None) -> str:
@@ -58,6 +62,9 @@ def test_live_transcription_controller_processes_chunks_in_order(
 
     assert len(calls) == 2
     assert result.raw_text == "chunk one\nchunk two"
+    assert len(result.chunks) == 2
+    assert result.chunks[0].mode == "live"
+    assert result.chunks[0].status == "completed"
 
 
 def test_live_transcription_controller_can_merge_two_sources(
@@ -138,6 +145,12 @@ def test_live_transcription_controller_raises_on_background_failure(
 
     with pytest.raises(RuntimeError, match="Live transcription failed"):
         controller.complete()
+
+    chunks = controller.chunk_metadata()
+    assert len(chunks) == 1
+    assert chunks[0].mode == "live"
+    assert chunks[0].status == "failed"
+    assert chunks[0].error == "boom"
 
     controller.cleanup()
 

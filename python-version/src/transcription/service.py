@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -11,6 +12,7 @@ from here.audio.chunking import (
 )
 from here.audio.mix import materialize_normalized_session
 from here.audio.models import ChunkingConfig
+from here.output.metadata import ChunkMetadata
 from here.recording.models import RecordingSession
 from here.transcription.client import (
     AudioTranscription,
@@ -124,6 +126,7 @@ def transcribe_recording_session(
 
     merged_raw_text = ""
     segment_timeline: SegmentTimeline | None = SegmentTimeline()
+    chunks: list[ChunkMetadata] = []
 
     with TemporaryDirectory(prefix="here_chunks_") as temp_dir:
         working_dir = Path(temp_dir)
@@ -146,6 +149,7 @@ def transcribe_recording_session(
                     prompt = build_chunk_prompt(merged_raw_text, resolved_config.prompt_tail_words)
 
                 logger.info("Transcribing chunk {index}/{total}...", index=index, total=len(windows))
+                transcription_started_at = datetime.now().astimezone()
                 try:
                     chunk_transcription = coerce_audio_transcription(
                         transcribe_audio_file(
@@ -155,6 +159,39 @@ def transcribe_recording_session(
                             prompt=prompt,
                         )
                     )
+                    transcription_finished_at = datetime.now().astimezone()
+                    chunks.append(
+                        ChunkMetadata(
+                            index=index,
+                            mode="offline",
+                            start_seconds=window.start_frame / resolved_config.target_sample_rate,
+                            end_seconds=window.end_frame / resolved_config.target_sample_rate,
+                            duration_seconds=window.frame_count
+                            / resolved_config.target_sample_rate,
+                            source_count=len(session.sources),
+                            transcription_started_at=transcription_started_at,
+                            transcription_finished_at=transcription_finished_at,
+                            status="completed",
+                        )
+                    )
+                except Exception as exc:
+                    transcription_finished_at = datetime.now().astimezone()
+                    chunks.append(
+                        ChunkMetadata(
+                            index=index,
+                            mode="offline",
+                            start_seconds=window.start_frame / resolved_config.target_sample_rate,
+                            end_seconds=window.end_frame / resolved_config.target_sample_rate,
+                            duration_seconds=window.frame_count
+                            / resolved_config.target_sample_rate,
+                            source_count=len(session.sources),
+                            transcription_started_at=transcription_started_at,
+                            transcription_finished_at=transcription_finished_at,
+                            status="failed",
+                            error=str(exc),
+                        )
+                    )
+                    raise
                 finally:
                     chunk_path.unlink(missing_ok=True)
 
@@ -174,4 +211,5 @@ def transcribe_recording_session(
         raw_text=merged_raw_text,
         cleanup_model=resolved_cleanup_model,
         should_cleanup=should_cleanup,
+        chunks=chunks,
     )

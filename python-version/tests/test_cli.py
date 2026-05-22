@@ -81,9 +81,11 @@ def test_save_transcription_writes_file_and_cleans_up(monkeypatch: pytest.Monkey
     output_file = output_dir / "transcript.txt"
     metadata_file = output_dir / "session.json"
     markdown_file = output_dir / "transcript.md"
+    chunks_file = output_dir / "chunks.json"
     assert output_file.read_text(encoding=cli_module.TRANSCRIPT_ENCODING) == "hola"
     assert metadata_file.exists()
     assert markdown_file.exists()
+    assert chunks_file.exists()
     metadata = json.loads(metadata_file.read_text(encoding="utf-8"))
     assert metadata["schema_version"] == 1
     assert metadata["session_id"] == "20260410_220000"
@@ -93,6 +95,7 @@ def test_save_transcription_writes_file_and_cleans_up(monkeypatch: pytest.Monkey
     assert metadata["alt_model_used"] is False
     assert metadata["live_pipeline_attempted"] is False
     assert metadata["fallback_used"] is False
+    assert json.loads(chunks_file.read_text(encoding="utf-8")) == {"schema_version": 1, "chunks": []}
     markdown = markdown_file.read_text(encoding="utf-8")
     assert "# Recording 2026-04-10 22:00" in markdown
     assert "- Session ID: `20260410_220000`" in markdown

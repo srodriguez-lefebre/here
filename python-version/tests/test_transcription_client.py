@@ -202,3 +202,4 @@ def test_finalize_transcription_uses_cleanup_only_when_requested(monkeypatch: py
 
     assert result.raw_text == "raw"
     assert result.final_text == "cleaned"
+    assert result.chunks == []

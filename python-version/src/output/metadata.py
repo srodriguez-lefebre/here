@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -30,6 +31,24 @@ class SessionMetadata(BaseModel):
     live_pipeline_used: bool
     fallback_used: bool
     output_files: list[str]
+
+
+class ChunkMetadata(BaseModel):
+    index: int
+    mode: Literal["live", "offline"]
+    start_seconds: float | None
+    end_seconds: float | None
+    duration_seconds: float | None
+    source_count: int
+    transcription_started_at: datetime | None
+    transcription_finished_at: datetime | None
+    status: Literal["completed", "failed"]
+    error: str | None = None
+
+
+class ChunkMetadataDocument(BaseModel):
+    schema_version: int = Field(default=1)
+    chunks: list[ChunkMetadata]
 
 
 def source_metadata(source: RecordedAudioSource) -> SourceMetadata:
