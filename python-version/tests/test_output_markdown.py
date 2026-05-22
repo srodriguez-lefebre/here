@@ -21,6 +21,7 @@ def test_render_transcript_markdown_has_stable_sections() -> None:
         sources=[
             SourceMetadata(
                 label="microphone",
+                device_name="Asterisk Nova",
                 sample_rate=48000,
                 channels=2,
                 frames=14_400_000,
@@ -51,7 +52,7 @@ def test_render_transcript_markdown_has_stable_sections() -> None:
         "\n"
         "## Sources\n"
         "\n"
-        "- microphone: 2 channel(s), 48000 Hz, 5m 0s\n"
+        "- microphone (Asterisk Nova): 2 channel(s), 48000 Hz, 5m 0s\n"
         "\n"
         "## Processing\n"
         "\n"

@@ -17,6 +17,7 @@ runner = CliRunner()
 
 class _FakeSource:
     label = "microphone"
+    device_name = "Asterisk Nova"
     sample_rate = 16000
     channels = 1
     frames = 32000
@@ -43,6 +44,17 @@ class _FrozenDateTime:
     @staticmethod
     def now() -> datetime:
         return datetime(2026, 4, 10, 22, 0, 0)
+
+
+class _SequentialDateTime:
+    calls = 0
+
+    @classmethod
+    def now(cls) -> datetime:
+        cls.calls += 1
+        if cls.calls == 1:
+            return datetime(2026, 4, 10, 22, 0, 0)
+        return datetime(2026, 4, 10, 22, 5, 0)
 
 
 class _FakeLiveController:
@@ -92,6 +104,7 @@ def test_save_transcription_writes_file_and_cleans_up(monkeypatch: pytest.Monkey
     assert metadata["session_id"] == "20260410_220000"
     assert metadata["duration_seconds"] == 2.0
     assert metadata["sources"][0]["label"] == "microphone"
+    assert metadata["sources"][0]["device_name"] == "Asterisk Nova"
     assert metadata["transcription_model"] == "gpt-4o-transcribe-diarize"
     assert metadata["alt_model_used"] is False
     assert metadata["live_pipeline_attempted"] is False
@@ -102,6 +115,27 @@ def test_save_transcription_writes_file_and_cleans_up(monkeypatch: pytest.Monkey
     assert "- Session ID: `20260410_220000`" in markdown
     assert session.cleaned
     assert captured["use_alt_transcription_model"] is False
+
+
+def test_save_transcription_uses_recording_completion_time_for_session_id(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    session = _FakeSession()
+    _SequentialDateTime.calls = 0
+
+    def _transcribe_recording_session(recorded_session: object, **kwargs: object) -> SimpleNamespace:
+        del recorded_session, kwargs
+        cli_module.datetime.now()
+        return SimpleNamespace(final_text="hola")
+
+    monkeypatch.setattr(cli_module, "transcribe_recording_session", _transcribe_recording_session)
+    monkeypatch.setattr(cli_module, "datetime", _SequentialDateTime)
+
+    cli_module._save_transcription(session, tmp_path)
+
+    assert (tmp_path / "20260410_220000" / "session.json").exists()
+    assert not (tmp_path / "20260410_220500").exists()
 
 
 def test_save_transcription_can_use_alt_model(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

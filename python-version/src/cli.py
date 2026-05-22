@@ -90,6 +90,7 @@ def _save_transcription(
 ) -> None:
     target_dir.mkdir(parents=True, exist_ok=True)
     should_cleanup = False
+    recording_completed_at = datetime.now().astimezone()
 
     try:
         outcome = _transcribe_session_outcome(
@@ -119,7 +120,7 @@ def _save_transcription(
         session=session,
         target_dir=target_dir,
         transcript_text=outcome.result.final_text,
-        completed_at=datetime.now().astimezone(),
+        completed_at=recording_completed_at,
         transcription_model=transcription_model,
         cleanup_model=settings.CLEANUP_MODEL,
         cleanup_enabled=settings.CLEANUP_ENABLED,

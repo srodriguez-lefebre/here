@@ -18,6 +18,7 @@ def _record_to_disk_until_enter(
     channels: int,
     label: str,
     *,
+    device_name: str | None = None,
     block_sink: Callable[[str, np.ndarray, int, int], None] | None = None,
 ) -> RecordingSession:
     path, writer = open_temp_soundfile(sample_rate, channels)
@@ -76,6 +77,7 @@ def _record_to_disk_until_enter(
         channels=channels,
         frames=written_frames[0],
         label=label,
+        device_name=device_name or label,
     )
 
 
@@ -155,6 +157,7 @@ def record_os_linux(
             sample_rate,
             channels=1,
             label="system audio",
+            device_name=monitor,
             block_sink=block_sink,
         )
     finally:

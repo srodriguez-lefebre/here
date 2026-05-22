@@ -27,6 +27,7 @@ def _session(tmp_path: Path) -> RecordingSession:
                 channels=1,
                 frames=48000,
                 label="microphone",
+                device_name="Asterisk Nova",
             )
         ]
     )
@@ -76,6 +77,7 @@ def test_write_session_artifacts_creates_folder_text_markdown_and_metadata(
     assert metadata["sources"] == [
         {
             "label": "microphone",
+            "device_name": "Asterisk Nova",
             "sample_rate": 16000,
             "channels": 1,
             "frames": 48000,
@@ -96,6 +98,7 @@ def test_write_session_artifacts_creates_folder_text_markdown_and_metadata(
     markdown = artifacts.markdown_path.read_text(encoding="utf-8")
     assert "# Recording 2026-05-22 10:30" in markdown
     assert "- Session ID: `20260522_103000`" in markdown
+    assert "- microphone (Asterisk Nova): 1 channel(s), 16000 Hz, 3s" in markdown
     assert "Speaker 1: hola" in markdown
 
 

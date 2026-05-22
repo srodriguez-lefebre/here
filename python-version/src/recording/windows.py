@@ -223,6 +223,7 @@ def _record_windows_device(
         channels=channels,
         frames=written_frames[0],
         label=label,
+        device_name=str(device["name"]),
     )
 
 
@@ -367,6 +368,7 @@ def record_both_windows(*, block_sink: Callable[[str, np.ndarray, int, int], Non
                 channels=mic_channels,
                 frames=mic_written_frames[0],
                 label="microphone",
+                device_name=str(mic_device["name"]),
             ),
             RecordedAudioSource(
                 path=os_path,
@@ -374,6 +376,7 @@ def record_both_windows(*, block_sink: Callable[[str, np.ndarray, int, int], Non
                 channels=os_channels,
                 frames=os_written_frames[0],
                 label="system audio",
+                device_name=str(os_device["name"]),
             ),
         ]
     )

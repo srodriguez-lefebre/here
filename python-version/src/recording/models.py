@@ -9,6 +9,7 @@ class RecordedAudioSource:
     channels: int
     frames: int
     label: str
+    device_name: str | None = None
 
     @property
     def duration_seconds(self) -> float:

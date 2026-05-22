@@ -10,6 +10,7 @@ from here.recording.models import RecordedAudioSource, RecordingSession
 
 class SourceMetadata(BaseModel):
     label: str
+    device_name: str | None = None
     sample_rate: int
     channels: int
     frames: int
@@ -54,6 +55,7 @@ class ChunkMetadataDocument(BaseModel):
 def source_metadata(source: RecordedAudioSource) -> SourceMetadata:
     return SourceMetadata(
         label=source.label,
+        device_name=source.device_name,
         sample_rate=source.sample_rate,
         channels=source.channels,
         frames=source.frames,

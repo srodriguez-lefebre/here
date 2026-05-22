@@ -27,6 +27,7 @@ def build_single_source_session(
     channels: int,
     frames: int,
     label: str,
+    device_name: str | None = None,
 ) -> RecordingSession:
     return RecordingSession(
         sources=[
@@ -36,6 +37,7 @@ def build_single_source_session(
                 channels=channels,
                 frames=frames,
                 label=label,
+                device_name=device_name,
             )
         ]
     )

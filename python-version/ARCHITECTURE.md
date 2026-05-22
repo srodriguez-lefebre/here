@@ -33,8 +33,10 @@ The main flow is:
 
 The output layer owns persisted artifacts.
 
-`session.json` stores global session metadata. `chunks.json` stores chunk-level
-metadata only, without audio, transcript text, or duplicated global fields.
+`session.json` stores global session metadata, including the recording window
+and the concrete device names captured for each source when the backend exposes
+them. `chunks.json` stores chunk-level metadata only, without audio, transcript
+text, or duplicated global fields.
 
 This split keeps artifacts useful for debugging now and ready for a later local
 search/RAG layer.

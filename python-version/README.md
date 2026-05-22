@@ -91,9 +91,9 @@ Pydantic-validated session metadata:
 
 - schema version
 - session id
-- start/completion timestamps
+- recording start/completion timestamps
 - duration
-- source labels, sample rates, channels, frames, and durations
+- source labels, device names, sample rates, channels, frames, and durations
 - transcription and cleanup model names
 - alternate model flag
 - live pipeline and fallback flags

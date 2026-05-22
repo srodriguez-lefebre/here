@@ -28,7 +28,8 @@ def render_transcript_markdown(metadata: SessionMetadata, transcript_text: str) 
     title_time = metadata.completed_at.strftime("%Y-%m-%d %H:%M")
     source_lines = [
         (
-            f"- {source.label}: {source.channels} channel(s), "
+            f"- {_format_source_name(source.label, source.device_name)}: "
+            f"{source.channels} channel(s), "
             f"{source.sample_rate} Hz, {format_duration(source.duration_seconds)}"
         )
         for source in metadata.sources
@@ -64,3 +65,9 @@ def render_transcript_markdown(metadata: SessionMetadata, transcript_text: str) 
         "",
     ]
     return "\n".join(lines)
+
+
+def _format_source_name(label: str, device_name: str | None) -> str:
+    if not device_name or device_name == label:
+        return label
+    return f"{label} ({device_name})"
