@@ -11,7 +11,18 @@ from here.config.settings import get_settings
 from here.live_processing import LiveTranscriptionController
 from here.output.metadata import ChunkMetadata
 from here.output.session_writer import TRANSCRIPT_ENCODING, write_session_artifacts
-from here.recorder import RecordingSession, record_both_until_enter, record_mic_until_enter, record_os_until_enter
+from here.recording.diagnostics import (
+    AudioDeviceInfo,
+    SignalTestResult,
+    get_windows_audio_devices,
+    test_windows_audio_signal,
+)
+from here.recorder import (
+    RecordingSession,
+    record_both_until_enter,
+    record_mic_until_enter,
+    record_os_until_enter,
+)
 from here.transcription.client import TranscriptionResult
 from here.transcriber import transcribe_recording_session
 
@@ -19,7 +30,9 @@ app = typer.Typer()
 record_app = typer.Typer(invoke_without_command=True)
 mic_app = typer.Typer(invoke_without_command=True)
 os_app = typer.Typer(invoke_without_command=True)
+test_app = typer.Typer()
 app.add_typer(record_app, name="record")
+app.add_typer(test_app, name="test")
 record_app.add_typer(mic_app, name="mic")
 record_app.add_typer(os_app, name="os")
 OutputDirOption = Annotated[
@@ -42,6 +55,30 @@ class _TranscriptionOutcome:
 
 def _resolve_target_dir(output_dir: Path | None) -> Path:
     return output_dir or get_settings().TRANSCRIPTIONS_DIR
+
+
+def _format_device_info(device: AudioDeviceInfo) -> str:
+    return (
+        f"{device.source}: {device.name} "
+        f"(index={device.index}, {device.channels} channel(s), {device.sample_rate} Hz)"
+    )
+
+
+def _format_signal_result(result: SignalTestResult) -> str:
+    signal = "signal detected" if result.has_signal else "no signal detected"
+    return (
+        f"{_format_device_info(result.device)}\n"
+        f"duration={result.duration_seconds:.1f}s peak={result.peak:.4f} "
+        f"rms={result.rms:.4f} status={signal}"
+    )
+
+
+def _run_audio_diagnostic(action: Callable[[], str]) -> None:
+    try:
+        typer.echo(action())
+    except RuntimeError as exc:
+        logger.error(str(exc))
+        raise typer.Exit(code=1) from exc
 
 
 def _save_transcription(
@@ -193,6 +230,48 @@ def _chunk_metadata_from_controller(
 @app.callback()
 def main() -> None:
     """here - record audio and transcribe it."""
+
+
+@app.command("devices")
+def devices() -> None:
+    """Show the Windows audio devices used by here."""
+
+    def _show_devices() -> str:
+        return "\n".join(_format_device_info(device) for device in get_windows_audio_devices())
+
+    _run_audio_diagnostic(_show_devices)
+
+
+@test_app.command("mic")
+def test_mic(
+    duration: Annotated[
+        float,
+        typer.Option("--duration", "-d", help="Seconds to measure microphone signal."),
+    ] = 3.0,
+) -> None:
+    """Measure signal from the default Windows microphone."""
+
+    _run_audio_diagnostic(
+        lambda: _format_signal_result(
+            test_windows_audio_signal("microphone", duration_seconds=duration)
+        )
+    )
+
+
+@test_app.command("os")
+def test_os(
+    duration: Annotated[
+        float,
+        typer.Option("--duration", "-d", help="Seconds to measure system audio signal."),
+    ] = 3.0,
+) -> None:
+    """Measure signal from the default Windows WASAPI loopback device."""
+
+    _run_audio_diagnostic(
+        lambda: _format_signal_result(
+            test_windows_audio_signal("system audio", duration_seconds=duration)
+        )
+    )
 
 
 @record_app.callback(invoke_without_command=True)

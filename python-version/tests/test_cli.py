@@ -10,6 +10,7 @@ import typer
 from typer.testing import CliRunner
 
 import here.cli as cli_module
+from here.recording.diagnostics import AudioDeviceInfo, SignalTestResult
 
 runner = CliRunner()
 
@@ -235,6 +236,62 @@ def test_record_main_returns_early_when_subcommand_is_present(monkeypatch: pytes
     )
 
     cli_module.record_main(SimpleNamespace(invoked_subcommand="alt"), None)
+
+
+def test_devices_command_prints_windows_audio_devices(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        cli_module,
+        "get_windows_audio_devices",
+        lambda: [
+            AudioDeviceInfo(
+                source="microphone",
+                name="Mic",
+                index=1,
+                sample_rate=48000,
+                channels=1,
+            ),
+            AudioDeviceInfo(
+                source="system audio",
+                name="Speakers",
+                index=2,
+                sample_rate=48000,
+                channels=2,
+            ),
+        ],
+    )
+
+    result = runner.invoke(cli_module.app, ["devices"])
+
+    assert result.exit_code == 0
+    assert "microphone: Mic" in result.output
+    assert "system audio: Speakers" in result.output
+
+
+def test_audio_test_command_prints_signal_status(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        cli_module,
+        "test_windows_audio_signal",
+        lambda source, *, duration_seconds: SignalTestResult(
+            source=source,
+            device=AudioDeviceInfo(
+                source=source,
+                name="Mic",
+                index=1,
+                sample_rate=48000,
+                channels=1,
+            ),
+            duration_seconds=duration_seconds,
+            peak=0.25,
+            rms=0.1,
+            has_signal=True,
+        ),
+    )
+
+    result = runner.invoke(cli_module.app, ["test", "mic", "--duration", "0.5"])
+
+    assert result.exit_code == 0
+    assert "peak=0.2500" in result.output
+    assert "status=signal detected" in result.output
 
 
 def test_record_alt_command_uses_alt_model(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
