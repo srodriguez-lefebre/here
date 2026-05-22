@@ -70,7 +70,8 @@ def test_write_session_artifacts_creates_folder_text_markdown_and_metadata(
     assert "source.wav" not in artifacts.metadata_path.read_text(encoding="utf-8")
 
     markdown = artifacts.markdown_path.read_text(encoding="utf-8")
-    assert "# Recording 20260522_103000" in markdown
+    assert "# Recording 2026-05-22 10:30" in markdown
+    assert "- Session ID: `20260522_103000`" in markdown
     assert "Speaker 1: hola" in markdown
 
 

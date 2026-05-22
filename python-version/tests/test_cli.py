@@ -93,7 +93,9 @@ def test_save_transcription_writes_file_and_cleans_up(monkeypatch: pytest.Monkey
     assert metadata["alt_model_used"] is False
     assert metadata["live_pipeline_attempted"] is False
     assert metadata["fallback_used"] is False
-    assert "# Recording 20260410_220000" in markdown_file.read_text(encoding="utf-8")
+    markdown = markdown_file.read_text(encoding="utf-8")
+    assert "# Recording 2026-04-10 22:00" in markdown
+    assert "- Session ID: `20260410_220000`" in markdown
     assert session.cleaned
     assert captured["use_alt_transcription_model"] is False
 

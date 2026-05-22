@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from here.output.metadata import SessionMetadata
 
 
@@ -14,22 +16,47 @@ def format_duration(seconds: float) -> str:
     return f"{secs}s"
 
 
+def _format_timestamp(value: datetime) -> str:
+    return value.strftime("%Y-%m-%d %H:%M:%S %z").strip()
+
+
+def _yes_no(value: bool) -> str:
+    return "yes" if value else "no"
+
+
 def render_transcript_markdown(metadata: SessionMetadata, transcript_text: str) -> str:
-    source_labels = ", ".join(source.label for source in metadata.sources) or "none"
-    completed_at = metadata.completed_at.strftime("%Y-%m-%d %H:%M:%S %z").strip()
+    title_time = metadata.completed_at.strftime("%Y-%m-%d %H:%M")
+    source_lines = [
+        (
+            f"- {source.label}: {source.channels} channel(s), "
+            f"{source.sample_rate} Hz, {format_duration(source.duration_seconds)}"
+        )
+        for source in metadata.sources
+    ] or ["- none"]
 
     lines = [
-        f"# Recording {metadata.session_id}",
+        f"# Recording {title_time}",
         "",
         "## Details",
         "",
-        f"- Completed: {completed_at}",
+        f"- Session ID: `{metadata.session_id}`",
+        f"- Started: {_format_timestamp(metadata.started_at)}",
+        f"- Completed: {_format_timestamp(metadata.completed_at)}",
         f"- Duration: {format_duration(metadata.duration_seconds)}",
-        f"- Sources: {source_labels}",
+        "",
+        "## Sources",
+        "",
+        *source_lines,
+        "",
+        "## Processing",
+        "",
         f"- Transcription model: {metadata.transcription_model}",
-        f"- Cleanup enabled: {'yes' if metadata.cleanup_enabled else 'no'}",
-        f"- Live pipeline: {'yes' if metadata.live_pipeline_used else 'no'}",
-        f"- Fallback used: {'yes' if metadata.fallback_used else 'no'}",
+        f"- Cleanup model: {metadata.cleanup_model}",
+        f"- Cleanup enabled: {_yes_no(metadata.cleanup_enabled)}",
+        f"- Alternate model used: {_yes_no(metadata.alt_model_used)}",
+        f"- Live pipeline attempted: {_yes_no(metadata.live_pipeline_attempted)}",
+        f"- Live pipeline used: {_yes_no(metadata.live_pipeline_used)}",
+        f"- Fallback used: {_yes_no(metadata.fallback_used)}",
         "",
         "## Transcript",
         "",
