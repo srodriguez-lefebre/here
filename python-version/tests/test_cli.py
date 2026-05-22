@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -12,9 +14,25 @@ import here.cli as cli_module
 runner = CliRunner()
 
 
+class _FakeSource:
+    label = "microphone"
+    sample_rate = 16000
+    channels = 1
+    frames = 32000
+
+    @property
+    def duration_seconds(self) -> float:
+        return self.frames / self.sample_rate
+
+
 class _FakeSession:
     def __init__(self) -> None:
         self.cleaned = False
+        self.sources = [_FakeSource()]
+
+    @property
+    def duration_seconds(self) -> float:
+        return max(source.duration_seconds for source in self.sources)
 
     def cleanup(self) -> None:
         self.cleaned = True
@@ -22,8 +40,8 @@ class _FakeSession:
 
 class _FrozenDateTime:
     @staticmethod
-    def now() -> SimpleNamespace:
-        return SimpleNamespace(strftime=lambda fmt: "20260410_220000")
+    def now() -> datetime:
+        return datetime(2026, 4, 10, 22, 0, 0)
 
 
 class _FakeLiveController:
@@ -59,9 +77,23 @@ def test_save_transcription_writes_file_and_cleans_up(monkeypatch: pytest.Monkey
 
     cli_module._save_transcription(session, tmp_path)
 
-    output_file = tmp_path / "20260410_220000.txt"
-    assert output_file.exists()
+    output_dir = tmp_path / "20260410_220000"
+    output_file = output_dir / "transcript.txt"
+    metadata_file = output_dir / "session.json"
+    markdown_file = output_dir / "transcript.md"
     assert output_file.read_text(encoding=cli_module.TRANSCRIPT_ENCODING) == "hola"
+    assert metadata_file.exists()
+    assert markdown_file.exists()
+    metadata = json.loads(metadata_file.read_text(encoding="utf-8"))
+    assert metadata["schema_version"] == 1
+    assert metadata["session_id"] == "20260410_220000"
+    assert metadata["duration_seconds"] == 2.0
+    assert metadata["sources"][0]["label"] == "microphone"
+    assert metadata["transcription_model"] == "gpt-4o-transcribe-diarize"
+    assert metadata["alt_model_used"] is False
+    assert metadata["live_pipeline_attempted"] is False
+    assert metadata["fallback_used"] is False
+    assert "# Recording 20260410_220000" in markdown_file.read_text(encoding="utf-8")
     assert session.cleaned
     assert captured["use_alt_transcription_model"] is False
 

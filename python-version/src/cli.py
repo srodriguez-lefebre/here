@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated
@@ -8,6 +9,7 @@ from loguru import logger
 
 from here.config.settings import get_settings
 from here.live_processing import LiveTranscriptionController
+from here.output.session_writer import TRANSCRIPT_ENCODING, write_session_artifacts
 from here.recorder import RecordingSession, record_both_until_enter, record_mic_until_enter, record_os_until_enter
 from here.transcription.client import TranscriptionResult
 from here.transcriber import transcribe_recording_session
@@ -19,7 +21,6 @@ os_app = typer.Typer(invoke_without_command=True)
 app.add_typer(record_app, name="record")
 record_app.add_typer(mic_app, name="mic")
 record_app.add_typer(os_app, name="os")
-TRANSCRIPT_ENCODING = "utf-8-sig"
 OutputDirOption = Annotated[
     Path | None,
     typer.Option(
@@ -28,6 +29,14 @@ OutputDirOption = Annotated[
         help="Directory to save the transcription. Defaults to TRANSCRIPTIONS_DIR from settings.",
     ),
 ]
+
+
+@dataclass(slots=True)
+class _TranscriptionOutcome:
+    result: TranscriptionResult
+    live_pipeline_attempted: bool
+    live_pipeline_used: bool
+    fallback_used: bool
 
 
 def _resolve_target_dir(output_dir: Path | None) -> Path:
@@ -45,7 +54,7 @@ def _save_transcription(
     should_cleanup = False
 
     try:
-        result = _transcribe_session(
+        outcome = _transcribe_session_outcome(
             session,
             use_alt_transcription_model=use_alt_transcription_model,
             live_controller=live_controller,
@@ -62,10 +71,26 @@ def _save_transcription(
                 live_controller.abort()
             logger.warning("Temporary audio files were preserved after transcription failure.")
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_file = target_dir / f"{timestamp}.txt"
-    output_file.write_text(result.final_text, encoding=TRANSCRIPT_ENCODING)
-    logger.success("Saved to {path}", path=output_file)
+    settings = get_settings()
+    transcription_model = (
+        settings.ALT_TRANSCRIPTION_MODEL
+        if use_alt_transcription_model
+        else settings.TRANSCRIPTION_MODEL
+    )
+    artifacts = write_session_artifacts(
+        session=session,
+        target_dir=target_dir,
+        transcript_text=outcome.result.final_text,
+        completed_at=datetime.now().astimezone(),
+        transcription_model=transcription_model,
+        cleanup_model=settings.CLEANUP_MODEL,
+        cleanup_enabled=settings.CLEANUP_ENABLED,
+        alt_model_used=use_alt_transcription_model,
+        live_pipeline_attempted=outcome.live_pipeline_attempted,
+        live_pipeline_used=outcome.live_pipeline_used,
+        fallback_used=outcome.fallback_used,
+    )
+    logger.success("Saved to {path}", path=artifacts.session_dir)
 
 
 def _run_recording(
@@ -109,19 +134,42 @@ def _transcribe_session(
     use_alt_transcription_model: bool = False,
     live_controller: LiveTranscriptionController | None = None,
 ) -> TranscriptionResult:
+    return _transcribe_session_outcome(
+        session,
+        use_alt_transcription_model=use_alt_transcription_model,
+        live_controller=live_controller,
+    ).result
+
+
+def _transcribe_session_outcome(
+    session: RecordingSession,
+    *,
+    use_alt_transcription_model: bool = False,
+    live_controller: LiveTranscriptionController | None = None,
+) -> _TranscriptionOutcome:
     if live_controller is not None:
         try:
             logger.info("Completing live transcription from background chunks.")
-            return live_controller.complete()
+            return _TranscriptionOutcome(
+                result=live_controller.complete(),
+                live_pipeline_attempted=True,
+                live_pipeline_used=True,
+                fallback_used=False,
+            )
         except Exception as exc:
             logger.warning(
                 "Live transcription failed: {exc}. Falling back to offline post-processing.",
                 exc=exc,
             )
 
-    return transcribe_recording_session(
-        session,
-        use_alt_transcription_model=use_alt_transcription_model,
+    return _TranscriptionOutcome(
+        result=transcribe_recording_session(
+            session,
+            use_alt_transcription_model=use_alt_transcription_model,
+        ),
+        live_pipeline_attempted=live_controller is not None,
+        live_pipeline_used=False,
+        fallback_used=live_controller is not None,
     )
 
 

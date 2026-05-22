@@ -29,6 +29,7 @@ packages = [
     "here",
     "here.audio",
     "here.config",
+    "here.output",
     "here.recording",
     "here.transcription",
 ]
@@ -37,6 +38,7 @@ packages = [
 "here" = "src"
 "here.audio" = "src/audio"
 "here.config" = "src/config"
+"here.output" = "src/output"
 "here.recording" = "src/recording"
 "here.transcription" = "src/transcription"
 
