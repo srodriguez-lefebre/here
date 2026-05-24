@@ -50,12 +50,14 @@ record mic
 record mic alt
 record os
 record os alt
+here trans path\to\audio.wav
 ```
 
 - `record` captures microphone + system audio together.
 - `record mic` captures microphone audio only.
 - `record os` captures system audio only.
 - `alt` variants use `ALT_TRANSCRIPTION_MODEL`.
+- `here trans {file}` transcribes an existing audio file without recording.
 
 ## Output Artifacts
 
@@ -63,11 +65,25 @@ Each successful recording creates a session folder:
 
 ```text
 transcriptions/YYYYMMDD_HHMMSS/
+  audio.wav
   transcript.txt
   transcript.md
   session.json
   chunks.json
 ```
+
+If transcription fails after recording, `here` still creates a recoverable
+session folder:
+
+```text
+transcriptions/YYYYMMDD_HHMMSS/
+  audio.wav
+  session.json
+  chunks.json
+  errors.json
+```
+
+`audio.wav` is the normalized/mixed audio that can be retried later.
 
 ### `transcript.txt`
 
@@ -93,6 +109,8 @@ Pydantic-validated session metadata:
 - session id
 - recording start/completion timestamps
 - duration
+- status: `completed` or `failed`
+- recoverable audio path
 - source labels, device names, sample rates, channels, frames, and durations
 - transcription and cleanup model names
 - alternate model flag
@@ -100,6 +118,16 @@ Pydantic-validated session metadata:
 - generated artifact names
 
 Temporary audio paths, raw audio, and secrets are not persisted.
+
+### `errors.json`
+
+Failed sessions include structured errors:
+
+- stage
+- error type
+- message
+- whether the error is retryable
+- timestamp
 
 ### `chunks.json`
 
@@ -140,6 +168,27 @@ here test os --duration 5
 ```
 
 The signal tests report peak, RMS, and whether signal was detected.
+
+## Retrying Or Transcribing Existing Audio
+
+Use `here trans` with any local audio file:
+
+```powershell
+here trans .\meeting.wav
+```
+
+If the file lives inside a failed session folder, such as:
+
+```text
+transcriptions/20260524_153000/audio.wav
+```
+
+then `here trans` updates that session in place. On success it writes
+`transcript.txt` and `transcript.md`, marks `session.json` as `completed`, and
+removes `errors.json`.
+
+For an external audio file, `here trans` creates a new session folder and stores
+a normalized `audio.wav` alongside the generated transcript artifacts.
 
 ## Development
 
