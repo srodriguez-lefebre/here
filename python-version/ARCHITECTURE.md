@@ -12,10 +12,11 @@ The main flow is:
 3. Captured blocks are sent to the live transcription pipeline.
 4. Live processing cuts chunks near silence, normalizes/mixes audio, and
    transcribes chunks in the background.
-5. If live processing fails, the CLI falls back to offline session
-   transcription.
-6. Output writing creates `transcript.txt`, `transcript.md`, `session.json`,
-   and `chunks.json`.
+5. Once recording ends, output creates a recoverable session folder and
+   materializes normalized/mixed `audio.wav`.
+6. If live processing fails, the CLI falls back to offline session
+   transcription using the recoverable audio.
+7. Output writing creates completed or failed artifacts.
 
 ## Main Modules
 
@@ -38,8 +39,18 @@ and the concrete device names captured for each source when the backend exposes
 them. `chunks.json` stores chunk-level metadata only, without audio, transcript
 text, or duplicated global fields.
 
+Failed sessions are still persisted. They include `audio.wav`, `session.json`,
+`chunks.json`, and `errors.json`, so API/provider failures can be retried without
+re-recording.
+
 This split keeps artifacts useful for debugging now and ready for a later local
 search/RAG layer.
+
+## Existing Audio Transcription
+
+`here trans {file}` builds the same recoverable session shape from an existing
+audio file. When `{file}` is already `audio.wav` inside a failed session folder,
+the command updates that session in place.
 
 ## Diagnostics
 

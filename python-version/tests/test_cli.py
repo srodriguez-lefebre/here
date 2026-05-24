@@ -11,6 +11,8 @@ from typer.testing import CliRunner
 
 import here.cli as cli_module
 from here.recording.diagnostics import AudioDeviceInfo, SignalTestResult
+from here.output.metadata import ErrorMetadata
+from here.output.session_writer import write_session_artifacts
 
 runner = CliRunner()
 
@@ -38,6 +40,14 @@ class _FakeSession:
 
     def cleanup(self) -> None:
         self.cleaned = True
+
+
+def _patch_recoverable_audio(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        cli_module,
+        "materialize_normalized_session",
+        lambda session, working_dir, output_name: session,
+    )
 
 
 class _FrozenDateTime:
@@ -87,6 +97,7 @@ def test_save_transcription_writes_file_and_cleans_up(monkeypatch: pytest.Monkey
 
     monkeypatch.setattr(cli_module, "transcribe_recording_session", _transcribe_recording_session)
     monkeypatch.setattr(cli_module, "datetime", _FrozenDateTime)
+    _patch_recoverable_audio(monkeypatch)
 
     cli_module._save_transcription(session, tmp_path)
 
@@ -109,6 +120,8 @@ def test_save_transcription_writes_file_and_cleans_up(monkeypatch: pytest.Monkey
     assert metadata["alt_model_used"] is False
     assert metadata["live_pipeline_attempted"] is False
     assert metadata["fallback_used"] is False
+    assert metadata["status"] == "completed"
+    assert metadata["recoverable_audio"] == "audio.wav"
     assert json.loads(chunks_file.read_text(encoding="utf-8")) == {"schema_version": 1, "chunks": []}
     markdown = markdown_file.read_text(encoding="utf-8")
     assert "# Recording 2026-04-10 22:00" in markdown
@@ -131,6 +144,7 @@ def test_save_transcription_uses_recording_completion_time_for_session_id(
 
     monkeypatch.setattr(cli_module, "transcribe_recording_session", _transcribe_recording_session)
     monkeypatch.setattr(cli_module, "datetime", _SequentialDateTime)
+    _patch_recoverable_audio(monkeypatch)
 
     cli_module._save_transcription(session, tmp_path)
 
@@ -149,6 +163,7 @@ def test_save_transcription_can_use_alt_model(monkeypatch: pytest.MonkeyPatch, t
 
     monkeypatch.setattr(cli_module, "transcribe_recording_session", _transcribe_recording_session)
     monkeypatch.setattr(cli_module, "datetime", _FrozenDateTime)
+    _patch_recoverable_audio(monkeypatch)
 
     cli_module._save_transcription(session, tmp_path, use_alt_transcription_model=True)
 
@@ -165,11 +180,54 @@ def test_save_transcription_preserves_audio_when_transcription_fails(
         "transcribe_recording_session",
         lambda recorded_session, **kwargs: (_ for _ in ()).throw(RuntimeError("boom")),
     )
+    monkeypatch.setattr(cli_module, "datetime", _FrozenDateTime)
+    _patch_recoverable_audio(monkeypatch)
 
-    with pytest.raises(RuntimeError, match="boom"):
+    with pytest.raises(RuntimeError, match="Transcription failed"):
         cli_module._save_transcription(session, tmp_path)
 
+    output_dir = tmp_path / "20260410_220000"
+    assert (output_dir / "session.json").exists()
+    assert (output_dir / "chunks.json").exists()
+    assert (output_dir / "errors.json").exists()
+    metadata = json.loads((output_dir / "session.json").read_text(encoding="utf-8"))
+    assert metadata["status"] == "failed"
+    assert metadata["failure_stage"] == "offline_transcription"
+    assert metadata["recoverable_audio"] == "audio.wav"
+    assert session.cleaned
+
+
+def test_save_transcription_writes_failed_session_when_recoverable_audio_fails(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    session = _FakeSession()
+    live_controller = _FakeLiveController()
+    monkeypatch.setattr(
+        cli_module,
+        "materialize_normalized_session",
+        lambda *args, **kwargs: (_ for _ in ()).throw(OSError("disk full")),
+    )
+    monkeypatch.setattr(cli_module, "datetime", _FrozenDateTime)
+
+    with pytest.raises(RuntimeError, match="Recoverable audio preparation failed"):
+        cli_module._save_transcription(session, tmp_path, live_controller=live_controller)
+
+    output_dir = tmp_path / "20260410_220000"
+    assert (output_dir / "session.json").exists()
+    assert (output_dir / "chunks.json").exists()
+    assert (output_dir / "errors.json").exists()
+    assert not (output_dir / "audio.wav").exists()
+    metadata = json.loads((output_dir / "session.json").read_text(encoding="utf-8"))
+    assert metadata["status"] == "failed"
+    assert metadata["failure_stage"] == "recoverable_audio"
+    assert metadata["recoverable_audio"] is None
+    errors = json.loads((output_dir / "errors.json").read_text(encoding="utf-8"))
+    assert errors["errors"][0]["stage"] == "recoverable_audio"
+    assert errors["errors"][0]["type"] == "OSError"
+    assert errors["errors"][0]["message"] == "disk full"
     assert not session.cleaned
+    assert live_controller.aborted
 
 
 def test_transcribe_session_prefers_live_result() -> None:
@@ -326,6 +384,150 @@ def test_audio_test_command_prints_signal_status(monkeypatch: pytest.MonkeyPatch
     assert result.exit_code == 0
     assert "peak=0.2500" in result.output
     assert "status=signal detected" in result.output
+
+
+def test_trans_command_transcribes_external_audio(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    audio_path = tmp_path / "external.wav"
+    audio_path.write_bytes(b"audio")
+    output_dir = tmp_path / "transcriptions"
+
+    monkeypatch.setattr(
+        cli_module.sf,
+        "info",
+        lambda path: SimpleNamespace(samplerate=16000, channels=1, frames=32000),
+    )
+    monkeypatch.setattr(cli_module, "datetime", _FrozenDateTime)
+
+    def _materialize_normalized_session(session: object, working_dir: Path, output_name: str) -> _FakeSession:
+        (working_dir / output_name).write_bytes(b"normalized")
+        return _FakeSession()
+
+    monkeypatch.setattr(cli_module, "materialize_normalized_session", _materialize_normalized_session)
+    monkeypatch.setattr(
+        cli_module,
+        "transcribe_recording_session",
+        lambda session, **kwargs: SimpleNamespace(final_text="external transcript", chunks=[]),
+    )
+
+    result = runner.invoke(cli_module.app, ["trans", str(audio_path), "--output-dir", str(output_dir)])
+
+    assert result.exit_code == 0
+    session_dir = output_dir / "20260410_220000"
+    assert (session_dir / "audio.wav").exists()
+    assert (session_dir / "transcript.txt").read_text(encoding=cli_module.TRANSCRIPT_ENCODING) == (
+        "external transcript"
+    )
+    metadata = json.loads((session_dir / "session.json").read_text(encoding="utf-8"))
+    assert metadata["status"] == "completed"
+    assert metadata["recoverable_audio"] == "audio.wav"
+
+
+def test_trans_command_writes_failed_session_when_recoverable_audio_fails(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    audio_path = tmp_path / "external.wav"
+    audio_path.write_bytes(b"audio")
+    output_dir = tmp_path / "transcriptions"
+
+    monkeypatch.setattr(
+        cli_module.sf,
+        "info",
+        lambda path: SimpleNamespace(samplerate=16000, channels=1, frames=32000),
+    )
+    monkeypatch.setattr(cli_module, "datetime", _FrozenDateTime)
+    monkeypatch.setattr(
+        cli_module,
+        "materialize_normalized_session",
+        lambda *args, **kwargs: (_ for _ in ()).throw(OSError("disk full")),
+    )
+
+    result = runner.invoke(cli_module.app, ["trans", str(audio_path), "--output-dir", str(output_dir)])
+
+    assert result.exit_code == 1
+    session_dir = output_dir / "20260410_220000"
+    assert (session_dir / "session.json").exists()
+    assert (session_dir / "errors.json").exists()
+    assert not (session_dir / "audio.wav").exists()
+    metadata = json.loads((session_dir / "session.json").read_text(encoding="utf-8"))
+    assert metadata["status"] == "failed"
+    assert metadata["failure_stage"] == "recoverable_audio"
+    assert metadata["recoverable_audio"] is None
+
+
+def test_trans_command_completes_failed_session_audio(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    session_dir = tmp_path / "transcriptions" / "20260410_220000"
+    session_dir.mkdir(parents=True)
+    audio_path = session_dir / "audio.wav"
+    audio_path.write_bytes(b"audio")
+    write_session_artifacts(
+        session=_FakeSession(),
+        target_dir=tmp_path / "transcriptions",
+        completed_at=datetime(2026, 4, 10, 22, 0, 0),
+        transcription_model="gpt-4o-transcribe-diarize",
+        cleanup_model="gpt-4.1-mini",
+        cleanup_enabled=False,
+        alt_model_used=False,
+        live_pipeline_attempted=True,
+        live_pipeline_used=False,
+        fallback_used=True,
+        status="failed",
+        failure_stage="offline_transcription",
+        recoverable_audio="audio.wav",
+        errors=[
+            ErrorMetadata(
+                stage="offline_transcription",
+                type="RuntimeError",
+                message="no credits",
+                retryable=True,
+                occurred_at=datetime(2026, 4, 10, 22, 1, 0),
+            )
+        ],
+        session_dir=session_dir,
+        session_id="20260410_220000",
+    )
+
+    monkeypatch.setattr(
+        cli_module.sf,
+        "info",
+        lambda path: SimpleNamespace(samplerate=16000, channels=1, frames=32000),
+    )
+    monkeypatch.setattr(cli_module, "datetime", _FrozenDateTime)
+    monkeypatch.setattr(
+        cli_module,
+        "transcribe_recording_session",
+        lambda session, **kwargs: SimpleNamespace(final_text="recovered", chunks=[]),
+    )
+
+    result = runner.invoke(cli_module.app, ["trans", str(audio_path)])
+
+    assert result.exit_code == 0
+    assert (session_dir / "transcript.txt").read_text(encoding=cli_module.TRANSCRIPT_ENCODING) == "recovered"
+    assert not (session_dir / "errors.json").exists()
+    metadata = json.loads((session_dir / "session.json").read_text(encoding="utf-8"))
+    assert metadata["status"] == "completed"
+    assert metadata["fallback_used"] is True
+
+
+def test_error_metadata_includes_wrapped_root_cause() -> None:
+    try:
+        try:
+            raise ValueError("no credits")
+        except ValueError as exc:
+            raise RuntimeError("Transcription failed") from exc
+    except RuntimeError as exc:
+        error = cli_module._error_metadata("offline_transcription", exc)
+
+    assert error.type == "RuntimeError"
+    assert error.message == "Transcription failed"
+    assert error.cause_type == "ValueError"
+    assert error.cause_message == "no credits"
 
 
 def test_record_alt_command_uses_alt_model(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
