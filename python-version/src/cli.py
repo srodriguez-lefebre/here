@@ -191,7 +191,31 @@ def _save_transcription(
             output_name=AUDIO_FILE,
         )
         raw_audio_is_recoverable = True
+    except Exception as exc:
+        write_session_artifacts(
+            session=session,
+            target_dir=target_dir,
+            completed_at=recording_completed_at,
+            transcription_model=transcription_model,
+            cleanup_model=settings.CLEANUP_MODEL,
+            cleanup_enabled=settings.CLEANUP_ENABLED,
+            alt_model_used=use_alt_transcription_model,
+            live_pipeline_attempted=False,
+            live_pipeline_used=False,
+            fallback_used=False,
+            errors=[_error_metadata("recoverable_audio", exc)],
+            status="failed",
+            failure_stage="recoverable_audio",
+            session_dir=session_dir,
+            session_id=session_id,
+        )
+        if live_controller is not None:
+            live_controller.abort()
+        logger.warning("Temporary audio files were preserved after recoverable audio failure.")
+        logger.error("Saved failed session to {path}", path=session_dir)
+        raise RuntimeError("Recoverable audio preparation failed") from exc
 
+    try:
         outcome = _transcribe_session_outcome(
             recoverable_session,
             use_alt_transcription_model=use_alt_transcription_model,
@@ -286,14 +310,42 @@ def _transcribe_audio_path(
     else:
         session_id, session_dir = create_session_dir(target_dir, completed_at)
 
-    if audio_path.parent == session_dir and audio_path.name == AUDIO_FILE:
-        recoverable_session = source_session
-    else:
-        recoverable_session = materialize_normalized_session(
-            source_session,
-            session_dir,
-            output_name=AUDIO_FILE,
+    recoverable_session: RecordingSession | None = None
+    try:
+        if audio_path.parent == session_dir and audio_path.name == AUDIO_FILE:
+            recoverable_session = source_session
+        else:
+            recoverable_session = materialize_normalized_session(
+                source_session,
+                session_dir,
+                output_name=AUDIO_FILE,
+            )
+    except Exception as exc:
+        errors = [
+            *previous_errors,
+            _error_metadata("recoverable_audio", exc),
+        ]
+        write_session_artifacts(
+            session=source_session,
+            target_dir=target_dir,
+            completed_at=existing_metadata.completed_at if existing_metadata else completed_at,
+            transcription_model=transcription_model,
+            cleanup_model=settings.CLEANUP_MODEL,
+            cleanup_enabled=settings.CLEANUP_ENABLED,
+            alt_model_used=use_alt_transcription_model,
+            live_pipeline_attempted=existing_metadata.live_pipeline_attempted
+            if existing_metadata
+            else False,
+            live_pipeline_used=existing_metadata.live_pipeline_used if existing_metadata else False,
+            fallback_used=existing_metadata.fallback_used if existing_metadata else False,
+            chunks=previous_chunks,
+            errors=errors,
+            status="failed",
+            failure_stage="recoverable_audio",
+            session_dir=session_dir,
+            session_id=session_id,
         )
+        raise RuntimeError("Recoverable audio preparation failed") from exc
 
     try:
         result = transcribe_recording_session(
@@ -466,10 +518,13 @@ def _chunk_metadata_from_controller(
 
 
 def _error_metadata(stage: str, exc: Exception) -> ErrorMetadata:
+    cause = exc.__cause__ or exc.__context__
     return ErrorMetadata(
         stage=stage,
         type=type(exc).__name__,
         message=str(exc),
+        cause_type=type(cause).__name__ if cause is not None else None,
+        cause_message=str(cause) if cause is not None else None,
         retryable=True,
         occurred_at=datetime.now().astimezone(),
     )

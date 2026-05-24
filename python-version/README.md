@@ -109,7 +109,7 @@ Pydantic-validated session metadata:
 - session id
 - recording start/completion timestamps
 - duration
-- status: `completed` or `failed`
+- status: `pending`, `completed`, or `failed` (`pending` is reserved for transitional states)
 - recoverable audio path
 - source labels, device names, sample rates, channels, frames, and durations
 - transcription and cleanup model names
@@ -126,6 +126,7 @@ Failed sessions include structured errors:
 - stage
 - error type
 - message
+- root cause type/message when the error was wrapped
 - whether the error is retryable
 - timestamp
 

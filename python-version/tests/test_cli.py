@@ -197,6 +197,39 @@ def test_save_transcription_preserves_audio_when_transcription_fails(
     assert session.cleaned
 
 
+def test_save_transcription_writes_failed_session_when_recoverable_audio_fails(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    session = _FakeSession()
+    live_controller = _FakeLiveController()
+    monkeypatch.setattr(
+        cli_module,
+        "materialize_normalized_session",
+        lambda *args, **kwargs: (_ for _ in ()).throw(OSError("disk full")),
+    )
+    monkeypatch.setattr(cli_module, "datetime", _FrozenDateTime)
+
+    with pytest.raises(RuntimeError, match="Recoverable audio preparation failed"):
+        cli_module._save_transcription(session, tmp_path, live_controller=live_controller)
+
+    output_dir = tmp_path / "20260410_220000"
+    assert (output_dir / "session.json").exists()
+    assert (output_dir / "chunks.json").exists()
+    assert (output_dir / "errors.json").exists()
+    assert not (output_dir / "audio.wav").exists()
+    metadata = json.loads((output_dir / "session.json").read_text(encoding="utf-8"))
+    assert metadata["status"] == "failed"
+    assert metadata["failure_stage"] == "recoverable_audio"
+    assert metadata["recoverable_audio"] is None
+    errors = json.loads((output_dir / "errors.json").read_text(encoding="utf-8"))
+    assert errors["errors"][0]["stage"] == "recoverable_audio"
+    assert errors["errors"][0]["type"] == "OSError"
+    assert errors["errors"][0]["message"] == "disk full"
+    assert not session.cleaned
+    assert live_controller.aborted
+
+
 def test_transcribe_session_prefers_live_result() -> None:
     live_controller = _FakeLiveController(result=SimpleNamespace(final_text="live"))
 
@@ -392,6 +425,39 @@ def test_trans_command_transcribes_external_audio(
     assert metadata["recoverable_audio"] == "audio.wav"
 
 
+def test_trans_command_writes_failed_session_when_recoverable_audio_fails(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    audio_path = tmp_path / "external.wav"
+    audio_path.write_bytes(b"audio")
+    output_dir = tmp_path / "transcriptions"
+
+    monkeypatch.setattr(
+        cli_module.sf,
+        "info",
+        lambda path: SimpleNamespace(samplerate=16000, channels=1, frames=32000),
+    )
+    monkeypatch.setattr(cli_module, "datetime", _FrozenDateTime)
+    monkeypatch.setattr(
+        cli_module,
+        "materialize_normalized_session",
+        lambda *args, **kwargs: (_ for _ in ()).throw(OSError("disk full")),
+    )
+
+    result = runner.invoke(cli_module.app, ["trans", str(audio_path), "--output-dir", str(output_dir)])
+
+    assert result.exit_code == 1
+    session_dir = output_dir / "20260410_220000"
+    assert (session_dir / "session.json").exists()
+    assert (session_dir / "errors.json").exists()
+    assert not (session_dir / "audio.wav").exists()
+    metadata = json.loads((session_dir / "session.json").read_text(encoding="utf-8"))
+    assert metadata["status"] == "failed"
+    assert metadata["failure_stage"] == "recoverable_audio"
+    assert metadata["recoverable_audio"] is None
+
+
 def test_trans_command_completes_failed_session_audio(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -447,6 +513,21 @@ def test_trans_command_completes_failed_session_audio(
     metadata = json.loads((session_dir / "session.json").read_text(encoding="utf-8"))
     assert metadata["status"] == "completed"
     assert metadata["fallback_used"] is True
+
+
+def test_error_metadata_includes_wrapped_root_cause() -> None:
+    try:
+        try:
+            raise ValueError("no credits")
+        except ValueError as exc:
+            raise RuntimeError("Transcription failed") from exc
+    except RuntimeError as exc:
+        error = cli_module._error_metadata("offline_transcription", exc)
+
+    assert error.type == "RuntimeError"
+    assert error.message == "Transcription failed"
+    assert error.cause_type == "ValueError"
+    assert error.cause_message == "no credits"
 
 
 def test_record_alt_command_uses_alt_model(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

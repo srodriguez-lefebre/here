@@ -35,7 +35,7 @@ class SessionArtifactPaths:
     metadata_path: Path
     chunks_path: Path
     errors_path: Path
-    audio_path: Path
+    audio_path: Path | None
     metadata: SessionMetadata
     chunks: ChunkMetadataDocument
     errors: ErrorMetadataDocument
@@ -119,7 +119,7 @@ def write_session_artifacts(
     metadata_path = session_dir / METADATA_FILE
     chunks_path = session_dir / CHUNKS_FILE
     errors_path = session_dir / ERRORS_FILE
-    audio_path = session_dir / AUDIO_FILE
+    audio_path = session_dir / recoverable_audio if recoverable_audio is not None else None
     chunks_document = ChunkMetadataDocument(chunks=chunks or [])
     errors_document = ErrorMetadataDocument(errors=errors or [])
 

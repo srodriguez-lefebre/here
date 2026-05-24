@@ -59,6 +59,8 @@ class ErrorMetadata(BaseModel):
     stage: str
     type: str
     message: str
+    cause_type: str | None = None
+    cause_message: str | None = None
     retryable: bool
     occurred_at: datetime
 
