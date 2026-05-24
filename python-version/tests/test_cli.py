@@ -11,6 +11,8 @@ from typer.testing import CliRunner
 
 import here.cli as cli_module
 from here.recording.diagnostics import AudioDeviceInfo, SignalTestResult
+from here.output.metadata import ErrorMetadata
+from here.output.session_writer import write_session_artifacts
 
 runner = CliRunner()
 
@@ -349,6 +351,102 @@ def test_audio_test_command_prints_signal_status(monkeypatch: pytest.MonkeyPatch
     assert result.exit_code == 0
     assert "peak=0.2500" in result.output
     assert "status=signal detected" in result.output
+
+
+def test_trans_command_transcribes_external_audio(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    audio_path = tmp_path / "external.wav"
+    audio_path.write_bytes(b"audio")
+    output_dir = tmp_path / "transcriptions"
+
+    monkeypatch.setattr(
+        cli_module.sf,
+        "info",
+        lambda path: SimpleNamespace(samplerate=16000, channels=1, frames=32000),
+    )
+    monkeypatch.setattr(cli_module, "datetime", _FrozenDateTime)
+
+    def _materialize_normalized_session(session: object, working_dir: Path, output_name: str) -> _FakeSession:
+        (working_dir / output_name).write_bytes(b"normalized")
+        return _FakeSession()
+
+    monkeypatch.setattr(cli_module, "materialize_normalized_session", _materialize_normalized_session)
+    monkeypatch.setattr(
+        cli_module,
+        "transcribe_recording_session",
+        lambda session, **kwargs: SimpleNamespace(final_text="external transcript", chunks=[]),
+    )
+
+    result = runner.invoke(cli_module.app, ["trans", str(audio_path), "--output-dir", str(output_dir)])
+
+    assert result.exit_code == 0
+    session_dir = output_dir / "20260410_220000"
+    assert (session_dir / "audio.wav").exists()
+    assert (session_dir / "transcript.txt").read_text(encoding=cli_module.TRANSCRIPT_ENCODING) == (
+        "external transcript"
+    )
+    metadata = json.loads((session_dir / "session.json").read_text(encoding="utf-8"))
+    assert metadata["status"] == "completed"
+    assert metadata["recoverable_audio"] == "audio.wav"
+
+
+def test_trans_command_completes_failed_session_audio(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    session_dir = tmp_path / "transcriptions" / "20260410_220000"
+    session_dir.mkdir(parents=True)
+    audio_path = session_dir / "audio.wav"
+    audio_path.write_bytes(b"audio")
+    write_session_artifacts(
+        session=_FakeSession(),
+        target_dir=tmp_path / "transcriptions",
+        completed_at=datetime(2026, 4, 10, 22, 0, 0),
+        transcription_model="gpt-4o-transcribe-diarize",
+        cleanup_model="gpt-4.1-mini",
+        cleanup_enabled=False,
+        alt_model_used=False,
+        live_pipeline_attempted=True,
+        live_pipeline_used=False,
+        fallback_used=True,
+        status="failed",
+        failure_stage="offline_transcription",
+        recoverable_audio="audio.wav",
+        errors=[
+            ErrorMetadata(
+                stage="offline_transcription",
+                type="RuntimeError",
+                message="no credits",
+                retryable=True,
+                occurred_at=datetime(2026, 4, 10, 22, 1, 0),
+            )
+        ],
+        session_dir=session_dir,
+        session_id="20260410_220000",
+    )
+
+    monkeypatch.setattr(
+        cli_module.sf,
+        "info",
+        lambda path: SimpleNamespace(samplerate=16000, channels=1, frames=32000),
+    )
+    monkeypatch.setattr(cli_module, "datetime", _FrozenDateTime)
+    monkeypatch.setattr(
+        cli_module,
+        "transcribe_recording_session",
+        lambda session, **kwargs: SimpleNamespace(final_text="recovered", chunks=[]),
+    )
+
+    result = runner.invoke(cli_module.app, ["trans", str(audio_path)])
+
+    assert result.exit_code == 0
+    assert (session_dir / "transcript.txt").read_text(encoding=cli_module.TRANSCRIPT_ENCODING) == "recovered"
+    assert not (session_dir / "errors.json").exists()
+    metadata = json.loads((session_dir / "session.json").read_text(encoding="utf-8"))
+    assert metadata["status"] == "completed"
+    assert metadata["fallback_used"] is True
 
 
 def test_record_alt_command_uses_alt_model(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

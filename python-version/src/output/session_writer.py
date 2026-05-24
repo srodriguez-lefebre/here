@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from typing import Literal
 
 from here.output.markdown import render_transcript_markdown
 from here.output.metadata import (
@@ -76,7 +77,7 @@ def write_session_artifacts(
     transcript_text: str | None = None,
     chunks: list[ChunkMetadata] | None = None,
     errors: list[ErrorMetadata] | None = None,
-    status: str = "completed",
+    status: Literal["pending", "completed", "failed"] = "completed",
     failure_stage: str | None = None,
     recoverable_audio: str | None = None,
     session_dir: Path | None = None,
