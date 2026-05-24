@@ -7,10 +7,16 @@ from typing import Annotated
 import typer
 from loguru import logger
 
+from here.audio.mix import materialize_normalized_session
 from here.config.settings import get_settings
 from here.live_processing import LiveTranscriptionController
-from here.output.metadata import ChunkMetadata
-from here.output.session_writer import TRANSCRIPT_ENCODING, write_session_artifacts
+from here.output.metadata import ChunkMetadata, ErrorMetadata
+from here.output.session_writer import (
+    AUDIO_FILE,
+    TRANSCRIPT_ENCODING,
+    create_session_dir,
+    write_session_artifacts,
+)
 from here.recording.diagnostics import (
     AudioDeviceInfo,
     SignalTestResult,
@@ -25,6 +31,7 @@ from here.recorder import (
 )
 from here.transcription.client import TranscriptionResult
 from here.transcriber import transcribe_recording_session
+from here.transcription.service import TranscriptionPipelineError
 
 app = typer.Typer()
 record_app = typer.Typer(invoke_without_command=True)
@@ -51,6 +58,28 @@ class _TranscriptionOutcome:
     live_pipeline_attempted: bool
     live_pipeline_used: bool
     fallback_used: bool
+    errors: list[ErrorMetadata]
+
+
+class _TranscriptionFailure(RuntimeError):
+    def __init__(
+        self,
+        message: str,
+        *,
+        chunks: list[ChunkMetadata],
+        errors: list[ErrorMetadata],
+        live_pipeline_attempted: bool,
+        live_pipeline_used: bool,
+        fallback_used: bool,
+        failure_stage: str,
+    ) -> None:
+        super().__init__(message)
+        self.chunks = chunks
+        self.errors = errors
+        self.live_pipeline_attempted = live_pipeline_attempted
+        self.live_pipeline_used = live_pipeline_used
+        self.fallback_used = fallback_used
+        self.failure_stage = failure_stage
 
 
 def _resolve_target_dir(output_dir: Path | None) -> Path:
@@ -89,35 +118,68 @@ def _save_transcription(
     live_controller: LiveTranscriptionController | None = None,
 ) -> None:
     target_dir.mkdir(parents=True, exist_ok=True)
-    should_cleanup = False
     recording_completed_at = datetime.now().astimezone()
-
-    try:
-        outcome = _transcribe_session_outcome(
-            session,
-            use_alt_transcription_model=use_alt_transcription_model,
-            live_controller=live_controller,
-        )
-        should_cleanup = True
-    finally:
-        if should_cleanup:
-            session.cleanup()
-            if live_controller is not None:
-                live_controller.cleanup()
-            logger.info("Temporary audio files deleted.")
-        else:
-            if live_controller is not None:
-                live_controller.abort()
-            logger.warning("Temporary audio files were preserved after transcription failure.")
-
     settings = get_settings()
     transcription_model = (
         settings.ALT_TRANSCRIPTION_MODEL
         if use_alt_transcription_model
         else settings.TRANSCRIPTION_MODEL
     )
+    session_id, session_dir = create_session_dir(target_dir, recording_completed_at)
+    recoverable_session: RecordingSession | None = None
+    raw_audio_is_recoverable = False
+
+    try:
+        recoverable_session = materialize_normalized_session(
+            session,
+            session_dir,
+            output_name=AUDIO_FILE,
+        )
+        raw_audio_is_recoverable = True
+
+        outcome = _transcribe_session_outcome(
+            recoverable_session,
+            use_alt_transcription_model=use_alt_transcription_model,
+            live_controller=live_controller,
+        )
+    except _TranscriptionFailure as exc:
+        write_session_artifacts(
+            session=recoverable_session or session,
+            target_dir=target_dir,
+            completed_at=recording_completed_at,
+            transcription_model=transcription_model,
+            cleanup_model=settings.CLEANUP_MODEL,
+            cleanup_enabled=settings.CLEANUP_ENABLED,
+            alt_model_used=use_alt_transcription_model,
+            live_pipeline_attempted=exc.live_pipeline_attempted,
+            live_pipeline_used=exc.live_pipeline_used,
+            fallback_used=exc.fallback_used,
+            chunks=exc.chunks,
+            errors=exc.errors,
+            status="failed",
+            failure_stage=exc.failure_stage,
+            recoverable_audio=AUDIO_FILE if raw_audio_is_recoverable else None,
+            session_dir=session_dir,
+            session_id=session_id,
+        )
+        if raw_audio_is_recoverable:
+            session.cleanup()
+            if live_controller is not None:
+                live_controller.cleanup()
+        else:
+            if live_controller is not None:
+                live_controller.abort()
+            logger.warning("Temporary audio files were preserved after recoverable audio failure.")
+        logger.error("Saved failed recoverable session to {path}", path=session_dir)
+        raise
+    except Exception as exc:
+        if live_controller is not None:
+            live_controller.abort()
+        logger.warning("Temporary audio files were preserved after transcription failure.")
+        raise
+
     artifacts = write_session_artifacts(
-        session=session,
+        session=recoverable_session,
         target_dir=target_dir,
         transcript_text=outcome.result.final_text,
         completed_at=recording_completed_at,
@@ -129,7 +191,16 @@ def _save_transcription(
         live_pipeline_used=outcome.live_pipeline_used,
         fallback_used=outcome.fallback_used,
         chunks=list(getattr(outcome.result, "chunks", [])),
+        errors=outcome.errors,
+        status="completed",
+        recoverable_audio=AUDIO_FILE,
+        session_dir=session_dir,
+        session_id=session_id,
     )
+    session.cleanup()
+    if live_controller is not None:
+        live_controller.cleanup()
+    logger.info("Temporary audio files deleted.")
     logger.success("Saved to {path}", path=artifacts.session_dir)
 
 
@@ -188,6 +259,7 @@ def _transcribe_session_outcome(
     live_controller: LiveTranscriptionController | None = None,
 ) -> _TranscriptionOutcome:
     failed_live_chunks: list[ChunkMetadata] = []
+    errors: list[ErrorMetadata] = []
     if live_controller is not None:
         try:
             logger.info("Completing live transcription from background chunks.")
@@ -196,18 +268,34 @@ def _transcribe_session_outcome(
                 live_pipeline_attempted=True,
                 live_pipeline_used=True,
                 fallback_used=False,
+                errors=[],
             )
         except Exception as exc:
             logger.warning(
                 "Live transcription failed: {exc}. Falling back to offline post-processing.",
                 exc=exc,
             )
+            errors.append(_error_metadata("live_transcription", exc))
             failed_live_chunks = _chunk_metadata_from_controller(live_controller)
 
-    result = transcribe_recording_session(
-        session,
-        use_alt_transcription_model=use_alt_transcription_model,
-    )
+    try:
+        result = transcribe_recording_session(
+            session,
+            use_alt_transcription_model=use_alt_transcription_model,
+        )
+    except Exception as exc:
+        offline_chunks = getattr(exc, "chunks", [])
+        errors.append(_error_metadata("offline_transcription", exc))
+        raise _TranscriptionFailure(
+            "Transcription failed",
+            chunks=failed_live_chunks + list(offline_chunks),
+            errors=errors,
+            live_pipeline_attempted=live_controller is not None,
+            live_pipeline_used=False,
+            fallback_used=live_controller is not None,
+            failure_stage="offline_transcription",
+        ) from exc
+
     if failed_live_chunks:
         result.chunks = failed_live_chunks + list(getattr(result, "chunks", []))
 
@@ -216,6 +304,7 @@ def _transcribe_session_outcome(
         live_pipeline_attempted=live_controller is not None,
         live_pipeline_used=False,
         fallback_used=live_controller is not None,
+        errors=errors,
     )
 
 
@@ -226,6 +315,16 @@ def _chunk_metadata_from_controller(
     if not callable(chunk_metadata):
         return []
     return list(chunk_metadata())
+
+
+def _error_metadata(stage: str, exc: Exception) -> ErrorMetadata:
+    return ErrorMetadata(
+        stage=stage,
+        type=type(exc).__name__,
+        message=str(exc),
+        retryable=True,
+        occurred_at=datetime.now().astimezone(),
+    )
 
 
 @app.callback()

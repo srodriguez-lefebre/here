@@ -154,6 +154,7 @@ def materialize_normalized_session(
     session: RecordingSession,
     working_dir: Path,
     config: ChunkingConfig | None = None,
+    output_name: str = "normalized_source.wav",
 ) -> RecordingSession:
     resolved_config = config or ChunkingConfig()
     total_frames = get_total_target_frames(session, resolved_config)
@@ -161,7 +162,7 @@ def materialize_normalized_session(
         raise RuntimeError("No audio available to normalize.")
 
     working_dir.mkdir(parents=True, exist_ok=True)
-    normalized_path = working_dir / "normalized_source.wav"
+    normalized_path = working_dir / output_name
     block_frames = max(1, resolved_config.process_block_seconds * resolved_config.target_sample_rate)
     gains = _compute_source_gains(session, resolved_config)
     source_files = [sf.SoundFile(source.path) for source in session.sources]

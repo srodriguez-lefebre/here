@@ -23,6 +23,9 @@ class SessionMetadata(BaseModel):
     started_at: datetime
     completed_at: datetime
     duration_seconds: float
+    status: Literal["pending", "completed", "failed"] = "completed"
+    failure_stage: str | None = None
+    recoverable_audio: str | None = None
     sources: list[SourceMetadata]
     transcription_model: str
     cleanup_model: str
@@ -52,6 +55,19 @@ class ChunkMetadataDocument(BaseModel):
     chunks: list[ChunkMetadata]
 
 
+class ErrorMetadata(BaseModel):
+    stage: str
+    type: str
+    message: str
+    retryable: bool
+    occurred_at: datetime
+
+
+class ErrorMetadataDocument(BaseModel):
+    schema_version: int = Field(default=1)
+    errors: list[ErrorMetadata]
+
+
 def source_metadata(source: RecordedAudioSource) -> SourceMetadata:
     return SourceMetadata(
         label=source.label,
@@ -75,6 +91,9 @@ def build_session_metadata(
     live_pipeline_attempted: bool,
     live_pipeline_used: bool,
     fallback_used: bool,
+    status: Literal["pending", "completed", "failed"] = "completed",
+    failure_stage: str | None = None,
+    recoverable_audio: str | None = None,
     output_files: list[str],
 ) -> SessionMetadata:
     duration_seconds = session.duration_seconds
@@ -83,6 +102,9 @@ def build_session_metadata(
         started_at=completed_at - timedelta(seconds=duration_seconds),
         completed_at=completed_at,
         duration_seconds=duration_seconds,
+        status=status,
+        failure_stage=failure_stage,
+        recoverable_audio=recoverable_audio,
         sources=[source_metadata(source) for source in session.sources],
         transcription_model=transcription_model,
         cleanup_model=cleanup_model,

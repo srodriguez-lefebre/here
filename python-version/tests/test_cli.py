@@ -40,6 +40,14 @@ class _FakeSession:
         self.cleaned = True
 
 
+def _patch_recoverable_audio(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        cli_module,
+        "materialize_normalized_session",
+        lambda session, working_dir, output_name: session,
+    )
+
+
 class _FrozenDateTime:
     @staticmethod
     def now() -> datetime:
@@ -87,6 +95,7 @@ def test_save_transcription_writes_file_and_cleans_up(monkeypatch: pytest.Monkey
 
     monkeypatch.setattr(cli_module, "transcribe_recording_session", _transcribe_recording_session)
     monkeypatch.setattr(cli_module, "datetime", _FrozenDateTime)
+    _patch_recoverable_audio(monkeypatch)
 
     cli_module._save_transcription(session, tmp_path)
 
@@ -109,6 +118,8 @@ def test_save_transcription_writes_file_and_cleans_up(monkeypatch: pytest.Monkey
     assert metadata["alt_model_used"] is False
     assert metadata["live_pipeline_attempted"] is False
     assert metadata["fallback_used"] is False
+    assert metadata["status"] == "completed"
+    assert metadata["recoverable_audio"] == "audio.wav"
     assert json.loads(chunks_file.read_text(encoding="utf-8")) == {"schema_version": 1, "chunks": []}
     markdown = markdown_file.read_text(encoding="utf-8")
     assert "# Recording 2026-04-10 22:00" in markdown
@@ -131,6 +142,7 @@ def test_save_transcription_uses_recording_completion_time_for_session_id(
 
     monkeypatch.setattr(cli_module, "transcribe_recording_session", _transcribe_recording_session)
     monkeypatch.setattr(cli_module, "datetime", _SequentialDateTime)
+    _patch_recoverable_audio(monkeypatch)
 
     cli_module._save_transcription(session, tmp_path)
 
@@ -149,6 +161,7 @@ def test_save_transcription_can_use_alt_model(monkeypatch: pytest.MonkeyPatch, t
 
     monkeypatch.setattr(cli_module, "transcribe_recording_session", _transcribe_recording_session)
     monkeypatch.setattr(cli_module, "datetime", _FrozenDateTime)
+    _patch_recoverable_audio(monkeypatch)
 
     cli_module._save_transcription(session, tmp_path, use_alt_transcription_model=True)
 
@@ -165,11 +178,21 @@ def test_save_transcription_preserves_audio_when_transcription_fails(
         "transcribe_recording_session",
         lambda recorded_session, **kwargs: (_ for _ in ()).throw(RuntimeError("boom")),
     )
+    monkeypatch.setattr(cli_module, "datetime", _FrozenDateTime)
+    _patch_recoverable_audio(monkeypatch)
 
-    with pytest.raises(RuntimeError, match="boom"):
+    with pytest.raises(RuntimeError, match="Transcription failed"):
         cli_module._save_transcription(session, tmp_path)
 
-    assert not session.cleaned
+    output_dir = tmp_path / "20260410_220000"
+    assert (output_dir / "session.json").exists()
+    assert (output_dir / "chunks.json").exists()
+    assert (output_dir / "errors.json").exists()
+    metadata = json.loads((output_dir / "session.json").read_text(encoding="utf-8"))
+    assert metadata["status"] == "failed"
+    assert metadata["failure_stage"] == "offline_transcription"
+    assert metadata["recoverable_audio"] == "audio.wav"
+    assert session.cleaned
 
 
 def test_transcribe_session_prefers_live_result() -> None:

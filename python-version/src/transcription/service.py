@@ -28,6 +28,12 @@ from here.transcription.client import (
 from here.transcription.segments import SegmentTimeline, shift_segments
 
 
+class TranscriptionPipelineError(RuntimeError):
+    def __init__(self, message: str, *, chunks: list[ChunkMetadata] | None = None) -> None:
+        super().__init__(message)
+        self.chunks = chunks or []
+
+
 def _merge_chunk_transcription(
     merged_raw_text: str,
     timeline: SegmentTimeline | None,
@@ -94,7 +100,7 @@ def transcribe(
         )
     except Exception as exc:
         logger.error("Transcription failed: {exc}", exc=exc)
-        raise RuntimeError("Transcription failed") from exc
+        raise TranscriptionPipelineError("Transcription failed") from exc
 
     return finalize_transcription(
         client=client,
@@ -204,7 +210,7 @@ def transcribe_recording_session(
                 )
         except Exception as exc:
             logger.error("Chunked transcription failed: {exc}", exc=exc)
-            raise RuntimeError("Transcription failed") from exc
+            raise TranscriptionPipelineError("Transcription failed", chunks=chunks) from exc
 
     return finalize_transcription(
         client=client,
