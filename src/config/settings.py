@@ -3,7 +3,7 @@ from pathlib import Path
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# MVP/ root, from src/config/settings.py
+# Project root, from src/config/settings.py
 _PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 
@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     TRANSCRIPTIONS_DIR: Path = _PROJECT_ROOT / "transcriptions"
     PULSE_SERVER: str | None = None
     TRANSCRIPTION_MODEL: str = "gpt-4o-transcribe-diarize"
+    ALT_TRANSCRIPTION_MODEL: str = "gpt-4o-transcribe"
     CLEANUP_MODEL: str = "gpt-4.1-mini"
     CLEANUP_ENABLED: bool = False
 

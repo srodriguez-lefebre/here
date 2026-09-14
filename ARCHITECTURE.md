@@ -1,9 +1,9 @@
-# Python Version Architecture
+# Architecture
 
 ## Overview
 
-`python-version` is the active implementation of `here`. It records audio,
-transcribes it, and writes a structured session artifact folder.
+`here` records audio, transcribes it, and writes a structured session artifact
+folder.
 
 The main flow is:
 
