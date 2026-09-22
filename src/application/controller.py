@@ -198,7 +198,11 @@ class HereApplicationController:
         del channels
         with self._lock:
             live = self._live
-            if self._snapshot.state is not ApplicationState.RECORDING:
+            state = self._snapshot.state
+            if state not in {
+                ApplicationState.PREPARING,
+                ApplicationState.RECORDING,
+            }:
                 return
         if live is not None:
             live.submit_block(label, data, sample_rate, data.shape[1] if data.ndim > 1 else 1)
@@ -220,6 +224,8 @@ class HereApplicationController:
                 data.shape[0] / sample_rate
             )
             self._levels[label] = (peak, rms)
+            if state is not ApplicationState.RECORDING:
+                return
             if now - self._last_level_emitted < (1 / 15):
                 return
             self._last_level_emitted = now
@@ -426,7 +432,7 @@ class HereApplicationController:
                 self._processing_cancel.set()
                 self._append_session_event("processing_cancelled", details={"recoverable": True})
                 live = self._live
-                if live is not None and state is ApplicationState.PROCESSING:
+                if live is not None:
                     live.abort()
                 return
             raise InvalidApplicationCommand(f"Cannot cancel while application is {state.value}")
