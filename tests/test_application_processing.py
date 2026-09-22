@@ -100,6 +100,31 @@ def test_processing_cancellation_preserves_audio_as_recoverable_session(tmp_path
     assert not session.sources[0].path.exists()
 
 
+def test_cancellation_arriving_during_transcription_is_persisted(tmp_path: Path) -> None:
+    session = make_session(tmp_path)
+    cancellation = threading.Event()
+
+    def transcribe(*args: object, **kwargs: object) -> TranscriptionResult:
+        del args, kwargs
+        cancellation.set()
+        return TranscriptionResult(raw_text="late", final_text="Late")
+
+    processor = SessionProcessor(transcribe=transcribe, retry_delays=())
+
+    with pytest.raises(ProcessingCancelled) as exc_info:
+        processor.process(
+            session,
+            tmp_path / "sessions",
+            cancel_event=cancellation,
+        )
+
+    metadata = json.loads(
+        (exc_info.value.session_dir / "session.json").read_text(encoding="utf-8")
+    )
+    assert metadata["status"] == "cancelled"
+    assert not (exc_info.value.session_dir / "transcript.txt").exists()
+
+
 def test_offline_transcription_retries_three_times_then_succeeds(tmp_path: Path) -> None:
     session = make_session(tmp_path)
     attempts = 0
@@ -166,3 +191,93 @@ def test_retry_reuses_recoverable_audio_and_clears_persisted_errors(tmp_path: Pa
     assert recovered.metadata.status == "completed"
     assert recovered.transcript_path.read_text(encoding="utf-8-sig") == "Recovered"
     assert not recovered.errors_path.exists()
+
+
+def test_retry_preserves_existing_lifecycle_events(tmp_path: Path) -> None:
+    session = make_session(tmp_path)
+    occurred_at = datetime.now().astimezone()
+    events = [
+        SessionEventMetadata(
+            kind="paused",
+            occurred_at=occurred_at,
+            recorded_duration_seconds=0.05,
+        )
+    ]
+    failing = SessionProcessor(
+        transcribe=lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("temporary")),
+        retry_delays=(),
+    )
+    with pytest.raises(SessionProcessingFailed) as exc_info:
+        failing.process(session, tmp_path / "sessions", events=events)
+
+    recovered = SessionProcessor(
+        transcribe=lambda *args, **kwargs: TranscriptionResult(
+            raw_text="recovered",
+            final_text="Recovered",
+        ),
+        retry_delays=(),
+    ).retry(exc_info.value.session_dir)
+
+    persisted = json.loads(recovered.events_path.read_text(encoding="utf-8"))
+    assert [event["kind"] for event in persisted["events"]] == ["paused"]
+
+
+def test_failed_retry_preserves_existing_lifecycle_events(tmp_path: Path) -> None:
+    session = make_session(tmp_path)
+    event = SessionEventMetadata(
+        kind="paused",
+        occurred_at=datetime.now().astimezone(),
+        recorded_duration_seconds=0.05,
+    )
+    first_failure = SessionProcessor(
+        transcribe=lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("first")),
+        retry_delays=(),
+    )
+    with pytest.raises(SessionProcessingFailed) as exc_info:
+        first_failure.process(session, tmp_path / "sessions", events=[event])
+
+    with pytest.raises(SessionProcessingFailed):
+        SessionProcessor(
+            transcribe=lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("second")),
+            retry_delays=(),
+        ).retry(exc_info.value.session_dir)
+
+    persisted = json.loads(
+        (exc_info.value.session_dir / "events.json").read_text(encoding="utf-8")
+    )
+    assert [item["kind"] for item in persisted["events"]] == ["paused"]
+
+
+def test_cancelled_retry_updates_session_and_records_event(tmp_path: Path) -> None:
+    session = make_session(tmp_path)
+    event = SessionEventMetadata(
+        kind="paused",
+        occurred_at=datetime.now().astimezone(),
+        recorded_duration_seconds=0.05,
+    )
+    first_failure = SessionProcessor(
+        transcribe=lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("first")),
+        retry_delays=(),
+    )
+    with pytest.raises(SessionProcessingFailed) as exc_info:
+        first_failure.process(session, tmp_path / "sessions", events=[event])
+    cancellation = threading.Event()
+    cancellation.set()
+
+    with pytest.raises(ProcessingCancelled):
+        SessionProcessor(retry_delays=()).retry(
+            exc_info.value.session_dir,
+            cancel_event=cancellation,
+        )
+
+    metadata = json.loads(
+        (exc_info.value.session_dir / "session.json").read_text(encoding="utf-8")
+    )
+    persisted = json.loads(
+        (exc_info.value.session_dir / "events.json").read_text(encoding="utf-8")
+    )
+    assert metadata["status"] == "cancelled"
+    assert [item["kind"] for item in persisted["events"]] == [
+        "paused",
+        "processing_cancelled",
+    ]

@@ -334,9 +334,12 @@ def _record_windows_controlled(
         stop_event.wait()
         for thread in threads:
             thread.join()
+    except BaseException:
+        for path in paths:
+            path.unlink(missing_ok=True)
+        raise
     finally:
         stop_event.set()
-        ready_event.set()
         for thread in threads:
             if thread.is_alive():
                 thread.join(timeout=2)

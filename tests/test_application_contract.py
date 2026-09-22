@@ -74,3 +74,18 @@ def test_application_event_carries_state_transition_and_small_details() -> None:
 
     assert event.previous_state is ApplicationState.PREPARING
     assert event.details == {"source_count": 2}
+
+
+def test_application_event_details_cannot_be_changed_after_creation() -> None:
+    details = {"source_count": 2}
+    event = ApplicationEvent(
+        kind=EventKind.STATE_CHANGED,
+        state=ApplicationState.RECORDING,
+        details=details,
+    )
+
+    details["source_count"] = 3
+
+    assert event.details["source_count"] == 2
+    with pytest.raises(TypeError):
+        event.details["source_count"] = 4  # type: ignore[index]

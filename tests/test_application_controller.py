@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 from types import SimpleNamespace
 
+import here.application.controller as controller_module
 import numpy as np
 import pytest
 from here.application import (
@@ -266,6 +267,37 @@ def test_audio_telemetry_is_combined_normalized_and_not_emitted_while_paused(
     controller.wait_until_terminal(2)
 
 
+def test_audio_telemetry_rechecks_state_before_emitting(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    controller, _, _, _ = build_controller(tmp_path)
+    levels = []
+    controller.subscribe(
+        lambda event: levels.append(event) if event.kind is EventKind.AUDIO_LEVEL else None
+    )
+    controller.start(StartRequest(output_dir=tmp_path))
+    wait_for_state(controller, ApplicationState.RECORDING)
+    original_max = controller_module.np.max
+    paused = False
+
+    def pause_during_level_calculation(*args: object, **kwargs: object) -> object:
+        nonlocal paused
+        if not paused:
+            paused = True
+            controller.pause()
+        return original_max(*args, **kwargs)
+
+    monkeypatch.setattr(controller_module.np, "max", pause_during_level_calculation)
+
+    controller._block_sink("microphone", np.array([[16384]], dtype=np.int16), 16000, 1)
+
+    assert controller.snapshot.state is ApplicationState.PAUSED
+    assert levels == []
+    controller.cancel()
+    controller.wait_until_terminal(2)
+
+
 def test_invalid_commands_are_rejected_without_changing_state(tmp_path: Path) -> None:
     controller, _, _, _ = build_controller(tmp_path)
 
@@ -294,6 +326,65 @@ def test_processing_failure_exposes_recoverable_session_for_retry(tmp_path: Path
     assert snapshot.recoverable
     assert snapshot.session_dir == processor.session_dir
     assert snapshot.last_error is not None
+
+
+def test_successful_retry_clears_the_previous_error(tmp_path: Path) -> None:
+    controller, _, _, processor = build_controller(tmp_path)
+
+    def fail_process(*args: object, **kwargs: object) -> object:
+        del args, kwargs
+        raise SessionProcessingFailed("provider down", processor.session_dir, recoverable=True)
+
+    processor.process = fail_process  # type: ignore[method-assign]
+    controller.start(StartRequest(output_dir=tmp_path))
+    wait_for_state(controller, ApplicationState.RECORDING)
+    controller.stop()
+    failed = controller.wait_until_terminal(2)
+    assert failed.last_error is not None
+
+    controller.retry()
+    recovered = controller.wait_until_terminal(2)
+
+    assert recovered.state is ApplicationState.COMPLETED
+    assert recovered.last_error is None
+
+
+def test_finishing_worker_does_not_clear_a_new_recording(tmp_path: Path) -> None:
+    first_capture = FakeCapture()
+    second_capture = FakeCapture()
+    captures = iter([first_capture, second_capture])
+
+    class ImmediateProcessor(FakeProcessor):
+        def process(self, session: object, target_dir: Path, **kwargs: object) -> object:
+            del session, target_dir, kwargs
+            return SimpleNamespace(session_dir=self.session_dir)
+
+    controller = HereApplicationController(
+        capture_factory=lambda request, sink: next(captures),
+        live_factory=lambda count, alt: FakeLive(),
+        processor=ImmediateProcessor(tmp_path / "session"),  # type: ignore[arg-type]
+    )
+    replacement_started = threading.Event()
+
+    def start_replacement(event: object) -> None:
+        if getattr(event, "state", None) is not ApplicationState.COMPLETED:
+            return
+        controller.start(StartRequest(output_dir=tmp_path))
+        wait_for_state(controller, ApplicationState.RECORDING)
+        replacement_started.set()
+
+    controller.subscribe(start_replacement)
+    controller.start(StartRequest(output_dir=tmp_path))
+    wait_for_state(controller, ApplicationState.RECORDING)
+    controller.stop()
+    assert replacement_started.wait(2)
+    time.sleep(0.01)
+
+    controller.pause()
+
+    assert second_capture.paused
+    controller.cancel()
+    controller.wait_until_terminal(2)
 
 
 def test_capture_start_failure_aborts_and_cleans_live_pipeline(tmp_path: Path) -> None:
