@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import StrEnum
 from pathlib import Path
+from types import MappingProxyType
 from typing import Mapping
 
 
@@ -101,3 +102,6 @@ class ApplicationEvent:
     error: ApplicationError | None = None
     session_dir: Path | None = None
     details: Mapping[str, str | int | float | bool | None] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "details", MappingProxyType(dict(self.details)))

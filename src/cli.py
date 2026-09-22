@@ -461,9 +461,21 @@ def _run_recording(
             controller.wait_until_terminal()
         raise typer.Exit(code=130) from None
     except RuntimeError as exc:
+        if controller.snapshot.has_active_work:
+            try:
+                controller.cancel()
+                controller.wait_until_terminal()
+            except Exception:
+                logger.exception("Failed to clean up the active recording")
         logger.error(str(exc))
         raise typer.Exit(code=1) from exc
     except Exception as exc:
+        if controller.snapshot.has_active_work:
+            try:
+                controller.cancel()
+                controller.wait_until_terminal()
+            except Exception:
+                logger.exception("Failed to clean up the active recording")
         logger.exception("Unexpected error while recording or transcribing audio")
         raise typer.Exit(code=1) from exc
 

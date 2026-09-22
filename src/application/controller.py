@@ -224,6 +224,7 @@ class HereApplicationController:
                 data.shape[0] / sample_rate
             )
             self._levels[label] = (peak, rms)
+            state = self._snapshot.state
             if state is not ApplicationState.RECORDING:
                 return
             if now - self._last_level_emitted < (1 / 15):
@@ -314,8 +315,9 @@ class HereApplicationController:
                 self._fail("application_job", exc)
         finally:
             with self._lock:
-                self._capture = None
-                self._live = None
+                if self._worker is threading.current_thread():
+                    self._capture = None
+                    self._live = None
 
     def _persisted(self, session_dir: Path, *, recoverable: bool) -> None:
         with self._lock:
@@ -446,7 +448,11 @@ class HereApplicationController:
                 raise InvalidApplicationCommand("No recoverable session is available")
             self._processing_cancel.clear()
             previous = self._snapshot.state
-            self._snapshot = replace(self._snapshot, state=ApplicationState.PROCESSING)
+            self._snapshot = replace(
+                self._snapshot,
+                state=ApplicationState.PROCESSING,
+                last_error=None,
+            )
             worker = threading.Thread(
                 target=self._run_retry,
                 args=(target,),

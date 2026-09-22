@@ -17,12 +17,14 @@ from here.output.metadata import (
     ErrorMetadata,
     ErrorMetadataDocument,
     SessionEventMetadata,
+    SessionEventMetadataDocument,
     SessionMetadata,
 )
 from here.output.session_writer import (
     AUDIO_FILE,
     CHUNKS_FILE,
     ERRORS_FILE,
+    EVENTS_FILE,
     METADATA_FILE,
     SessionArtifactPaths,
     create_session_dir,
@@ -325,6 +327,22 @@ class SessionProcessor:
                 recoverable=True,
             ) from exc
 
+        if cancellation.is_set():
+            return self._persist_cancelled(
+                original=session,
+                recoverable=recoverable,
+                target_dir=target_dir,
+                session_dir=session_dir,
+                session_id=session_id,
+                completed_at=completed_at,
+                transcription_model=transcription_model,
+                use_alt_transcription_model=use_alt_transcription_model,
+                live_controller=live_controller,
+                events=events,
+                started_at=started_at,
+                total_paused_seconds=total_paused_seconds,
+            )
+
         artifacts = write_session_artifacts(
             session=recoverable,
             target_dir=target_dir,
@@ -407,6 +425,7 @@ class SessionProcessor:
         metadata = _read_model(metadata_path, SessionMetadata)
         chunks_path = session_dir / CHUNKS_FILE
         errors_path = session_dir / ERRORS_FILE
+        events_path = session_dir / EVENTS_FILE
         chunks = (
             ChunkMetadataDocument.model_validate_json(
                 chunks_path.read_text(encoding="utf-8")
@@ -421,18 +440,60 @@ class SessionProcessor:
             if errors_path.exists()
             else []
         )
+        events = (
+            SessionEventMetadataDocument.model_validate_json(
+                events_path.read_text(encoding="utf-8")
+            ).events
+            if events_path.exists()
+            else []
+        )
         source = session_from_audio_file(audio_path)
         cancellation = cancel_event or threading.Event()
+        settings = get_settings()
         try:
             result = self._offline_with_retries(
                 source,
                 use_alt_transcription_model=metadata.alt_model_used if metadata else False,
                 cancel_event=cancellation,
             )
+            if cancellation.is_set():
+                raise InterruptedError("Processing cancelled")
         except InterruptedError as exc:
+            events.append(
+                SessionEventMetadata(
+                    kind="processing_cancelled",
+                    occurred_at=datetime.now().astimezone(),
+                    recorded_duration_seconds=source.duration_seconds,
+                    total_paused_seconds=metadata.total_paused_seconds if metadata else 0.0,
+                    details={"recoverable": True},
+                )
+            )
+            write_session_artifacts(
+                session=source,
+                target_dir=session_dir.parent,
+                completed_at=metadata.completed_at if metadata else datetime.now().astimezone(),
+                transcription_model=metadata.transcription_model
+                if metadata
+                else settings.TRANSCRIPTION_MODEL,
+                cleanup_model=metadata.cleanup_model if metadata else settings.CLEANUP_MODEL,
+                cleanup_enabled=metadata.cleanup_enabled if metadata else settings.CLEANUP_ENABLED,
+                alt_model_used=metadata.alt_model_used if metadata else False,
+                live_pipeline_attempted=metadata.live_pipeline_attempted if metadata else False,
+                live_pipeline_used=False,
+                fallback_used=metadata.fallback_used if metadata else False,
+                chunks=chunks,
+                errors=errors,
+                status="cancelled",
+                failure_stage="processing_cancelled",
+                recoverable_audio=AUDIO_FILE,
+                session_dir=session_dir,
+                session_id=metadata.session_id if metadata else session_dir.name,
+                events=events,
+                started_at=metadata.started_at if metadata else None,
+                total_paused_seconds=metadata.total_paused_seconds if metadata else 0.0,
+            )
             raise ProcessingCancelled(session_dir) from exc
         except Exception as exc:
-            settings = get_settings()
             failure = error_metadata("offline_transcription", exc)
             write_session_artifacts(
                 session=source,
@@ -454,6 +515,7 @@ class SessionProcessor:
                 recoverable_audio=AUDIO_FILE,
                 session_dir=session_dir,
                 session_id=metadata.session_id if metadata else session_dir.name,
+                events=events,
                 started_at=metadata.started_at if metadata else None,
                 total_paused_seconds=metadata.total_paused_seconds if metadata else 0.0,
             )
@@ -463,7 +525,6 @@ class SessionProcessor:
                 recoverable=True,
             ) from exc
 
-        settings = get_settings()
         return write_session_artifacts(
             session=source,
             target_dir=session_dir.parent,
@@ -483,6 +544,7 @@ class SessionProcessor:
             recoverable_audio=AUDIO_FILE,
             session_dir=session_dir,
             session_id=metadata.session_id if metadata else session_dir.name,
+            events=events,
             started_at=metadata.started_at if metadata else None,
             total_paused_seconds=metadata.total_paused_seconds if metadata else 0.0,
         )

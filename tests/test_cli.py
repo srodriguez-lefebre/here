@@ -303,6 +303,61 @@ def test_run_recording_wraps_runtime_errors_as_typer_exit(tmp_path: Path) -> Non
     assert exc_info.value.exit_code == 1
 
 
+@pytest.mark.parametrize("input_error", [EOFError("stdin closed"), RuntimeError("stdin failed")])
+def test_run_recording_cleans_up_active_work_after_unexpected_input_error(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    input_error: Exception,
+) -> None:
+    class Controller:
+        def __init__(self) -> None:
+            self.snapshot = SimpleNamespace(
+                state=cli_module.ApplicationState.IDLE,
+                last_error=None,
+                has_active_work=False,
+            )
+            self.cancelled = False
+            self.waited = False
+
+        def start(self, request: object) -> None:
+            del request
+            self.snapshot = SimpleNamespace(
+                state=cli_module.ApplicationState.RECORDING,
+                last_error=None,
+                has_active_work=True,
+            )
+
+        def cancel(self) -> None:
+            self.cancelled = True
+            self.snapshot = SimpleNamespace(
+                state=cli_module.ApplicationState.CANCELLED,
+                last_error=None,
+                has_active_work=False,
+            )
+
+        def wait_until_terminal(self) -> object:
+            self.waited = True
+            return self.snapshot
+
+    controller = Controller()
+    monkeypatch.setattr(cli_module, "create_default_controller", lambda: controller)
+    monkeypatch.setattr(
+        "builtins.input",
+        lambda: (_ for _ in ()).throw(input_error),
+    )
+
+    with pytest.raises(typer.Exit) as exc_info:
+        cli_module._run_recording(
+            cli_module.record_mic_until_enter,
+            tmp_path,
+            expected_source_count=1,
+        )
+
+    assert exc_info.value.exit_code == 1
+    assert controller.cancelled
+    assert controller.waited
+
+
 def test_record_main_uses_settings_directory_when_no_subcommand(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
