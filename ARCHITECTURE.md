@@ -71,6 +71,10 @@ the overlay keeps the process reachable. Closing while idle requests full proces
 exit. If work ends while the window is hidden, the process exits after the
 terminal indicator finishes.
 
+Failed or recoverably cancelled sessions expose the application controller's
+`retry` command from the main window. Starting a new recording remains available
+from terminal states without conflating it with retrying the preserved session.
+
 ## Output Layer
 
 The output layer owns persisted artifacts.

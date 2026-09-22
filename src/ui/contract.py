@@ -50,6 +50,8 @@ class VisualController(Protocol):
 
     def cancel_processing(self) -> None: ...
 
+    def retry_processing(self) -> None: ...
+
 
 class ApplicationUiAdapter:
     """Translate visual intent into the stable application-core contract."""
@@ -92,6 +94,9 @@ class ApplicationUiAdapter:
 
     def cancel_processing(self) -> None:
         self._controller.cancel()
+
+    def retry_processing(self) -> None:
+        self._controller.retry(self.snapshot.session_dir)
 
 
 __all__ = [

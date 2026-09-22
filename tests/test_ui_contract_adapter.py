@@ -14,12 +14,13 @@ def test_visual_adapter_translates_commands_to_application_contract(tmp_path: Pa
     adapter.resume_recording()
     adapter.stop_and_process()
     adapter.cancel_processing()
+    adapter.retry_processing()
 
-    assert core.command_log == ["start", "pause", "resume", "stop", "cancel"]
+    assert core.command_log == ["start", "pause", "resume", "stop", "cancel", "retry"]
     assert core.last_request is not None
     assert core.last_request.output_dir == tmp_path
     assert core.last_request.source_mode is SourceMode.BOTH
-    assert adapter.snapshot.state is ApplicationState.CANCELLED
+    assert adapter.snapshot.state is ApplicationState.PROCESSING
     assert adapter.snapshot.recoverable is True
 
 

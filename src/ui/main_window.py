@@ -89,6 +89,10 @@ class MainWindow(QMainWindow):
         self._cancel_button.setObjectName("cancelButton")
         self._cancel_button.clicked.connect(self._confirm_cancel)
 
+        self._retry_button = QPushButton("Reintentar procesamiento")
+        self._retry_button.setObjectName("retryButton")
+        self._retry_button.clicked.connect(self._controller.retry_processing)
+
         self._color_button = QPushButton("Color del indicador")
         self._color_button.setObjectName("accentButton")
         self._color_button.clicked.connect(self._choose_accent)
@@ -98,6 +102,7 @@ class MainWindow(QMainWindow):
         actions.addWidget(self._pause_button)
         actions.addWidget(self._stop_button)
         actions.addWidget(self._cancel_button)
+        actions.addWidget(self._retry_button)
 
         layout = QVBoxLayout()
         layout.setContentsMargins(24, 24, 24, 24)
@@ -140,7 +145,20 @@ class MainWindow(QMainWindow):
         self._detail_label.setVisible(bool(detail))
 
         recording = state in {ApplicationState.RECORDING, ApplicationState.PAUSED}
-        self._start_button.setVisible(state is ApplicationState.IDLE)
+        self._start_button.setVisible(
+            state
+            in {
+                ApplicationState.IDLE,
+                ApplicationState.COMPLETED,
+                ApplicationState.FAILED,
+                ApplicationState.CANCELLED,
+            }
+        )
+        self._start_button.setText(
+            "Iniciar grabación"
+            if state is ApplicationState.IDLE
+            else "Nueva grabación"
+        )
         self._pause_button.setVisible(recording)
         self._pause_button.setText(
             "Reanudar" if state is ApplicationState.PAUSED else "Pausar"
@@ -154,6 +172,10 @@ class MainWindow(QMainWindow):
                 ApplicationState.PAUSED,
                 ApplicationState.PROCESSING,
             }
+        )
+        self._retry_button.setVisible(
+            snapshot.recoverable
+            and state in {ApplicationState.FAILED, ApplicationState.CANCELLED}
         )
         self._level.setVisible(state is ApplicationState.RECORDING)
         if state is not ApplicationState.RECORDING:

@@ -65,6 +65,12 @@ def test_main_window_exposes_only_compatible_actions(tmp_path: Path, qtbot: QtBo
     ).text()
     assert str(tmp_path) in window.findChild(object, "destinationLabel").text()
 
+    window.set_snapshot(
+        ApplicationSnapshot(state=ApplicationState.FAILED, recoverable=True)
+    )
+    assert window.findChild(object, "retryButton").isVisibleTo(window)
+    assert window.findChild(object, "startButton").text() == "Nueva grabación"
+
 
 def test_accent_preference_is_persisted_but_overlay_position_is_not(
     tmp_path: Path,
