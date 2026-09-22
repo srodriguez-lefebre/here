@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import math
 
-from here.ui.contract import ApplicationSnapshot, ApplicationState, VisualController
-from here.ui.preferences import VisualPreferences
 from PySide6.QtCore import QPoint, QPointF, QRectF, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import (
     QAction,
@@ -17,6 +15,9 @@ from PySide6.QtGui import (
     QPen,
 )
 from PySide6.QtWidgets import QApplication, QMenu, QMessageBox, QStyle, QWidget
+
+from .contract import ApplicationSnapshot, ApplicationState, VisualController
+from .preferences import VisualPreferences
 
 TERMINAL_DURATION_MS = 3000
 CANCELLED_DURATION_MS = 1800

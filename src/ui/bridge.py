@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from here.ui.contract import (
+from PySide6.QtCore import QObject, Signal, Slot
+
+from .contract import (
     ApplicationEvent,
     ApplicationSnapshot,
     EventKind,
     VisualController,
 )
-from PySide6.QtCore import QObject, Signal, Slot
 
 
 class ApplicationEventBridge(QObject):

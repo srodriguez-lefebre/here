@@ -5,14 +5,15 @@ from __future__ import annotations
 from pathlib import Path
 from typing import cast
 
-from here.application import ApplicationController
-from here.ui.bridge import ApplicationEventBridge
-from here.ui.contract import ApplicationUiAdapter, VisualController
-from here.ui.main_window import MainWindow
-from here.ui.overlay import LiveLogoOverlay
-from here.ui.preferences import VisualPreferences
 from PySide6.QtCore import QSettings, Slot
 from PySide6.QtWidgets import QApplication
+
+from ..application import ApplicationController
+from .bridge import ApplicationEventBridge
+from .contract import ApplicationUiAdapter, VisualController
+from .main_window import MainWindow
+from .overlay import LiveLogoOverlay
+from .preferences import VisualPreferences
 
 
 class HereDesktop:

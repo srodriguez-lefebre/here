@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from here.ui.contract import ApplicationSnapshot, ApplicationState, VisualController
-from here.ui.preferences import VisualPreferences
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QCloseEvent, QColor, QPalette
 from PySide6.QtWidgets import (
@@ -17,6 +15,9 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from .contract import ApplicationSnapshot, ApplicationState, VisualController
+from .preferences import VisualPreferences
 
 STATE_LABELS = {
     ApplicationState.IDLE: "Listo para grabar",

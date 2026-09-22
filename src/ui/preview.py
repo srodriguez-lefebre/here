@@ -5,8 +5,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from here.ui.app import application_instance, create_desktop
-from here.ui.fake_controller import FakeApplicationController
+from .app import application_instance, create_desktop
+from .fake_controller import FakeApplicationController
 
 
 def main() -> int:
