@@ -27,6 +27,7 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 packages = [
     "here",
+    "here.application",
     "here.audio",
     "here.config",
     "here.output",
@@ -36,6 +37,7 @@ packages = [
 
 [tool.setuptools.package-dir]
 "here" = "src"
+"here.application" = "src/application"
 "here.audio" = "src/audio"
 "here.config" = "src/config"
 "here.output" = "src/output"
