@@ -9,6 +9,7 @@ dependencies = [
     "numpy>=2.3.4",
     "openai>=2.29.0",
     "pydantic-settings>=2.13.1",
+    "PySide6>=6.8.0",
     "python-dotenv>=1.2.2",
     "sounddevice>=0.5.5",
     "soundfile>=0.13.1",
@@ -18,6 +19,7 @@ dependencies = [
 
 [project.scripts]
 here = "here.cli:app"
+here-gui-preview = "here.ui.preview:main"
 record = "here.cli:record_app"
 
 [build-system]
@@ -33,6 +35,7 @@ packages = [
     "here.output",
     "here.recording",
     "here.transcription",
+    "here.ui",
 ]
 
 [tool.setuptools.package-dir]
@@ -43,11 +46,13 @@ packages = [
 "here.output" = "src/output"
 "here.recording" = "src/recording"
 "here.transcription" = "src/transcription"
+"here.ui" = "src/ui"
 
 [dependency-groups]
 dev = [
     "mypy>=1.19.1",
     "pytest>=8.4.1",
+    "pytest-qt>=4.5.0",
     "ruff>=0.15.7",
 ]
 
