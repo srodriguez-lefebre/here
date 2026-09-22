@@ -260,3 +260,23 @@ def test_processing_failure_exposes_recoverable_session_for_retry(tmp_path: Path
     assert snapshot.recoverable
     assert snapshot.session_dir == processor.session_dir
     assert snapshot.last_error is not None
+
+
+def test_capture_start_failure_aborts_and_cleans_live_pipeline(tmp_path: Path) -> None:
+    live = FakeLive()
+    controller = HereApplicationController(
+        capture_factory=lambda request, sink: (_ for _ in ()).throw(
+            RuntimeError("device unavailable")
+        ),
+        live_factory=lambda count, alt: live,
+        processor=FakeProcessor(tmp_path / "session"),  # type: ignore[arg-type]
+    )
+
+    controller.start(StartRequest(output_dir=tmp_path))
+    snapshot = controller.wait_until_terminal(2)
+
+    assert snapshot.state is ApplicationState.FAILED
+    assert live.aborted
+    assert live.cleaned
+    assert snapshot.session_dir is None
+    assert not snapshot.recoverable

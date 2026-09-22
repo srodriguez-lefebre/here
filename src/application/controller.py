@@ -285,6 +285,11 @@ class HereApplicationController:
             self._persisted(exc.session_dir, recoverable=True)
             self._transition(ApplicationState.CANCELLED, details={"recoverable": True})
         except SessionProcessingFailed as exc:
+            with self._lock:
+                live = self._live
+            if live is not None:
+                live.abort()
+                live.cleanup()
             self._persisted(exc.session_dir, recoverable=exc.recoverable)
             self._fail("processing", exc)
         except Exception as exc:
@@ -297,6 +302,9 @@ class HereApplicationController:
                     live.cleanup()
                 self._transition(ApplicationState.CANCELLED, details={"recoverable": False})
             else:
+                if live is not None:
+                    live.abort()
+                    live.cleanup()
                 self._fail("application_job", exc)
         finally:
             with self._lock:
