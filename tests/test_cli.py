@@ -5,14 +5,13 @@ from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 
+import here.cli as cli_module
 import pytest
 import typer
-from typer.testing import CliRunner
-
-import here.cli as cli_module
-from here.recording.diagnostics import AudioDeviceInfo, SignalTestResult
 from here.output.metadata import ErrorMetadata
 from here.output.session_writer import write_session_artifacts
+from here.recording.diagnostics import AudioDeviceInfo, SignalTestResult
+from typer.testing import CliRunner
 
 runner = CliRunner()
 
@@ -86,11 +85,15 @@ class _FakeLiveController:
         self.cleaned = True
 
 
-def test_save_transcription_writes_file_and_cleans_up(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_save_transcription_writes_file_and_cleans_up(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     session = _FakeSession()
     captured: dict[str, object] = {}
 
-    def _transcribe_recording_session(recorded_session: object, **kwargs: object) -> SimpleNamespace:
+    def _transcribe_recording_session(
+        recorded_session: object, **kwargs: object
+    ) -> SimpleNamespace:
         del recorded_session
         captured.update(kwargs)
         return SimpleNamespace(final_text="hola")
@@ -122,7 +125,10 @@ def test_save_transcription_writes_file_and_cleans_up(monkeypatch: pytest.Monkey
     assert metadata["fallback_used"] is False
     assert metadata["status"] == "completed"
     assert metadata["recoverable_audio"] == "audio.wav"
-    assert json.loads(chunks_file.read_text(encoding="utf-8")) == {"schema_version": 1, "chunks": []}
+    assert json.loads(chunks_file.read_text(encoding="utf-8")) == {
+        "schema_version": 1,
+        "chunks": [],
+    }
     markdown = markdown_file.read_text(encoding="utf-8")
     assert "# Recording 2026-04-10 22:00" in markdown
     assert "- Session ID: `20260410_220000`" in markdown
@@ -137,7 +143,9 @@ def test_save_transcription_uses_recording_completion_time_for_session_id(
     session = _FakeSession()
     _SequentialDateTime.calls = 0
 
-    def _transcribe_recording_session(recorded_session: object, **kwargs: object) -> SimpleNamespace:
+    def _transcribe_recording_session(
+        recorded_session: object, **kwargs: object
+    ) -> SimpleNamespace:
         del recorded_session, kwargs
         cli_module.datetime.now()
         return SimpleNamespace(final_text="hola")
@@ -152,11 +160,15 @@ def test_save_transcription_uses_recording_completion_time_for_session_id(
     assert not (tmp_path / "20260410_220500").exists()
 
 
-def test_save_transcription_can_use_alt_model(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_save_transcription_can_use_alt_model(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     session = _FakeSession()
     captured: dict[str, object] = {}
 
-    def _transcribe_recording_session(recorded_session: object, **kwargs: object) -> SimpleNamespace:
+    def _transcribe_recording_session(
+        recorded_session: object, **kwargs: object
+    ) -> SimpleNamespace:
         del recorded_session
         captured.update(kwargs)
         return SimpleNamespace(final_text="hola")
@@ -241,11 +253,15 @@ def test_transcribe_session_prefers_live_result() -> None:
     assert result.final_text == "live"
 
 
-def test_transcribe_session_falls_back_to_offline_when_live_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_transcribe_session_falls_back_to_offline_when_live_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     live_controller = _FakeLiveController(error=RuntimeError("live failed"))
     captured: dict[str, object] = {}
 
-    def _transcribe_recording_session(recorded_session: object, **kwargs: object) -> SimpleNamespace:
+    def _transcribe_recording_session(
+        recorded_session: object, **kwargs: object
+    ) -> SimpleNamespace:
         del recorded_session
         captured.update(kwargs)
         return SimpleNamespace(final_text="offline")
@@ -264,37 +280,87 @@ def test_transcribe_session_falls_back_to_offline_when_live_fails(monkeypatch: p
 
 def test_run_recording_wraps_runtime_errors_as_typer_exit(tmp_path: Path) -> None:
     class _Controller:
-        def __init__(self, **kwargs: object) -> None:
-            del kwargs
-            self.aborted = False
-            self.cleaned = False
+        snapshot = SimpleNamespace(
+            state=cli_module.ApplicationState.FAILED,
+            last_error=SimpleNamespace(message="broken"),
+            has_active_work=False,
+        )
 
-        def submit_block(self, *args: object) -> None:
-            del args
-
-        def abort(self) -> None:
-            self.aborted = True
-
-        def cleanup(self) -> None:
-            self.cleaned = True
+        def start(self, request: object) -> None:
+            del request
 
     controller = _Controller()
     monkeypatch = pytest.MonkeyPatch()
-    monkeypatch.setattr(cli_module, "LiveTranscriptionController", lambda **kwargs: controller)
+    monkeypatch.setattr(cli_module, "create_default_controller", lambda: controller)
     with pytest.raises(typer.Exit) as exc_info:
         cli_module._run_recording(
-            lambda **kwargs: (_ for _ in ()).throw(RuntimeError("broken")),
+            cli_module.record_mic_until_enter,
             tmp_path,
             expected_source_count=1,
         )
     monkeypatch.undo()
 
     assert exc_info.value.exit_code == 1
-    assert controller.aborted
-    assert controller.cleaned
 
 
-def test_record_main_uses_settings_directory_when_no_subcommand(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+@pytest.mark.parametrize("input_error", [EOFError("stdin closed"), RuntimeError("stdin failed")])
+def test_run_recording_cleans_up_active_work_after_unexpected_input_error(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    input_error: Exception,
+) -> None:
+    class Controller:
+        def __init__(self) -> None:
+            self.snapshot = SimpleNamespace(
+                state=cli_module.ApplicationState.IDLE,
+                last_error=None,
+                has_active_work=False,
+            )
+            self.cancelled = False
+            self.waited = False
+
+        def start(self, request: object) -> None:
+            del request
+            self.snapshot = SimpleNamespace(
+                state=cli_module.ApplicationState.RECORDING,
+                last_error=None,
+                has_active_work=True,
+            )
+
+        def cancel(self) -> None:
+            self.cancelled = True
+            self.snapshot = SimpleNamespace(
+                state=cli_module.ApplicationState.CANCELLED,
+                last_error=None,
+                has_active_work=False,
+            )
+
+        def wait_until_terminal(self) -> object:
+            self.waited = True
+            return self.snapshot
+
+    controller = Controller()
+    monkeypatch.setattr(cli_module, "create_default_controller", lambda: controller)
+    monkeypatch.setattr(
+        "builtins.input",
+        lambda: (_ for _ in ()).throw(input_error),
+    )
+
+    with pytest.raises(typer.Exit) as exc_info:
+        cli_module._run_recording(
+            cli_module.record_mic_until_enter,
+            tmp_path,
+            expected_source_count=1,
+        )
+
+    assert exc_info.value.exit_code == 1
+    assert controller.cancelled
+    assert controller.waited
+
+
+def test_record_main_uses_settings_directory_when_no_subcommand(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     captured: dict[str, object] = {}
 
     def _run_recording(
@@ -310,7 +376,9 @@ def test_record_main_uses_settings_directory_when_no_subcommand(monkeypatch: pyt
         captured["expected_source_count"] = expected_source_count
 
     monkeypatch.setattr(cli_module, "_run_recording", _run_recording)
-    monkeypatch.setattr(cli_module, "get_settings", lambda: SimpleNamespace(TRANSCRIPTIONS_DIR=tmp_path))
+    monkeypatch.setattr(
+        cli_module, "get_settings", lambda: SimpleNamespace(TRANSCRIPTIONS_DIR=tmp_path)
+    )
 
     cli_module.record_main(SimpleNamespace(invoked_subcommand=None), None)
 
@@ -320,7 +388,9 @@ def test_record_main_uses_settings_directory_when_no_subcommand(monkeypatch: pyt
     assert captured["expected_source_count"] == 2
 
 
-def test_record_main_returns_early_when_subcommand_is_present(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_record_main_returns_early_when_subcommand_is_present(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setattr(
         cli_module,
         "_run_recording",
@@ -401,18 +471,24 @@ def test_trans_command_transcribes_external_audio(
     )
     monkeypatch.setattr(cli_module, "datetime", _FrozenDateTime)
 
-    def _materialize_normalized_session(session: object, working_dir: Path, output_name: str) -> _FakeSession:
+    def _materialize_normalized_session(
+        session: object, working_dir: Path, output_name: str
+    ) -> _FakeSession:
         (working_dir / output_name).write_bytes(b"normalized")
         return _FakeSession()
 
-    monkeypatch.setattr(cli_module, "materialize_normalized_session", _materialize_normalized_session)
+    monkeypatch.setattr(
+        cli_module, "materialize_normalized_session", _materialize_normalized_session
+    )
     monkeypatch.setattr(
         cli_module,
         "transcribe_recording_session",
         lambda session, **kwargs: SimpleNamespace(final_text="external transcript", chunks=[]),
     )
 
-    result = runner.invoke(cli_module.app, ["trans", str(audio_path), "--output-dir", str(output_dir)])
+    result = runner.invoke(
+        cli_module.app, ["trans", str(audio_path), "--output-dir", str(output_dir)]
+    )
 
     assert result.exit_code == 0
     session_dir = output_dir / "20260410_220000"
@@ -445,7 +521,9 @@ def test_trans_command_writes_failed_session_when_recoverable_audio_fails(
         lambda *args, **kwargs: (_ for _ in ()).throw(OSError("disk full")),
     )
 
-    result = runner.invoke(cli_module.app, ["trans", str(audio_path), "--output-dir", str(output_dir)])
+    result = runner.invoke(
+        cli_module.app, ["trans", str(audio_path), "--output-dir", str(output_dir)]
+    )
 
     assert result.exit_code == 1
     session_dir = output_dir / "20260410_220000"
@@ -508,7 +586,9 @@ def test_trans_command_completes_failed_session_audio(
     result = runner.invoke(cli_module.app, ["trans", str(audio_path)])
 
     assert result.exit_code == 0
-    assert (session_dir / "transcript.txt").read_text(encoding=cli_module.TRANSCRIPT_ENCODING) == "recovered"
+    assert (session_dir / "transcript.txt").read_text(
+        encoding=cli_module.TRANSCRIPT_ENCODING
+    ) == "recovered"
     assert not (session_dir / "errors.json").exists()
     metadata = json.loads((session_dir / "session.json").read_text(encoding="utf-8"))
     assert metadata["status"] == "completed"
@@ -546,7 +626,9 @@ def test_record_alt_command_uses_alt_model(monkeypatch: pytest.MonkeyPatch, tmp_
         captured["expected_source_count"] = expected_source_count
 
     monkeypatch.setattr(cli_module, "_run_recording", _run_recording)
-    monkeypatch.setattr(cli_module, "get_settings", lambda: SimpleNamespace(TRANSCRIPTIONS_DIR=tmp_path))
+    monkeypatch.setattr(
+        cli_module, "get_settings", lambda: SimpleNamespace(TRANSCRIPTIONS_DIR=tmp_path)
+    )
 
     result = runner.invoke(cli_module.app, ["record", "alt"])
 
@@ -557,7 +639,9 @@ def test_record_alt_command_uses_alt_model(monkeypatch: pytest.MonkeyPatch, tmp_
     assert captured["expected_source_count"] == 2
 
 
-def test_record_mic_command_uses_default_model(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_record_mic_command_uses_default_model(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     captured: dict[str, object] = {}
 
     def _run_recording(
@@ -573,7 +657,9 @@ def test_record_mic_command_uses_default_model(monkeypatch: pytest.MonkeyPatch, 
         captured["expected_source_count"] = expected_source_count
 
     monkeypatch.setattr(cli_module, "_run_recording", _run_recording)
-    monkeypatch.setattr(cli_module, "get_settings", lambda: SimpleNamespace(TRANSCRIPTIONS_DIR=tmp_path))
+    monkeypatch.setattr(
+        cli_module, "get_settings", lambda: SimpleNamespace(TRANSCRIPTIONS_DIR=tmp_path)
+    )
 
     result = runner.invoke(cli_module.app, ["record", "mic"])
 
@@ -584,7 +670,9 @@ def test_record_mic_command_uses_default_model(monkeypatch: pytest.MonkeyPatch, 
     assert captured["expected_source_count"] == 1
 
 
-def test_record_mic_alt_command_uses_alt_model(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_record_mic_alt_command_uses_alt_model(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     captured: dict[str, object] = {}
 
     def _run_recording(
@@ -600,7 +688,9 @@ def test_record_mic_alt_command_uses_alt_model(monkeypatch: pytest.MonkeyPatch, 
         captured["expected_source_count"] = expected_source_count
 
     monkeypatch.setattr(cli_module, "_run_recording", _run_recording)
-    monkeypatch.setattr(cli_module, "get_settings", lambda: SimpleNamespace(TRANSCRIPTIONS_DIR=tmp_path))
+    monkeypatch.setattr(
+        cli_module, "get_settings", lambda: SimpleNamespace(TRANSCRIPTIONS_DIR=tmp_path)
+    )
 
     result = runner.invoke(cli_module.app, ["record", "mic", "alt"])
 
@@ -611,7 +701,9 @@ def test_record_mic_alt_command_uses_alt_model(monkeypatch: pytest.MonkeyPatch, 
     assert captured["expected_source_count"] == 1
 
 
-def test_record_os_alt_command_uses_alt_model(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_record_os_alt_command_uses_alt_model(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     captured: dict[str, object] = {}
 
     def _run_recording(
@@ -627,7 +719,9 @@ def test_record_os_alt_command_uses_alt_model(monkeypatch: pytest.MonkeyPatch, t
         captured["expected_source_count"] = expected_source_count
 
     monkeypatch.setattr(cli_module, "_run_recording", _run_recording)
-    monkeypatch.setattr(cli_module, "get_settings", lambda: SimpleNamespace(TRANSCRIPTIONS_DIR=tmp_path))
+    monkeypatch.setattr(
+        cli_module, "get_settings", lambda: SimpleNamespace(TRANSCRIPTIONS_DIR=tmp_path)
+    )
 
     result = runner.invoke(cli_module.app, ["record", "os", "alt"])
 

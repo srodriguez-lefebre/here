@@ -3,9 +3,8 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Literal
 
-from pydantic import BaseModel, Field
-
 from here.recording.models import RecordedAudioSource, RecordingSession
+from pydantic import BaseModel, Field
 
 
 class SourceMetadata(BaseModel):
@@ -23,7 +22,7 @@ class SessionMetadata(BaseModel):
     started_at: datetime
     completed_at: datetime
     duration_seconds: float
-    status: Literal["pending", "completed", "failed"] = "completed"
+    status: Literal["pending", "completed", "failed", "cancelled"] = "completed"
     failure_stage: str | None = None
     recoverable_audio: str | None = None
     sources: list[SourceMetadata]
@@ -35,6 +34,20 @@ class SessionMetadata(BaseModel):
     live_pipeline_used: bool
     fallback_used: bool
     output_files: list[str]
+    total_paused_seconds: float = 0.0
+
+
+class SessionEventMetadata(BaseModel):
+    kind: str
+    occurred_at: datetime
+    recorded_duration_seconds: float
+    total_paused_seconds: float = 0.0
+    details: dict[str, str | int | float | bool | None] = Field(default_factory=dict)
+
+
+class SessionEventMetadataDocument(BaseModel):
+    schema_version: int = Field(default=1)
+    events: list[SessionEventMetadata]
 
 
 class ChunkMetadata(BaseModel):
@@ -93,15 +106,17 @@ def build_session_metadata(
     live_pipeline_attempted: bool,
     live_pipeline_used: bool,
     fallback_used: bool,
-    status: Literal["pending", "completed", "failed"] = "completed",
+    status: Literal["pending", "completed", "failed", "cancelled"] = "completed",
     failure_stage: str | None = None,
     recoverable_audio: str | None = None,
+    started_at: datetime | None = None,
+    total_paused_seconds: float = 0.0,
     output_files: list[str],
 ) -> SessionMetadata:
     duration_seconds = session.duration_seconds
     return SessionMetadata(
         session_id=session_id,
-        started_at=completed_at - timedelta(seconds=duration_seconds),
+        started_at=started_at or completed_at - timedelta(seconds=duration_seconds),
         completed_at=completed_at,
         duration_seconds=duration_seconds,
         status=status,
@@ -116,4 +131,5 @@ def build_session_metadata(
         live_pipeline_used=live_pipeline_used,
         fallback_used=fallback_used,
         output_files=output_files,
+        total_paused_seconds=total_paused_seconds,
     )

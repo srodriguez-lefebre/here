@@ -5,10 +5,13 @@ from pathlib import Path
 
 import numpy as np
 import soundfile as sf
-from loguru import logger
-
 from here.recording.models import RecordedAudioSource, RecordingSession
-from here.recording.shared import build_single_source_session, open_temp_soundfile, safe_close_soundfile
+from here.recording.shared import (
+    build_single_source_session,
+    open_temp_soundfile,
+    safe_close_soundfile,
+)
+from loguru import logger
 
 WINDOWS_CAPTURE_CHUNK = 1024
 
@@ -21,6 +24,7 @@ def _capture_windows_stream_to_file(
     channels: int,
     writer: sf.SoundFile,
     stop_event: threading.Event,
+    pause_event: threading.Event | None = None,
     errors: list[Exception],
     label: str,
     written_frames: list[int],
@@ -30,9 +34,28 @@ def _capture_windows_stream_to_file(
     chunk_duration = chunk / sample_rate
     silence_chunk = np.zeros((chunk, channels), dtype=np.int16)
     next_deadline = start_time if start_time is not None else time.perf_counter()
+    was_paused = False
 
     while True:
+        if pause_event is not None and pause_event.is_set():
+            was_paused = True
+            get_read_available = getattr(stream, "get_read_available", None)
+            try:
+                available = max(0, int(get_read_available())) if callable(get_read_available) else 0
+                if available > 0:
+                    stream.read(min(chunk, available), exception_on_overflow=False)
+            except Exception as exc:
+                errors.append(exc)
+                stop_event.set()
+                break
+            if stop_event.wait(0.01):
+                break
+            continue
+
         now = time.perf_counter()
+        if was_paused:
+            next_deadline = now
+            was_paused = False
         if stop_event.is_set() and now < next_deadline:
             break
 
@@ -75,6 +98,82 @@ def _capture_windows_stream_to_file(
         next_deadline += chunk_duration
 
 
+class WindowsRecordingHandle:
+    """Thread-safe programmatic control for a running WASAPI capture."""
+
+    def __init__(
+        self,
+        mode: str,
+        *,
+        block_sink: Callable[[str, np.ndarray, int, int], None] | None = None,
+        microphone_device_id: int | None = None,
+        system_device_id: int | None = None,
+    ) -> None:
+        self._mode = mode
+        self._block_sink = block_sink
+        self._microphone_device_id = microphone_device_id
+        self._system_device_id = system_device_id
+        self._stop_event = threading.Event()
+        self._pause_event = threading.Event()
+        self._cancel_event = threading.Event()
+        self._ready_event = threading.Event()
+        self._done_event = threading.Event()
+        self._result: RecordingSession | None = None
+        self._error: BaseException | None = None
+        self._thread = threading.Thread(target=self._run, daemon=True, name="here-windows-capture")
+        self._thread.start()
+        if not self._ready_event.wait(10):
+            self._stop_event.set()
+            raise TimeoutError("Timed out while opening Windows audio devices")
+        if self._error is not None:
+            raise RuntimeError("Failed to start Windows audio capture") from self._error
+
+    def _run(self) -> None:
+        try:
+            self._result = _record_windows_controlled(
+                self._mode,
+                stop_event=self._stop_event,
+                pause_event=self._pause_event,
+                cancel_event=self._cancel_event,
+                ready_event=self._ready_event,
+                block_sink=self._block_sink,
+                microphone_device_id=self._microphone_device_id,
+                system_device_id=self._system_device_id,
+            )
+            if self._cancel_event.is_set() and self._result is not None:
+                self._result.cleanup()
+                self._result = None
+        except BaseException as exc:
+            self._error = exc
+        finally:
+            self._ready_event.set()
+            self._done_event.set()
+
+    def pause(self) -> None:
+        self._pause_event.set()
+
+    def resume(self) -> None:
+        self._pause_event.clear()
+
+    def stop(self) -> None:
+        self._stop_event.set()
+
+    def cancel(self) -> None:
+        self._cancel_event.set()
+        self._stop_event.set()
+
+    def wait(self, timeout: float | None = None) -> RecordingSession:
+        if not self._done_event.wait(timeout):
+            raise TimeoutError("Timed out waiting for audio capture to stop")
+        if self._error is not None:
+            raise RuntimeError("Windows audio capture failed") from self._error
+        if self._cancel_event.is_set():
+            raise RuntimeError("Windows audio capture was cancelled")
+        if self._result is None:
+            raise RuntimeError("Windows audio capture produced no result")
+        return self._result
+
+
 def _safe_close_stream(stream: object | None) -> None:
     if stream is None:
         return
@@ -114,8 +213,22 @@ def _get_default_windows_loopback_device() -> dict[str, object]:
             return p.get_default_wasapi_loopback()
         except Exception as exc:
             raise RuntimeError(
-                "No default WASAPI loopback device is available. Check the active Windows playback device."
+                "No default WASAPI loopback device is available. "
+                "Check the active Windows playback device."
             ) from exc
+    finally:
+        p.terminate()
+
+
+def _get_windows_device_by_index(index: int) -> dict[str, object]:
+    import pyaudiowpatch as pyaudio
+
+    p = pyaudio.PyAudio()
+    try:
+        try:
+            return p.get_device_info_by_index(index)
+        except Exception as exc:
+            raise RuntimeError(f"Windows audio device {index} is not available.") from exc
     finally:
         p.terminate()
 
@@ -140,6 +253,147 @@ def _open_windows_input_stream(
         frames_per_buffer=chunk,
     )
     return stream, sample_rate, channels
+
+
+def _record_windows_controlled(
+    mode: str,
+    *,
+    stop_event: threading.Event,
+    pause_event: threading.Event,
+    cancel_event: threading.Event,
+    ready_event: threading.Event,
+    block_sink: Callable[[str, np.ndarray, int, int], None] | None = None,
+    microphone_device_id: int | None = None,
+    system_device_id: int | None = None,
+) -> RecordingSession:
+    import pyaudiowpatch as pyaudio
+
+    if mode not in {"both", "microphone", "system_audio"}:
+        raise ValueError(f"Unsupported capture mode: {mode}")
+
+    p = pyaudio.PyAudio()
+    streams: list[object] = []
+    writers: list[sf.SoundFile] = []
+    paths: list[Path] = []
+    threads: list[threading.Thread] = []
+    errors: list[Exception] = []
+    captured: list[tuple[str, dict[str, object], int, int, list[int], Path]] = []
+    try:
+        devices: list[tuple[str, dict[str, object]]] = []
+        if mode in {"both", "microphone"}:
+            mic = (
+                _get_windows_device_by_index(microphone_device_id)
+                if microphone_device_id is not None
+                else _get_default_windows_input_device()
+            )
+            devices.append(("microphone", mic))
+        if mode in {"both", "system_audio"}:
+            system = (
+                _get_windows_device_by_index(system_device_id)
+                if system_device_id is not None
+                else _get_default_windows_loopback_device()
+            )
+            devices.append(("system audio", system))
+
+        start_time = time.perf_counter() + (0.1 if len(devices) > 1 else 0.05)
+        for label, device in devices:
+            logger.info("Using {label} device: {name}", label=label, name=device["name"])
+            stream, sample_rate, channels = _open_windows_input_stream(
+                p, pyaudio, device, WINDOWS_CAPTURE_CHUNK
+            )
+            path, writer = open_temp_soundfile(sample_rate, channels)
+            written_frames = [0]
+            streams.append(stream)
+            writers.append(writer)
+            paths.append(path)
+            captured.append((label, device, sample_rate, channels, written_frames, path))
+            threads.append(
+                threading.Thread(
+                    target=_capture_windows_stream_to_file,
+                    kwargs={
+                        "stream": stream,
+                        "chunk": WINDOWS_CAPTURE_CHUNK,
+                        "sample_rate": sample_rate,
+                        "channels": channels,
+                        "writer": writer,
+                        "stop_event": stop_event,
+                        "pause_event": pause_event,
+                        "errors": errors,
+                        "label": label,
+                        "written_frames": written_frames,
+                        "start_time": start_time,
+                        "block_sink": block_sink,
+                    },
+                    daemon=True,
+                )
+            )
+
+        for thread in threads:
+            thread.start()
+        ready_event.set()
+        stop_event.wait()
+        for thread in threads:
+            thread.join()
+    except BaseException:
+        for path in paths:
+            path.unlink(missing_ok=True)
+        raise
+    finally:
+        stop_event.set()
+        for thread in threads:
+            if thread.is_alive():
+                thread.join(timeout=2)
+        for stream in streams:
+            _safe_close_stream(stream)
+        for writer in writers:
+            safe_close_soundfile(writer)
+        p.terminate()
+
+    if cancel_event.is_set():
+        for path in paths:
+            path.unlink(missing_ok=True)
+        return RecordingSession(sources=[])
+    if errors:
+        for path in paths:
+            path.unlink(missing_ok=True)
+        raise RuntimeError("Recording failed while capturing Windows audio.") from errors[0]
+
+    missing = [label for label, _, _, _, frames, _ in captured if frames[0] <= 0]
+    if missing:
+        for path in paths:
+            path.unlink(missing_ok=True)
+        raise RuntimeError(f"No audio captured from {', '.join(missing)}.")
+
+    return RecordingSession(
+        sources=[
+            RecordedAudioSource(
+                path=path,
+                sample_rate=sample_rate,
+                channels=channels,
+                frames=frames[0],
+                label=label,
+                device_name=str(device["name"]),
+            )
+            for label, device, sample_rate, channels, frames, path in captured
+        ]
+    )
+
+
+def start_windows_recording(
+    mode: str = "both",
+    *,
+    block_sink: Callable[[str, np.ndarray, int, int], None] | None = None,
+    microphone_device_id: int | None = None,
+    system_device_id: int | None = None,
+) -> WindowsRecordingHandle:
+    """Start capture and return once the requested Windows streams are ready."""
+
+    return WindowsRecordingHandle(
+        mode,
+        block_sink=block_sink,
+        microphone_device_id=microphone_device_id,
+        system_device_id=system_device_id,
+    )
 
 
 def _record_windows_device(
@@ -227,17 +481,23 @@ def _record_windows_device(
     )
 
 
-def record_mic_windows(*, block_sink: Callable[[str, np.ndarray, int, int], None] | None = None) -> RecordingSession:
+def record_mic_windows(
+    *, block_sink: Callable[[str, np.ndarray, int, int], None] | None = None
+) -> RecordingSession:
     device = _get_default_windows_input_device()
     return _record_windows_device("microphone", device, block_sink=block_sink)
 
 
-def record_os_windows(*, block_sink: Callable[[str, np.ndarray, int, int], None] | None = None) -> RecordingSession:
+def record_os_windows(
+    *, block_sink: Callable[[str, np.ndarray, int, int], None] | None = None
+) -> RecordingSession:
     device = _get_default_windows_loopback_device()
     return _record_windows_device("system audio", device, block_sink=block_sink)
 
 
-def record_both_windows(*, block_sink: Callable[[str, np.ndarray, int, int], None] | None = None) -> RecordingSession:
+def record_both_windows(
+    *, block_sink: Callable[[str, np.ndarray, int, int], None] | None = None
+) -> RecordingSession:
     import pyaudiowpatch as pyaudio
 
     chunk = WINDOWS_CAPTURE_CHUNK
@@ -338,7 +598,9 @@ def record_both_windows(*, block_sink: Callable[[str, np.ndarray, int, int], Non
             mic_path.unlink(missing_ok=True)
         if os_path is not None:
             os_path.unlink(missing_ok=True)
-        raise RuntimeError("Recording failed while capturing microphone and system audio.") from errors[0]
+        raise RuntimeError(
+            "Recording failed while capturing microphone and system audio."
+        ) from errors[0]
 
     if mic_path is None or mic_written_frames[0] <= 0:
         if mic_path is not None:

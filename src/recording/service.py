@@ -2,12 +2,38 @@ import sys
 from collections.abc import Callable
 
 import numpy as np
-
+from here.recording.control import ControllableRecording
 from here.recording.linux import record_mic_linux, record_os_linux
 from here.recording.models import RecordingSession
-from here.recording.windows import record_both_windows, record_mic_windows, record_os_windows
+from here.recording.windows import (
+    record_both_windows,
+    record_mic_windows,
+    record_os_windows,
+    start_windows_recording,
+)
 
 BlockSink = Callable[[str, np.ndarray, int, int], None]
+
+
+def start_recording(
+    mode: str = "both",
+    *,
+    block_sink: BlockSink | None = None,
+    microphone_device_id: int | None = None,
+    system_device_id: int | None = None,
+) -> ControllableRecording:
+    """Start a programmatically controlled recording for the Windows application."""
+
+    if sys.platform != "win32":
+        raise RuntimeError(
+            "Programmatic application capture is currently supported on Windows only."
+        )
+    return start_windows_recording(
+        mode,
+        block_sink=block_sink,
+        microphone_device_id=microphone_device_id,
+        system_device_id=system_device_id,
+    )
 
 
 def record_mic_until_enter(

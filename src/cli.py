@@ -1,3 +1,4 @@
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
@@ -6,8 +7,12 @@ from typing import Annotated
 
 import soundfile as sf
 import typer
-from loguru import logger
-
+from here.application import (
+    ApplicationState,
+    SourceMode,
+    StartRequest,
+    create_default_controller,
+)
 from here.audio.mix import materialize_normalized_session
 from here.config.settings import get_settings
 from here.live_processing import LiveTranscriptionController
@@ -23,15 +28,11 @@ from here.output.session_writer import (
     CHUNKS_FILE,
     ERRORS_FILE,
     METADATA_FILE,
-    TRANSCRIPT_ENCODING,
     create_session_dir,
     write_session_artifacts,
 )
-from here.recording.diagnostics import (
-    AudioDeviceInfo,
-    SignalTestResult,
-    get_windows_audio_devices,
-    test_windows_audio_signal,
+from here.output.session_writer import (
+    TRANSCRIPT_ENCODING as TRANSCRIPT_ENCODING,
 )
 from here.recorder import (
     RecordedAudioSource,
@@ -40,8 +41,15 @@ from here.recorder import (
     record_mic_until_enter,
     record_os_until_enter,
 )
-from here.transcription.client import TranscriptionResult
+from here.recording.diagnostics import (
+    AudioDeviceInfo,
+    SignalTestResult,
+    get_windows_audio_devices,
+    test_windows_audio_signal,
+)
 from here.transcriber import transcribe_recording_session
+from here.transcription.client import TranscriptionResult
+from loguru import logger
 
 app = typer.Typer()
 record_app = typer.Typer(invoke_without_command=True)
@@ -135,18 +143,14 @@ def _load_chunk_metadata(session_dir: Path) -> list[ChunkMetadata]:
     chunks_path = session_dir / CHUNKS_FILE
     if not chunks_path.exists():
         return []
-    return ChunkMetadataDocument.model_validate_json(
-        chunks_path.read_text(encoding="utf-8")
-    ).chunks
+    return ChunkMetadataDocument.model_validate_json(chunks_path.read_text(encoding="utf-8")).chunks
 
 
 def _load_error_metadata(session_dir: Path) -> list[ErrorMetadata]:
     errors_path = session_dir / ERRORS_FILE
     if not errors_path.exists():
         return []
-    return ErrorMetadataDocument.model_validate_json(
-        errors_path.read_text(encoding="utf-8")
-    ).errors
+    return ErrorMetadataDocument.model_validate_json(errors_path.read_text(encoding="utf-8")).errors
 
 
 def _session_from_audio_file(audio_path: Path) -> RecordingSession:
@@ -251,7 +255,7 @@ def _save_transcription(
             logger.warning("Temporary audio files were preserved after recoverable audio failure.")
         logger.error("Saved failed recoverable session to {path}", path=session_dir)
         raise
-    except Exception as exc:
+    except Exception:
         if live_controller is not None:
             live_controller.abort()
         logger.warning("Temporary audio files were preserved after transcription failure.")
@@ -411,30 +415,67 @@ def _run_recording(
     use_alt_transcription_model: bool = False,
     expected_source_count: int,
 ) -> None:
-    logger.info(
-        "Live chunk processing enabled for this recording ({sources} source(s)).",
-        sources=expected_source_count,
-    )
-    live_controller = LiveTranscriptionController(
-        expected_source_count=expected_source_count,
-        use_alt_transcription_model=use_alt_transcription_model,
-    )
+    del expected_source_count
+    source_modes = {
+        record_both_until_enter: SourceMode.BOTH,
+        record_mic_until_enter: SourceMode.MICROPHONE,
+        record_os_until_enter: SourceMode.SYSTEM_AUDIO,
+    }
+    source_mode = source_modes.get(capture_fn)
+    if source_mode is None:
+        raise ValueError("Unknown recording entry point")
+    controller = create_default_controller()
     try:
-        session = capture_fn(block_sink=live_controller.submit_block)
-        _save_transcription(
-            session,
-            target_dir,
-            use_alt_transcription_model=use_alt_transcription_model,
-            live_controller=live_controller,
+        controller.start(
+            StartRequest(
+                output_dir=target_dir,
+                source_mode=source_mode,
+                use_alt_transcription_model=use_alt_transcription_model,
+            )
         )
+        while controller.snapshot.state is ApplicationState.PREPARING:
+            time.sleep(0.01)
+        if controller.snapshot.state is not ApplicationState.RECORDING:
+            raise RuntimeError(
+                controller.snapshot.last_error.message
+                if controller.snapshot.last_error is not None
+                else "Recording could not be started"
+            )
+        logger.info("Recording... Press Enter to stop.")
+        input()
+        controller.stop()
+        snapshot = controller.wait_until_terminal()
+        if snapshot.state is not ApplicationState.COMPLETED:
+            raise RuntimeError(
+                snapshot.last_error.message
+                if snapshot.last_error is not None
+                else f"Recording ended with state {snapshot.state.value}"
+            )
+        logger.success(
+            "Saved to {path}",
+            path=snapshot.session_dir,
+        )
+    except KeyboardInterrupt:
+        if controller.snapshot.has_active_work:
+            controller.cancel()
+            controller.wait_until_terminal()
+        raise typer.Exit(code=130) from None
     except RuntimeError as exc:
-        live_controller.abort()
-        live_controller.cleanup()
+        if controller.snapshot.has_active_work:
+            try:
+                controller.cancel()
+                controller.wait_until_terminal()
+            except Exception:
+                logger.exception("Failed to clean up the active recording")
         logger.error(str(exc))
         raise typer.Exit(code=1) from exc
     except Exception as exc:
-        live_controller.abort()
-        live_controller.cleanup()
+        if controller.snapshot.has_active_work:
+            try:
+                controller.cancel()
+                controller.wait_until_terminal()
+            except Exception:
+                logger.exception("Failed to clean up the active recording")
         logger.exception("Unexpected error while recording or transcribing audio")
         raise typer.Exit(code=1) from exc
 

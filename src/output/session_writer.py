@@ -11,6 +11,8 @@ from here.output.metadata import (
     ChunkMetadataDocument,
     ErrorMetadata,
     ErrorMetadataDocument,
+    SessionEventMetadata,
+    SessionEventMetadataDocument,
     SessionMetadata,
     build_session_metadata,
 )
@@ -25,6 +27,7 @@ METADATA_FILE = "session.json"
 CHUNKS_FILE = "chunks.json"
 AUDIO_FILE = "audio.wav"
 ERRORS_FILE = "errors.json"
+EVENTS_FILE = "events.json"
 
 
 @dataclass(slots=True)
@@ -35,6 +38,7 @@ class SessionArtifactPaths:
     metadata_path: Path
     chunks_path: Path
     errors_path: Path
+    events_path: Path
     audio_path: Path | None
     metadata: SessionMetadata
     chunks: ChunkMetadataDocument
@@ -77,11 +81,14 @@ def write_session_artifacts(
     transcript_text: str | None = None,
     chunks: list[ChunkMetadata] | None = None,
     errors: list[ErrorMetadata] | None = None,
-    status: Literal["pending", "completed", "failed"] = "completed",
+    status: Literal["pending", "completed", "failed", "cancelled"] = "completed",
     failure_stage: str | None = None,
     recoverable_audio: str | None = None,
     session_dir: Path | None = None,
     session_id: str | None = None,
+    events: list[SessionEventMetadata] | None = None,
+    started_at: datetime | None = None,
+    total_paused_seconds: float = 0.0,
 ) -> SessionArtifactPaths:
     if session_dir is None:
         session_id, session_dir = create_session_dir(target_dir, completed_at)
@@ -96,6 +103,8 @@ def write_session_artifacts(
         output_files.append(recoverable_audio)
     if errors:
         output_files.append(ERRORS_FILE)
+    if events:
+        output_files.append(EVENTS_FILE)
 
     metadata = build_session_metadata(
         session_id=session_id,
@@ -112,6 +121,8 @@ def write_session_artifacts(
         failure_stage=failure_stage,
         recoverable_audio=recoverable_audio,
         output_files=output_files,
+        started_at=started_at,
+        total_paused_seconds=total_paused_seconds,
     )
 
     transcript_path = session_dir / TRANSCRIPT_FILE
@@ -119,9 +130,11 @@ def write_session_artifacts(
     metadata_path = session_dir / METADATA_FILE
     chunks_path = session_dir / CHUNKS_FILE
     errors_path = session_dir / ERRORS_FILE
+    events_path = session_dir / EVENTS_FILE
     audio_path = session_dir / recoverable_audio if recoverable_audio is not None else None
     chunks_document = ChunkMetadataDocument(chunks=chunks or [])
     errors_document = ErrorMetadataDocument(errors=errors or [])
+    events_document = SessionEventMetadataDocument(events=events or [])
 
     if transcript_text is not None:
         transcript_path.write_text(transcript_text, encoding=TRANSCRIPT_ENCODING)
@@ -144,6 +157,13 @@ def write_session_artifacts(
         )
     elif errors_path.exists():
         errors_path.unlink()
+    if events:
+        events_path.write_text(
+            events_document.model_dump_json(indent=2),
+            encoding=METADATA_ENCODING,
+        )
+    elif events_path.exists():
+        events_path.unlink()
 
     return SessionArtifactPaths(
         session_dir=session_dir,
@@ -152,6 +172,7 @@ def write_session_artifacts(
         metadata_path=metadata_path,
         chunks_path=chunks_path,
         errors_path=errors_path,
+        events_path=events_path,
         audio_path=audio_path,
         metadata=metadata,
         chunks=chunks_document,
