@@ -220,7 +220,7 @@ def test_new_session_resets_to_lower_right_but_pause_keeps_drag_position(
     overlay_parts: tuple[FakeApplicationController, ApplicationUiAdapter, LiveLogoOverlay],
 ) -> None:
     _, _, overlay = overlay_parts
-    screen = QApplication.primaryScreen()
+    screen = QApplication.screenAt(overlay.cursor().pos()) or QApplication.primaryScreen()
     assert screen is not None
     available = screen.availableGeometry()
     expected = (

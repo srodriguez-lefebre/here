@@ -45,6 +45,17 @@ class FakeCapture:
         return self.session
 
 
+class DelayedStopCapture(FakeCapture):
+    def __init__(self) -> None:
+        super().__init__()
+        self.release = threading.Event()
+
+    def wait(self, timeout: float | None = None) -> RecordingSession:
+        assert self.done.wait(timeout or 2)
+        assert self.release.wait(timeout or 2)
+        return self.session
+
+
 class FakeLive:
     def __init__(self) -> None:
         self.blocks: list[tuple[object, ...]] = []
@@ -191,6 +202,29 @@ def test_cancel_during_processing_preserves_recoverable_session(tmp_path: Path) 
     assert any(event.kind is EventKind.SESSION_PERSISTED for event in events)
 
 
+def test_cancel_while_stopping_aborts_live_before_audio_materialization(tmp_path: Path) -> None:
+    capture = DelayedStopCapture()
+    live = FakeLive()
+    processor = FakeProcessor(tmp_path / "session")
+    controller = HereApplicationController(
+        capture_factory=lambda request, sink: capture,
+        live_factory=lambda count, alt: live,
+        processor=processor,  # type: ignore[arg-type]
+    )
+    controller.start(StartRequest(output_dir=tmp_path))
+    wait_for_state(controller, ApplicationState.RECORDING)
+
+    controller.stop()
+    assert controller.snapshot.state is ApplicationState.STOPPING
+    controller.cancel()
+
+    assert live.aborted
+    capture.release.set()
+    snapshot = controller.wait_until_terminal(2)
+    assert snapshot.state is ApplicationState.CANCELLED
+    assert snapshot.recoverable
+
+
 def test_audio_telemetry_is_combined_normalized_and_not_emitted_while_paused(
     tmp_path: Path,
 ) -> None:
@@ -280,3 +314,34 @@ def test_capture_start_failure_aborts_and_cleans_live_pipeline(tmp_path: Path) -
     assert live.cleaned
     assert snapshot.session_dir is None
     assert not snapshot.recoverable
+
+
+def test_first_capture_blocks_reach_live_pipeline_while_devices_finish_preparing(
+    tmp_path: Path,
+) -> None:
+    capture = FakeCapture()
+    live = FakeLive()
+
+    def capture_factory(request: object, sink: object) -> FakeCapture:
+        del request
+        assert callable(sink)
+        sink("microphone", np.array([[1000]], dtype=np.int16), 16000, 1)
+        return capture
+
+    controller = HereApplicationController(
+        capture_factory=capture_factory,  # type: ignore[arg-type]
+        live_factory=lambda count, alt: live,
+        processor=FakeProcessor(tmp_path / "session"),  # type: ignore[arg-type]
+    )
+    levels = []
+    controller.subscribe(
+        lambda event: levels.append(event) if event.kind is EventKind.AUDIO_LEVEL else None
+    )
+
+    controller.start(StartRequest(output_dir=tmp_path))
+    wait_for_state(controller, ApplicationState.RECORDING)
+
+    assert len(live.blocks) == 1
+    assert levels == []
+    controller.cancel()
+    controller.wait_until_terminal(2)
