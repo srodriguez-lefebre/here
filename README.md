@@ -27,18 +27,18 @@ This installs the current CLI commands:
 ```powershell
 here
 record
+here-gui
 ```
 
-The Qt interface is being integrated on top of the same application contract.
-Its visual layer can be exercised without audio hardware or provider calls with:
+`here-gui` starts the Qt interface with the real application controller. Its
+visual layer can also be exercised without audio hardware or provider calls with:
 
 ```powershell
 here-gui-preview
 ```
 
-The preview uses synthetic state and level events. It exists for UI development
-and is deliberately separate from the production entry point, which is composed
-with the real application controller.
+The preview uses synthetic state and level events and is deliberately separate
+from the production entry point.
 
 ## Configuration
 
@@ -61,6 +61,7 @@ record mic alt
 record os
 record os alt
 here trans path\to\audio.wav
+here-gui
 ```
 
 - `record` captures microphone and system audio together.
@@ -68,6 +69,7 @@ here trans path\to\audio.wav
 - `record os` captures system audio only.
 - `alt` uses the configured alternative transcription model.
 - `here trans` transcribes an existing audio file.
+- `here-gui` opens the Windows application and its live recording overlay.
 
 ## Session Artifacts
 
@@ -85,6 +87,9 @@ transcriptions/YYYYMMDD_HHMMSS/
 If transcription fails, the audio and diagnostic metadata remain available so
 the session can be retried without recording it again. Failed sessions also
 include an `errors.json` file.
+
+Application-driven recordings can also include `events.json`, which records
+pause/resume and processing lifecycle events without storing raw audio blocks.
 
 The project produces transcripts and processing metadata. It does not currently
 generate summaries or action items.
@@ -104,15 +109,21 @@ here test os
 Run the test suite from the repository root:
 
 ```powershell
-python -m pytest
+uv sync --dev
+uv run pytest
 ```
 
 Qt tests run without a display server:
 
 ```powershell
 $env:QT_QPA_PLATFORM = "offscreen"
-python -m pytest tests/test_live_logo_overlay.py tests/test_ui_lifecycle.py
+uv run pytest tests/test_live_logo_overlay.py tests/test_ui_lifecycle.py
 ```
+
+The Windows GUI integrates directly through
+`here.application.create_default_controller()`; it never launches the CLI as a
+subprocess. See the application-contract section in
+[ARCHITECTURE.md](ARCHITECTURE.md#application-contract).
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for an overview of the internal flow and
 main modules.
