@@ -156,7 +156,12 @@ def test_terminal_states_use_bounded_timers_and_hide_without_sleeping(
     _, _, overlay = overlay_parts
     finished = QSignalSpy(overlay.terminalDisplayFinished)
 
-    overlay.set_snapshot(ApplicationSnapshot(state=state))
+    overlay.set_snapshot(
+        ApplicationSnapshot(
+            state=state,
+            recoverable=state is ApplicationState.CANCELLED,
+        )
+    )
     qtbot.waitUntil(overlay.isVisible)
 
     assert overlay.terminal_timer.isActive()
@@ -164,6 +169,37 @@ def test_terminal_states_use_bounded_timers_and_hide_without_sleeping(
     overlay.terminal_timer.timeout.emit()
     assert not overlay.isVisible()
     assert finished.count() == 1
+
+
+def test_destructive_recording_cancellation_disappears_without_terminal_symbol(
+    overlay_parts: tuple[FakeApplicationController, ApplicationUiAdapter, LiveLogoOverlay],
+) -> None:
+    _, _, overlay = overlay_parts
+    finished = QSignalSpy(overlay.terminalDisplayFinished)
+    overlay.set_snapshot(ApplicationSnapshot(state=ApplicationState.RECORDING))
+    assert overlay.isVisible()
+
+    overlay.set_snapshot(
+        ApplicationSnapshot(state=ApplicationState.CANCELLED, recoverable=False)
+    )
+
+    assert not overlay.isVisible()
+    assert not overlay.terminal_timer.isActive()
+    assert finished.count() == 1
+
+
+def test_recoverable_processing_cancellation_shows_neutral_terminal_symbol(
+    overlay_parts: tuple[FakeApplicationController, ApplicationUiAdapter, LiveLogoOverlay],
+    qtbot: QtBot,
+) -> None:
+    _, _, overlay = overlay_parts
+    overlay.set_snapshot(
+        ApplicationSnapshot(state=ApplicationState.CANCELLED, recoverable=True)
+    )
+    qtbot.waitUntil(overlay.isVisible)
+
+    assert overlay.terminal_timer.isActive()
+    assert overlay.terminal_timer.interval() == CANCELLED_DURATION_MS
 
 
 def test_combined_audio_level_is_ignored_while_paused(

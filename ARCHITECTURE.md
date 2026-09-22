@@ -61,8 +61,9 @@ Visual state decisions are intentionally explicit:
 - pause is a static ring with a pause mark;
 - preparation, stopping, and processing use an indeterminate spiral in that color;
 - success and failure use fixed green-check and red-cross marks for three seconds;
-- cancellation uses a neutral gray minus mark for 1.8 seconds, never a success or
-  error symbol.
+- recoverable processing cancellation uses a neutral gray minus mark for 1.8
+  seconds, never a success or error symbol; destructive recording cancellation
+  disappears immediately because it leaves no session.
 
 The accent preference is persisted through `QSettings`; overlay position is not.
 Closing the main window while `snapshot.has_active_work` is true hides it while

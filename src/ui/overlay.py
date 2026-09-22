@@ -96,11 +96,9 @@ class LiveLogoOverlay(QWidget):
                 self._animation_timer.stop()
             else:
                 self._animation_timer.start()
-        elif state in {
-            ApplicationState.COMPLETED,
-            ApplicationState.FAILED,
-            ApplicationState.CANCELLED,
-        }:
+        elif state in {ApplicationState.COMPLETED, ApplicationState.FAILED} or (
+            state is ApplicationState.CANCELLED and snapshot.recoverable
+        ):
             self.show()
             self._animation_timer.stop()
             duration = (
@@ -109,6 +107,13 @@ class LiveLogoOverlay(QWidget):
                 else TERMINAL_DURATION_MS
             )
             self._terminal_timer.start(duration)
+        elif state is ApplicationState.CANCELLED:
+            # Destructive recording cancellation leaves no session and has no
+            # terminal symbol. The signal still completes the hidden-window
+            # lifecycle immediately.
+            self._animation_timer.stop()
+            self.hide()
+            self.terminalDisplayFinished.emit()
         else:
             self._animation_timer.stop()
             self.hide()
