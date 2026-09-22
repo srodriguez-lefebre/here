@@ -113,7 +113,7 @@ class FakeApplicationController(ApplicationController):
         self.command_log.append("cancel")
         self.set_state(
             ApplicationState.CANCELLED,
-            recoverable=state is ApplicationState.PROCESSING,
+            recoverable=state in {ApplicationState.STOPPING, ApplicationState.PROCESSING},
         )
 
     def retry(self, session_dir: Path | None = None) -> None:

@@ -170,6 +170,7 @@ class MainWindow(QMainWindow):
                 ApplicationState.PREPARING,
                 ApplicationState.RECORDING,
                 ApplicationState.PAUSED,
+                ApplicationState.STOPPING,
                 ApplicationState.PROCESSING,
             }
         )
@@ -195,7 +196,10 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def _confirm_cancel(self) -> None:
-        if self._snapshot.state is ApplicationState.PROCESSING:
+        if self._snapshot.state in {
+            ApplicationState.STOPPING,
+            ApplicationState.PROCESSING,
+        }:
             answer = QMessageBox.question(
                 self,
                 "Cancelar procesamiento",
@@ -239,7 +243,7 @@ class MainWindow(QMainWindow):
         self._color_button.setAutoFillBackground(True)
 
     def closeEvent(self, event: QCloseEvent) -> None:  # noqa: N802 (Qt override)
-        if self._snapshot.has_active_work:
+        if self._controller.snapshot.has_active_work:
             event.ignore()
             self.hide()
             return

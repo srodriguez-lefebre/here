@@ -57,6 +57,7 @@ def test_overlay_is_transparent_frameless_and_always_on_top(
             ApplicationState.PAUSED,
             ["Detener y guardar", "Reanudar", "Cancelar grabación"],
         ),
+        (ApplicationState.STOPPING, ["Cancelar procesamiento"]),
         (ApplicationState.PROCESSING, ["Cancelar procesamiento"]),
         (ApplicationState.IDLE, []),
     ],
@@ -103,12 +104,17 @@ def test_recording_menu_dispatches_stop_pause_and_confirmed_cancel(
     assert core.snapshot.recoverable is False
 
 
+@pytest.mark.parametrize(
+    "state",
+    [ApplicationState.STOPPING, ApplicationState.PROCESSING],
+)
 def test_processing_cancel_is_confirmed_and_recoverable(
     overlay_parts: tuple[FakeApplicationController, ApplicationUiAdapter, LiveLogoOverlay],
     monkeypatch: pytest.MonkeyPatch,
+    state: ApplicationState,
 ) -> None:
     core, _, overlay = overlay_parts
-    core.set_state(ApplicationState.PROCESSING, recoverable=True)
+    core.set_state(state, recoverable=True)
     overlay.set_snapshot(core.snapshot)
     monkeypatch.setattr(
         QMessageBox,

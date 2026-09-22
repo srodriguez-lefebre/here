@@ -185,7 +185,7 @@ class LiveLogoOverlay(QWidget):
             cancel_action.setObjectName("cancelRecordingAction")
             cancel_action.triggered.connect(self._confirm_cancel_recording)
             menu.addAction(cancel_action)
-        elif state is ApplicationState.PROCESSING:
+        elif state in {ApplicationState.STOPPING, ApplicationState.PROCESSING}:
             cancel_action = QAction(
                 style.standardIcon(QStyle.StandardPixmap.SP_DialogCancelButton),
                 "Cancelar procesamiento",
