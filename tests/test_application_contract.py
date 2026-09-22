@@ -31,13 +31,16 @@ def test_all_visual_lifecycle_states_are_stable_string_values() -> None:
 def test_snapshot_reports_only_working_states_as_active(state: ApplicationState) -> None:
     snapshot = ApplicationSnapshot(state=state)
 
-    assert snapshot.has_active_work is (state in {
-        ApplicationState.PREPARING,
-        ApplicationState.RECORDING,
-        ApplicationState.PAUSED,
-        ApplicationState.STOPPING,
-        ApplicationState.PROCESSING,
-    })
+    assert snapshot.has_active_work is (
+        state
+        in {
+            ApplicationState.PREPARING,
+            ApplicationState.RECORDING,
+            ApplicationState.PAUSED,
+            ApplicationState.STOPPING,
+            ApplicationState.PROCESSING,
+        }
+    )
 
 
 def test_start_request_defaults_to_combined_capture(tmp_path: Path) -> None:

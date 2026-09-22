@@ -46,6 +46,7 @@ packages = [
 
 [dependency-groups]
 dev = [
+    "httpx>=0.27,<1",
     "mypy>=1.19.1",
     "pytest>=8.4.1",
     "ruff>=0.15.7",

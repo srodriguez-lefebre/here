@@ -11,8 +11,6 @@ from pathlib import Path
 
 import numpy as np
 import soundfile as sf
-from loguru import logger
-
 from here.audio.chunking import build_chunk_prompt, merge_transcript_parts
 from here.audio.mix import (
     downmix_to_mono,
@@ -36,6 +34,7 @@ from here.transcription.client import (
     transcribe_audio_file,
 )
 from here.transcription.segments import SegmentTimeline, TranscriptSegment, shift_segments
+from loguru import logger
 
 PCM_SUBTYPE = "PCM_16"
 
@@ -195,7 +194,9 @@ class BufferedSourceState:
         else:
             next_audio = remainder
 
-        overlap_seconds = (_frame_count(overlap_seed) / self.sample_rate) if self.sample_rate > 0 else 0.0
+        overlap_seconds = (
+            (_frame_count(overlap_seed) / self.sample_rate) if self.sample_rate > 0 else 0.0
+        )
         self._segment_start_seconds += (cut_frames / self.sample_rate) - overlap_seconds
         self._seed_frames = _frame_count(overlap_seed)
         self._cached_audio = next_audio
@@ -231,6 +232,7 @@ class LiveTranscriptionController:
         self._chunk_queue: queue.SimpleQueue[LiveChunkJob | None] = queue.SimpleQueue()
         self._source_states: dict[str, BufferedSourceState] = {}
         self._capture_closed = False
+        self._abort_event = threading.Event()
         self._capture_lock = threading.Lock()
         self._error_lock = threading.Lock()
         self._error: Exception | None = None
@@ -247,7 +249,8 @@ class LiveTranscriptionController:
         )
 
         logger.info(
-            "Starting live transcription pipeline for {sources} source(s). Rolling chunks every {seconds}s with {overlap}s overlap.",
+            "Starting live transcription pipeline for {sources} source(s). "
+            "Rolling chunks every {seconds}s with {overlap}s overlap.",
             sources=self.expected_source_count,
             seconds=self.config.live_chunk_seconds,
             overlap=self.config.overlap_seconds,
@@ -265,7 +268,7 @@ class LiveTranscriptionController:
         sample_rate: int,
         channels: int,
     ) -> None:
-        if self._capture_closed:
+        if self._capture_closed or self._abort_event.is_set():
             return
         self._capture_queue.put(
             CapturedAudioBlock(
@@ -312,8 +315,7 @@ class LiveTranscriptionController:
             return None
 
         proxy_blocks = [
-            state.resampled_mono(self.config.target_sample_rate, target_frames)
-            for state in states
+            state.resampled_mono(self.config.target_sample_rate, target_frames) for state in states
         ]
         return mix_audio_blocks(proxy_blocks, target_frames)
 
@@ -332,7 +334,8 @@ class LiveTranscriptionController:
         index = segments[0].index
         start_offset_seconds = segments[0].start_offset_seconds
         logger.info(
-            "Queued live chunk {index} with {sources} source(s) for transcription at {offset:.2f}s.",
+            "Queued live chunk {index} with {sources} source(s) "
+            "for transcription at {offset:.2f}s.",
             index=index,
             sources=len(segments),
             offset=start_offset_seconds,
@@ -351,8 +354,12 @@ class LiveTranscriptionController:
             if proxy_audio is None:
                 return
 
-            target_index = int(round(self.config.live_chunk_seconds * self.config.target_sample_rate))
-            overlap_frames = int(round(self.config.overlap_seconds * self.config.target_sample_rate))
+            target_index = int(
+                round(self.config.live_chunk_seconds * self.config.target_sample_rate)
+            )
+            overlap_frames = int(
+                round(self.config.overlap_seconds * self.config.target_sample_rate)
+            )
             min_index = max(1, target_index - overlap_frames)
             cut_index = choose_silence_cut_index(
                 proxy_audio,
@@ -392,26 +399,30 @@ class LiveTranscriptionController:
             while True:
                 block = self._capture_queue.get()
                 if block is None:
-                    logger.info("Live capture finished. Flushing pending audio into final chunk(s).")
+                    logger.info(
+                        "Live capture finished. Flushing pending audio into final chunk(s)."
+                    )
                     break
                 state = self._source_state_for(block)
                 state.append_block(block.data)
                 self._maybe_enqueue_live_chunks()
 
-            segments = [
-                segment
-                for state in self._ordered_states()
-                for segment in [state.finish()]
-                if segment is not None
-            ]
-            if len(segments) == self.expected_source_count:
-                self._enqueue_live_job(segments)
-            elif segments:
-                logger.warning(
-                    "Discarding partial final live chunk because only {count}/{expected} source(s) produced audio.",
-                    count=len(segments),
-                    expected=self.expected_source_count,
-                )
+            if not self._abort_event.is_set():
+                segments = [
+                    segment
+                    for state in self._ordered_states()
+                    for segment in [state.finish()]
+                    if segment is not None
+                ]
+                if len(segments) == self.expected_source_count:
+                    self._enqueue_live_job(segments)
+                elif segments:
+                    logger.warning(
+                        "Discarding partial final live chunk because only "
+                        "{count}/{expected} source(s) produced audio.",
+                        count=len(segments),
+                        expected=self.expected_source_count,
+                    )
         except Exception as exc:
             logger.error("Live chunk generation failed: {exc}", exc=exc)
             self._set_error(exc)
@@ -456,7 +467,7 @@ class LiveTranscriptionController:
                 if job is None:
                     break
 
-                if failed:
+                if failed or self._abort_event.is_set():
                     self._cleanup_chunk_job(job)
                     continue
 
@@ -533,7 +544,7 @@ class LiveTranscriptionController:
                         pass
                     self._cleanup_chunk_job(job)
 
-            if not failed:
+            if not failed and not self._abort_event.is_set():
                 logger.info("Finalizing live transcription.")
                 self._result = finalize_transcription(
                     client=self._client,
@@ -568,6 +579,7 @@ class LiveTranscriptionController:
 
     def abort(self) -> None:
         logger.warning("Aborting live transcription pipeline.")
+        self._abort_event.set()
         with self._capture_lock:
             if not self._capture_closed:
                 self._capture_closed = True

@@ -75,6 +75,9 @@ If transcription fails, the audio and diagnostic metadata remain available so
 the session can be retried without recording it again. Failed sessions also
 include an `errors.json` file.
 
+Application-driven recordings can also include `events.json`, which records
+pause/resume and processing lifecycle events without storing raw audio blocks.
+
 The project produces transcripts and processing metadata. It does not currently
 generate summaries or action items.
 
@@ -93,8 +96,14 @@ here test os
 Run the test suite from the repository root:
 
 ```powershell
-python -m pytest
+uv sync --dev
+uv run pytest
 ```
+
+The Windows GUI integrates directly through
+`here.application.create_default_controller()`; it never launches the CLI as a
+subprocess. See the application-contract section in
+[ARCHITECTURE.md](ARCHITECTURE.md#application-contract).
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for an overview of the internal flow and
 main modules.
