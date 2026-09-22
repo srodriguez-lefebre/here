@@ -29,6 +29,46 @@ The main flow is:
   timeline merge.
 - `output/`: Pydantic metadata models, Markdown rendering, and session artifact
   writing.
+- `application/`: stable states, events, snapshots, telemetry, and commands shared
+  by every interface.
+- `ui/`: Qt Widgets presentation, the live-logo overlay, and the single adapter
+  from visual actions to the application contract.
+
+## Windows Presentation Layer
+
+The Windows interface and live logo run in the same process as the application
+controller. `ApplicationEventBridge` is the only asynchronous entry into Qt: it
+marshals application callbacks onto the UI event loop, then distributes immutable
+snapshots and the reduced combined audio level. Widgets never open an audio
+device, parse logs, inspect session files, or invoke the CLI.
+
+`ApplicationUiAdapter` is the narrow integration seam. It translates UI intent
+into the stable application commands, including a combined-source `StartRequest`.
+The main window and overlay depend on that seam, so controller implementation
+changes do not leak into painting or interaction code. A fake implementation of
+the real contract supports deterministic preview and headless tests.
+
+The overlay is a transparent, frameless, always-on-top Qt tool window. Each new
+active session positions it in the lower-right of the current screen's available
+area with a 24-pixel margin; dragging changes only that instance and is never
+saved. Its 104-pixel surface redraws at roughly 30 frames per second, independently
+from capture callbacks. Audio updates are reduced to one normalized level and are
+ignored outside the recording state.
+
+Visual state decisions are intentionally explicit:
+
+- recording uses a reactive perimeter in the configured accent color;
+- pause is a static ring with a pause mark;
+- preparation, stopping, and processing use an indeterminate spiral in that color;
+- success and failure use fixed green-check and red-cross marks for three seconds;
+- cancellation uses a neutral gray minus mark for 1.8 seconds, never a success or
+  error symbol.
+
+The accent preference is persisted through `QSettings`; overlay position is not.
+Closing the main window while `snapshot.has_active_work` is true hides it while
+the overlay keeps the process reachable. Closing while idle requests full process
+exit. If work ends while the window is hidden, the process exits after the
+terminal indicator finishes.
 
 ## Output Layer
 

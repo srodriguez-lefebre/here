@@ -11,8 +11,9 @@ from here.ui.overlay import (
 )
 from here.ui.preferences import VisualPreferences
 from PySide6.QtCore import QSettings, Qt
+from PySide6.QtGui import QColor
 from PySide6.QtTest import QSignalSpy
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QApplication, QMessageBox
 from pytestqt.qtbot import QtBot
 
 
@@ -176,3 +177,57 @@ def test_combined_audio_level_is_ignored_while_paused(
     overlay.set_snapshot(ApplicationSnapshot(state=ApplicationState.PAUSED))
     overlay.set_audio_level(0.9)
     assert overlay._target_level == 0.0
+    assert not overlay.animation_timer.isActive()
+
+
+def test_new_session_resets_to_lower_right_but_pause_keeps_drag_position(
+    overlay_parts: tuple[FakeApplicationController, ApplicationUiAdapter, LiveLogoOverlay],
+) -> None:
+    _, _, overlay = overlay_parts
+    screen = QApplication.primaryScreen()
+    assert screen is not None
+    available = screen.availableGeometry()
+    expected = (
+        available.right() - overlay.width() - 24 + 1,
+        available.bottom() - overlay.height() - 24 + 1,
+    )
+
+    overlay.move(3, 7)
+    overlay.set_snapshot(ApplicationSnapshot(state=ApplicationState.RECORDING))
+    assert (overlay.x(), overlay.y()) == expected
+
+    overlay.move(15, 19)
+    overlay.set_snapshot(ApplicationSnapshot(state=ApplicationState.PAUSED))
+    assert (overlay.x(), overlay.y()) == (15, 19)
+
+    overlay.set_snapshot(ApplicationSnapshot(state=ApplicationState.IDLE))
+    overlay.set_snapshot(ApplicationSnapshot(state=ApplicationState.RECORDING))
+    assert (overlay.x(), overlay.y()) == expected
+
+
+@pytest.mark.parametrize(
+    ("state", "semantic_color"),
+    [
+        (ApplicationState.COMPLETED, QColor("#21b36b")),
+        (ApplicationState.FAILED, QColor("#e5484d")),
+    ],
+)
+def test_terminal_semantic_colors_do_not_follow_the_accent(
+    overlay_parts: tuple[FakeApplicationController, ApplicationUiAdapter, LiveLogoOverlay],
+    qtbot: QtBot,
+    state: ApplicationState,
+    semantic_color: QColor,
+) -> None:
+    _, _, overlay = overlay_parts
+    overlay.set_snapshot(ApplicationSnapshot(state=state))
+    qtbot.waitUntil(overlay.isVisible)
+    image = overlay.grab().toImage()
+
+    colored_pixels = sum(
+        1
+        for x in range(image.width())
+        for y in range(image.height())
+        if QColor(image.pixelColor(x, y)).name() == semantic_color.name()
+    )
+
+    assert colored_pixels > 20

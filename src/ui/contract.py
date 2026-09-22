@@ -30,6 +30,12 @@ class VisualController(Protocol):
     @property
     def snapshot(self) -> ApplicationSnapshot: ...
 
+    @property
+    def output_dir(self) -> Path: ...
+
+    @property
+    def source_label(self) -> str: ...
+
     def subscribe(self, listener: EventListener) -> Unsubscribe: ...
 
     def start_recording(self) -> None: ...
@@ -55,6 +61,14 @@ class ApplicationUiAdapter:
     @property
     def snapshot(self) -> ApplicationSnapshot:
         return self._controller.snapshot
+
+    @property
+    def output_dir(self) -> Path:
+        return self._output_dir
+
+    @property
+    def source_label(self) -> str:
+        return "Micrófono + audio del sistema"
 
     def subscribe(self, listener: EventListener) -> Unsubscribe:
         return self._controller.subscribe(listener)

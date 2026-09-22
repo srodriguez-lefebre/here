@@ -92,14 +92,17 @@ class LiveLogoOverlay(QWidget):
         self._terminal_timer.stop()
         if _is_active_overlay_state(state):
             self.show()
-            self._animation_timer.start()
+            if state is ApplicationState.PAUSED:
+                self._animation_timer.stop()
+            else:
+                self._animation_timer.start()
         elif state in {
             ApplicationState.COMPLETED,
             ApplicationState.FAILED,
             ApplicationState.CANCELLED,
         }:
             self.show()
-            self._animation_timer.start()
+            self._animation_timer.stop()
             duration = (
                 CANCELLED_DURATION_MS
                 if state is ApplicationState.CANCELLED

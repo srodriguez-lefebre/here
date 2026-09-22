@@ -59,6 +59,14 @@ class MainWindow(QMainWindow):
         self._detail_label.setObjectName("detailLabel")
         self._detail_label.setWordWrap(True)
 
+        self._source_label = QLabel(f"Fuentes: {controller.source_label}")
+        self._source_label.setObjectName("sourceLabel")
+        self._destination_label = QLabel(f"Destino: {controller.output_dir}")
+        self._destination_label.setObjectName("destinationLabel")
+        self._destination_label.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse
+        )
+
         self._level = QProgressBar()
         self._level.setObjectName("combinedAudioLevel")
         self._level.setRange(0, 100)
@@ -96,6 +104,8 @@ class MainWindow(QMainWindow):
         layout.setSpacing(14)
         layout.addWidget(self._state_label)
         layout.addWidget(self._detail_label)
+        layout.addWidget(self._source_label)
+        layout.addWidget(self._destination_label)
         layout.addWidget(self._level)
         layout.addLayout(actions)
         layout.addWidget(self._color_button, alignment=Qt.AlignmentFlag.AlignLeft)

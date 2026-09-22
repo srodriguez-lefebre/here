@@ -22,12 +22,23 @@ From the repository root:
 pip install -e .
 ```
 
-This installs two commands:
+This installs the current CLI commands:
 
 ```powershell
 here
 record
 ```
+
+The Qt interface is being integrated on top of the same application contract.
+Its visual layer can be exercised without audio hardware or provider calls with:
+
+```powershell
+here-gui-preview
+```
+
+The preview uses synthetic state and level events. It exists for UI development
+and is deliberately separate from the production entry point, which is composed
+with the real application controller.
 
 ## Configuration
 
@@ -94,6 +105,13 @@ Run the test suite from the repository root:
 
 ```powershell
 python -m pytest
+```
+
+Qt tests run without a display server:
+
+```powershell
+$env:QT_QPA_PLATFORM = "offscreen"
+python -m pytest tests/test_live_logo_overlay.py tests/test_ui_lifecycle.py
 ```
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for an overview of the internal flow and
