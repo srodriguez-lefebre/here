@@ -1,0 +1,49 @@
+name: Windows package
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-package-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    name: Locked Windows bundle and installer
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+        with:
+          version: '0.12.8'
+          enable-cache: true
+      - name: Install explicit managed Python runtime
+        shell: pwsh
+        run: uv python install 3.13.15
+      - name: Build locked noneditable wheel, GUI, CLI and installer
+        shell: pwsh
+        run: ./scripts/build_windows.ps1 -Python (uv python find --managed-python 3.13.15)
+      - name: Verify actual delivered stable-AppId installation and data preservation
+        shell: pwsh
+        run: ./scripts/smoke_windows.ps1 -BundlePath ./dist/windows/here -InstallerPath ./dist/windows/here-0.2.0-windows-x64-setup.exe
+      - name: Upload installer, bundle, provenance, checksums and runtime evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: here-0.2.0-windows-x64
+          path: |
+            dist/windows/*.exe
+            dist/windows/*.zip
+            dist/windows/*.whl
+            dist/windows/*.json
+            dist/windows/SHA256SUMS.txt
+            dist/windows/evidence/
+            build/windows/pyinstaller/*/warn-*.txt
+          if-no-files-found: error
