@@ -106,7 +106,7 @@ class HereDesktop:
         elif kind == "recovery":
             self.main_window.set_recovery(value, error)
         elif error:
-            self.main_window.set_recovery([], error)
+            self.main_window.set_recovery_error(error)
 
     def _jobs_changed(self):
         if self._refresh_pending and not self.jobs.busy and not self._exit_intent:

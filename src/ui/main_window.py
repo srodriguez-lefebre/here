@@ -267,6 +267,10 @@ class MainWindow(QMainWindow):
             text = f"{value.device.name}: {signal} ({value.duration_seconds:g} s)"
         self._diagnostics_label.setText(text)
 
+    def set_recovery_error(self, error):
+        """A failed explicit retry leaves the current selection available to try again."""
+        self._recovery_label.setText(error)
+
     def set_recovery(self, candidates, error=None):
         self._recovery_selector.clear()
         for item in candidates or []:

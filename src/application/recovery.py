@@ -20,11 +20,17 @@ def validate_recovery_audio(directory: Path, metadata: SessionMetadata) -> bool:
             )
             available |= actual.frames > 0
     if metadata.recoverable_audio:
-        expected = metadata.sources[0] if len(metadata.sources) == 1 else None
-        actual = _validated_recovery_source(
-            session_artifact_path(directory, metadata.recoverable_audio), expected
-        )
-        available |= actual.frames > 0
+        # Validate redirects/nonregular entries before distinguishing an absent derived WAV.
+        # Only absence may use the validated raw sources above; corrupt existing audio fails.
+        normalized = session_artifact_path(directory, metadata.recoverable_audio)
+        try:
+            normalized.stat()
+        except FileNotFoundError:
+            pass
+        else:
+            expected = metadata.sources[0] if len(metadata.sources) == 1 else None
+            actual = _validated_recovery_source(normalized, expected)
+            available |= actual.frames > 0
     return available
 
 

@@ -65,6 +65,120 @@ def managed_file_session(root):
     return directory
 
 
+@pytest.mark.parametrize("audio_name", ["audio.wav", "audio_selected.wav"])
+@pytest.mark.parametrize("status", ["pending", "failed"])
+def test_fresh_discovery_materialize_retry_rebuilds_absent_normalized_audio(
+    tmp_path, audio_name, status
+):
+    from here.application.recovery import RecoveryService
+
+    root = tmp_path / "sessions"
+    directory = managed_file_session(root)
+    path = directory / "session.json"
+    metadata = json.loads(path.read_text())
+    metadata["status"] = status
+    metadata["recoverable_audio"] = audio_name
+    metadata["output_files"] = [
+        audio_name if name == "audio.wav" else name for name in metadata["output_files"]
+    ]
+    path.write_text(json.dumps(metadata))
+    (directory / "audio.wav").unlink()
+    before = {entry.name: entry.read_bytes() for entry in directory.iterdir()}
+
+    # Restart with the derived WAV already absent, before either public recovery step.
+    service = RecoveryService(root)
+    (candidate,) = service.discover()
+    assert candidate.can_retry
+    assert candidate.capture_id == metadata["meeting_id"]
+    assert service.materialize(candidate) == directory
+    assert {entry.name: entry.read_bytes() for entry in directory.iterdir()} == before
+    calls = []
+
+    def synthetic_transcribe(session, **kwargs):
+        pending = json.loads(path.read_text())
+        assert pending["status"] == "pending"
+        assert pending["recoverable_audio"] == audio_name
+        assert pending["meeting_id"] == metadata["meeting_id"]
+        calls.append(session.sources[0].frames)
+        return TranscriptionResult("synthetic", "synthetic")
+
+    result = SessionProcessor(transcribe=synthetic_transcribe).retry(directory)
+    assert calls == [240]
+    assert sf.info(directory / audio_name).frames == 240
+    assert result.metadata.status == "completed"
+    assert result.metadata.meeting_id == metadata["meeting_id"]
+    assert result.metadata.session_id == metadata["session_id"]
+    assert (directory / "source_01.wav").read_bytes() == before["source_01.wav"]
+
+
+@pytest.mark.parametrize(
+    "damage",
+    ["corrupt", "geometry", "directory", "hardlink", "traversal", "absolute", "raw_missing"],
+)
+def test_raw_backing_never_hides_existing_normalized_damage(tmp_path, monkeypatch, damage):
+    from here.application.recovery import RecoveryService
+
+    root = tmp_path / "sessions"
+    directory = managed_file_session(root)
+    metadata_path = directory / "session.json"
+    metadata = json.loads(metadata_path.read_text())
+    metadata["status"] = "pending"
+    metadata_path.write_text(json.dumps(metadata))
+    service = RecoveryService(root)
+    (candidate,) = service.discover()
+    normalized = directory / "audio.wav"
+    external = tmp_path / "external.wav"
+    sf.write(external, np.ones(160), 16000)
+    external_bytes = external.read_bytes()
+    if damage == "corrupt":
+        normalized.write_bytes(b"not audio")
+    elif damage == "geometry":
+        sf.write(normalized, np.ones(1), 8000)
+    elif damage == "directory":
+        normalized.unlink()
+        normalized.mkdir()
+    elif damage == "hardlink":
+        normalized.unlink()
+        normalized.hardlink_to(external)
+    elif damage in {"traversal", "absolute"}:
+        metadata["recoverable_audio"] = (
+            "../../external.wav" if damage == "traversal" else str(external)
+        )
+        metadata_path.write_text(json.dumps(metadata))
+    else:
+        normalized.unlink()
+        (directory / "source_01.wav").unlink()
+    before = {entry.name: entry.read_bytes() for entry in directory.iterdir() if entry.is_file()}
+    original_info = sf.info
+
+    def guarded_info(path, *args, **kwargs):
+        candidate_path = Path(path)
+        if candidate_path.exists():
+            assert not candidate_path.samefile(external), "Read redirected audio"
+        return original_info(path, *args, **kwargs)
+
+    monkeypatch.setattr(sf, "info", guarded_info)
+    monkeypatch.setattr(
+        "here.transcription.client.build_client", lambda: pytest.fail("provider allocation")
+    )
+    assert RecoveryService(root).discover() == []
+    with pytest.raises((OSError, ValueError, RuntimeError)):
+        service.materialize(candidate)
+    calls = []
+
+    def forbidden(*args, **kwargs):
+        calls.append("normalize/provider")
+        pytest.fail("Unsafe recovery allocated normalization/provider work")
+
+    with pytest.raises((OSError, ValueError, RuntimeError)):
+        SessionProcessor(normalize=forbidden, transcribe=forbidden).retry(directory)
+    assert calls == []
+    assert {
+        entry.name: entry.read_bytes() for entry in directory.iterdir() if entry.is_file()
+    } == before
+    assert external.read_bytes() == external_bytes
+
+
 @pytest.mark.parametrize("kind", ["external", "managed_audio", "managed_raw"])
 def test_cli_provider_interruption_leaves_discoverable_pending(tmp_path, monkeypatch, kind):
     import here.cli as cli

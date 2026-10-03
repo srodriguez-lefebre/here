@@ -65,13 +65,16 @@ def test_preparing_stop_is_atomic_idempotent_and_saves(tmp_path):
     try:
         core.stop()
         core.stop()
+        release.set()
+        assert capture.done.wait(2), "PREPARING stop intent was not delivered to the ready handle"
+        result = core.wait_until_terminal(3)
+        assert result.state is ApplicationState.COMPLETED
+        assert result.worker_complete
+        assert not capture.cancelled
     finally:
         release.set()
         capture.done.set()
-    result = core.wait_until_terminal(3)
-    assert result.state is ApplicationState.COMPLETED
-    assert result.worker_complete
-    assert not capture.cancelled
+        core.wait_until_terminal(3)
 
 
 def test_completion_waits_for_real_live_cleanup(tmp_path):

@@ -166,23 +166,42 @@ def test_selected_retry_missing_key_preserves_recovery_before_materialization(
     journal = tmp_path / "keep-journal.json"
     journal.write_text("preserve")
     candidate = RecoveryCandidate(tmp_path, "Interrupted", 3, "interrupted", None, True)
+    other = RecoveryCandidate(tmp_path / "other", "Other", 2, "failed", None, True)
 
     class Recovery:
         def discover(self):
-            return [candidate]
+            return [other, candidate]
 
         def materialize(self, item):
+            assert item == candidate
             calls.append("materialize")
             return tmp_path
 
     core, ui = desktop(qtbot, tmp_path, recovery_service=Recovery())
     qtbot.waitUntil(lambda: not ui.jobs.busy)
+    selector = ui.main_window.findChild(object, "recoverySelector")
+    selector.setCurrentIndex(1)
     ui.main_window.findChild(object, "recoverButton").click()
     qtbot.waitUntil(lambda: not ui.jobs.busy)
     assert calls == []
     assert core.command_log == []
     assert journal.read_text() == "preserve"
     assert "OPENAI_API_KEY" in ui.main_window.findChild(object, "recoveryLabel").text()
+    assert selector.count() == 2
+    assert selector.currentData() == candidate
+    assert selector.isEnabled()
+    assert ui.main_window.findChild(object, "recoverButton").isEnabled()
+
+    # Correct the effective file; the same window must permit a new explicit operation.
+    from here.config.paths import get_env_file
+
+    get_env_file().write_text("OPENAI_API_KEY=synthetic-test-only\n")
+    assert calls == [] and core.command_log == []
+    ui.main_window.findChild(object, "recoverButton").click()
+    qtbot.waitUntil(lambda: not ui.jobs.busy)
+    assert calls == ["materialize"]
+    assert core.command_log == ["retry"]
+    assert journal.read_text() == "preserve"
 
 
 def test_fast_terminal_worker_event_refreshes_recovery(qtbot, tmp_path):
