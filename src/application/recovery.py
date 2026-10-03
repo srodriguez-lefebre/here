@@ -53,8 +53,8 @@ class RecoveryService:
         validate_session_directory(self.root)
         if not self.root.exists():
             return []
-        candidates: dict[str, RecoveryCandidate] = {}
-        completed: set[str] = set()
+        candidates: dict[tuple[str, Path], RecoveryCandidate] = {}
+        completed: set[tuple[str, Path]] = set()
         for directory in sorted(self.root.iterdir()):
             if directory.name.startswith("."):
                 continue
@@ -62,7 +62,8 @@ class RecoveryService:
                 metadata = read_session_metadata(directory)
                 if metadata is None:
                     continue
-                key = metadata.meeting_id or directory.name
+                # A copied manifest does not own other directories with the same ID.
+                key = (metadata.meeting_id or directory.name, directory)
                 if metadata.status == "completed":
                     completed.add(key)
                     continue
@@ -96,7 +97,8 @@ class RecoveryService:
         for directory in journals:
             try:
                 journal = CaptureJournal.load(self.root, directory.name)
-                key = journal.document.capture_id
+                # Only metadata at this journal's validated reservation supersedes it.
+                key = (journal.document.capture_id, journal.destination)
                 if key in completed or key in candidates:
                     continue
                 recording = journal.recording_session()
@@ -107,7 +109,7 @@ class RecoveryService:
                     "interrupted",
                     "Capture interrupted before final persistence",
                     recording.duration_seconds > 0,
-                    key,
+                    journal.document.capture_id,
                 )
             except (OSError, ValueError, RuntimeError):
                 continue

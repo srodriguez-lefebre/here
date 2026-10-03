@@ -1,4 +1,5 @@
 import json
+import shutil
 import subprocess
 import sys
 import time
@@ -80,6 +81,106 @@ def make_capture(root):
     writer.write(np.full((80, 1), 1234, dtype=np.int16))
     writer.close()
     return capture
+
+
+def write_recovery_manifest(directory, capture_id, status):
+    """An imported manifest and authored PCM, independent of the session writer."""
+    directory.mkdir()
+    sf.write(directory / "audio.wav", np.full(80, 1234, dtype=np.int16), 8000, subtype="PCM_16")
+    (directory / "session.json").write_text(
+        json.dumps(
+            {
+                "session_id": "copied-human-id",
+                "meeting_id": capture_id,
+                "started_at": "2026-10-03T12:00:00+00:00",
+                "completed_at": "2026-10-03T12:00:01+00:00",
+                "duration_seconds": 0.01,
+                "status": status,
+                "recoverable_audio": "audio.wav",
+                "sources": [
+                    {
+                        "label": "mic",
+                        "sample_rate": 8000,
+                        "channels": 1,
+                        "frames": 80,
+                        "duration_seconds": 0.01,
+                    }
+                ],
+                "transcription_model": "test-model",
+                "cleanup_model": "test-cleanup",
+                "cleanup_enabled": False,
+                "alt_model_used": False,
+                "live_pipeline_attempted": False,
+                "live_pipeline_used": False,
+                "fallback_used": False,
+                "output_files": ["session.json", "audio.wav"],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
+@pytest.mark.parametrize("status", ["failed", "completed"])
+def test_foreign_manifest_with_same_uuid_does_not_hide_interrupted_capture(tmp_path, status):
+    from here.application.recovery import RecoveryService
+
+    capture = make_capture(tmp_path)
+    foreign = tmp_path / "foreign-copy"
+    write_recovery_manifest(foreign, capture.document.capture_id, status)
+    before = {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()}
+
+    candidates = RecoveryService(tmp_path).discover()
+
+    expected = {capture.destination: "interrupted"}
+    if status == "failed":
+        expected[foreign] = "failed"
+    assert {item.session_dir: item.status for item in candidates} == expected
+    assert all(item.capture_id == capture.document.capture_id for item in candidates)
+    assert all(item.can_retry and item.recorded_duration_seconds == 0.01 for item in candidates)
+    assert not capture.destination.exists()
+    assert {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()} == before
+
+
+def test_failed_manifest_copies_with_same_uuid_are_both_discoverable(tmp_path):
+    from here.application.recovery import RecoveryService
+
+    capture = make_capture(tmp_path)
+    write_recovery_manifest(capture.destination, capture.document.capture_id, "failed")
+    copied = tmp_path / "copied-session"
+    shutil.copytree(capture.destination, copied)
+    before = {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()}
+    service = RecoveryService(tmp_path)
+
+    candidates = service.discover()
+
+    assert {item.session_dir for item in candidates} == {capture.destination, copied}
+    assert len(candidates) == 2
+    assert all(item.status == "failed" and item.can_retry for item in candidates)
+    assert all(item.capture_id == capture.document.capture_id for item in candidates)
+    assert all(item.display_id == "copied-human-id" for item in candidates)
+    for candidate in candidates:
+        assert service.materialize(candidate) == candidate.session_dir
+    assert {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()} == before
+
+
+@pytest.mark.parametrize("status", ["failed", "completed"])
+def test_manifest_supersedes_journal_only_at_same_identity_and_reserved_directory(tmp_path, status):
+    from here.application.recovery import RecoveryService
+
+    capture = make_capture(tmp_path)
+    write_recovery_manifest(capture.destination, capture.document.capture_id, status)
+    before = {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()}
+
+    candidates = RecoveryService(tmp_path).discover()
+
+    if status == "completed":
+        assert candidates == []
+    else:
+        assert len(candidates) == 1
+        assert candidates[0].session_dir == capture.destination
+        assert candidates[0].status == "failed"
+        assert candidates[0].display_id == "copied-human-id"
+    assert {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()} == before
 
 
 def test_pending_exists_before_provider_and_journal_retained_on_commit_error(tmp_path, monkeypatch):
