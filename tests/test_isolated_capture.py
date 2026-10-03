@@ -12,11 +12,21 @@ from here.recording.models import CaptureFailed
 
 FAKE_BACKEND = """
 import sys, time, types
+from pathlib import Path
 behavior = BEHAVIOR
+def marker(name): return Path(__file__).with_suffix("." + name)
 class Stream:
     reads = 0
-    def get_read_available(self): return 1024
+    def __init__(self, index): self.index = index
+    def gate(self, operation):
+        if marker(f"block-{operation}-{self.index}").exists():
+            marker(f"blocked-{operation}-{self.index}").touch()
+            time.sleep(60)
+    def get_read_available(self):
+        self.gate("available")
+        return 0 if marker("no-data").exists() else 1024
     def read(self, frames, **kwargs):
+        self.gate("read")
         self.reads += 1
         if behavior == "read": time.sleep(60)
         if behavior == "error": raise RuntimeError("Synthetic device disconnected")
@@ -25,6 +35,7 @@ class Stream:
                 from pathlib import Path
                 while not Path(__file__).with_suffix(".fail").exists(): time.sleep(0.01)
             raise OSError("Synthetic original device failure")
+        if marker(f"paused-{self.index}").exists(): marker(f"drained-{self.index}").touch()
         return b"\\x01\\x00" * frames
     def stop_stream(self):
         if behavior == "close":
@@ -37,12 +48,26 @@ class Audio:
         if behavior == "enumerate": time.sleep(60)
         return {"name": "Actual fake USB", "index": 7, "maxInputChannels": 1,
                 "defaultSampleRate": 48000}
-    def get_default_wasapi_loopback(self): return self.get_default_input_device_info()
+    def get_default_wasapi_loopback(self):
+        return {**self.get_default_input_device_info(), "index": 8}
     def open(self, **kwargs):
         if behavior == "open": time.sleep(60)
-        return Stream()
+        return Stream(kwargs["input_device_index"])
     def terminate(self): pass
 sys.modules["pyaudiowpatch"] = types.SimpleNamespace(PyAudio=Audio, paInt16=8)
+from here.recording.journal import CaptureJournal, CaptureWriter
+checkpoint = CaptureWriter.checkpoint
+event = CaptureJournal.event
+def source_index(label): return 7 if label == "microphone" else 8
+def checkpointed(writer):
+    checkpoint(writer)
+    marker(f"checkpoint-{source_index(writer.source.label)}").touch()
+def observed_event(journal, kind, **details):
+    event(journal, kind, **details)
+    if kind in ("paused", "resumed"):
+        marker(f"{kind}-{source_index(details['source'])}").touch()
+CaptureWriter.checkpoint = checkpointed
+CaptureJournal.event = observed_event
 from here.recording.helper_worker import run
 raise SystemExit(run())
 """
@@ -147,7 +172,8 @@ def test_stalled_read_or_close_reaps_and_preserves_capture(tmp_path, behavior):
     ]
 
 
-def test_stop_uses_close_deadline_after_real_child_enters_cleanup(tmp_path, monkeypatch):
+@pytest.mark.parametrize("state", ["recording", "paused", "resumed"])
+def test_stop_uses_close_deadline_after_real_child_enters_cleanup(tmp_path, monkeypatch, state):
     import here.recording.isolated as isolated
 
     now = [0.0]
@@ -184,6 +210,11 @@ def test_stop_uses_close_deadline_after_real_child_enters_cleanup(tmp_path, monk
     monkeypatch.setattr(helpers[0], "get", get)
     try:
         assert audio.wait(3)
+        if state != "recording":
+            pause_and_drain(handle, tmp_path)
+        if state == "resumed":
+            handle.resume()
+            wait_for(lambda: (tmp_path / "fake_hardware.resumed-7").exists())
         handle.stop()
         assert closing.wait(3)
         now[0] = 2.0
@@ -195,6 +226,179 @@ def test_stop_uses_close_deadline_after_real_child_enters_cleanup(tmp_path, monk
         handle._thread.join(4)
     assert not handle._thread.is_alive()
     assert not helpers[0].reader.is_alive()
+
+
+def wait_for(predicate, timeout=3):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if value := predicate():
+            return value
+        time.sleep(0.01)
+    raise AssertionError("Synthetic capture condition did not arrive")
+
+
+def journal_for(handle):
+    return CaptureJournal.load(handle._journal.root, handle._journal.document.capture_id)
+
+
+def pause_and_drain(handle, tmp_path, indexes=(7,)):
+    handle.pause()
+    # Child-side markers follow the real pause event and a completed drain read.
+    # Polling a journal during atomic replacement interferes with Windows writes.
+    wait_for(lambda: all((tmp_path / f"fake_hardware.drained-{i}").exists() for i in indexes))
+
+
+def reap_capture(handle, helpers):
+    if helpers[0].process.poll() is None:
+        helpers[0].process.kill()
+    handle._thread.join(4)
+    assert not handle._thread.is_alive()
+    assert not helpers[0].reader.is_alive()
+    assert not helpers[0].writer.is_alive()
+
+
+@pytest.mark.parametrize(
+    ("moment", "operation", "mode", "stalled_index"),
+    [
+        ("active", "read", "microphone", 7),
+        ("paused", "read", "microphone", 7),
+        ("paused", "available", "microphone", 7),
+        ("active", "read", "both", 7),
+        ("paused", "read", "both", 7),
+        ("paused", "read", "both", 8),
+    ],
+)
+def test_pause_cannot_hide_an_actual_stalled_reader(
+    tmp_path, moment, operation, mode, stalled_index
+):
+    from here.application.recovery import RecoveryService
+    from here.output.metadata import ErrorMetadataDocument
+
+    launch, helpers = factory(tmp_path)
+    handle = WindowsRecordingHandle(
+        mode, sessions_root=tmp_path / "sessions", helper_factory=launch, timeout=1.5
+    )
+    indexes = (7, 8) if mode == "both" else (7,)
+    try:
+        wait_for(
+            lambda: all((tmp_path / f"fake_hardware.checkpoint-{i}").exists() for i in indexes)
+        )
+        if moment == "paused":
+            pause_and_drain(handle, tmp_path, indexes)
+        (tmp_path / f"fake_hardware.block-{operation}-{stalled_index}").touch()
+        wait_for(lambda: (tmp_path / f"fake_hardware.blocked-{operation}-{stalled_index}").exists())
+        if moment == "active":
+            handle.pause()
+        assert handle._done.wait(3), "Pause removed the stalled reader's finite deadline"
+        with pytest.raises(CaptureFailed, match="reader stopped responding"):
+            handle.wait(0)
+        assert helpers[0].process.poll() is not None
+    finally:
+        reap_capture(handle, helpers)
+    journal = journal_for(handle)
+    assert journal.document.state == "interrupted"
+    assert all(source.frames >= 1024 for source in journal.document.sources)
+    (error,) = [event for event in journal.document.events if event["kind"] == "capture_error"]
+    assert error["details"] == {
+        "error_type": "TimeoutError",
+        "error_message": "Windows audio reader stopped responding",
+    }
+    recovery = RecoveryService(journal.root)
+    (candidate,) = recovery.discover()
+    assert candidate.can_retry
+    directory = recovery.materialize(candidate)
+    (saved_error,) = ErrorMetadataDocument.model_validate_json(
+        (directory / "errors.json").read_text()
+    ).errors
+    assert saved_error.type == "TimeoutError"
+    assert saved_error.message == error["details"]["error_message"]
+    assert saved_error.occurred_at == datetime.fromisoformat(error["occurred_at"])
+
+
+@pytest.mark.parametrize("no_data", [False, True])
+@pytest.mark.parametrize("finish", ["stop", "resume"])
+def test_healthy_pause_outlives_watchdog_without_audio(tmp_path, no_data, finish):
+    launch, helpers = factory(tmp_path)
+    live_frames = []
+    handle = WindowsRecordingHandle(
+        "microphone",
+        sessions_root=tmp_path / "sessions",
+        helper_factory=launch,
+        block_sink=lambda label, data, *args: live_frames.append(len(data)),
+        timeout=1.5,
+    )
+    try:
+        wait_for(lambda: live_frames)
+        pause_and_drain(handle, tmp_path)
+        journal = journal_for(handle)
+        frames = journal.document.sources[0].frames
+        wait_for(lambda: (helpers[0].get("tick") or {}).get("counts") == {"microphone": frames})
+        wait_for(lambda: sum(live_frames) == frames)
+        if no_data:
+            (tmp_path / "fake_hardware.no-data").touch()
+        raw = journal.recording_session().sources[0].path
+        before = raw.read_bytes()
+        paused_events = journal.document.events
+        assert not handle._done.wait(2.1), "A healthy paused reader was timed out"
+        assert sum(live_frames) == frames
+        assert raw.read_bytes() == before
+        assert journal_for(handle).document.events == paused_events
+        assert helpers[0].get("tick")["counts"] == {"microphone": frames}
+        if finish == "resume":
+            (tmp_path / "fake_hardware.no-data").unlink(missing_ok=True)
+            # Rapid commands must not turn an old pause acknowledgement into health.
+            for _ in range(5):
+                handle.resume()
+                handle.pause()
+            handle.resume()
+            wait_for(lambda: sum(live_frames) > frames)
+        handle.stop()
+        saved = handle.wait(4)
+        assert saved.sources[0].frames == sum(live_frames)
+        if finish == "stop":
+            assert saved.sources[0].frames == frames
+        else:
+            assert saved.sources[0].frames > frames
+        assert handle.live_error is None
+        assert helpers[0].process.returncode == 0
+    finally:
+        reap_capture(handle, helpers)
+
+
+@pytest.mark.parametrize("delivery", ["stale", "missing", "rollback"])
+def test_paused_reader_requires_new_progress_despite_child_heartbeats(
+    tmp_path, monkeypatch, delivery
+):
+    launch, helpers = factory(tmp_path)
+    handle = WindowsRecordingHandle(
+        "microphone", sessions_root=tmp_path / "sessions", helper_factory=launch, timeout=1.5
+    )
+    try:
+        wait_for(lambda: (tmp_path / "fake_hardware.checkpoint-7").exists())
+        pause_and_drain(handle, tmp_path)
+        frozen = wait_for(lambda: helpers[0].get("tick"))
+        original_get = helpers[0].get
+        polls = 0
+
+        def get(kind):
+            nonlocal polls
+            if kind != "tick":
+                return original_get(kind)
+            polls += 1
+            if polls % 2 == 0:
+                if delivery == "missing":
+                    return None
+                if delivery == "rollback":
+                    return {**frozen, "progress": {"microphone": 0}}
+            return frozen
+
+        monkeypatch.setattr(helpers[0], "get", get)
+        assert handle._done.wait(3), "Cached or missing ticks renewed paused reader health"
+        with pytest.raises(CaptureFailed, match="reader stopped responding"):
+            handle.wait(0)
+        assert polls > 2
+    finally:
+        reap_capture(handle, helpers)
 
 
 def test_unexpected_child_death_keeps_parent_cause(tmp_path):

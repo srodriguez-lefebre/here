@@ -30,7 +30,6 @@ class WindowsRecordingHandle:
         self._error = None
         self._result = None
         self._stop_at = None
-        self._paused = False
         self._cancelled = False
         self._ready = threading.Event()
         self._done = threading.Event()
@@ -85,7 +84,7 @@ class WindowsRecordingHandle:
         consumer = threading.Thread(target=consume, name="here-capture-live", daemon=True)
         consumer.start()
         deadline = time.monotonic() + timeout
-        last_counts = {}
+        last_progress = {}
         progressed = {}
         try:
             while helper.process.poll() is None:
@@ -103,13 +102,15 @@ class WindowsRecordingHandle:
                         raise TimeoutError("Timed out while opening Windows audio devices")
                 else:
                     tick = helper.get("tick") or {}
-                    counts = tick.get("counts", {})
+                    progress = tick.get("progress", {})
                     for label in progressed:
-                        if self._paused or counts.get(label) != last_counts.get(label):
+                        value = progress.get(label)
+                        # Missing, cached or older ticks cannot renew a reader's lease.
+                        if type(value) is int and value > last_progress.get(label, 0):
+                            last_progress[label] = value
                             progressed[label] = now
                         elif self._stop_at is None and now - progressed[label] > timeout:
                             raise TimeoutError("Windows audio reader stopped responding")
-                    last_counts = counts
                 if self._stop_at is not None and now - self._stop_at >= timeout:
                     raise TimeoutError("Timed out closing Windows audio devices")
                 time.sleep(0.01)
@@ -151,11 +152,9 @@ class WindowsRecordingHandle:
             self._done.set()
 
     def pause(self):
-        self._paused = True
         self._helper.send({"command": "pause"})
 
     def resume(self):
-        self._paused = False
         self._helper.send({"command": "resume"})
 
     def stop(self):

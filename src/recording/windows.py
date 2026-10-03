@@ -32,6 +32,7 @@ def _capture_windows_stream_to_file(
     written_frames: list[int],
     start_time: float | None = None,
     block_sink: Callable[[str, np.ndarray, int, int], None] | None = None,
+    progress_sink: Callable[[str], None] | None = None,
 ) -> None:
     chunk_duration = chunk / sample_rate
     silence_chunk = np.zeros((chunk, channels), dtype=np.int16)
@@ -54,6 +55,8 @@ def _capture_windows_stream_to_file(
                     )
                     if available > 0:
                         stream.read(min(chunk, available), exception_on_overflow=False)
+                    if progress_sink is not None:
+                        progress_sink(label)
                 except Exception as exc:
                     errors.append(exc)
                     stop_event.set()
@@ -118,6 +121,8 @@ def _capture_windows_stream_to_file(
                 written_frames[0] += chunk
                 if block_sink is not None:
                     block_sink(label, frames, sample_rate, channels)
+                if progress_sink is not None:
+                    progress_sink(label)
             except Exception as exc:
                 errors.append(exc)
                 logger.error("Failed to read {label}: {exc}", label=label, exc=exc)
@@ -145,6 +150,7 @@ class _ThreadedWindowsRecording:
         mode: str,
         *,
         block_sink: Callable[[str, np.ndarray, int, int], None] | None = None,
+        progress_sink: Callable[[str], None] | None = None,
         microphone_device_id: int | None = None,
         system_device_id: int | None = None,
         sessions_root: Path | None = None,
@@ -155,6 +161,7 @@ class _ThreadedWindowsRecording:
         self._sessions_root = sessions_root
         self._mode = mode
         self._block_sink = block_sink
+        self._progress_sink = progress_sink
         self._microphone_device_id = microphone_device_id
         self._system_device_id = system_device_id
         self._stop_event = threading.Event()
@@ -184,6 +191,7 @@ class _ThreadedWindowsRecording:
                 cancel_event=self._cancel_event,
                 ready_event=self._ready_event,
                 block_sink=self._block_sink,
+                progress_sink=self._progress_sink,
                 microphone_device_id=self._microphone_device_id,
                 system_device_id=self._system_device_id,
                 sessions_root=self._sessions_root,
@@ -329,6 +337,7 @@ def _record_windows_controlled(
     sessions_root: Path | None = None,
     journal: CaptureJournal | None = None,
     opened_sink=None,
+    progress_sink: Callable[[str], None] | None = None,
 ) -> RecordingSession:
     import pyaudiowpatch as pyaudio
 
@@ -394,6 +403,7 @@ def _record_windows_controlled(
                         "written_frames": written_frames,
                         "start_time": start_time,
                         "block_sink": block_sink,
+                        "progress_sink": progress_sink,
                     },
                     daemon=True,
                 )

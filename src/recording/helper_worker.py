@@ -51,7 +51,14 @@ def _capture(parameters, emit):
     ended = threading.Event()
     dropped = threading.Event()
     counts = {}
+    progress = {}
     count_lock = threading.Lock()
+
+    def reader_progress(label):
+        # Only the actual reader advances this after completing its IO, including
+        # availability/drain calls while paused. The sender cannot vouch for it.
+        with count_lock:
+            progress[label] = progress.get(label, 0) + 1
 
     def sink(label, data, rate, channels):
         # Primary WAV/journal never waits for IPC or live processing.
@@ -93,7 +100,9 @@ def _capture(parameters, emit):
     )
     handle = None
     try:
-        handle = _ThreadedWindowsRecording(**parameters, block_sink=sink, journal=journal)
+        handle = _ThreadedWindowsRecording(
+            **parameters, block_sink=sink, progress_sink=reader_progress, journal=journal
+        )
         emit({"kind": "ready", "sources": [asdict(item) for item in handle.opened_sources]})
 
         def commands():
@@ -113,7 +122,8 @@ def _capture(parameters, emit):
         while not handle._done_event.wait(0.2):
             with count_lock:
                 current = dict(counts)
-            emit({"kind": "tick", "counts": current})
+                current_progress = dict(progress)
+            emit({"kind": "tick", "counts": current, "progress": current_progress})
         # wait joins the actual reader/writer and all hardware cleanup.
         handle.wait()
     finally:
