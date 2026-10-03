@@ -10,11 +10,26 @@ offline fallback if the live transcription pipeline fails.
 
 ## Requirements
 
-- Python 3.12.6 or later
-- An OpenAI API key
 - Windows for combined microphone and system-audio capture and diagnostics
+- An OpenAI API key when transcription is requested; opening the desktop and
+  local recovery does not require one
+- Python 3.12.6 or later for source/wheel development; the Windows installer
+  includes its own Python runtime
 
 ## Installation
+
+For the Windows 11 x64 packaged application, run the generated
+`here-0.2.0-windows-x64-setup.exe`. It installs for the current user under
+`%LOCALAPPDATA%\Programs\here` and creates Start entries for here and its
+uninstaller. Exit here before reinstalling or updating: the installer refuses
+to replace a running application. Uninstalling preserves `%LOCALAPPDATA%\here`
+and any configured data directory. It never enables automatic startup or recording.
+
+The installer and portable onedir ZIP are build/CI artifacts; no public release
+download or Authenticode application signature is claimed. See
+[Windows build instructions](docs/development/WINDOWS_DISTRIBUTION.md).
+
+For source development, from the repository root:
 
 From the repository root:
 
@@ -42,7 +57,10 @@ from the production entry point.
 
 ## Configuration
 
-Copy `.env.example` to `.env` and provide your API key:
+For an installed application, place configuration in
+`%LOCALAPPDATA%\here\.env`, or select one file explicitly with `HERE_ENV_FILE`.
+For source development, `.env.example` may be copied to a repository `.env`.
+Provide an API key only when requesting transcription:
 
 ```env
 OPENAI_API_KEY=sk-...
@@ -50,6 +68,10 @@ OPENAI_API_KEY=sk-...
 
 The example file also contains optional settings for output directories,
 transcription models, and transcript cleanup.
+`HERE_DATA_DIR` overrides the user data root; sessions default to its `sessions`
+directory. Frozen builds do not read a development `.env`. `HERE_SETTINGS_FILE`
+optionally selects an INI file for presentation preferences, including isolated
+portable/test launches; ordinary launches retain the existing per-user preferences.
 
 ## Usage
 
