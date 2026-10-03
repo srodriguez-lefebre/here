@@ -233,6 +233,7 @@ class LiveTranscriptionController:
     ) -> None:
         self.expected_source_count = expected_source_count
         self.config = chunking_config or ChunkingConfig()
+        self._client = build_client()
         self.working_dir = Path(tempfile.mkdtemp(prefix="here_live_"))
         self._capture_queue: queue.Queue[CapturedAudioBlock] = queue.Queue(maxsize=256)
         self._chunk_queue: queue.Queue[LiveChunkJob] = queue.Queue(maxsize=8)
@@ -247,7 +248,6 @@ class LiveTranscriptionController:
         self._error: Exception | None = None
         self._result: TranscriptionResult | None = None
         self._chunks: list[ChunkMetadata] = []
-        self._client = build_client()
         self._resolved_transcription_model, self._resolved_cleanup_model, self._should_cleanup = (
             resolve_transcription_models(
                 transcription_model=transcription_model,

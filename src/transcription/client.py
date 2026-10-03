@@ -2,7 +2,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from here.config.settings import get_settings
+from here.config.settings import get_settings, require_provider_key
 from here.output.metadata import ChunkMetadata
 from here.transcription.segments import TranscriptSegment, parse_transcript_segments
 from loguru import logger
@@ -102,8 +102,7 @@ def _extract_cleanup_text(payload: object) -> str:
 
 
 def build_client() -> OpenAI:
-    settings = get_settings()
-    return OpenAI(api_key=settings.OPENAI_API_KEY.get_secret_value())
+    return OpenAI(api_key=require_provider_key())
 
 
 def resolve_transcription_models(
