@@ -106,6 +106,21 @@ retained choices after missing-key failure, and an explicit retry after editing 
 effective configuration in the same window. It rebuilt 240 frames while preserving
 identity/selected filename/raw bytes; no physical capture or provider was used.
 
+
+PR [#13](https://github.com/srodriguez-lefebre/here/pull/13) is open. Initial hosted
+checks at `ef7010e` failed: Ubuntu exposed eager PortAudio initialization in pure
+subprocess imports and a Windows-only path assumption in a test; Windows reported a
+native Qt teardown exception whose cause remains unconfirmed. Commits `cc947e0` and
+`98e19b1` defer unrelated Linux hardware loading, make platform tests explicit, and
+address Copilot review `5400263899`/inline `4172753832`: retain the original child
+capture error once instead of obscuring it with a generic parent error. Real child
+failure/timeout/death regressions passed. The final committed-source suite on actual
+Python 3.13.15/Qt 6.11.2 passed 581 tests with six existing local privilege skips
+(56.67 s); scoped independent review accepted the corrections. Bounded Qt diagnostics
+did not reproduce the native exception; verbose hosted diagnostics were added without
+a speculative product patch. A new current-head Copilot review and hosted checks
+still precede merge. Installer and long-duration M1 acceptance remain open.
+
 Long meeting means at least 7,200 seconds of recording wall time excluding deliberate
 pauses. Compare known playback markers and recorded durations; do not require exact
 hardware-clock synchronization between two sources. Initial marker seek tolerance is

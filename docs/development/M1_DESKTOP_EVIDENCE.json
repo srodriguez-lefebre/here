@@ -2,8 +2,8 @@
   "schema_version": 1,
   "milestone": "M1",
   "milestone_complete": false,
-  "desktop_delivery": "Local source gates accepted; Copilot review and current-head hosted checks pending.",
-  "latest_desktop_source_head": "490b77c7b1a9681ef68cdc0beb8bb7c1823ea206",
+  "desktop_delivery": "PR13 open; local corrections independently accepted, new-head Copilot and hosted checks pending.",
+  "latest_desktop_source_head": "98e19b14cd5dd93618b64c8899ddad5d26614c20",
   "task_1": {
     "status": "independent_spec_and_quality_approved",
     "base": "eba75781c3c317f62e9ec7080fbb9503952b6998",
@@ -58,8 +58,14 @@
       "skip_reason": "Existing Windows symbolic-link tests require unavailable local privileges (WinError 1314).",
       "changed_python_files_lint_and_format": 27,
       "diff_check": "passed",
-      "final_helper_capture_focus": { "passed": 16, "seconds": 20.80 },
-      "controller_ui_processing_focus": { "passed": 93, "seconds": 4.44 },
+      "final_helper_capture_focus": {
+        "passed": 16,
+        "seconds": 20.8
+      },
+      "controller_ui_processing_focus": {
+        "passed": 93,
+        "seconds": 4.44
+      },
       "windows_parent_death": "Real synthetic parent was killed; actual kernel Job Object terminated its stalled child. Regression went RED to GREEN.",
       "pressure": "Real synthetic child WAV checkpoints progress while live callback or pipe delivery is blocked; incomplete live results force offline fallback."
     },
@@ -84,13 +90,31 @@
     "source_head": "490b77c7b1a9681ef68cdc0beb8bb7c1823ea206",
     "initial_whole_branch_verdict": "with_fixes",
     "important_findings": [
-      { "finding": "Absent normalized WAV hid valid raw-backed sessions during fresh discovery/materialization.", "disposition": "Fixed; only genuine derived-file absence is skipped after safe path validation. Existing corrupt/unsafe audio remains rejected; shared retry rebuilds the selected filename." },
-      { "finding": "Missing-key selected retry cleared recovery choices.", "disposition": "Fixed; present the error while retaining choices and selection, allowing a later explicit same-window retry after editing the effective env file." }
+      {
+        "finding": "Absent normalized WAV hid valid raw-backed sessions during fresh discovery/materialization.",
+        "disposition": "Fixed; only genuine derived-file absence is skipped after safe path validation. Existing corrupt/unsafe audio remains rejected; shared retry rebuilds the selected filename."
+      },
+      {
+        "finding": "Missing-key selected retry cleared recovery choices.",
+        "disposition": "Fixed; present the error while retaining choices and selection, allowing a later explicit same-window retry after editing the effective env file."
+      }
     ],
     "minor_stop_test": "Actual stop delivery asserted before success; emergency completion only in teardown. Suppressed-stop in-memory mutation detected.",
-    "regressions": { "red_failed": 5, "green_passed": 11 },
-    "focused": { "passed": 170, "skipped": 5, "seconds": 27.22 },
-    "final_committed_head_suite": { "passed": 569, "skipped": 6, "seconds": 56.92, "skip_reason": "Existing local Windows symlink cases require unavailable privileges, WinError 1314." },
+    "regressions": {
+      "red_failed": 5,
+      "green_passed": 11
+    },
+    "focused": {
+      "passed": 170,
+      "skipped": 5,
+      "seconds": 27.22
+    },
+    "final_committed_head_suite": {
+      "passed": 569,
+      "skipped": 6,
+      "seconds": 56.92,
+      "skip_reason": "Existing local Windows symlink cases require unavailable privileges, WinError 1314."
+    },
     "changed_python_files_lint_and_format": 6,
     "diff_check": "passed",
     "scoped_independent_review": "accepted; both P2 findings and P3 test note addressed, no new material findings",
@@ -109,7 +133,10 @@
     "identity_selected_name_and_raw_bytes_preserved": true,
     "injected_transcriber_calls": 1,
     "exit_after_actual_worker_and_background_cleanup": true,
-    "qt_heartbeat": { "samples": 22, "max_gap_seconds": 0.03705850000551436 },
+    "qt_heartbeat": {
+      "samples": 22,
+      "max_gap_seconds": 0.03705850000551436
+    },
     "raw_audio_retained": false,
     "scope": "Native Qt window/event delivery with authored tiny WAV and injected transcription. No physical capture, real provider, frozen or long-run claim."
   },
@@ -124,8 +151,28 @@
     "missing_key_start_created_no_capture": true,
     "missing_key_retry_preserved_unmaterialized_journal": true,
     "diagnostics": [
-      { "source": "microphone", "device_name": "Microphone (3- Arctis Nova 7P)", "sample_rate": 44100, "channels": 2, "duration_seconds": 3.0, "peak": 0.000030517578125, "rms": 0.000014619909052271396, "has_signal": false, "elapsed_seconds": 4.199913199990988 },
-      { "source": "system audio", "device_name": "Headphones (3- Arctis Nova 7P) [Loopback]", "sample_rate": 48000, "channels": 2, "duration_seconds": 3.0, "peak": 0.150115966796875, "rms": 0.10608416795730591, "has_signal": true, "elapsed_seconds": 4.133567600001697 }
+      {
+        "source": "microphone",
+        "device_name": "Microphone (3- Arctis Nova 7P)",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_seconds": 3.0,
+        "peak": 3.0517578125e-05,
+        "rms": 1.4619909052271396e-05,
+        "has_signal": false,
+        "elapsed_seconds": 4.199913199990988
+      },
+      {
+        "source": "system audio",
+        "device_name": "Headphones (3- Arctis Nova 7P) [Loopback]",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_seconds": 3.0,
+        "peak": 0.150115966796875,
+        "rms": 0.10608416795730591,
+        "has_signal": true,
+        "elapsed_seconds": 4.133567600001697
+      }
     ],
     "signal_fixture": "Authored 440 Hz PCM tone played locally; signal results report the actual observations.",
     "saved_exit": {
@@ -139,15 +186,69 @@
       "recoverable_audio_and_local_discovery": true,
       "session_persisted_before_worker_completion": true,
       "exit_seconds": 0.3718958000099519,
-      "delivered_frames": { "microphone": 99328, "system audio": 107520 },
+      "delivered_frames": {
+        "microphone": 99328,
+        "system audio": 107520
+      },
       "normalized_frames": 36037,
       "normalized_sample_rate": 16000,
       "normalized_channels": 1
     },
     "idle_close_quit_after_background_cleanup": true,
     "capture_workers_and_reservation_released": true,
-    "qt_heartbeat": { "samples": 688, "max_gap_seconds": 0.04955320000590291 },
+    "qt_heartbeat": {
+      "samples": 688,
+      "max_gap_seconds": 0.04955320000590291
+    },
     "raw_audio_retained": false,
     "scope": "Bounded native source-runtime Qt/device/recovery/exit check. No frozen, real-provider, long-duration or full-M1 completion claim."
+  },
+  "ci_and_copilot_correction_2": {
+    "base": "ef7010e7d12093d817faf3fad0bdbf3bebd0fbb9",
+    "source_head": "98e19b14cd5dd93618b64c8899ddad5d26614c20",
+    "commits": [
+      "cc947e0e77334f573d279706f9b65c7fd3663c55",
+      "98e19b14cd5dd93618b64c8899ddad5d26614c20"
+    ],
+    "pr": "https://github.com/srodriguez-lefebre/here/pull/13",
+    "prior_hosted_run": {
+      "id": 37115691460,
+      "head": "ef7010e7d12093d817faf3fad0bdbf3bebd0fbb9",
+      "status": "failed"
+    },
+    "confirmed_corrections": [
+      "Lazy Linux backend imports keep pure journal/recovery/helper/GUI startup independent of PortAudio initialization; explicit backend forwarding remains tested.",
+      "Per-user path tests cover Windows, XDG and home fallback with a module-local platform mock.",
+      "Preserve the child-finalized interrupted journal and original device error once; parent-only timeout/death errors remain durable."
+    ],
+    "copilot": {
+      "review": 5400263899,
+      "head": "ef7010e7d12093d817faf3fad0bdbf3bebd0fbb9",
+      "state": "COMMENTED",
+      "inline": 4172753832,
+      "body_and_inline_findings": 1,
+      "disposition": "Accepted and fixed in 98e19b1; current-head review still required."
+    },
+    "verification": {
+      "runtime": "CPython 3.13.15 AMD64; PySide6 and Qt 6.11.2",
+      "command": "QT_QPA_PLATFORM=offscreen PYTHONUNBUFFERED=1 python -m pytest -vv",
+      "passed": 581,
+      "skipped": 6,
+      "seconds": 56.67,
+      "skip_reason": "Existing local Windows symbolic-link cases require unavailable privileges (WinError 1314).",
+      "focused": {
+        "passed": 123,
+        "seconds": 39.12
+      },
+      "original_child_error_regression": "Actual synthetic child OSError reproduced duplicate generic parent error before correction; one original error survives journal, materialization and fresh recovery after correction.",
+      "lint_format_diff": "passed"
+    },
+    "scoped_independent_review": "accepted",
+    "windows_native_exception": {
+      "status": "cause unconfirmed; no speculative Qt correction",
+      "bounded_negative_reproduction": "60-case Qt neighborhood, original 203-case prefix and one owner-lifetime barrier probe completed without native exception.",
+      "diagnostics": "Hosted pytest now uses verbose test names and unbuffered output.",
+      "limit": "Local passing results do not diagnose the previous access violation or replace new-head hosted checks."
+    }
   }
 }
