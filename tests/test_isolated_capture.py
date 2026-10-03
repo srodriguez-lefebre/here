@@ -1,6 +1,7 @@
 import sys
 import threading
 import time
+from types import SimpleNamespace
 
 import pytest
 from here.audio_helper import OwnedHelper
@@ -22,7 +23,10 @@ class Stream:
             raise OSError("Synthetic original device failure")
         return b"\\x01\\x00" * frames
     def stop_stream(self):
-        if behavior == "close": time.sleep(60)
+        if behavior == "close":
+            from pathlib import Path
+            Path(__file__).with_suffix(".closing").touch()
+            time.sleep(60)
     def close(self): pass
 class Audio:
     def get_default_input_device_info(self):
@@ -97,11 +101,16 @@ def test_stalled_open_has_owner_until_reaped_and_keeps_journal(tmp_path, behavio
 @pytest.mark.parametrize("behavior", ["read", "close"])
 def test_stalled_read_or_close_reaps_and_preserves_capture(tmp_path, behavior):
     launch, helpers = factory(tmp_path, behavior)
+    audio = threading.Event()
     handle = WindowsRecordingHandle(
-        "microphone", sessions_root=tmp_path / "sessions", helper_factory=launch, timeout=1.5
+        "microphone",
+        sessions_root=tmp_path / "sessions",
+        helper_factory=launch,
+        block_sink=lambda *args: audio.set(),
+        timeout=1.5,
     )
     if behavior == "close":
-        time.sleep(0.6)
+        assert audio.wait(3)
         handle.stop()
     with pytest.raises(CaptureFailed):
         handle.wait(4)
@@ -118,6 +127,56 @@ def test_stalled_read_or_close_reaps_and_preserves_capture(tmp_path, behavior):
             else "Timed out closing Windows audio devices"
         ),
     }
+
+
+def test_stop_uses_close_deadline_after_real_child_enters_cleanup(tmp_path, monkeypatch):
+    import here.recording.isolated as isolated
+
+    now = [0.0]
+    monkeypatch.setattr(
+        isolated,
+        "time",
+        SimpleNamespace(
+            monotonic=lambda: now[0],
+            sleep=time.sleep,
+        ),
+    )
+    launch, helpers = factory(tmp_path, "close")
+    audio, closing = threading.Event(), threading.Event()
+    handle = WindowsRecordingHandle(
+        "microphone",
+        sessions_root=tmp_path / "sessions",
+        helper_factory=launch,
+        block_sink=lambda *args: audio.set(),
+        timeout=1.5,
+    )
+    original_get = helpers[0].get
+    closed_polls = []
+
+    def get(kind):
+        if kind == "tick" and (tmp_path / "fake_hardware.closing").exists():
+            # Freeze progress once real stop_stream has been entered. Two polls
+            # establish unchanged counts before advancing the owner's clock.
+            closed_polls.append(True)
+            if len(closed_polls) >= 2:
+                closing.set()
+            return {"counts": {}}
+        return original_get(kind)
+
+    monkeypatch.setattr(helpers[0], "get", get)
+    try:
+        assert audio.wait(3)
+        handle.stop()
+        assert closing.wait(3)
+        now[0] = 2.0
+        with pytest.raises(CaptureFailed, match="Timed out closing Windows audio devices"):
+            handle.wait(4)
+    finally:
+        if helpers[0].process.poll() is None:
+            helpers[0].process.kill()
+        handle._thread.join(4)
+    assert not handle._thread.is_alive()
+    assert not helpers[0].reader.is_alive()
 
 
 def test_unexpected_child_death_keeps_parent_cause(tmp_path):

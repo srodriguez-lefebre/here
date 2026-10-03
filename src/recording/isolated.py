@@ -107,7 +107,7 @@ class WindowsRecordingHandle:
                     for label in progressed:
                         if self._paused or counts.get(label) != last_counts.get(label):
                             progressed[label] = now
-                        elif now - progressed[label] > timeout:
+                        elif self._stop_at is None and now - progressed[label] > timeout:
                             raise TimeoutError("Windows audio reader stopped responding")
                     last_counts = counts
                 if self._stop_at is not None and now - self._stop_at >= timeout:
