@@ -212,6 +212,19 @@ class SessionProcessor:
         session.cleanup()
         return artifacts
 
+    def mark_capture_failure_cancelled(
+        self, artifacts: SessionArtifactPaths, *, events: list[SessionEventMetadata]
+    ) -> None:
+        """Finalize a recovery cancellation without losing the capture-error evidence."""
+        metadata = artifacts.metadata.model_copy(
+            update={"status": "cancelled", "failure_stage": "processing_cancelled"}
+        )
+        artifacts.metadata_path.write_text(metadata.model_dump_json(indent=2), encoding="utf-8")
+        artifacts.events_path.write_text(
+            SessionEventMetadataDocument(events=events).model_dump_json(indent=2), encoding="utf-8"
+        )
+        artifacts.metadata = metadata
+
     def _offline_with_retries(
         self,
         session: RecordingSession,

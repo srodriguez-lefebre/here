@@ -96,6 +96,11 @@ their provenance remain available for retry; recovery validates each filename
 and resolved path within the session. Destructive recording cancellation takes
 precedence over recovery and leaves no session.
 
+Catch-up silence is offered to live processing in disk-write order so both paths
+share the recording timeline. Capture completion and failure recovery atomically
+leave destructive-cancellation states; any later accepted cancellation preserves
+the session and publishes matching cancelled metadata and application state.
+
 The capture queue holds 256 blocks and the transcription queue eight pending jobs.
 Both producers use nonblocking handoff. Overflow disables live work and requires
 offline transcription from complete saved audio, including after partial live

@@ -67,6 +67,8 @@ def _capture_windows_stream_to_file(
             while now >= next_deadline + chunk_duration:
                 writer.write(silence_chunk)
                 written_frames[0] += chunk
+                if block_sink is not None:
+                    block_sink(label, silence_chunk, sample_rate, channels)
                 next_deadline += chunk_duration
             available = 0
             get_read_available = getattr(stream, "get_read_available", None)

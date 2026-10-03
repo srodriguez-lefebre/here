@@ -27,6 +27,7 @@ from here.application.processing import (
 )
 from here.live_processing import LiveTranscriptionController
 from here.output.metadata import SessionEventMetadata
+from here.output.session_writer import SessionArtifactPaths
 from here.recording.control import ControllableRecording
 from here.recording.models import CaptureFailed
 from here.recording.service import start_recording
@@ -265,18 +266,13 @@ class HereApplicationController:
                     self._append_session_event("recording", details={"source_count": source_count})
 
             session = capture.wait()
-            with self._lock:
-                destructive_cancel = self._cancel_recording
-            if destructive_cancel:
+            if not self._begin_processing():
                 session.cleanup()
                 live.abort()
                 live.cleanup()
                 self._transition(ApplicationState.CANCELLED, details={"recoverable": False})
                 return
 
-            self._transition(ApplicationState.PROCESSING)
-            with self._lock:
-                self._append_session_event("processing")
             artifacts = self._processor.process(
                 session,
                 request.output_dir,
@@ -294,7 +290,6 @@ class HereApplicationController:
             self._transition(ApplicationState.CANCELLED, details={"recoverable": True})
         except CaptureFailed as exc:
             with self._lock:
-                destructive_cancel = self._cancel_recording
                 live = self._live
                 self._finish_pause()
                 self._append_session_event(
@@ -303,7 +298,7 @@ class HereApplicationController:
             if live is not None:
                 live.abort()
                 live.cleanup()
-            if destructive_cancel:
+            if not self._begin_processing(details={"capture_failure": True}):
                 exc.session.cleanup()
                 self._transition(ApplicationState.CANCELLED, details={"recoverable": False})
             else:
@@ -316,8 +311,7 @@ class HereApplicationController:
                         started_at=self._snapshot.started_at,
                         total_paused_seconds=self._snapshot.total_paused_seconds,
                     )
-                    self._persisted(artifacts.session_dir, recoverable=True)
-                    self._fail("capture", exc)
+                    self._finish_capture_failure(artifacts, exc)
                 except Exception as persistence_error:
                     self._fail("capture_persistence", persistence_error)
         except SessionProcessingFailed as exc:
@@ -347,6 +341,76 @@ class HereApplicationController:
                 if self._worker is threading.current_thread():
                     self._capture = None
                     self._live = None
+
+    def _begin_processing(
+        self, *, details: dict[str, str | int | float | bool | None] | None = None
+    ) -> bool:
+        """Serialize accepted destructive cancellation against ownership handoff."""
+        with self._lock:
+            if self._cancel_recording:
+                return False
+            previous = self._snapshot.state
+            self._snapshot = replace(self._snapshot, state=ApplicationState.PROCESSING)
+            self._append_session_event("processing", details=details)
+            event = ApplicationEvent(
+                kind=EventKind.STATE_CHANGED,
+                state=ApplicationState.PROCESSING,
+                previous_state=previous,
+                details=details or {},
+            )
+        self._emit(event)
+        return True
+
+    def _finish_capture_failure(self, artifacts: SessionArtifactPaths, exc: CaptureFailed) -> None:
+        metadata = error_metadata("capture", exc)
+        error = ApplicationError(
+            stage=metadata.stage,
+            error_type=metadata.type,
+            message=metadata.message,
+            retryable=metadata.retryable,
+            occurred_at=metadata.occurred_at,
+        )
+        with self._lock:
+            cancelled = self._processing_cancel.is_set()
+            if cancelled:
+                self._processor.mark_capture_failure_cancelled(artifacts, events=self._events)
+            previous = self._snapshot.state
+            state = ApplicationState.CANCELLED if cancelled else ApplicationState.FAILED
+            self._snapshot = replace(
+                self._snapshot,
+                state=state,
+                session_id=artifacts.session_dir.name,
+                session_dir=artifacts.session_dir,
+                recoverable=True,
+                last_error=None if cancelled else error,
+            )
+            events = [
+                ApplicationEvent(
+                    kind=EventKind.SESSION_PERSISTED,
+                    state=previous,
+                    session_dir=artifacts.session_dir,
+                    details={"recoverable": True},
+                )
+            ]
+            if not cancelled:
+                events.append(
+                    ApplicationEvent(
+                        kind=EventKind.ERROR_RECORDED,
+                        state=state,
+                        previous_state=previous,
+                        error=error,
+                    )
+                )
+            events.append(
+                ApplicationEvent(
+                    kind=EventKind.STATE_CHANGED,
+                    state=state,
+                    previous_state=previous,
+                    details={"recoverable": True} if cancelled else {},
+                )
+            )
+        for event in events:
+            self._emit(event)
 
     def _persisted(self, session_dir: Path, *, recoverable: bool) -> None:
         with self._lock:
