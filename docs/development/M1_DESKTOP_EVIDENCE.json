@@ -2,8 +2,8 @@
   "schema_version": 1,
   "milestone": "M1",
   "milestone_complete": false,
-  "desktop_delivery": "PR13 open; CLI completion and paused-reader deadline corrections independently accepted; new-head Copilot and hosted gates pending.",
-  "latest_desktop_source_head": "662babafb90ef36894d2dd7a23740cf808e5a353",
+  "desktop_delivery": "PR13 open; catch-up progress and prior normalized-audio cleanup corrections independently accepted; final Windows-only CI and renewed Copilot review pending.",
+  "latest_desktop_source_head": "1fa3688d10da4c833ca55da098ae7db71545dcf5",
   "task_1": {
     "status": "independent_spec_and_quality_approved",
     "base": "eba75781c3c317f62e9ec7080fbb9503952b6998",
@@ -740,5 +740,100 @@
     },
     "wheel_and_source_builds": "passed on both platforms; version 0.1.0",
     "limit": "Historical head only; later corrections require their own hosted gates. Hosted Windows is distinct from local Windows 11 native evidence."
+  },
+  "copilot_correction_9": {
+    "base": "fed9b4c3cdc0882ded216722ee5a4907530f6274",
+    "source_head": "1fa3688d10da4c833ca55da098ae7db71545dcf5",
+    "commits": [
+      "c2c23e0c21bfdac7433d20d1e5d9781cef6d53e5",
+      "1fa3688d10da4c833ca55da098ae7db71545dcf5"
+    ],
+    "copilot": {
+      "review": 5401125631,
+      "state": "COMMENTED",
+      "submitted_at": "2026-10-03T13:59:28Z",
+      "inline_findings": 1,
+      "inline_comment": 4173451519,
+      "body_findings": 1,
+      "disposition": "Both accepted, fixed and independently accepted; reply publication and final-head Windows CI/Copilot gates follow."
+    },
+    "changes": {
+      "catchup_progress": "Each reader advances its progress counter after each successfully inserted silence write and live delivery. Per-block stop/pause checks, explicit scheduling-gap journal evidence, independent reader watchdogs and the distinct closing deadline remain in place; blocked writes still time out.",
+      "normalized_cleanup": "Only after final completed/failed metadata publication, cleanup considers the prior validated recoverable normalized filename (audio.wav or audio_<32 lowercase hex>.wav). It rereads committed metadata, verifies final status/identity/current audio, protects selected input, current output/recoverable references and prior/current capture sources, revalidates containment/link safety, and removes only that single unreferenced prior file. Unknown files/names remain. Expected cleanup faults warn without replacing committed success or the original provider failure. Managed normalization failure preserves all prior manifest/error/audio bytes; new-session failure publication is unchanged."
+    },
+    "regressions": {
+      "catchup": {
+        "red_failed": 3,
+        "red_seconds": 7.57,
+        "green_passed": 5,
+        "green_seconds": 18.51
+      },
+      "cleanup": {
+        "red_failed": 13,
+        "preservation_guards_passed": 2,
+        "red_seconds": 5.53,
+        "initial_green_passed": 23,
+        "initial_green_seconds": 6.05
+      },
+      "reader_focus": {
+        "passed": 107,
+        "seconds": 97.4
+      },
+      "final_cli_output_focus": {
+        "passed": 243,
+        "skipped": 6,
+        "seconds": 28.49
+      },
+      "scope": "Actual synthetic hardware children and tiny authored PCM: healthy catch-up beyond watchdog, stop/pause/blocked single and dual-source writes, actual owned closure; repeated completed/failed retry outcomes, pending/normalization/final publication retention, current/raw/capture/unknown reference safety and postcommit read/path/unlink failures.",
+      "harness_history": "An initial misspelled test path exited before collection and was corrected; initial cleanup focus excluded the pending normalization ruling. Final focus and full suite include the approved guard."
+    },
+    "regression_summary": "Three real-child healthy catch-up RED failures became five passing catch-up cases; reader guards passed 107 cases. Thirteen authored-PCM cleanup/normalization RED failures with two existing publication-retention guards led to a final 243-case CLI/output focus with six existing privilege skips; unknown/current/raw references and cleanup faults are covered.",
+    "verification": {
+      "runtime": "CPython 3.13.15 AMD64; PySide6 and Qt 6.11.2; Windows",
+      "command": "QT_QPA_PLATFORM=offscreen .superpowers/m1-desktop/venv313/Scripts/python.exe -m pytest -q",
+      "passed": 734,
+      "skipped": 6,
+      "seconds": 138.64,
+      "exit_code": 0,
+      "skip_reason": "Existing local Windows symbolic-link cases require unavailable privileges (WinError 1314).",
+      "changed_files_lint_format": 4,
+      "diff_check": "passed",
+      "source_or_test_edits_after_full": false,
+      "scoped_synthetic_process_check": "No remaining owned synthetic child/owner processes."
+    },
+    "scoped_independent_review": "accepted",
+    "limits": [
+      "Conservative postcommit cleanup may retain the known prior WAV if proof or deletion fails; no sweep or general garbage collection.",
+      "No general concurrent-writer or power-loss transaction guarantee.",
+      "Historical short native smoke retains its original source provenance; no new hardware/provider or frozen-runtime inference.",
+      "Two-hour capture/resource and long generated-audio transcription are explicitly omitted by the user, not passed.",
+      "Final-head Windows-only CI, renewed formal Copilot review and all finding dispositions remain required before merge."
+    ]
+  },
+  "current_authorized_scope": {
+    "objective": "Finish remaining M1 on Windows, then stop; M2-M5 outside this run.",
+    "omitted_by_explicit_user_instruction": [
+      "Two-hour capture/pause/recovery/resource run",
+      "Long generated-audio transcription/timestamps/diarization run"
+    ],
+    "omitted_cases_passed": false,
+    "ubuntu": "Retained as manual-only; not run for this delivery."
+  },
+  "hosted_desktop_checkpoint_c207b70": {
+    "head": "c207b70bf63e6b1bdb25bf1008b027b110a62366",
+    "run": 37127558138,
+    "status": "success",
+    "windows": {
+      "passed": 711,
+      "skipped": 0,
+      "seconds": 94.8
+    },
+    "ubuntu": {
+      "passed": 708,
+      "skipped": 3,
+      "seconds": 73.24
+    },
+    "wheel_and_source_builds": "Passed on both; version 0.1.0.",
+    "limit": "Historical pre-scope-change checkpoint. New-head automatic CI is Windows-only; no new Ubuntu run."
   }
 }

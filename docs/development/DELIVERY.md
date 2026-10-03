@@ -227,6 +227,21 @@ existing local privilege skips (114.77 s); scoped independent
 review accepted. New-head hosted checks and Copilot remain required; full M1 is open.
 Actual Windows 11 two-source smoke at this source passed: 44.1/48 kHz stereo, 4.007 s healthy pause with a 3 s reader deadline and unchanged primary frame counts, both sources resumed, then paused stop in 0.262 s. Actual helper/owned threads closed; provider calls were zero and owned raw audio was removed after closure. This is short native reader/IPC proof, separate from GUI, frozen and long acceptance.
 
+
+Copilot review `5401125631` identified healthy inserted-silence catch-up being
+classified as a stalled reader and prior normalized WAVs remaining orphaned after
+managed raw-audio retries. Both findings were accepted. Final source `1fa3688`:
+Each reader advances its progress counter after each successfully inserted silence write and live delivery. Per-block stop/pause checks, explicit scheduling-gap journal evidence, independent reader watchdogs and the distinct closing deadline remain in place; blocked writes still time out.
+Only after final completed/failed metadata publication, cleanup considers the prior validated recoverable normalized filename (audio.wav or audio_<32 lowercase hex>.wav). It rereads committed metadata, verifies final status/identity/current audio, protects selected input, current output/recoverable references and prior/current capture sources, revalidates containment/link safety, and removes only that single unreferenced prior file. Unknown files/names remain. Expected cleanup faults warn without replacing committed success or the original provider failure. Managed normalization failure preserves all prior manifest/error/audio bytes; new-session failure publication is unchanged.
+Three real-child healthy catch-up RED failures became five passing catch-up cases; reader guards passed 107 cases. Thirteen authored-PCM cleanup/normalization RED failures with two existing publication-retention guards led to a final 243-case CLI/output focus with six existing privilege skips; unknown/current/raw references and cleanup faults are covered.
+Final committed-source suite on CPython 3.13.15 / Qt 6.11.2: 734
+passed, 6 existing local privilege skips, 138.64 s.
+Changed-file lint/format and diff checks passed; scoped independent review accepted.
+New-head Windows-only CI and formal Copilot review remain required before merge.
+The user explicitly omitted two-hour capture/resource and long generated-audio
+transcription acceptance; neither is run or claimed as passing. Finish remaining
+Windows distribution and revised-scope M1 closure, then stop.
+
 ## Review and merge gates
 
 - Each implementation task follows meaningful red/green tests and self-review.
