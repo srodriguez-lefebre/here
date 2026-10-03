@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import threading
 import time
 from collections.abc import Callable, Sequence
@@ -12,6 +13,7 @@ from here.audio.mix import materialize_normalized_session
 from here.config.settings import get_settings
 from here.live_processing import LiveTranscriptionController
 from here.output.metadata import (
+    CaptureSourceMetadata,
     ChunkMetadata,
     ChunkMetadataDocument,
     ErrorMetadata,
@@ -19,6 +21,7 @@ from here.output.metadata import (
     SessionEventMetadata,
     SessionEventMetadataDocument,
     SessionMetadata,
+    source_metadata,
 )
 from here.output.session_writer import (
     AUDIO_FILE,
@@ -30,7 +33,7 @@ from here.output.session_writer import (
     create_session_dir,
     write_session_artifacts,
 )
-from here.recording.models import RecordedAudioSource, RecordingSession
+from here.recording.models import CaptureFailed, RecordedAudioSource, RecordingSession
 from here.transcriber import transcribe_recording_session
 from here.transcription.client import TranscriptionResult
 
@@ -121,6 +124,72 @@ class SessionProcessor:
         self._transcribe = transcribe
         self._retry_delays = tuple(retry_delays)
         self._sleeper = sleeper
+
+    def _preserve_sources(
+        self, session: RecordingSession, session_dir: Path
+    ) -> list[CaptureSourceMetadata]:
+        provenance = []
+        for index, source in enumerate(session.sources, start=1):
+            metadata = CaptureSourceMetadata(**source_metadata(source).model_dump())
+            if source.path.exists():
+                name = f"source_{index:02d}.wav"
+                shutil.copy2(source.path, session_dir / name)
+                metadata.audio_file = name
+            provenance.append(metadata)
+        return provenance
+
+    def persist_capture_failure(
+        self,
+        failure: CaptureFailed,
+        target_dir: Path,
+        *,
+        use_alt_transcription_model: bool = False,
+        events: list[SessionEventMetadata] | None = None,
+        started_at: datetime | None = None,
+        total_paused_seconds: float = 0.0,
+    ) -> SessionArtifactPaths:
+        settings = get_settings()
+        completed_at = datetime.now().astimezone()
+        session_id, session_dir = create_session_dir(target_dir, completed_at)
+        session = failure.session
+        provenance = self._preserve_sources(session, session_dir)
+        errors = [error_metadata("capture", failure)]
+        recoverable_audio = None
+        try:
+            material = RecordingSession([source for source in session.sources if source.frames > 0])
+            normalized = materialize_normalized_session(
+                material, session_dir, output_name=AUDIO_FILE
+            )
+            recoverable_audio = AUDIO_FILE
+        except Exception as exc:
+            errors.append(error_metadata("recoverable_audio", exc))
+            normalized = session
+        artifacts = write_session_artifacts(
+            session=normalized,
+            target_dir=target_dir,
+            completed_at=completed_at,
+            transcription_model=settings.ALT_TRANSCRIPTION_MODEL
+            if use_alt_transcription_model
+            else settings.TRANSCRIPTION_MODEL,
+            cleanup_model=settings.CLEANUP_MODEL,
+            cleanup_enabled=settings.CLEANUP_ENABLED,
+            alt_model_used=use_alt_transcription_model,
+            live_pipeline_attempted=False,
+            live_pipeline_used=False,
+            fallback_used=False,
+            errors=errors,
+            status="failed",
+            failure_stage="capture",
+            recoverable_audio=recoverable_audio,
+            session_dir=session_dir,
+            session_id=session_id,
+            events=events,
+            started_at=started_at,
+            total_paused_seconds=total_paused_seconds,
+            capture_sources=provenance,
+        )
+        session.cleanup()
+        return artifacts
 
     def _offline_with_retries(
         self,
@@ -229,6 +298,7 @@ class SessionProcessor:
                 output_name=AUDIO_FILE,
             )
         except Exception as exc:
+            provenance = self._preserve_sources(session, session_dir)
             write_session_artifacts(
                 session=session,
                 target_dir=target_dir,
@@ -248,13 +318,14 @@ class SessionProcessor:
                 events=events,
                 started_at=started_at,
                 total_paused_seconds=total_paused_seconds,
+                capture_sources=provenance,
             )
             if live_controller is not None:
                 live_controller.abort()
             raise SessionProcessingFailed(
                 "Recoverable audio preparation failed",
                 session_dir,
-                recoverable=False,
+                recoverable=any(source.audio_file and source.frames > 0 for source in provenance),
             ) from exc
 
         if cancellation.is_set():
@@ -419,10 +490,30 @@ class SessionProcessor:
         cancel_event: threading.Event | None = None,
     ) -> SessionArtifactPaths:
         audio_path = session_dir / AUDIO_FILE
-        if not audio_path.exists():
-            raise RuntimeError(f"Recoverable audio does not exist: {audio_path}")
         metadata_path = session_dir / METADATA_FILE
         metadata = _read_model(metadata_path, SessionMetadata)
+        if not audio_path.exists():
+            raw_sources = (
+                [
+                    RecordedAudioSource(
+                        path=session_dir / item.audio_file,
+                        sample_rate=item.sample_rate,
+                        channels=item.channels,
+                        frames=item.frames,
+                        label=item.label,
+                        device_name=item.device_name,
+                    )
+                    for item in metadata.capture_sources
+                    if item.audio_file and item.frames > 0
+                ]
+                if metadata
+                else []
+            )
+            if not raw_sources:
+                raise RuntimeError(f"Recoverable audio does not exist: {audio_path}")
+            materialize_normalized_session(
+                RecordingSession(raw_sources), session_dir, output_name=AUDIO_FILE
+            )
         chunks_path = session_dir / CHUNKS_FILE
         errors_path = session_dir / ERRORS_FILE
         events_path = session_dir / EVENTS_FILE
@@ -529,6 +620,7 @@ class SessionProcessor:
             session=source,
             target_dir=session_dir.parent,
             transcript_text=result.final_text,
+            capture_sources=metadata.capture_sources if metadata else None,
             completed_at=metadata.completed_at if metadata else datetime.now().astimezone(),
             transcription_model=metadata.transcription_model
             if metadata

@@ -29,3 +29,13 @@ class RecordingSession:
     def cleanup(self) -> None:
         for source in self.sources:
             source.path.unlink(missing_ok=True)
+
+
+class CaptureFailed(RuntimeError):
+    """Capture stopped unexpectedly with finalized, recoverable source material."""
+
+    def __init__(self, session: RecordingSession, cause: BaseException) -> None:
+        super().__init__(f"Audio capture failed: {cause}")
+        self.session = session
+        self.cause = cause
+        self.__cause__ = cause

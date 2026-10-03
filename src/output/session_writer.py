@@ -7,6 +7,7 @@ from typing import Literal
 
 from here.output.markdown import render_transcript_markdown
 from here.output.metadata import (
+    CaptureSourceMetadata,
     ChunkMetadata,
     ChunkMetadataDocument,
     ErrorMetadata,
@@ -89,6 +90,7 @@ def write_session_artifacts(
     events: list[SessionEventMetadata] | None = None,
     started_at: datetime | None = None,
     total_paused_seconds: float = 0.0,
+    capture_sources: list[CaptureSourceMetadata] | None = None,
 ) -> SessionArtifactPaths:
     if session_dir is None:
         session_id, session_dir = create_session_dir(target_dir, completed_at)
@@ -105,6 +107,7 @@ def write_session_artifacts(
         output_files.append(ERRORS_FILE)
     if events:
         output_files.append(EVENTS_FILE)
+    output_files.extend(source.audio_file for source in capture_sources or [] if source.audio_file)
 
     metadata = build_session_metadata(
         session_id=session_id,
@@ -123,6 +126,7 @@ def write_session_artifacts(
         output_files=output_files,
         started_at=started_at,
         total_paused_seconds=total_paused_seconds,
+        capture_sources=capture_sources,
     )
 
     transcript_path = session_dir / TRANSCRIPT_FILE

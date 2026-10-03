@@ -28,6 +28,7 @@ from here.application.processing import (
 from here.live_processing import LiveTranscriptionController
 from here.output.metadata import SessionEventMetadata
 from here.recording.control import ControllableRecording
+from here.recording.models import CaptureFailed
 from here.recording.service import start_recording
 
 BlockSink = Callable[[str, np.ndarray, int, int], None]
@@ -291,6 +292,34 @@ class HereApplicationController:
         except ProcessingCancelled as exc:
             self._persisted(exc.session_dir, recoverable=True)
             self._transition(ApplicationState.CANCELLED, details={"recoverable": True})
+        except CaptureFailed as exc:
+            with self._lock:
+                destructive_cancel = self._cancel_recording
+                live = self._live
+                self._finish_pause()
+                self._append_session_event(
+                    "error", details={"stage": "capture", "type": type(exc).__name__}
+                )
+            if live is not None:
+                live.abort()
+                live.cleanup()
+            if destructive_cancel:
+                exc.session.cleanup()
+                self._transition(ApplicationState.CANCELLED, details={"recoverable": False})
+            else:
+                try:
+                    artifacts = self._processor.persist_capture_failure(
+                        exc,
+                        request.output_dir,
+                        use_alt_transcription_model=request.use_alt_transcription_model,
+                        events=self._events,
+                        started_at=self._snapshot.started_at,
+                        total_paused_seconds=self._snapshot.total_paused_seconds,
+                    )
+                    self._persisted(artifacts.session_dir, recoverable=True)
+                    self._fail("capture", exc)
+                except Exception as persistence_error:
+                    self._fail("capture_persistence", persistence_error)
         except SessionProcessingFailed as exc:
             with self._lock:
                 live = self._live

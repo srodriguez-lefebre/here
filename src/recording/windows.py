@@ -5,7 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import soundfile as sf
-from here.recording.models import RecordedAudioSource, RecordingSession
+from here.recording.models import CaptureFailed, RecordedAudioSource, RecordingSession
 from here.recording.shared import (
     build_single_source_session,
     open_temp_soundfile,
@@ -63,13 +63,12 @@ def _capture_windows_stream_to_file(
             time.sleep(min(next_deadline - now, 0.01))
             continue
 
-        while now >= next_deadline + chunk_duration:
-            writer.write(silence_chunk)
-            written_frames[0] += chunk
-            next_deadline += chunk_duration
-
         frames = silence_chunk.copy()
         try:
+            while now >= next_deadline + chunk_duration:
+                writer.write(silence_chunk)
+                written_frames[0] += chunk
+                next_deadline += chunk_duration
             available = 0
             get_read_available = getattr(stream, "get_read_available", None)
             if callable(get_read_available):
@@ -126,6 +125,8 @@ class WindowsRecordingHandle:
             self._stop_event.set()
             raise TimeoutError("Timed out while opening Windows audio devices")
         if self._error is not None:
+            if isinstance(self._error, CaptureFailed):
+                raise self._error
             raise RuntimeError("Failed to start Windows audio capture") from self._error
 
     def _run(self) -> None:
@@ -144,6 +145,8 @@ class WindowsRecordingHandle:
                 self._result.cleanup()
                 self._result = None
         except BaseException as exc:
+            if self._cancel_event.is_set() and isinstance(exc, CaptureFailed):
+                exc.session.cleanup()
             self._error = exc
         finally:
             self._ready_event.set()
@@ -165,10 +168,14 @@ class WindowsRecordingHandle:
     def wait(self, timeout: float | None = None) -> RecordingSession:
         if not self._done_event.wait(timeout):
             raise TimeoutError("Timed out waiting for audio capture to stop")
-        if self._error is not None:
-            raise RuntimeError("Windows audio capture failed") from self._error
         if self._cancel_event.is_set():
+            if isinstance(self._error, CaptureFailed):
+                self._error.session.cleanup()
             raise RuntimeError("Windows audio capture was cancelled")
+        if self._error is not None:
+            if isinstance(self._error, CaptureFailed):
+                raise self._error
+            raise RuntimeError("Windows audio capture failed") from self._error
         if self._result is None:
             raise RuntimeError("Windows audio capture produced no result")
         return self._result
@@ -334,10 +341,8 @@ def _record_windows_controlled(
         stop_event.wait()
         for thread in threads:
             thread.join()
-    except BaseException:
-        for path in paths:
-            path.unlink(missing_ok=True)
-        raise
+    except Exception as exc:
+        errors.append(exc)
     finally:
         stop_event.set()
         for thread in threads:
@@ -346,25 +351,28 @@ def _record_windows_controlled(
         for stream in streams:
             _safe_close_stream(stream)
         for writer in writers:
-            safe_close_soundfile(writer)
-        p.terminate()
+            try:
+                writer.close()
+            except Exception as exc:
+                errors.append(exc)
+        try:
+            p.terminate()
+        except Exception as exc:
+            errors.append(exc)
 
     if cancel_event.is_set():
         for path in paths:
             path.unlink(missing_ok=True)
         return RecordingSession(sources=[])
-    if errors:
-        for path in paths:
-            path.unlink(missing_ok=True)
-        raise RuntimeError("Recording failed while capturing Windows audio.") from errors[0]
-
     missing = [label for label, _, _, _, frames, _ in captured if frames[0] <= 0]
-    if missing:
+    if missing and not errors:
+        errors.append(RuntimeError(f"No audio captured from {', '.join(missing)}."))
+    if errors and not any(frames[0] > 0 for _, _, _, _, frames, _ in captured):
         for path in paths:
             path.unlink(missing_ok=True)
-        raise RuntimeError(f"No audio captured from {', '.join(missing)}.")
+        raise errors[0]
 
-    return RecordingSession(
+    session = RecordingSession(
         sources=[
             RecordedAudioSource(
                 path=path,
@@ -377,6 +385,9 @@ def _record_windows_controlled(
             for label, device, sample_rate, channels, frames, path in captured
         ]
     )
+    if errors:
+        raise CaptureFailed(session, errors[0]) from errors[0]
+    return session
 
 
 def start_windows_recording(

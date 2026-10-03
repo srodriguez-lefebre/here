@@ -16,6 +16,10 @@ class SourceMetadata(BaseModel):
     duration_seconds: float
 
 
+class CaptureSourceMetadata(SourceMetadata):
+    audio_file: str | None = None
+
+
 class SessionMetadata(BaseModel):
     schema_version: int = Field(default=1)
     session_id: str
@@ -26,6 +30,7 @@ class SessionMetadata(BaseModel):
     failure_stage: str | None = None
     recoverable_audio: str | None = None
     sources: list[SourceMetadata]
+    capture_sources: list[CaptureSourceMetadata] = Field(default_factory=list)
     transcription_model: str
     cleanup_model: str
     cleanup_enabled: bool
@@ -112,6 +117,7 @@ def build_session_metadata(
     started_at: datetime | None = None,
     total_paused_seconds: float = 0.0,
     output_files: list[str],
+    capture_sources: list[CaptureSourceMetadata] | None = None,
 ) -> SessionMetadata:
     duration_seconds = session.duration_seconds
     return SessionMetadata(
@@ -123,6 +129,7 @@ def build_session_metadata(
         failure_stage=failure_stage,
         recoverable_audio=recoverable_audio,
         sources=[source_metadata(source) for source in session.sources],
+        capture_sources=capture_sources or [],
         transcription_model=transcription_model,
         cleanup_model=cleanup_model,
         cleanup_enabled=cleanup_enabled,
