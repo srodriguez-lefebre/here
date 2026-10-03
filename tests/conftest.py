@@ -45,8 +45,10 @@ sys.modules["here"] = here_package
 
 
 @pytest.fixture(autouse=True)
-def _reset_settings_cache(monkeypatch: pytest.MonkeyPatch) -> None:
+def _reset_settings_cache(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setenv("HERE_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("HERE_ENV_FILE", str(tmp_path / "absent.env"))
 
     import here.config.settings as settings_module
 

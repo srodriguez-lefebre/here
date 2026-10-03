@@ -205,6 +205,7 @@ def materialize_normalized_session(
             source_file.close()
 
     return RecordingSession(
+        meeting_id=session.meeting_id,
         sources=[
             RecordedAudioSource(
                 path=normalized_path,
@@ -213,5 +214,5 @@ def materialize_normalized_session(
                 frames=written_frames,
                 label="normalized-mix",
             )
-        ]
+        ],
     )

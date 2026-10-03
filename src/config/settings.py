@@ -1,4 +1,8 @@
+from collections.abc import Callable
+from contextvars import ContextVar
+from functools import wraps
 from pathlib import Path
+from typing import ParamSpec, TypeVar
 
 from here.config.paths import get_data_dir, get_env_file
 from pydantic import Field, SecretStr
@@ -25,10 +29,29 @@ class Settings(BaseSettings):
 
 
 _settings_instance: Settings | None = None
+_operation_settings: ContextVar[Settings | None] = ContextVar("here_settings", default=None)
 
 
 def get_settings() -> Settings:
-    return Settings()
+    return _operation_settings.get() or Settings()
+
+
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
+def settings_operation(function: Callable[P, R]) -> Callable[P, R]:
+    """Refresh once per explicit operation; nested consumers share its snapshot."""
+
+    @wraps(function)
+    def wrapped(*args: P.args, **kwargs: P.kwargs) -> R:
+        token = _operation_settings.set(get_settings())
+        try:
+            return function(*args, **kwargs)
+        finally:
+            _operation_settings.reset(token)
+
+    return wrapped
 
 
 def require_provider_key() -> str:

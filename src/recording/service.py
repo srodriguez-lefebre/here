@@ -1,5 +1,6 @@
 import sys
 from collections.abc import Callable
+from pathlib import Path
 
 import numpy as np
 from here.recording.control import ControllableRecording
@@ -21,6 +22,7 @@ def start_recording(
     block_sink: BlockSink | None = None,
     microphone_device_id: int | None = None,
     system_device_id: int | None = None,
+    sessions_root: Path | None = None,
 ) -> ControllableRecording:
     """Start a programmatically controlled recording for the Windows application."""
 
@@ -33,6 +35,7 @@ def start_recording(
         block_sink=block_sink,
         microphone_device_id=microphone_device_id,
         system_device_id=system_device_id,
+        sessions_root=sessions_root,
     )
 
 

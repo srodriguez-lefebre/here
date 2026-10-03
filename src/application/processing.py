@@ -10,7 +10,7 @@ from pathlib import Path
 
 import soundfile as sf
 from here.audio.mix import materialize_normalized_session
-from here.config.settings import get_settings
+from here.config.settings import get_settings, require_provider_key, settings_operation
 from here.live_processing import LiveTranscriptionController
 from here.output.metadata import (
     CaptureSourceMetadata,
@@ -20,7 +20,6 @@ from here.output.metadata import (
     ErrorMetadataDocument,
     SessionEventMetadata,
     SessionEventMetadataDocument,
-    SessionMetadata,
     SourceMetadata,
     capture_metadata,
     source_metadata,
@@ -39,6 +38,7 @@ from here.output.session_writer import (
     METADATA_FILE,
     SessionArtifactPaths,
     create_session_dir,
+    read_session_metadata,
     validate_session_artifacts,
     write_session_artifacts,
 )
@@ -143,12 +143,6 @@ def _validated_recovery_source(
     )
 
 
-def _read_model(path: Path, model: type[SessionMetadata]) -> SessionMetadata | None:
-    if not path.exists():
-        return None
-    return model.model_validate_json(path.read_text(encoding="utf-8"))
-
-
 class SessionProcessor:
     """Owns recoverable persistence, live fallback, retries and session reprocessing."""
 
@@ -158,10 +152,64 @@ class SessionProcessor:
         transcribe: Callable[..., TranscriptionResult] = transcribe_recording_session,
         retry_delays: Sequence[float] = (0.5, 1.0),
         sleeper: Callable[[float], None] = time.sleep,
+        normalize: Callable[..., RecordingSession] | None = None,
+        clock: Callable[[], datetime] | None = None,
     ) -> None:
+        self._normalize = normalize
+        self._clock = clock or (lambda: datetime.now().astimezone())
         self._transcribe = transcribe
         self._retry_delays = tuple(retry_delays)
         self._sleeper = sleeper
+
+    def _materialize(
+        self, session: RecordingSession, directory: Path, *, output_name: str
+    ) -> RecordingSession:
+        normalize = self._normalize or materialize_normalized_session
+        for source in session.sources:
+            if getattr(source, "path", None) is not None:
+                path = session_artifact_path(source.path.parent, source.path.name)
+                _validated_recovery_source(path, source_metadata(source))
+        result = normalize(session, directory, output_name=output_name)
+        for source in result.sources:
+            if getattr(source, "path", None) is not None:
+                path = session_artifact_path(directory, source.path.name)
+                if path.absolute() != source.path.absolute():
+                    raise UnsafeSessionPath("Normalized source escaped the session")
+                _validated_recovery_source(path, source_metadata(source))
+        return result
+
+    def _destination(
+        self, session: RecordingSession, target_dir: Path, completed_at: datetime
+    ) -> tuple[str, Path]:
+        journal = getattr(session, "journal", None)
+        if journal is None:
+            for source in session.sources:
+                if getattr(source, "path", None) is not None:
+                    path = session_artifact_path(source.path.parent, source.path.name)
+                    _validated_recovery_source(path, source_metadata(source))
+            return create_session_dir(target_dir, completed_at)
+        current = journal.load(journal.root, journal.document.capture_id)
+        if current.root != target_dir.absolute():
+            raise UnsafeSessionPath("Capture root disagrees with processing destination")
+        session.sources = current.recording_session().sources  # authoritative validated disk state
+        directory = current.destination
+        existing = read_session_metadata(directory)
+        if existing is not None and existing.meeting_id != current.document.capture_id:
+            raise UnsafeSessionPath("Destination belongs to another session")
+        directory.mkdir(parents=True, exist_ok=True)
+        return current.document.started_at.strftime("%Y%m%d_%H%M%S"), directory
+
+    def _capture_events(
+        self, session: RecordingSession, events: list[SessionEventMetadata] | None
+    ) -> list[SessionEventMetadata] | None:
+        journal = getattr(session, "journal", None)
+        if journal is None:
+            return events
+        current = journal.load(journal.root, journal.document.capture_id)
+        return [
+            *(events or []),
+            *(SessionEventMetadata.model_validate(event) for event in current.document.events),
+        ]
 
     def _preserve_sources(
         self, session: RecordingSession, session_dir: Path
@@ -169,10 +217,14 @@ class SessionProcessor:
         validate_session_artifacts(
             session_dir, [f"source_{index:02d}.wav" for index in range(1, len(session.sources) + 1)]
         )
+        for source in session.sources:
+            if getattr(source, "path", None) is not None:
+                path = session_artifact_path(source.path.parent, source.path.name)
+                _validated_recovery_source(path, source_metadata(source))
         provenance = []
         for index, source in enumerate(session.sources, start=1):
             metadata = CaptureSourceMetadata(**source_metadata(source).model_dump())
-            if source.path.exists():
+            if getattr(source, "path", None) is not None and source.path.exists():
                 name = f"source_{index:02d}.wav"
                 with staged_artifact_path(session_dir / name) as staged:
                     shutil.copy2(source.path, staged)
@@ -189,24 +241,26 @@ class SessionProcessor:
         events: list[SessionEventMetadata] | None = None,
         started_at: datetime | None = None,
         total_paused_seconds: float = 0.0,
+        original_errors: list[ErrorMetadata] | None = None,
     ) -> SessionArtifactPaths:
         settings = get_settings()
-        completed_at = datetime.now().astimezone()
-        session_id, session_dir = create_session_dir(target_dir, completed_at)
+        completed_at = self._clock()
         session = failure.session
+        session_id, session_dir = self._destination(session, target_dir, completed_at)
+        events = self._capture_events(session, events)
         provenance = self._preserve_sources(session, session_dir)
-        errors = [error_metadata("capture", failure)]
+        errors = original_errors or [error_metadata("capture", failure)]
         recoverable_audio = None
         try:
-            material = RecordingSession([source for source in session.sources if source.frames > 0])
-            normalized = materialize_normalized_session(
-                material, session_dir, output_name=AUDIO_FILE
+            material = RecordingSession(
+                [source for source in session.sources if source.frames > 0],
+                meeting_id=session.meeting_id,
             )
+            normalized = self._materialize(material, session_dir, output_name=AUDIO_FILE)
             recoverable_audio = AUDIO_FILE
         except UnsafeSessionPath:
             raise
         except Exception as exc:
-            (session_dir / AUDIO_FILE).unlink(missing_ok=True)
             errors.append(error_metadata("recoverable_audio", exc))
             normalized = session
         artifacts = write_session_artifacts(
@@ -337,6 +391,7 @@ class SessionProcessor:
             errors=errors,
         )
 
+    @settings_operation
     def process(
         self,
         session: RecordingSession,
@@ -349,19 +404,22 @@ class SessionProcessor:
         started_at: datetime | None = None,
         total_paused_seconds: float = 0.0,
     ) -> SessionArtifactPaths:
+        if self._transcribe is transcribe_recording_session:
+            require_provider_key()
         cancellation = cancel_event or threading.Event()
-        completed_at = datetime.now().astimezone()
+        completed_at = self._clock()
         settings = get_settings()
         transcription_model = (
             settings.ALT_TRANSCRIPTION_MODEL
             if use_alt_transcription_model
             else settings.TRANSCRIPTION_MODEL
         )
-        session_id, session_dir = create_session_dir(target_dir, completed_at)
+        session_id, session_dir = self._destination(session, target_dir, completed_at)
+        events = self._capture_events(session, events)
         recoverable: RecordingSession | None = None
 
         try:
-            recoverable = materialize_normalized_session(
+            recoverable = self._materialize(
                 session,
                 session_dir,
                 output_name=AUDIO_FILE,
@@ -369,7 +427,6 @@ class SessionProcessor:
         except UnsafeSessionPath:
             raise
         except Exception as exc:
-            (session_dir / AUDIO_FILE).unlink(missing_ok=True)
             provenance = self._preserve_sources(session, session_dir)
             write_session_artifacts(
                 session=session,
@@ -400,6 +457,26 @@ class SessionProcessor:
                 recoverable=any(source.audio_file and source.frames > 0 for source in provenance),
             ) from exc
 
+        write_session_artifacts(
+            session=recoverable,
+            target_dir=target_dir,
+            completed_at=completed_at,
+            transcription_model=transcription_model,
+            cleanup_model=settings.CLEANUP_MODEL,
+            cleanup_enabled=settings.CLEANUP_ENABLED,
+            alt_model_used=use_alt_transcription_model,
+            live_pipeline_attempted=live_controller is not None,
+            live_pipeline_used=False,
+            fallback_used=False,
+            status="pending",
+            recoverable_audio=AUDIO_FILE,
+            session_dir=session_dir,
+            session_id=session_id,
+            capture_sources=capture_metadata(session),
+            events=events,
+            started_at=started_at,
+            total_paused_seconds=total_paused_seconds,
+        )
         if cancellation.is_set():
             return self._persist_cancelled(
                 original=session,
@@ -559,16 +636,30 @@ class SessionProcessor:
         original.cleanup()
         raise ProcessingCancelled(artifacts.session_dir)
 
+    @settings_operation
     def retry(
         self,
         session_dir: Path,
         *,
         cancel_event: threading.Event | None = None,
     ) -> SessionArtifactPaths:
+        if self._transcribe is transcribe_recording_session:
+            require_provider_key()
         validate_session_artifacts(session_dir)
         audio_path = session_audio_path(session_dir, AUDIO_FILE)
-        metadata_path = session_dir / METADATA_FILE
-        metadata = _read_model(metadata_path, SessionMetadata)
+        metadata = read_session_metadata(session_dir)
+        journal = None
+        if metadata is not None and metadata.meeting_id is not None:
+            from here.recording.journal import CaptureJournal
+
+            try:
+                journal = CaptureJournal.load(session_dir.parent, metadata.meeting_id)
+            except FileNotFoundError:
+                pass
+            if journal is not None:
+                if journal.destination != session_dir.absolute():
+                    raise UnsafeSessionPath("Recovery journal points to another session")
+                journal.recording_session()
         raw_sources = []
         if metadata is not None:
             extra_files = list(metadata.output_files)
@@ -601,13 +692,7 @@ class SessionProcessor:
             raw_sources = [source for source in raw_sources if source.frames > 0]
             if not raw_sources:
                 raise RuntimeError(f"Recoverable audio does not exist: {audio_path}")
-            try:
-                materialize_normalized_session(
-                    RecordingSession(raw_sources), session_dir, output_name=AUDIO_FILE
-                )
-            except Exception:
-                audio_path.unlink(missing_ok=True)
-                raise
+            self._materialize(RecordingSession(raw_sources), session_dir, output_name=AUDIO_FILE)
             recovered_source = _validated_recovery_source(audio_path)
         chunks_path = session_dir / CHUNKS_FILE
         errors_path = session_dir / ERRORS_FILE
@@ -633,9 +718,35 @@ class SessionProcessor:
             if events_path.exists()
             else []
         )
-        source = RecordingSession([recovered_source])
+        source = RecordingSession(
+            [recovered_source], meeting_id=metadata.meeting_id if metadata else None
+        )
         cancellation = cancel_event or threading.Event()
         settings = get_settings()
+        write_session_artifacts(
+            session=source,
+            capture_sources=metadata.capture_sources if metadata else None,
+            target_dir=session_dir.parent,
+            completed_at=metadata.completed_at if metadata else datetime.now().astimezone(),
+            transcription_model=settings.ALT_TRANSCRIPTION_MODEL
+            if metadata and metadata.alt_model_used
+            else settings.TRANSCRIPTION_MODEL,
+            cleanup_model=settings.CLEANUP_MODEL,
+            cleanup_enabled=settings.CLEANUP_ENABLED,
+            alt_model_used=metadata.alt_model_used if metadata else False,
+            live_pipeline_attempted=metadata.live_pipeline_attempted if metadata else False,
+            live_pipeline_used=False,
+            fallback_used=metadata.fallback_used if metadata else False,
+            chunks=chunks,
+            errors=errors,
+            status="pending",
+            recoverable_audio=AUDIO_FILE,
+            session_dir=session_dir,
+            session_id=metadata.session_id if metadata else session_dir.name,
+            events=events,
+            started_at=metadata.started_at if metadata else None,
+            total_paused_seconds=metadata.total_paused_seconds if metadata else 0.0,
+        )
         try:
             result = self._offline_with_retries(
                 source,
@@ -659,11 +770,11 @@ class SessionProcessor:
                 capture_sources=metadata.capture_sources if metadata else None,
                 target_dir=session_dir.parent,
                 completed_at=metadata.completed_at if metadata else datetime.now().astimezone(),
-                transcription_model=metadata.transcription_model
-                if metadata
+                transcription_model=settings.ALT_TRANSCRIPTION_MODEL
+                if metadata and metadata.alt_model_used
                 else settings.TRANSCRIPTION_MODEL,
-                cleanup_model=metadata.cleanup_model if metadata else settings.CLEANUP_MODEL,
-                cleanup_enabled=metadata.cleanup_enabled if metadata else settings.CLEANUP_ENABLED,
+                cleanup_model=settings.CLEANUP_MODEL,
+                cleanup_enabled=settings.CLEANUP_ENABLED,
                 alt_model_used=metadata.alt_model_used if metadata else False,
                 live_pipeline_attempted=metadata.live_pipeline_attempted if metadata else False,
                 live_pipeline_used=False,
@@ -687,11 +798,11 @@ class SessionProcessor:
                 capture_sources=metadata.capture_sources if metadata else None,
                 target_dir=session_dir.parent,
                 completed_at=metadata.completed_at if metadata else datetime.now().astimezone(),
-                transcription_model=metadata.transcription_model
-                if metadata
+                transcription_model=settings.ALT_TRANSCRIPTION_MODEL
+                if metadata and metadata.alt_model_used
                 else settings.TRANSCRIPTION_MODEL,
-                cleanup_model=metadata.cleanup_model if metadata else settings.CLEANUP_MODEL,
-                cleanup_enabled=metadata.cleanup_enabled if metadata else settings.CLEANUP_ENABLED,
+                cleanup_model=settings.CLEANUP_MODEL,
+                cleanup_enabled=settings.CLEANUP_ENABLED,
                 alt_model_used=metadata.alt_model_used if metadata else False,
                 live_pipeline_attempted=metadata.live_pipeline_attempted if metadata else False,
                 live_pipeline_used=False,
@@ -713,18 +824,18 @@ class SessionProcessor:
                 recoverable=True,
             ) from exc
 
-        return write_session_artifacts(
+        artifacts = write_session_artifacts(
             session=source,
             target_dir=session_dir.parent,
             transcript_text=result.final_text,
             segments=getattr(result, "segments", None),
             capture_sources=metadata.capture_sources if metadata else None,
             completed_at=metadata.completed_at if metadata else datetime.now().astimezone(),
-            transcription_model=metadata.transcription_model
-            if metadata
+            transcription_model=settings.ALT_TRANSCRIPTION_MODEL
+            if metadata and metadata.alt_model_used
             else settings.TRANSCRIPTION_MODEL,
-            cleanup_model=metadata.cleanup_model if metadata else settings.CLEANUP_MODEL,
-            cleanup_enabled=metadata.cleanup_enabled if metadata else settings.CLEANUP_ENABLED,
+            cleanup_model=settings.CLEANUP_MODEL,
+            cleanup_enabled=settings.CLEANUP_ENABLED,
             alt_model_used=metadata.alt_model_used if metadata else False,
             live_pipeline_attempted=metadata.live_pipeline_attempted if metadata else False,
             live_pipeline_used=False,
@@ -738,3 +849,7 @@ class SessionProcessor:
             started_at=metadata.started_at if metadata else None,
             total_paused_seconds=metadata.total_paused_seconds if metadata else 0.0,
         )
+
+        if journal is not None:
+            journal.discard()
+        return artifacts

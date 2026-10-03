@@ -40,6 +40,7 @@ class TranscriptSegmentDocument(BaseModel):
 class SessionMetadata(BaseModel):
     schema_version: int = Field(default=1)
     session_id: str
+    meeting_id: str | None = None
     started_at: datetime
     completed_at: datetime
     duration_seconds: float
@@ -145,6 +146,7 @@ def build_session_metadata(
     duration_seconds = session.duration_seconds
     return SessionMetadata(
         session_id=session_id,
+        meeting_id=getattr(session, "meeting_id", None),
         started_at=started_at or completed_at - timedelta(seconds=duration_seconds),
         completed_at=completed_at,
         duration_seconds=duration_seconds,

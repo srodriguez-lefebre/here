@@ -25,6 +25,7 @@ from here.application.processing import (
     SessionProcessor,
     error_metadata,
 )
+from here.config.settings import require_provider_key, settings_operation
 from here.live_processing import LiveTranscriptionController
 from here.output.metadata import SessionEventMetadata
 from here.output.session_writer import SessionArtifactPaths
@@ -47,6 +48,7 @@ def _default_capture_factory(request: StartRequest, block_sink: BlockSink) -> Co
         block_sink=block_sink,
         microphone_device_id=request.microphone_device_id,
         system_device_id=request.system_device_id,
+        sessions_root=request.output_dir,
     )
 
 
@@ -200,12 +202,9 @@ class HereApplicationController:
         del channels
         with self._lock:
             live = self._live
+            # The sink receives blocks already committed to the disk timeline.
+            # A simultaneous pause/stop must not drop those from live processing.
             state = self._snapshot.state
-            if state not in {
-                ApplicationState.PREPARING,
-                ApplicationState.RECORDING,
-            }:
-                return
         if live is not None:
             live.submit_block(label, data, sample_rate, data.shape[1] if data.ndim > 1 else 1)
 
@@ -246,11 +245,17 @@ class HereApplicationController:
             )
         )
 
+    @settings_operation
     def _run_recording(self) -> None:
         request = self._request
         assert request is not None
         source_count = 2 if request.source_mode.value == "both" else 1
         try:
+            if (
+                self._capture_factory is _default_capture_factory
+                or self._live_factory is _default_live_factory
+            ):
+                require_provider_key()
             live = self._live_factory(source_count, request.use_alt_transcription_model)
             with self._lock:
                 self._live = live

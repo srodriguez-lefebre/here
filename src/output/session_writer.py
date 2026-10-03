@@ -93,6 +93,23 @@ def validate_session_artifacts(session_dir: Path, extra_files: list[str] | None 
         session_artifact_path(session_dir, filename)
 
 
+def read_session_metadata(session_dir: Path) -> SessionMetadata | None:
+    """Preflight every managed entry before reading neighboring session state."""
+    validate_session_artifacts(session_dir)
+    path = session_artifact_path(session_dir, METADATA_FILE)
+    if not path.exists():
+        return None
+    metadata = SessionMetadata.model_validate_json(path.read_text(encoding=METADATA_ENCODING))
+    if metadata.schema_version != 1:
+        raise ValueError("Unsupported session version")
+    references = list(metadata.output_files)
+    references.extend(item.audio_file for item in metadata.capture_sources if item.audio_file)
+    if metadata.recoverable_audio:
+        references.append(metadata.recoverable_audio)
+    validate_session_artifacts(session_dir, references)
+    return metadata
+
+
 def _stage_document(destination: Path, content: str) -> Path:
     staged = reserve_artifact_path(destination, ".stage")
     try:
@@ -261,18 +278,18 @@ def write_session_artifacts(
             errors_document.model_dump_json(indent=2),
             encoding=METADATA_ENCODING,
         )
-    elif errors_path.exists():
-        errors_path.unlink()
     if events:
         write_artifact_text(
             events_path,
             events_document.model_dump_json(indent=2),
             encoding=METADATA_ENCODING,
         )
-    elif events_path.exists():
-        events_path.unlink()
 
     _publish_metadata_and_segments(metadata_path, metadata.model_dump_json(indent=2), segments_json)
+    # Obsolete artifacts are removed only after the new manifest commits.
+    for filename, retain in ((ERRORS_FILE, errors), (EVENTS_FILE, events)):
+        if not retain:
+            session_artifact_path(session_dir, filename).unlink(missing_ok=True)
 
     return SessionArtifactPaths(
         session_dir=session_dir,
