@@ -25,6 +25,11 @@ must be synthetic; credentials and private conversations never enter evidence fi
 
 ## Runs
 
+Sanitized, versioned observations from the real synthetic-provider runs are in
+[`M1_PROVIDER_EVIDENCE.json`](M1_PROVIDER_EVIDENCE.json). Only authored fixture
+content, source formats, provider segments and audio hashes are included; no local
+session paths, credentials or private recordings are published.
+
 - 2026-10-03: original main `2bdb6ef`, 163 tests passed (Python environment in original
   checkout), and fresh managed worktree baseline 163 passed (Python 3.14.7, 42.19 s).
 - Windows default device enumeration: microphone `Microphone (3- Arctis Nova 7P)`,
@@ -48,6 +53,10 @@ must be synthetic; credentials and private conversations never enter evidence fi
   The first returned start precedes its synthetic source offset by 300 ms; later
   utterance starts are within 40 ms. This measures provider estimates, not an exact
   acoustic alignment guarantee, physical capture or long-meeting certification.
+- Capture correctness suite at review-fix commit `4860095`: 211 passed, including
+  ten regressions for the two Copilot findings. Changed-file Ruff and diff checks pass.
+  Hosted Windows/Ubuntu tests and wheel/source builds passed at CI correction head
+  `545174e`, run `37099618688`; current review-fix head checks are required separately.
 
 ## Measurement decisions
 

@@ -102,3 +102,14 @@ open wherever it has not actually been observed.
   persisting audio, and late processing cancellation retains matching metadata.
   Six regression cases and affected suites passed (55); full committed-head suite:
   200 passed in 16.86 seconds. Independent re-review precedes PR creation.
+- First M1 subset PR: https://github.com/srodriguez-lefebre/here/pull/12. Independent
+  task and whole-branch reviews accepted the implementation. GitHub recorded the
+  requested Copilot review; review `5399146085` inspected head `c3dc790` and identified
+  two accepted defects (comments `4171819200`, `4171819228`). Commit `4860095` fixes
+  successful-result cleanup after late cancellation and valid nested timestamp alias
+  fallback. Ten cases reproduced nine failures before correction; 57 focused tests
+  and the full suite of 211 passed. Replies, current-head review and merge remain pending.
+- Initial CI exposed an existing UTC string-comparison assumption and a missing EGL
+  runtime on Ubuntu. Commit `545174e` adds deterministic UTC/non-UTC checks using aware
+  datetime equality and installs libegl1. Windows and Ubuntu jobs both passed on that
+  head (run `37099618688`); review-fix head CI must also pass before merge.
