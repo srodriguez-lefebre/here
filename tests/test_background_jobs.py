@@ -7,6 +7,16 @@ import pytest
 from here.ui import bridge
 
 
+def test_successful_none_result_has_no_error(qtbot):
+    jobs = bridge.BackgroundJobs()
+    delivered = []
+    jobs.finished.connect(lambda *args: delivered.append(args))
+    request = jobs.submit("retry", lambda: None)
+    qtbot.waitUntil(lambda: not jobs.busy)
+    assert delivered == [(request, "retry", None, None)]
+    jobs.close()
+
+
 @pytest.mark.parametrize("closed", [False, True])
 def test_idle_waits_for_actual_final_job_thread_exit(qtbot, monkeypatch, closed):
     selected, entered, release = threading.Event(), threading.Event(), threading.Event()

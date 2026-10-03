@@ -79,7 +79,7 @@ class BackgroundJobs(QObject):
             try:
                 outcome[0] = operation()
             except Exception as exc:
-                outcome[1] = str(exc)
+                outcome[1] = str(exc) or type(exc).__name__
 
         worker = threading.Thread(target=work, name=f"here-ui-{kind}", daemon=True)
 

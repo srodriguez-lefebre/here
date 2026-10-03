@@ -83,6 +83,53 @@ def test_recovery_discovery_is_local_and_retry_requires_selection(qtbot, tmp_pat
     assert calls == ["discover", "materialize"]
 
 
+@pytest.mark.parametrize(
+    ("error", "message"),
+    [
+        (RuntimeError(), "RuntimeError"),
+        (OSError(), "OSError"),
+        (RuntimeError(" audio failed "), " audio failed "),
+    ],
+)
+def test_background_diagnostic_error_is_visible(qtbot, tmp_path, error, message):
+    class Diagnostics:
+        def test_signal(self, source):
+            raise error
+
+    _, ui = desktop(qtbot, tmp_path, diagnostics_service=Diagnostics())
+    qtbot.waitUntil(lambda: not ui.jobs.busy)
+    ui.main_window.findChild(object, "testMicrophoneButton").click()
+    qtbot.waitUntil(lambda: not ui.jobs.busy)
+    assert ui.main_window.findChild(object, "diagnosticsLabel").text() == (
+        f"Error de audio: {message}"
+    )
+    assert ui.main_window.findChild(object, "testMicrophoneButton").isEnabled()
+
+
+@pytest.mark.parametrize(
+    ("error", "message"),
+    [(ValueError(), "ValueError"), (ValueError(" retry failed "), " retry failed ")],
+)
+def test_background_retry_error_preserves_visible_selection(qtbot, tmp_path, error, message):
+    candidate = RecoveryCandidate(tmp_path, "Interrupted", 3, "interrupted", None, True)
+
+    class Recovery:
+        def discover(self):
+            return [candidate]
+
+        def materialize(self, item):
+            raise error
+
+    core, ui = desktop(qtbot, tmp_path, recovery_service=Recovery())
+    qtbot.waitUntil(lambda: not ui.jobs.busy)
+    ui.main_window.findChild(object, "recoverButton").click()
+    qtbot.waitUntil(lambda: not ui.jobs.busy)
+    assert ui.main_window.findChild(object, "recoveryLabel").text() == message
+    assert ui.main_window.findChild(object, "recoverySelector").currentData() == candidate
+    assert ui.main_window.findChild(object, "recoverButton").isEnabled()
+    assert core.command_log == []
+
+
 def test_exit_does_not_quit_until_terminal_and_completion(qtbot, tmp_path, monkeypatch):
     core, ui = desktop(qtbot, tmp_path)
     qtbot.waitUntil(lambda: not ui.jobs.busy)
