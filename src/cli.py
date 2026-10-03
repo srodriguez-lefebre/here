@@ -1,3 +1,4 @@
+import re
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -171,6 +172,52 @@ def _session_from_audio_file(audio_path: Path) -> RecordingSession:
     )
 
 
+def _cleanup_replaced_audio(
+    session_dir: Path,
+    previous: SessionMetadata | None,
+    *,
+    input_path: Path,
+    current_audio: str,
+) -> None:
+    """Best-effort removal of one known derived file after final publication."""
+    if previous is None or previous.recoverable_audio is None:
+        return
+    name = previous.recoverable_audio
+    if re.fullmatch(r"audio(?:_[0-9a-f]{32})?\.wav", name) is None:
+        logger.warning("Previous recoverable audio has an unknown name; retained: {}", name)
+        return
+    try:
+        current = read_session_metadata(session_dir)
+        if (
+            current is None
+            or current.status not in {"completed", "failed"}
+            or current.session_id != previous.session_id
+            or current.meeting_id != previous.meeting_id
+            or current.recoverable_audio != current_audio
+        ):
+            raise ValueError("Final session metadata could not be confirmed")
+        references = [*current.output_files, current_audio]
+        references.extend(
+            item.audio_file
+            for item in (*previous.capture_sources, *current.capture_sources)
+            if item.audio_file
+        )
+        protected = {
+            input_path.absolute(),
+            *((session_dir / item).absolute() for item in references),
+        }
+        candidate = session_artifact_path(session_dir, name)
+        if candidate.absolute() in protected:
+            return
+        candidate.unlink(missing_ok=True)
+    except (OSError, ValueError, RuntimeError) as exc:
+        logger.warning(
+            "Session metadata committed; replaced audio retained because cleanup failed: {}: {}",
+            name,
+            exc,
+        )
+
+
 @settings_operation
 def _save_transcription(
     session: RecordingSession,
@@ -248,6 +295,8 @@ def _transcribe_audio_path(
             )
             newly_owned_audio = True
     except Exception as exc:
+        if existing_metadata is not None:
+            raise RuntimeError("Recoverable audio preparation failed") from exc
         errors = [
             *previous_errors,
             _error_metadata("recoverable_audio", exc),
@@ -324,6 +373,9 @@ def _transcribe_audio_path(
             session_dir=session_dir,
             session_id=session_id,
         )
+        _cleanup_replaced_audio(
+            session_dir, existing_metadata, input_path=audio_path, current_audio=recoverable_audio
+        )
         raise RuntimeError("Transcription failed") from exc
 
     artifacts = write_session_artifacts(
@@ -349,6 +401,9 @@ def _transcribe_audio_path(
         recoverable_audio=recoverable_audio,
         session_dir=session_dir,
         session_id=session_id,
+    )
+    _cleanup_replaced_audio(
+        session_dir, existing_metadata, input_path=audio_path, current_audio=recoverable_audio
     )
     logger.success("Saved to {path}", path=artifacts.session_dir)
 

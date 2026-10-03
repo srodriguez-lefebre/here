@@ -1,4 +1,5 @@
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -63,6 +64,290 @@ def managed_file_session(root):
         ],
     )
     return directory
+
+
+@pytest.mark.parametrize(
+    "outcomes",
+    [
+        ("completed", "completed"),
+        ("completed", "failed"),
+        ("failed", "completed"),
+        ("failed", "failed"),
+    ],
+)
+def test_repeated_managed_raw_transcription_removes_only_replaced_audio(
+    tmp_path, monkeypatch, outcomes
+):
+    import here.cli as cli
+
+    root = tmp_path / "sessions"
+    directory = managed_file_session(root)
+    raw = directory / "source_01.wav"
+    original_raw = raw.read_bytes()
+    canaries = {"unknown.wav": b"unknown", "audio_" + "f" * 32 + ".wav": b"unowned"}
+    for name, content in canaries.items():
+        (directory / name).write_bytes(content)
+    metadata_path = directory / "session.json"
+    initial = json.loads(metadata_path.read_text())
+    for outcome in outcomes:
+        previous = json.loads(metadata_path.read_text())
+        old = directory / previous["recoverable_audio"]
+        old_bytes = old.read_bytes()
+        provider_error = OSError("synthetic original provider failure")
+
+        def provider(session, **kwargs):
+            pending = json.loads(metadata_path.read_text())
+            assert pending["status"] == "pending"
+            assert set(previous["output_files"]) <= set(pending["output_files"])
+            assert old.read_bytes() == old_bytes
+            assert raw.read_bytes() == original_raw
+            assert session.sources[0].path.name == pending["recoverable_audio"]
+            assert sf.info(session.sources[0].path).frames == 240
+            if outcome == "failed":
+                raise provider_error
+            return TranscriptionResult("new text", "new text")
+
+        monkeypatch.setattr(cli, "transcribe_recording_session", provider)
+        if outcome == "failed":
+            with pytest.raises(RuntimeError, match="Transcription failed") as caught:
+                cli._transcribe_audio_path(raw, root)
+            assert caught.value.__cause__ is provider_error
+        else:
+            cli._transcribe_audio_path(raw, root)
+        current = json.loads(metadata_path.read_text())
+        assert current["status"] == outcome
+        for key in ("session_id", "meeting_id", "capture_sources"):
+            assert current[key] == initial[key]
+        assert current["recoverable_audio"] != old.name
+        assert not old.exists(), "Replaced full-length normalized WAV became an orphan"
+        assert sf.info(directory / current["recoverable_audio"]).frames == 240
+        assert raw.read_bytes() == original_raw
+        assert {name: (directory / name).read_bytes() for name in canaries} == canaries
+        assert {path.name for path in directory.glob("*.wav")} == {
+            "source_01.wav",
+            current["recoverable_audio"],
+            *canaries,
+        }
+
+
+@pytest.mark.parametrize("outcome", ["completed", "failed"])
+@pytest.mark.parametrize("failure", ["unlink", "read", "path", "missing_metadata", "invalid_json"])
+def test_postcommit_audio_cleanup_fault_preserves_committed_outcome(
+    tmp_path, monkeypatch, outcome, failure
+):
+    import here.cli as cli
+    from here.output.paths import UnsafeSessionPath
+
+    root = tmp_path / "sessions"
+    directory = managed_file_session(root)
+    old = directory / "audio.wav"
+    old_bytes = old.read_bytes()
+    committed = False
+    attempted = []
+    warnings = []
+    provider_error = OSError("original provider failure")
+    original_write = cli.write_session_artifacts
+    original_read = cli.read_session_metadata
+    original_unlink = Path.unlink
+    original_path = cli.session_artifact_path
+
+    def write(**kwargs):
+        nonlocal committed
+        result = original_write(**kwargs)
+        committed = True
+        if failure == "invalid_json":
+            (directory / "session.json").write_text("invalid metadata")
+        return result
+
+    def read(path):
+        if committed and failure == "invalid_json":
+            attempted.append(failure)
+        if committed and failure in {"read", "missing_metadata"}:
+            attempted.append(failure)
+            if failure == "missing_metadata":
+                return None
+            raise OSError("postcommit metadata read failed")
+        return original_read(path)
+
+    def unlink(path, *args, **kwargs):
+        if path == old and committed and failure == "unlink":
+            attempted.append(failure)
+            raise OSError("postcommit unlink failed")
+        return original_unlink(path, *args, **kwargs)
+
+    def artifact_path(parent, name):
+        if parent / name == old and committed and failure == "path":
+            attempted.append(failure)
+            raise UnsafeSessionPath("postcommit path rejected")
+        return original_path(parent, name)
+
+    def provider(*args, **kwargs):
+        if outcome == "failed":
+            raise provider_error
+        return TranscriptionResult("new", "new")
+
+    monkeypatch.setattr(cli, "write_session_artifacts", write)
+    monkeypatch.setattr(cli, "read_session_metadata", read)
+    monkeypatch.setattr(cli, "session_artifact_path", artifact_path)
+    monkeypatch.setattr(Path, "unlink", unlink)
+    monkeypatch.setattr(cli, "transcribe_recording_session", provider)
+    token = cli.logger.add(lambda message: warnings.append(str(message)), level="WARNING")
+    try:
+        if outcome == "failed":
+            with pytest.raises(RuntimeError, match="Transcription failed") as caught:
+                cli._transcribe_audio_path(directory / "source_01.wav", root)
+            assert caught.value.__cause__ is provider_error
+        else:
+            cli._transcribe_audio_path(directory / "source_01.wav", root)
+    finally:
+        cli.logger.remove(token)
+    assert attempted == [failure], "Committed cleanup was not attempted"
+    assert warnings
+    assert old.read_bytes() == old_bytes
+    if failure != "invalid_json":
+        current = json.loads((directory / "session.json").read_text())
+        assert current["status"] == outcome
+        assert current["recoverable_audio"] != "audio.wav"
+        assert sf.info(directory / current["recoverable_audio"]).frames == 240
+
+
+@pytest.mark.parametrize("protection", ["output", "capture", "prior_capture", "current", "unknown"])
+def test_audio_cleanup_preserves_protected_and_unknown_previous_file(
+    tmp_path, monkeypatch, protection
+):
+    import here.cli as cli
+
+    root = tmp_path / "sessions"
+    directory = managed_file_session(root)
+    metadata_path = directory / "session.json"
+    old = directory / "audio.wav"
+    metadata = json.loads(metadata_path.read_text())
+    if protection == "unknown":
+        old = old.rename(directory / "audio_selected.wav")
+        metadata["recoverable_audio"] = old.name
+        metadata["output_files"] = [
+            old.name if name == "audio.wav" else name for name in metadata["output_files"]
+        ]
+    elif protection == "prior_capture":
+        original_capture = metadata["sources"][0]
+        metadata["capture_sources"].append({**original_capture, "audio_file": old.name})
+    metadata_path.write_text(json.dumps(metadata))
+    old_bytes = old.read_bytes()
+    raw_bytes = (directory / "source_01.wav").read_bytes()
+    original_write = cli.write_session_artifacts
+
+    def write(**kwargs):
+        # Remove old capture provenance at final publication: even then the
+        # original capture file must remain protected by the prior manifest.
+        if protection == "prior_capture":
+            kwargs["capture_sources"] = kwargs["capture_sources"][:1]
+        result = original_write(**kwargs)
+        current = json.loads(metadata_path.read_text())
+        if protection == "output":
+            # Windows paths ignore case; retain the same entry under either spelling.
+            current["output_files"].append(
+                old.name.upper() if sys.platform == "win32" else old.name
+            )
+        elif protection == "capture":
+            current["capture_sources"].append({**metadata["sources"][0], "audio_file": old.name})
+        metadata_path.write_text(json.dumps(current))
+        return result
+
+    monkeypatch.setattr(cli, "write_session_artifacts", write)
+    monkeypatch.setattr(
+        cli, "transcribe_recording_session", lambda *a, **kw: TranscriptionResult("ok", "ok")
+    )
+    selected = old if protection == "current" else directory / "source_01.wav"
+    cli._transcribe_audio_path(selected, root)
+    assert old.read_bytes() == old_bytes
+    assert (directory / "source_01.wav").read_bytes() == raw_bytes
+    current = json.loads(metadata_path.read_text())
+    assert current["status"] == "completed"
+    assert (directory / current["recoverable_audio"]).exists()
+
+
+@pytest.mark.parametrize("redirect", ["hardlink", "directory"])
+def test_postcommit_cleanup_rechecks_previous_path_safety(tmp_path, monkeypatch, redirect):
+    import here.cli as cli
+
+    root = tmp_path / "sessions"
+    directory = managed_file_session(root)
+    old = directory / "audio.wav"
+    external = tmp_path / "canary.wav"
+    external.write_bytes(b"external canary")
+    original_write = cli.write_session_artifacts
+    warnings = []
+
+    def write(**kwargs):
+        result = original_write(**kwargs)
+        old.unlink()
+        if redirect == "hardlink":
+            old.hardlink_to(external)
+        else:
+            old.mkdir()
+        return result
+
+    monkeypatch.setattr(cli, "write_session_artifacts", write)
+    monkeypatch.setattr(
+        cli, "transcribe_recording_session", lambda *a, **kw: TranscriptionResult("ok", "ok")
+    )
+    token = cli.logger.add(lambda message: warnings.append(str(message)), level="WARNING")
+    try:
+        cli._transcribe_audio_path(directory / "source_01.wav", root)
+    finally:
+        cli.logger.remove(token)
+    assert warnings
+    assert old.exists()
+    assert external.read_bytes() == b"external canary"
+    assert json.loads((directory / "session.json").read_text())["status"] == "completed"
+
+
+@pytest.mark.parametrize("failure", ["normalize", "final_completed", "final_failed"])
+def test_managed_audio_is_retained_before_final_publication(tmp_path, monkeypatch, failure):
+    import here.cli as cli
+
+    root = tmp_path / "sessions"
+    directory = managed_file_session(root)
+    before = {path.name: path.read_bytes() for path in directory.iterdir()}
+    original_replace = Path.replace
+    normalization_error = OSError("normalization blocked")
+    provider_calls = []
+
+    def normalize(*args, **kwargs):
+        raise normalization_error
+
+    def replace(path, target):
+        if Path(target).name == "session.json":
+            metadata = json.loads(path.read_text())
+            if metadata["status"] != "pending":
+                raise OSError("final publication blocked")
+        return original_replace(path, target)
+
+    def provider(*args, **kwargs):
+        provider_calls.append(True)
+        if failure == "final_failed":
+            raise RuntimeError("synthetic provider error")
+        return TranscriptionResult("new", "new")
+
+    monkeypatch.setattr(cli, "transcribe_recording_session", provider)
+    if failure == "normalize":
+        monkeypatch.setattr(cli, "materialize_normalized_session", normalize)
+    else:
+        monkeypatch.setattr(Path, "replace", replace)
+    with pytest.raises((OSError, RuntimeError)) as caught:
+        cli._transcribe_audio_path(directory / "source_01.wav", root)
+    assert (directory / "audio.wav").read_bytes() == before["audio.wav"]
+    assert (directory / "source_01.wav").read_bytes() == before["source_01.wav"]
+    if failure == "normalize":
+        assert str(caught.value) == "Recoverable audio preparation failed"
+        assert caught.value.__cause__ is normalization_error
+        assert not provider_calls
+        assert {path.name: path.read_bytes() for path in directory.iterdir()} == before
+    else:
+        current = json.loads((directory / "session.json").read_text())
+        assert current["status"] == "pending"
+        assert "audio.wav" in current["output_files"]
+        assert sf.info(directory / current["recoverable_audio"]).frames == 240
 
 
 @pytest.mark.parametrize("audio_name", ["audio.wav", "audio_selected.wav"])
