@@ -447,8 +447,8 @@ def test_segment_replace_failure_preserves_previous_pair(
 
 
 @pytest.mark.parametrize("link_kind", ["hardlink", "symlink"])
-def test_segment_backup_and_publication_do_not_modify_external_link_target(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, link_kind
+def test_linked_segment_entry_is_rejected_without_modifying_external_target(
+    tmp_path: Path, link_kind
 ) -> None:
     previous = _write_segment_artifacts(tmp_path, segments=[TranscriptSegment("old evidence")])
     old_metadata = previous.metadata_path.read_bytes()
@@ -462,21 +462,12 @@ def test_segment_backup_and_publication_do_not_modify_external_link_target(
             previous.segments_path.symlink_to(external)
         except OSError as error:
             pytest.skip(f"Host cannot create symlinks: {error}")
-    replace = Path.replace
-
-    def fail_metadata_replace(path: Path, target):
-        if Path(target) == previous.metadata_path:
-            path.unlink()
-        return replace(path, target)
-
-    with monkeypatch.context() as patch:
-        patch.setattr(Path, "replace", fail_metadata_replace)
-        with pytest.raises(OSError):
-            _write_segment_artifacts(
-                tmp_path,
-                segments=[TranscriptSegment("new evidence")],
-                session_dir=previous.session_dir,
-            )
+    with pytest.raises(ValueError, match="session artifact"):
+        _write_segment_artifacts(
+            tmp_path,
+            segments=[TranscriptSegment("new evidence")],
+            session_dir=previous.session_dir,
+        )
     assert previous.metadata_path.read_bytes() == old_metadata
     assert previous.segments_path.read_bytes() == old_segments
     assert external.read_bytes() == old_segments
@@ -484,9 +475,3 @@ def test_segment_backup_and_publication_do_not_modify_external_link_target(
         assert previous.segments_path.is_symlink()
     else:
         assert previous.segments_path.samefile(external)
-
-    _write_segment_artifacts(
-        tmp_path, segments=[TranscriptSegment("new evidence")], session_dir=previous.session_dir
-    )
-    assert external.read_bytes() == old_segments
-    assert not previous.segments_path.samefile(external)

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-import tempfile
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
@@ -19,6 +17,12 @@ from here.output.metadata import (
     SessionMetadata,
     TranscriptSegmentDocument,
     build_session_metadata,
+)
+from here.output.paths import (
+    reserve_artifact_path,
+    session_artifact_path,
+    validate_session_directory,
+    write_artifact_text,
 )
 from here.recording.models import RecordingSession
 from here.transcription.segments import TranscriptSegment
@@ -69,20 +73,28 @@ def _reserve_session_dir(target_dir: Path, session_id: str) -> tuple[str, Path]:
 
 
 def create_session_dir(target_dir: Path, completed_at: datetime) -> tuple[str, Path]:
+    validate_session_directory(target_dir)
     target_dir.mkdir(parents=True, exist_ok=True)
     return _reserve_session_dir(target_dir, _session_id_from_datetime(completed_at))
 
 
-def _reserve_artifact_path(destination: Path, suffix: str) -> Path:
-    descriptor, name = tempfile.mkstemp(
-        dir=destination.parent, prefix=f".{destination.name}.", suffix=suffix
-    )
-    os.close(descriptor)
-    return Path(name)
+def validate_session_artifacts(session_dir: Path, extra_files: list[str] | None = None) -> None:
+    for filename in (
+        TRANSCRIPT_FILE,
+        MARKDOWN_FILE,
+        METADATA_FILE,
+        CHUNKS_FILE,
+        ERRORS_FILE,
+        EVENTS_FILE,
+        SEGMENTS_FILE,
+        AUDIO_FILE,
+        *(extra_files or []),
+    ):
+        session_artifact_path(session_dir, filename)
 
 
 def _stage_document(destination: Path, content: str) -> Path:
-    staged = _reserve_artifact_path(destination, ".stage")
+    staged = reserve_artifact_path(destination, ".stage")
     try:
         staged.write_text(content, encoding=METADATA_ENCODING)
     except BaseException:
@@ -113,7 +125,7 @@ def _publish_metadata_and_segments(
         staged_paths.append(staged_metadata)
 
         if segments_path.is_symlink() or segments_path.exists():
-            backup = _reserve_artifact_path(segments_path, ".backup")
+            backup = reserve_artifact_path(segments_path, ".backup")
             # Rename the entry itself, without reading through an external link.
             segments_path.replace(backup)
             backup_moved = True
@@ -170,8 +182,14 @@ def write_session_artifacts(
     if session_dir is None:
         session_id, session_dir = create_session_dir(target_dir, completed_at)
     else:
+        validate_session_directory(session_dir)
         session_dir.mkdir(parents=True, exist_ok=True)
         session_id = session_id or session_dir.name
+
+    extra_files = [source.audio_file for source in capture_sources or [] if source.audio_file]
+    if recoverable_audio is not None:
+        extra_files.append(recoverable_audio)
+    validate_session_artifacts(session_dir, extra_files)
 
     output_files = [METADATA_FILE, CHUNKS_FILE]
     if segments is not None:
@@ -226,24 +244,28 @@ def write_session_artifacts(
     )
 
     if transcript_text is not None:
-        transcript_path.write_text(transcript_text, encoding=TRANSCRIPT_ENCODING)
-        markdown_path.write_text(
+        write_artifact_text(transcript_path, transcript_text, encoding=TRANSCRIPT_ENCODING)
+        write_artifact_text(
+            markdown_path,
             render_transcript_markdown(metadata, transcript_text),
             encoding=MARKDOWN_ENCODING,
         )
-    chunks_path.write_text(
+    write_artifact_text(
+        chunks_path,
         chunks_document.model_dump_json(indent=2),
         encoding=METADATA_ENCODING,
     )
     if errors:
-        errors_path.write_text(
+        write_artifact_text(
+            errors_path,
             errors_document.model_dump_json(indent=2),
             encoding=METADATA_ENCODING,
         )
     elif errors_path.exists():
         errors_path.unlink()
     if events:
-        events_path.write_text(
+        write_artifact_text(
+            events_path,
             events_document.model_dump_json(indent=2),
             encoding=METADATA_ENCODING,
         )

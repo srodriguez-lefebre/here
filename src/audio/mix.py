@@ -2,10 +2,10 @@ from pathlib import Path
 
 import numpy as np
 import soundfile as sf
-from loguru import logger
-
 from here.audio.models import ChunkingConfig
+from here.output.paths import session_artifact_path, staged_artifact_path
 from here.recording.models import RecordedAudioSource, RecordingSession
+from loguru import logger
 
 ACTIVE_BLOCK_PEAK_THRESHOLD = 1e-4
 TARGET_SOURCE_PEAK = 0.4
@@ -93,7 +93,9 @@ def _compute_source_gains(
     for source in session.sources:
         peak = _estimate_source_peak(source, config)
         if peak <= 0.0:
-            logger.warning("Source {label} has no measurable peak. Using unity gain.", label=source.label)
+            logger.warning(
+                "Source {label} has no measurable peak. Using unity gain.", label=source.label
+            )
             gains.append(1.0)
             continue
 
@@ -161,20 +163,26 @@ def materialize_normalized_session(
     if total_frames <= 0:
         raise RuntimeError("No audio available to normalize.")
 
+    normalized_path = session_artifact_path(working_dir, output_name)
     working_dir.mkdir(parents=True, exist_ok=True)
-    normalized_path = working_dir / output_name
-    block_frames = max(1, resolved_config.process_block_seconds * resolved_config.target_sample_rate)
+    block_frames = max(
+        1, resolved_config.process_block_seconds * resolved_config.target_sample_rate
+    )
     gains = _compute_source_gains(session, resolved_config)
     source_files = [sf.SoundFile(source.path) for source in session.sources]
 
     try:
-        with sf.SoundFile(
-            normalized_path,
-            mode="w",
-            samplerate=resolved_config.target_sample_rate,
-            channels=1,
-            subtype="PCM_16",
-        ) as writer:
+        with (
+            staged_artifact_path(normalized_path) as staged,
+            sf.SoundFile(
+                staged,
+                mode="w",
+                format="WAV",
+                samplerate=resolved_config.target_sample_rate,
+                channels=1,
+                subtype="PCM_16",
+            ) as writer,
+        ):
             written_frames = 0
             for block_start in range(0, total_frames, block_frames):
                 block_end = min(total_frames, block_start + block_frames)

@@ -6,7 +6,7 @@ import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from pathlib import Path, PureWindowsPath
+from pathlib import Path
 
 import soundfile as sf
 from here.audio.mix import materialize_normalized_session
@@ -24,6 +24,12 @@ from here.output.metadata import (
     capture_metadata,
     source_metadata,
 )
+from here.output.paths import (
+    UnsafeSessionPath,
+    session_artifact_path,
+    staged_artifact_path,
+    write_artifact_text,
+)
 from here.output.session_writer import (
     AUDIO_FILE,
     CHUNKS_FILE,
@@ -32,6 +38,7 @@ from here.output.session_writer import (
     METADATA_FILE,
     SessionArtifactPaths,
     create_session_dir,
+    validate_session_artifacts,
     write_session_artifacts,
 )
 from here.recording.models import CaptureFailed, RecordedAudioSource, RecordingSession
@@ -108,21 +115,7 @@ def session_from_audio_file(audio_path: Path) -> RecordingSession:
 
 def session_audio_path(session_dir: Path, audio_file: str) -> Path:
     """Only persisted local filenames may select audio during recovery."""
-    windows_path = PureWindowsPath(audio_file)
-    if (
-        not audio_file
-        or Path(audio_file).name != audio_file
-        or windows_path.name != audio_file
-        or windows_path.drive
-        or windows_path.root
-        or audio_file in {".", ".."}
-        or ":" in audio_file
-    ):
-        raise ValueError("Recoverable audio must be a filename inside the session")
-    path = session_dir / audio_file
-    if not path.resolve().is_relative_to(session_dir.resolve()):
-        raise ValueError("Recoverable audio must resolve inside the session")
-    return path
+    return session_artifact_path(session_dir, audio_file)
 
 
 def _read_model(path: Path, model: type[SessionMetadata]) -> SessionMetadata | None:
@@ -148,12 +141,16 @@ class SessionProcessor:
     def _preserve_sources(
         self, session: RecordingSession, session_dir: Path
     ) -> list[CaptureSourceMetadata]:
+        validate_session_artifacts(
+            session_dir, [f"source_{index:02d}.wav" for index in range(1, len(session.sources) + 1)]
+        )
         provenance = []
         for index, source in enumerate(session.sources, start=1):
             metadata = CaptureSourceMetadata(**source_metadata(source).model_dump())
             if source.path.exists():
                 name = f"source_{index:02d}.wav"
-                shutil.copy2(source.path, session_dir / name)
+                with staged_artifact_path(session_dir / name) as staged:
+                    shutil.copy2(source.path, staged)
                 metadata.audio_file = name
             provenance.append(metadata)
         return provenance
@@ -181,6 +178,8 @@ class SessionProcessor:
                 material, session_dir, output_name=AUDIO_FILE
             )
             recoverable_audio = AUDIO_FILE
+        except UnsafeSessionPath:
+            raise
         except Exception as exc:
             (session_dir / AUDIO_FILE).unlink(missing_ok=True)
             errors.append(error_metadata("recoverable_audio", exc))
@@ -216,12 +215,23 @@ class SessionProcessor:
         self, artifacts: SessionArtifactPaths, *, events: list[SessionEventMetadata]
     ) -> None:
         """Finalize a recovery cancellation without losing the capture-error evidence."""
+        extra_files = list(artifacts.metadata.output_files)
+        extra_files.extend(
+            source.audio_file for source in artifacts.metadata.capture_sources if source.audio_file
+        )
+        if artifacts.metadata.recoverable_audio:
+            extra_files.append(artifacts.metadata.recoverable_audio)
+        validate_session_artifacts(artifacts.session_dir, extra_files)
         metadata = artifacts.metadata.model_copy(
             update={"status": "cancelled", "failure_stage": "processing_cancelled"}
         )
-        artifacts.metadata_path.write_text(metadata.model_dump_json(indent=2), encoding="utf-8")
-        artifacts.events_path.write_text(
-            SessionEventMetadataDocument(events=events).model_dump_json(indent=2), encoding="utf-8"
+        write_artifact_text(
+            artifacts.session_dir / EVENTS_FILE,
+            SessionEventMetadataDocument(events=events).model_dump_json(indent=2),
+            encoding="utf-8",
+        )
+        write_artifact_text(
+            artifacts.session_dir / METADATA_FILE, metadata.model_dump_json(indent=2)
         )
         artifacts.metadata = metadata
 
@@ -331,6 +341,8 @@ class SessionProcessor:
                 session_dir,
                 output_name=AUDIO_FILE,
             )
+        except UnsafeSessionPath:
+            raise
         except Exception as exc:
             (session_dir / AUDIO_FILE).unlink(missing_ok=True)
             provenance = self._preserve_sources(session, session_dir)
@@ -528,9 +540,18 @@ class SessionProcessor:
         *,
         cancel_event: threading.Event | None = None,
     ) -> SessionArtifactPaths:
+        validate_session_artifacts(session_dir)
         audio_path = session_audio_path(session_dir, AUDIO_FILE)
         metadata_path = session_dir / METADATA_FILE
         metadata = _read_model(metadata_path, SessionMetadata)
+        if metadata is not None:
+            extra_files = list(metadata.output_files)
+            extra_files.extend(
+                source.audio_file for source in metadata.capture_sources if source.audio_file
+            )
+            if metadata.recoverable_audio:
+                extra_files.append(metadata.recoverable_audio)
+            validate_session_artifacts(session_dir, extra_files)
         if not audio_path.exists():
             raw_sources = (
                 [
