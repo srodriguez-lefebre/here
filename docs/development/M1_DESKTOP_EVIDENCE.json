@@ -2,8 +2,8 @@
   "schema_version": 1,
   "milestone": "M1",
   "milestone_complete": false,
-  "desktop_delivery": "PR13 open; running capture-error provenance correction independently accepted, new-head Copilot and hosted checks pending.",
-  "latest_desktop_source_head": "9b21f57f4f7f5929bb8b500eb4f99f8897332802",
+  "desktop_delivery": "PR13 open; optional-identity retry correction independently accepted, new-head Copilot and hosted checks pending.",
+  "latest_desktop_source_head": "0ca9a3a4356ecdbf99bef7897790584a7f5651e0",
   "task_1": {
     "status": "independent_spec_and_quality_approved",
     "base": "eba75781c3c317f62e9ec7080fbb9503952b6998",
@@ -539,6 +539,66 @@
       "passed": 636,
       "skipped": 3,
       "seconds": 35.36
+    },
+    "wheel_and_source_builds": "passed on both platforms; version 0.1.0",
+    "limit": "Historical head only; later corrections require their own hosted checks."
+  },
+  "copilot_correction_7": {
+    "base": "8153c49e869cb758708fed59ae4bff395cdf673e",
+    "source_head": "0ca9a3a4356ecdbf99bef7897790584a7f5651e0",
+    "commits": [
+      "0ca9a3a4356ecdbf99bef7897790584a7f5651e0"
+    ],
+    "copilot": {
+      "review": 5400816114,
+      "state": "COMMENTED",
+      "inline_findings": 0,
+      "body_findings": 1,
+      "disposition": "Accepted; validate canonical UUID form before optional journal lookup. Absent, malformed or noncanonical optional IDs associate no journal and preserve their metadata value; selected valid audio can complete retry. Actual canonical load/path/document/media checks and exact reservation ownership remain strict."
+    },
+    "regressions": {
+      "red_failed": 15,
+      "preservation_guards_passed": 17,
+      "green_passed": 32,
+      "green_seconds": 6.55,
+      "added_parameter_cases": 23,
+      "scope": "Real authored PCM/imported metadata and journals through discover/materialize/retry/completed: None/empty/malformed/path-like/uppercase/hex/braced optional IDs, no unusable lookup, identity/human ID/raw/selected PCM/pending preservation, noncanonical foreign capture bytes, strict selected path/geometry/media and canonical malformed JSON/schema guards."
+    },
+    "verification": {
+      "runtime": "CPython 3.13.15 AMD64; PySide6 and Qt 6.11.2",
+      "command": "QT_QPA_PLATFORM=offscreen python -m pytest -q --tb=short",
+      "passed": 677,
+      "skipped": 6,
+      "seconds": 71.7,
+      "skip_reason": "Existing local Windows symbolic-link cases require unavailable privileges (WinError 1314).",
+      "focused": {
+        "passed": 133,
+        "skipped": 0,
+        "seconds": 28.61
+      },
+      "changed_files_lint_format": 2,
+      "diff_check": "passed"
+    },
+    "scoped_independent_review": "accepted",
+    "limits": [
+      "M1 optional metadata compatibility does not certify canonical M2 catalog identity or grant a malformed ID journal authority.",
+      "No metadata schema/identity rewrite, native lifecycle or new concurrency/crash guarantee was added.",
+      "New-head hosted CI and Copilot review remain mandatory; installed and long acceptance remain separate."
+    ]
+  },
+  "hosted_desktop_checkpoint_8153c49": {
+    "head": "8153c49e869cb758708fed59ae4bff395cdf673e",
+    "run": 37123379011,
+    "status": "success",
+    "windows": {
+      "passed": 660,
+      "skipped": 0,
+      "seconds": 64.01
+    },
+    "ubuntu": {
+      "passed": 657,
+      "skipped": 3,
+      "seconds": 29.35
     },
     "wheel_and_source_builds": "passed on both platforms; version 0.1.0",
     "limit": "Historical head only; later corrections require their own hosted checks."

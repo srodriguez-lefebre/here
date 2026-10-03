@@ -184,6 +184,20 @@ skips (68.06 s), with scoped independent acceptance. Previous
 Copilot and hosted checks are still required. Raw recovery and actual worker
 ownership remain intact; no full-M1 or installed-runtime completion is claimed.
 
+
+Copilot body review `5400816114` identified retryable audio candidates blocked by
+a malformed optional meeting ID being used as a capture-journal locator.
+Correction `0ca9a3a` checks canonical UUID form before journal lookup; absent,
+malformed or noncanonical optional IDs associate no journal. Selected audio and
+metadata remain validated, with their original identity values preserved. Canonical
+journal document/path/media checks and exact reservation ownership remain strict.
+This M1 compatibility rule grants no journal authority and does not certify M2
+canonical catalog identity. Regressions: 15 RED
+failures became 32 GREEN cases. Final source
+suite: 677 passed, 6 existing local
+privilege skips (71.7 s); scoped independent review accepted.
+New-head hosted checks and Copilot remain merge gates; full M1 remains open.
+
 Long meeting means at least 7,200 seconds of recording wall time excluding deliberate
 pauses. Compare known playback markers and recorded durations; do not require exact
 hardware-clock synchronization between two sources. Initial marker seek tolerance is
