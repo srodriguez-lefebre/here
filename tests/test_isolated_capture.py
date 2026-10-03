@@ -265,7 +265,39 @@ def pause_and_drain(handle, tmp_path, indexes=(7,)):
     handle.pause()
     # Child-side markers follow the real pause event and a completed drain read.
     # Polling a journal during atomic replacement interferes with Windows writes.
-    wait_for(lambda: all((tmp_path / f"fake_hardware.drained-{i}").exists() for i in indexes))
+    try:
+        wait_for(lambda: all((tmp_path / f"fake_hardware.drained-{i}").exists() for i in indexes))
+    except AssertionError as exc:
+        markers = {
+            index: {
+                kind: (tmp_path / f"fake_hardware.{kind}-{index}").exists()
+                for kind in ("checkpoint", "paused", "drained")
+            }
+            for index in indexes
+        }
+        helper = handle._helper
+        before_reap = {
+            "exit_code": helper.process.poll(),
+            "done": handle._done.is_set(),
+            "owner_error": repr(handle._error),
+            "child_error": helper.get("error"),
+            "tick": helper.get("tick"),
+        }
+        reap_capture(handle, [helper])
+        # Only inspect durable state after the child and its owner have stopped.
+        # Preserve the pre-reap status so our cleanup is not mistaken for the cause.
+        try:
+            capture_errors = [
+                event
+                for event in journal_for(handle).document.events
+                if event["kind"] == "capture_error"
+            ]
+        except Exception as journal_error:
+            capture_errors = repr(journal_error)
+        raise AssertionError(
+            f"Pause drain failed: markers={markers}; before_reap={before_reap}; "
+            f"reaped_exit_code={helper.process.returncode}; capture_errors={capture_errors}"
+        ) from exc
 
 
 def reap_capture(handle, helpers):
