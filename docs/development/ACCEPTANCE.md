@@ -9,7 +9,7 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M1 | Both default Windows sources captured at 44.1/48 kHz | Actual device/format and WAV frame/duration report | Devices enumerated; capture pending |
 | M1 | Two-hour meeting without unbounded growth or unexplained gaps | Frames/known markers, peak memory, disk, queue and final artifacts | Open |
 | M1 | Pause/resume audio timeline, destructive cancel and saved exit | Qt and Windows synthetic marker runs | Open |
-| M1 | Provider/redaction/timestamps and diarization | Synthetic real-provider run and segment output inspected | Single-source TTS smoke passed; multi-source/long diarization open |
+| M1 | Provider/timestamps and diarization | Synthetic real-provider run and segment output inspected | Single/multiple-source TTS smokes passed; long diarization open |
 | M1 | Failure/crash/network/disconnection/disk-pressure recovery | Fault-injection plus bounded hardware run | Open |
 | M1 | Installed application opens, records and uninstalls | Fresh Windows installation and bundled-runtime smoke | Open |
 | M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | Open |
@@ -38,6 +38,16 @@ must be synthetic; credentials and private conversations never enter evidence fi
   `20261003_014354`. No private recording was uploaded; no credential was displayed or
   written to evidence. This verifies single-request provider integration, not speaker
   identity across requests or full long-duration acceptance.
+- 2026-10-03 02:05 America/Montevideo: alternating Windows David/Zira voices in two
+  synthetic stereo sources at 44,100/48,000 Hz (26.159 seconds) passed the actual
+  mixing, normalization, provider and artifact path. Seven provider segments retain
+  timestamps and alternating A/B speakers in request scope; source format/frame
+  provenance and normalized audio are preserved. Local evidence:
+  `.superpowers/provider-multisource/result.json`, session `20261003_020516`.
+  A spurious quote in the first utterance is preserved as original provider output.
+  The first returned start precedes its synthetic source offset by 300 ms; later
+  utterance starts are within 40 ms. This measures provider estimates, not an exact
+  acoustic alignment guarantee, physical capture or long-meeting certification.
 
 ## Measurement decisions
 

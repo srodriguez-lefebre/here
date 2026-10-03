@@ -92,3 +92,13 @@ open wherever it has not actually been observed.
 - Independent desktop-plan review adopted seven amendments covering actual WAV header
   checkpoints, atomic publication, preparation exit, diagnostic ownership, path
   validation, ready-time device provenance and credential precedence.
+- Release decision: planned M1 Windows delivery is `v0.2.0`; the complete five-milestone
+  product targets `v0.3.0`. These are targets until built, reviewed and published.
+  Existing official release is tag `MVP`, display name `v0.1.0`, published 2026-04-11,
+  without runtime assets. Treat that non-version tag as a legacy release, not a
+  trusted comparable installer update. Reuse the actual M1 artifact for M5 upgrade tests.
+- Review corrections in `7602c18`: every catch-up silence block follows disk order into
+  live capture; shared atomic cutover prevents accepted destructive cancellation from
+  persisting audio, and late processing cancellation retains matching metadata.
+  Six regression cases and affected suites passed (55); full committed-head suite:
+  200 passed in 16.86 seconds. Independent re-review precedes PR creation.

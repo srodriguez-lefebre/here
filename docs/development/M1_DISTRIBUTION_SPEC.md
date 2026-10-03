@@ -58,5 +58,13 @@ overwritten or uninstalled for testing.
 
 - [PyInstaller spec files](https://pyinstaller.org/en/latest/spec-files.html).
 - [PyInstaller operating modes](https://pyinstaller.org/en/stable/operating-mode.html).
+
+Compiler verification on 2026-10-03: official `jrsoftware/issrc` release `is-6_7_0`,
+asset `innosetup-6.7.0.exe`, SHA-256
+`f45c7d68d1e660cf13877ec36738a5179ce72a33414f9959d35e99b68c52a697`.
+Local download matched the release asset digest and Windows Authenticode reported
+Valid, signer `Pyrsys B.V.`. Silent current-user compiler installation returned 0;
+`ISCC.exe` exists in ignored `.superpowers/tools/inno-6.7.0`. This certifies the
+compiler preparation, not a built or installed here application.
 - [Inno Setup current-user mode](https://jrsoftware.org/ishelp/topic_admininstallmode.htm).
 - [Stable Inno AppId](https://jrsoftware.org/ishelp/topic_setup_appid.htm).
