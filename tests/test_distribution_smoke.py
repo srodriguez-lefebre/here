@@ -45,6 +45,8 @@ def test_wheel_smoke_opens_isolated_desktop_and_reaps_helper(tmp_path, entry):
     assert data["checks"]["hardware_opened"] is False
     assert data["checks"]["recording_started"] is False
     assert data["checks"]["editable_finder"] is False
+    assert data["checks"]["configuration_editor_saved"] is True
+    assert data["checks"]["indicator_preferences_saved"] is True
     assert canary.read_text(encoding="utf-8") == "preserve-existing-data"
     assert sorted(path.name for path in real_root.iterdir()) == ["canary.txt"]
 

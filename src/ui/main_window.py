@@ -41,6 +41,7 @@ class MainWindow(QMainWindow):
     exitRequested = Signal()
     diagnosticsRequested = Signal(str)
     recoveryRequested = Signal(object)
+    configurationSaved = Signal()
 
     def __init__(
         self,
@@ -279,6 +280,7 @@ class MainWindow(QMainWindow):
                 )
                 self._detail_label.setStyleSheet("")
                 self._detail_label.show()
+                self.configurationSaved.emit()
 
     def set_background_busy(self, busy, *, exiting=False):
         self._background_busy = busy

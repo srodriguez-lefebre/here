@@ -198,3 +198,81 @@ def test_saved_configuration_refreshes_next_recording_destination(tmp_path, monk
     adapter.refresh_configuration()
     adapter.start_recording()
     assert adapter._controller.last_request.output_dir == tmp_path / "new"
+
+
+def test_folder_change_routes_discovery_to_new_root(tmp_path, monkeypatch):
+    from here.config.editor import save_configuration
+    from here.ui import contract
+    from here.ui.fake_controller import FakeApplicationController
+
+    monkeypatch.delenv("TRANSCRIPTIONS_DIR", raising=False)
+    monkeypatch.setattr(contract.RecoveryService, "discover", lambda service: [service.root])
+    adapter = contract.ApplicationUiAdapter(FakeApplicationController(), tmp_path / "old")
+    save_configuration({"TRANSCRIPTIONS_DIR": str(tmp_path / "new")})
+    adapter.refresh_configuration()
+    assert adapter.discover_recovery() == [tmp_path / "new"]
+
+
+def test_configuration_refresh_refuses_active_work(tmp_path):
+    from here.ui.contract import ApplicationUiAdapter
+    from here.ui.fake_controller import FakeApplicationController
+
+    adapter = ApplicationUiAdapter(FakeApplicationController(), tmp_path)
+    adapter.start_recording()
+    with pytest.raises(RuntimeError):
+        adapter.refresh_configuration()
+
+
+@pytest.mark.usefixtures("owned_desktops")
+def test_saved_folder_refreshes_visible_recovery_choices(tmp_path, qtbot, monkeypatch):
+    from here.application.recovery import RecoveryCandidate, RecoveryService
+    from here.config.editor import save_configuration
+    from here.ui.app import HereDesktop
+    from here.ui.configuration import ConfigurationDialog
+    from here.ui.contract import ApplicationUiAdapter
+    from here.ui.fake_controller import FakeApplicationController
+    from PySide6.QtWidgets import QApplication
+
+    monkeypatch.delenv("TRANSCRIPTIONS_DIR", raising=False)
+    old_root, new_root = tmp_path / "old", tmp_path / "new"
+    roots = []
+
+    def discover(service):
+        roots.append(service.root)
+        return [
+            RecoveryCandidate(service.root / "session", service.root.name, 1, "failed", None, True)
+        ]
+
+    monkeypatch.setattr(RecoveryService, "discover", discover)
+    adapter = ApplicationUiAdapter(FakeApplicationController(), old_root)
+    settings = QSettings(str(tmp_path / "visual.ini"), QSettings.Format.IniFormat)
+    desktop = HereDesktop(QApplication.instance(), adapter, settings=settings)
+    qtbot.waitUntil(lambda: not desktop.jobs.busy)
+    selector = desktop.main_window.findChild(object, "recoverySelector")
+    assert selector.currentData().display_id == "old"
+    old_candidate = selector.currentData()
+
+    def accept(dialog):
+        save_configuration({"TRANSCRIPTIONS_DIR": str(new_root)})
+        return dialog.DialogCode.Accepted
+
+    monkeypatch.setattr(ConfigurationDialog, "exec", accept)
+    desktop.main_window.findChild(QPushButton, "configurationButton").click()
+    qtbot.waitUntil(lambda: not desktop.jobs.busy)
+    assert roots[-1] == new_root
+    assert selector.currentData().display_id == "new"
+    from here.output.paths import UnsafeSessionPath
+
+    with pytest.raises(UnsafeSessionPath):
+        adapter.retry_candidate(old_candidate)
+    materialized = []
+
+    def materialize(service, candidate):
+        materialized.append((service.root, candidate.session_dir))
+        return candidate.session_dir
+
+    monkeypatch.setattr(RecoveryService, "materialize", materialize)
+    desktop.main_window.findChild(QPushButton, "recoverButton").click()
+    qtbot.waitUntil(lambda: not desktop.jobs.busy)
+    assert materialized == [(new_root, new_root / "session")]
+    assert adapter._controller.command_log == ["retry"]

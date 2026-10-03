@@ -171,6 +171,41 @@ def smoke_check(report_path: Path) -> int:
                 checks["windowed_stdio_absent"] = sys.stdout is None and sys.stderr is None
                 report["qt"] = qVersion()
                 report["libsndfile"] = soundfile.__libsndfile_version__
+                # Exercise the actual packaged settings editor on the temporary
+                # smoke-owned file. The synthetic key is never sent to a provider
+                # and is removed before the fixed helper checks.
+                from here.config.paths import get_env_file
+                from here.ui.configuration import ConfigurationDialog
+                from here.ui.preferences import VisualPreferences
+                from PySide6.QtWidgets import QDialog, QLineEdit, QPushButton, QSlider, QSpinBox
+
+                dialog = ConfigurationDialog(desktop.preferences, desktop.main_window)
+                key_input = dialog.findChild(QLineEdit, "apiKeyInput")
+                masked = key_input.echoMode() == QLineEdit.EchoMode.Password
+                key_input.setText("synthetic-smoke-configuration")
+                dialog.findChild(QSpinBox, "indicatorSizeInput").setValue(144)
+                dialog.findChild(QSlider, "indicatorTransparencyInput").setValue(40)
+                dialog.findChild(QPushButton, "saveConfigurationButton").click()
+                configured = get_settings().OPENAI_API_KEY
+                checks["configuration_editor_saved"] = (
+                    masked
+                    and dialog.result() == QDialog.DialogCode.Accepted
+                    and configured is not None
+                    and configured.get_secret_value() == "synthetic-smoke-configuration"
+                )
+                restored = VisualPreferences(desktop.preferences._settings)
+                checks["indicator_preferences_saved"] = (
+                    restored.size == 144
+                    and abs(restored.opacity - 0.6) < 0.01
+                    and desktop.overlay.width() == 144
+                )
+                get_env_file().unlink(missing_ok=True)
+                dialog.close()
+                if not all(
+                    checks[name]
+                    for name in ("configuration_editor_saved", "indicator_preferences_saved")
+                ):
+                    raise RuntimeError("Packaged configuration check failed")
                 desktop.request_exit()
                 deadline = time.monotonic() + 10
                 while desktop.jobs.busy and time.monotonic() < deadline:

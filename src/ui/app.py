@@ -51,6 +51,7 @@ class HereDesktop:
         self.main_window.exitRequested.connect(self.request_exit)
         self.main_window.diagnosticsRequested.connect(self._diagnose)
         self.main_window.recoveryRequested.connect(self._recover)
+        self.main_window.configurationSaved.connect(self._configuration_changed)
         self.jobs.finished.connect(self._job_finished)
         self.jobs.idleChanged.connect(self._jobs_changed)
         self.bridge.snapshotChanged.connect(self._snapshot_changed)
@@ -86,6 +87,11 @@ class HereDesktop:
             return
         self._refresh_pending = False
         self._submit("recovery", self.controller.discover_recovery)
+
+    def _configuration_changed(self):
+        self._epoch += 1
+        self.main_window.set_recovery([])
+        self._discover()
 
     def _diagnose(self, source):
         if self.controller.snapshot.has_active_work:
