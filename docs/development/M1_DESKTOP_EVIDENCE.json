@@ -2,8 +2,8 @@
   "schema_version": 1,
   "milestone": "M1",
   "milestone_complete": false,
-  "desktop_delivery": "PR13 open; local corrections independently accepted, new-head Copilot and hosted checks pending.",
-  "latest_desktop_source_head": "e3b89173dfdd3283f1789fc20e525b56f216286c",
+  "desktop_delivery": "PR13 open; round-five corrections independently accepted, new-head Copilot and hosted checks pending.",
+  "latest_desktop_source_head": "e6e93a0c7f5e203cbf6926fdf1443f1d42461ea9",
   "task_1": {
     "status": "independent_spec_and_quality_approved",
     "base": "eba75781c3c317f62e9ec7080fbb9503952b6998",
@@ -390,5 +390,98 @@
     },
     "wheel_and_source_builds": "passed on both platforms; version 0.1.0",
     "limit": "No native exception occurred in this hosted run; exact previous access-violation causal mechanism remains unconfirmed. This does not establish checks for later heads."
+  },
+  "copilot_correction_5": {
+    "base": "9299d59e30a4df25d6cbc1501b5d2e28303ba405",
+    "source_head": "e6e93a0c7f5e203cbf6926fdf1443f1d42461ea9",
+    "commits": [
+      "7b5a124caa82e8842ec3d481077ae331f6d5188b",
+      "3100d3e4b9e395468737f954eaff36dac0f3619a",
+      "e6e93a0c7f5e203cbf6926fdf1443f1d42461ea9"
+    ],
+    "copilot": {
+      "review": 5400522452,
+      "state": "COMMENTED",
+      "inline_findings": 0,
+      "body_findings": 2,
+      "dispositions": [
+        "Accepted: identity is scoped to the validated managed directory; metadata supersedes a journal only at its reserved destination, preserving foreign and copied failed sessions.",
+        "Accepted: only capture-file cleanup after completed metadata publication is best effort for expected I/O, path-validation and unreadable-media failures; returned artifacts and persisted events remain truthful."
+      ]
+    },
+    "regressions": {
+      "identity_red_failed": 3,
+      "identity_green_passed": 5,
+      "cleanup_red_failed": 14,
+      "cleanup_green_passed": 19,
+      "scope": "Real authored WAV/journal/copied metadata; byte-preserving discovery; real postcommit source/journal unlink, unreadable original WAV and unsafe-path faults; completed artifacts and controller persisted event; live-closure admission barrier; strict direct discard, cancellation and precommit publication failures."
+    },
+    "initial_verification_at_3100d3e": {
+      "runtime": "CPython 3.13.15 AMD64; PySide6 and Qt 6.11.2",
+      "command": "QT_QPA_PLATFORM=offscreen python -m pytest -q",
+      "passed": 624,
+      "skipped": 6,
+      "seconds": 63.45,
+      "skip_reason": "Existing local Windows symbolic-link cases require unavailable privileges (WinError 1314).",
+      "focused": {
+        "passed": 185,
+        "skipped": 5,
+        "seconds": 43.78
+      },
+      "changed_files_lint_format": 4,
+      "diff_check": "passed"
+    },
+    "independent_integration_followup": {
+      "finding": "Newly offered copied sessions materialized successfully but UUID-only journal association rejected their explicit retry.",
+      "commit": "e6e93a0c7f5e203cbf6926fdf1443f1d42461ea9",
+      "disposition": "Associate the validated journal only at its exact reserved destination; a valid foreign journal is neither media-read nor discarded. Invalid journal/path errors remain strict.",
+      "red_failed": 2,
+      "preservation_guards_passed": 7,
+      "green_passed": 9,
+      "scope": "Full discover/materialize/retry with distinct copied PCM, original interrupted/failed cases, own pending/completed identity, original byte snapshots and recovery, own-journal cleanup and unsafe geometry/media/path/foreign-document guards.",
+      "focused": {
+        "passed": 200,
+        "skipped": 5,
+        "seconds": 31.99
+      }
+    },
+    "scoped_independent_review": "accepted",
+    "verification": {
+      "runtime": "CPython 3.13.15 AMD64; PySide6 and Qt 6.11.2",
+      "command": "QT_QPA_PLATFORM=offscreen python -m pytest -q",
+      "passed": 633,
+      "skipped": 6,
+      "seconds": 64.53,
+      "skip_reason": "Existing local Windows symbolic-link cases require unavailable privileges (WinError 1314).",
+      "focused": {
+        "passed": 200,
+        "skipped": 5,
+        "seconds": 31.99
+      },
+      "changed_files_lint_format": 4,
+      "diff_check": "passed"
+    },
+    "limits": [
+      "Failed postcommit cleanup can retain residual capture files and malformed evidence; it does not promise complete deletion.",
+      "Direct cancellation/discard, precommit/provider/publication failures and actual live/native worker closure remain strict.",
+      "No schema change, atomic process-kill transaction or concurrent-writer guarantee was added; new-head Copilot and hosted checks remain mandatory."
+    ]
+  },
+  "hosted_desktop_checkpoint_9299d59": {
+    "head": "9299d59e30a4df25d6cbc1501b5d2e28303ba405",
+    "run": 37119324471,
+    "status": "success",
+    "windows": {
+      "passed": 606,
+      "skipped": 0,
+      "seconds": 56.09
+    },
+    "ubuntu": {
+      "passed": 603,
+      "skipped": 3,
+      "seconds": 33.85
+    },
+    "wheel_and_source_builds": "passed on both platforms; version 0.1.0",
+    "limit": "Historical head only; new corrections require their own hosted checks. Exact original native-access-violation cause remains unconfirmed."
   }
 }

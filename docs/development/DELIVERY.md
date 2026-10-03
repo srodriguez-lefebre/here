@@ -147,6 +147,25 @@ acceptance. New-head hosted checks and Copilot review remain merge gates. Retain
 owned backups and handled-I/O rollback are explicit limits; no atomic process-kill
 transaction or full-M1 completion is claimed.
 
+
+Hosted checkpoint `9299d59` passed 606 Windows tests (56.09 s, no skips),
+603 Ubuntu tests (33.85 s, three Windows-only skips), and wheel/source builds.
+Copilot review `5400522452` then found two medium body issues. Both are fixed:
+`7b5a124` scopes recovery identity to its validated directory and journal
+reservation; `3100d3e` makes only completed capture-file cleanup best effort,
+preserving completed artifacts and persisted events even when residual WAV/path
+validation or deletion fails. Direct discard/cancellation, precommit/provider/
+publication failures and actual live/native closure remain strict. Seventeen RED
+failures became twenty-four GREEN cases at `3100d3e` (624 passed, six existing
+local privilege skips, 63.45 s). Scoped review exposed a copied-session retry
+association defect: `e6e93a0` associates only the exact journal reservation,
+leaving foreign bytes intact and invalid journal/path guards strict. Two RED
+public-flow failures became nine GREEN cases. Final committed-source suite:
+633 passed, 6 existing local privilege skips
+(64.53 s); scoped corrective review accepted.
+Residual capture evidence can remain after cleanup faults. Current-head hosted
+checks and Copilot are still required before merge; full M1 remains open.
+
 ## Review and merge gates
 
 - Each implementation task follows meaningful red/green tests and self-review.
