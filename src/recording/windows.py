@@ -90,6 +90,8 @@ def _capture_windows_stream_to_file(
                     written_frames[0] += chunk
                     if block_sink is not None:
                         block_sink(label, silence_chunk, sample_rate, channels)
+                    if progress_sink is not None:
+                        progress_sink(label)
                     next_deadline += chunk_duration
                 if inserted and isinstance(writer, CaptureWriter):
                     writer.checkpoint()

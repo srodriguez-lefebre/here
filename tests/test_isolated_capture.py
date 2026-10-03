@@ -66,8 +66,28 @@ def observed_event(journal, kind, **details):
     event(journal, kind, **details)
     if kind in ("paused", "resumed"):
         marker(f"{kind}-{source_index(details['source'])}").touch()
+    if kind == "scheduling_gap":
+        marker(f"gap-done-{source_index(details['source'])}").touch()
 CaptureWriter.checkpoint = checkpointed
 CaptureJournal.event = observed_event
+if behavior == "catchup":
+    import here.recording.windows as windows
+    capture = windows._capture_windows_stream_to_file
+    write = CaptureWriter.write
+    def delayed_capture(*args, **kwargs):
+        kwargs["start_time"] -= 4.0
+        capture(*args, **kwargs)
+    def slow_write(writer, data):
+        index = source_index(writer.source.label)
+        if marker(f"block-write-{index}").exists():
+            marker(f"blocked-write-{index}").touch()
+            time.sleep(60)
+        if not marker(f"gap-done-{index}").exists():
+            marker(f"gap-start-{index}").touch()
+            time.sleep(0.025)
+        write(writer, data)
+    windows._capture_windows_stream_to_file = delayed_capture
+    CaptureWriter.write = slow_write
 from here.recording.helper_worker import run
 raise SystemExit(run())
 """
@@ -255,6 +275,75 @@ def reap_capture(handle, helpers):
     assert not handle._thread.is_alive()
     assert not helpers[0].reader.is_alive()
     assert not helpers[0].writer.is_alive()
+
+
+@pytest.mark.parametrize("finish", ["complete", "stop", "pause"])
+def test_healthy_catchup_writes_outlive_reader_timeout(tmp_path, finish):
+    import numpy as np
+    import soundfile as sf
+
+    launch, helpers = factory(tmp_path, "catchup")
+    blocks = []
+    handle = WindowsRecordingHandle(
+        "microphone",
+        sessions_root=tmp_path / "sessions",
+        helper_factory=launch,
+        block_sink=lambda label, data, *args: blocks.append(data.copy()),
+        timeout=1.5,
+    )
+    try:
+        wait_for(lambda: blocks)
+        first = wait_for(lambda: helpers[0].get("tick"))["progress"].get("microphone", 0)
+        assert not handle._done.wait(2.1), "Healthy inserted-silence writes timed out"
+        assert not (tmp_path / "fake_hardware.gap-done-7").exists()
+        assert helpers[0].get("tick")["progress"]["microphone"] > first
+        if finish == "complete":
+            wait_for(lambda: (tmp_path / "fake_hardware.gap-done-7").exists(), timeout=6)
+            wait_for(lambda: any(np.any(block) for block in blocks))
+        elif finish == "pause":
+            pause_and_drain(handle, tmp_path)
+            assert not handle._done.wait(0.1)
+        started = time.monotonic()
+        handle.stop()
+        saved = handle.wait(4)
+        assert time.monotonic() - started < 1.5
+        assert helpers[0].process.returncode == 0
+        assert handle.live_error is None
+        data, _ = sf.read(saved.sources[0].path, dtype="int16", always_2d=True)
+        np.testing.assert_array_equal(data, np.concatenate(blocks))
+        assert saved.sources[0].frames == len(data)
+    finally:
+        reap_capture(handle, helpers)
+    gaps = [
+        event for event in journal_for(handle).document.events if event["kind"] == "scheduling_gap"
+    ]
+    assert gaps
+    assert gaps[0]["details"]["inserted_silence_frames"] >= 60 * 1024
+    assert not np.any(data[: gaps[0]["details"]["inserted_silence_frames"]])
+    if finish != "complete":
+        assert len(data) < 180 * 1024, "Stop/pause failed to interrupt catch-up per block"
+
+
+@pytest.mark.parametrize("mode", ["microphone", "both"])
+def test_actual_blocked_catchup_write_still_times_out(tmp_path, mode):
+    launch, helpers = factory(tmp_path, "catchup")
+    handle = WindowsRecordingHandle(
+        mode, sessions_root=tmp_path / "sessions", helper_factory=launch, timeout=1.5
+    )
+    try:
+        wait_for(lambda: (tmp_path / "fake_hardware.checkpoint-7").exists())
+        (tmp_path / "fake_hardware.block-write-7").touch()
+        wait_for(lambda: (tmp_path / "fake_hardware.blocked-write-7").exists())
+        if mode == "both":
+            first = wait_for(lambda: helpers[0].get("tick"))["progress"].get("system audio", 0)
+        assert handle._done.wait(3), "A blocked WAV write lost its finite deadline"
+        with pytest.raises(CaptureFailed, match="reader stopped responding"):
+            handle.wait(0)
+        if mode == "both":
+            assert helpers[0].get("tick")["progress"]["system audio"] > first
+    finally:
+        reap_capture(handle, helpers)
+    assert journal_for(handle).document.state == "interrupted"
 
 
 @pytest.mark.parametrize(
