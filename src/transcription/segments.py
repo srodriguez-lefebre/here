@@ -114,22 +114,14 @@ def _extract_timing_bounds(payload: object) -> tuple[float | None, float | None]
     for key in _TIMESTAMP_KEYS:
         timestamps = _value_from_payload(payload, key)
         if isinstance(timestamps, Mapping):
-            start = next(
-                (
-                    _coerce_float(timestamps[key])
-                    for key in ("start", "begin", "from", "start_time")
-                    if key in timestamps
-                ),
-                None,
-            )
-            end = next(
-                (
-                    _coerce_float(timestamps[key])
-                    for key in ("end", "finish", "to", "end_time")
-                    if key in timestamps
-                ),
-                None,
-            )
+            for start_key in ("start", "begin", "from", "start_time"):
+                start = _coerce_float(timestamps.get(start_key))
+                if start is not None:
+                    break
+            for end_key in ("end", "finish", "to", "end_time"):
+                end = _coerce_float(timestamps.get(end_key))
+                if end is not None:
+                    break
             if start is not None or end is not None:
                 return start, end
         if isinstance(timestamps, (list, tuple)) and len(timestamps) >= 2:

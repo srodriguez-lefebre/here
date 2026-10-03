@@ -170,6 +170,10 @@ class WindowsRecordingHandle:
         if not self._done_event.wait(timeout):
             raise TimeoutError("Timed out waiting for audio capture to stop")
         if self._cancel_event.is_set():
+            result = self._result
+            if result is not None:
+                result.cleanup()
+                self._result = None
             if isinstance(self._error, CaptureFailed):
                 self._error.session.cleanup()
             raise RuntimeError("Windows audio capture was cancelled")
