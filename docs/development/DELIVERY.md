@@ -39,6 +39,13 @@ and individual execution plans are added here before their implementation.
 5. M5 daily product: configuration, data control, export/import, reliable startup and
    logs, installer/uninstaller, explicit update checks and practical interoperability.
 
+Planned PR groups preserve task commits and independent task reviews: M1 capture,
+desktop recovery and distribution/acceptance; M2 immutable catalog (tasks 1–3),
+lifecycle/erasure (4–5) and shared persistence (6–7); M3 search/actions (1–2) and
+library/CLI/evidence (3–6); M4 grounded core (1–5) and product flows/evidence (6–8);
+M5 settings/runtime (1–2), portability/privacy (3–5) and updates/product acceptance
+(6–8). These are delivery boundaries, not completed milestones or published releases.
+
 ## Review and merge gates
 
 - Each implementation task follows meaningful red/green tests and self-review.
@@ -51,6 +58,11 @@ and individual execution plans are added here before their implementation.
   no unresolved material findings. Never treat review silence as approval.
 - Use merge commits to preserve the requested commit groups. Update this ledger with
   PR, head, review and validation evidence before proceeding.
+- Main ruleset `14750729` requires an approving/code-owner review and explicitly
+  permits repository administrators to merge. The delegated owner account has ADMIN
+  permission. Use that configured exception, without changing rules, only after the
+  gates above pass and with `--match-head-commit`. Copilot's COMMENTED reviews and
+  independent agent reviews are recorded as such; neither is a human APPROVED review.
 
 ## Acceptance and evidence
 
@@ -108,8 +120,34 @@ open wherever it has not actually been observed.
   two accepted defects (comments `4171819200`, `4171819228`). Commit `4860095` fixes
   successful-result cleanup after late cancellation and valid nested timestamp alias
   fallback. Ten cases reproduced nine failures before correction; 57 focused tests
-  and the full suite of 211 passed. Replies, current-head review and merge remain pending.
+  and the full suite of 211 passed. Both observations were replied to and resolved.
 - Initial CI exposed an existing UTC string-comparison assumption and a missing EGL
   runtime on Ubuntu. Commit `545174e` adds deterministic UTC/non-UTC checks using aware
   datetime equality and installs libegl1. Windows and Ubuntu jobs both passed on that
-  head (run `37099618688`); review-fix head CI must also pass before merge.
+  head (run `37099618688`). Later review-fix CI runs `37102433292` (`6f1f88d`) and
+  `37103530702` (`240858e`) also passed. The latter ran 266 tests on each platform,
+  including the symlink case omitted locally, and built wheel/source distributions.
+- Further Copilot observations were accepted and replied to: oversized timestamp
+  integers (`5399210060`) fixed in `6ac6a0f`; stale segment evidence (`5399274184`)
+  fixed in `e48f9ee`; cleanup ordering tightened in `6f1f88d` and explained in the
+  reply to review `5399321887`. Pair-publication failure (`5399348275`, inline
+  `4171988549`) fixed in `240858e`, independently accepted, replied to and resolved.
+- Review `5399404470` of `240858e`, received 2026-10-03 06:39:41 UTC, identified
+  unsafe recovery output entries (inline `4172034351`) and reversed timing pairs.
+  Commit `a9cb09a` rejects pre-existing redirects, hardlinks and nonregular managed
+  entries before retry reads/provider calls and stages text, normalized WAV and source
+  copies before replacement. Commit `7ed996a` keeps segment text/speaker but sets both
+  contradictory time bounds to null before offsets, including directly typed segments.
+  The stale-ledger observation is addressed by this event register.
+- Corrective-code checkpoint `7ed996a`: full offscreen suite **385 passed, 6 skipped
+  in 10.62 s**. All skips need local Windows symlink privileges; real hardlink and
+  junction cases passed. Focused security suite: 129 passed/6 skipped; focused timing
+  suite: 168 passed/1 skipped. Ruff, format and diff checks passed. This local result
+  does not substitute for hosted CI of the final PR head.
+
+This register records immutable observed checkpoints. The live
+[PR review/check/merge record](https://github.com/srodriguez-lefebre/here/pull/12)
+is the authority for subsequent review dispositions, final-head CI and merge status;
+earlier passing runs never waive a later-head gate. No milestone is complete here:
+desktop journals/restart, per-user paths, diagnostics/save-exit, installed distribution,
+two-hour acceptance and M2–M5 implementation still require their planned evidence.

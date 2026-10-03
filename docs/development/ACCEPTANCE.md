@@ -6,7 +6,7 @@ must be synthetic; credentials and private conversations never enter evidence fi
 
 | Milestone | Acceptance requirement | Evidence required | Current state |
 |---|---|---|---|
-| M1 | Both default Windows sources captured at 44.1/48 kHz | Actual device/format and WAV frame/duration report | Devices enumerated; capture pending |
+| M1 | Both default Windows sources captured at 44.1/48 kHz | Actual device/format and WAV frame/duration report | Short actual two-source capture passed; long run open |
 | M1 | Two-hour meeting without unbounded growth or unexplained gaps | Frames/known markers, peak memory, disk, queue and final artifacts | Open |
 | M1 | Pause/resume audio timeline, destructive cancel and saved exit | Qt and Windows synthetic marker runs | Open |
 | M1 | Provider/timestamps and diarization | Synthetic real-provider run and segment output inspected | Single/multiple-source TTS smokes passed; long diarization open |
@@ -56,7 +56,24 @@ session paths, credentials or private recordings are published.
 - Capture correctness suite at review-fix commit `4860095`: 211 passed, including
   ten regressions for the two Copilot findings. Changed-file Ruff and diff checks pass.
   Hosted Windows/Ubuntu tests and wheel/source builds passed at CI correction head
-  `545174e`, run `37099618688`; current review-fix head checks are required separately.
+  `545174e`, run `37099618688`.
+- Hosted review-fix CI at `240858e`, run `37103530702`: 266 tests passed in Windows
+  (8.35 s) and Ubuntu (7.71 s), including the locally skipped symlink test; wheel and
+  source builds passed. This is evidence for that immutable head, not later commits.
+- 2026-10-03 05:37 UTC, code `5ec4e92`: short actual default-device capture with an
+  authored TTS fixture on loopback, pause/resume and stop. Wall duration 8.281 s,
+  pause 2.000 s, stop latency 0.107 s. Microphone: 271,360 frames at 44,100 Hz,
+  stereo (6.153 s); system loopback: 295,936 frames at 48,000 Hz, stereo (6.165 s).
+  Persisted, returned and live frame counts matched for both sources; nonzero loopback
+  signal observed. No provider call; probe-owned raw audio was removed. The original
+  probe used raw integer samples for peak, so no calibrated amplitude/clipping claim
+  is made. This verifies a short device/control path, not long capture, journal recovery
+  or installed-runtime behavior.
+- Corrective code `7ed996a`: one full local offscreen suite, 385 passed/6 skipped in
+  10.62 s. New tests reproduce external-entry recovery routes, partial output writes
+  and reversed timing across aliases/objects/typed serialization. Real hardlinks and
+  junctions passed; six symlink cases require local Windows privileges. Hosted checks
+  for the final PR head are recorded in the PR and evaluated before merge.
 
 ## Measurement decisions
 
