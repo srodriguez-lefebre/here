@@ -284,6 +284,7 @@ def test_run_recording_wraps_runtime_errors_as_typer_exit(tmp_path: Path) -> Non
             state=cli_module.ApplicationState.FAILED,
             last_error=SimpleNamespace(message="broken"),
             has_active_work=False,
+            worker_complete=True,
         )
 
         def start(self, request: object) -> None:
@@ -315,6 +316,7 @@ def test_run_recording_cleans_up_active_work_after_unexpected_input_error(
                 state=cli_module.ApplicationState.IDLE,
                 last_error=None,
                 has_active_work=False,
+                worker_complete=True,
             )
             self.cancelled = False
             self.waited = False
@@ -325,6 +327,7 @@ def test_run_recording_cleans_up_active_work_after_unexpected_input_error(
                 state=cli_module.ApplicationState.RECORDING,
                 last_error=None,
                 has_active_work=True,
+                worker_complete=False,
             )
 
         def cancel(self) -> None:
@@ -333,6 +336,7 @@ def test_run_recording_cleans_up_active_work_after_unexpected_input_error(
                 state=cli_module.ApplicationState.CANCELLED,
                 last_error=None,
                 has_active_work=False,
+                worker_complete=False,
             )
 
         def wait_until_terminal(self) -> object:

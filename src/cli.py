@@ -370,6 +370,16 @@ def _run_recording(
     if source_mode is None:
         raise ValueError("Unknown recording entry point")
     controller = create_default_controller()
+
+    def finish_recording() -> None:
+        try:
+            if controller.snapshot.has_active_work:
+                controller.cancel()
+        finally:
+            # A terminal state can precede live teardown and the completion observer.
+            if not controller.snapshot.worker_complete:
+                controller.wait_until_terminal()
+
     try:
         controller.start(
             StartRequest(
@@ -401,26 +411,23 @@ def _run_recording(
             path=snapshot.session_dir,
         )
     except KeyboardInterrupt:
-        if controller.snapshot.has_active_work:
-            controller.cancel()
-            controller.wait_until_terminal()
+        try:
+            finish_recording()
+        except Exception:
+            logger.exception("Failed to clean up the active recording")
         raise typer.Exit(code=130) from None
     except RuntimeError as exc:
-        if controller.snapshot.has_active_work:
-            try:
-                controller.cancel()
-                controller.wait_until_terminal()
-            except Exception:
-                logger.exception("Failed to clean up the active recording")
+        try:
+            finish_recording()
+        except Exception:
+            logger.exception("Failed to clean up the active recording")
         logger.error(str(exc))
         raise typer.Exit(code=1) from exc
     except Exception as exc:
-        if controller.snapshot.has_active_work:
-            try:
-                controller.cancel()
-                controller.wait_until_terminal()
-            except Exception:
-                logger.exception("Failed to clean up the active recording")
+        try:
+            finish_recording()
+        except Exception:
+            logger.exception("Failed to clean up the active recording")
         logger.exception("Unexpected error while recording or transcribing audio")
         raise typer.Exit(code=1) from exc
 
