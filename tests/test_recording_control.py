@@ -94,7 +94,7 @@ def test_programmatic_handle_stop_returns_recording(monkeypatch: pytest.MonkeyPa
         return expected
 
     monkeypatch.setattr(windows_module, "_record_windows_controlled", controlled)
-    handle = windows_module.start_windows_recording("microphone")
+    handle = windows_module._ThreadedWindowsRecording("microphone")
 
     handle.stop()
 
@@ -127,7 +127,7 @@ def test_programmatic_handle_cancel_deletes_temporary_sources(
         return session
 
     monkeypatch.setattr(windows_module, "_record_windows_controlled", controlled)
-    handle = windows_module.start_windows_recording("microphone")
+    handle = windows_module._ThreadedWindowsRecording("microphone")
 
     handle.cancel()
 
@@ -168,7 +168,7 @@ def test_failed_device_startup_does_not_report_capture_ready(
     assert not ready.is_set()
 
 
-def test_partial_device_startup_deletes_created_audio(
+def test_partial_device_startup_preserves_owned_journal(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
@@ -201,11 +201,6 @@ def test_partial_device_startup_deletes_created_audio(
         return FakeControlledStream(), 16000, 1
 
     monkeypatch.setattr(windows_module, "_open_windows_input_stream", open_stream)
-    monkeypatch.setattr(
-        windows_module,
-        "open_temp_soundfile",
-        lambda *args: (audio_path, FakeWriter()),
-    )
 
     with pytest.raises(RuntimeError, match="second device unavailable"):
         windows_module._record_windows_controlled(
@@ -216,4 +211,8 @@ def test_partial_device_startup_deletes_created_audio(
             ready_event=ready,
         )
 
-    assert not audio_path.exists()
+    assert audio_path.read_bytes() == b"partial"
+    from here.config.settings import get_settings
+
+    journals = list((get_settings().TRANSCRIPTIONS_DIR / ".captures").glob("*/journal.json"))
+    assert len(journals) == 1

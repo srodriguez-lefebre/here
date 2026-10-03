@@ -34,7 +34,7 @@ def test_cancel_after_result_check_deletes_successful_recording(monkeypatch, tmp
             return self.done.wait(timeout)
 
     monkeypatch.setattr(windows, "_record_windows_controlled", controlled)
-    handle = windows.start_windows_recording("microphone")
+    handle = windows._ThreadedWindowsRecording("microphone")
     completion = GatedCompletion()
     handle._done_event = completion
     try:

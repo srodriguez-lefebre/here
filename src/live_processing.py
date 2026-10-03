@@ -233,6 +233,7 @@ class LiveTranscriptionController:
     ) -> None:
         self.expected_source_count = expected_source_count
         self.config = chunking_config or ChunkingConfig()
+        self._client = build_client()
         self.working_dir = Path(tempfile.mkdtemp(prefix="here_live_"))
         self._capture_queue: queue.Queue[CapturedAudioBlock] = queue.Queue(maxsize=256)
         self._chunk_queue: queue.Queue[LiveChunkJob] = queue.Queue(maxsize=8)
@@ -247,7 +248,6 @@ class LiveTranscriptionController:
         self._error: Exception | None = None
         self._result: TranscriptionResult | None = None
         self._chunks: list[ChunkMetadata] = []
-        self._client = build_client()
         self._resolved_transcription_model, self._resolved_cleanup_model, self._should_cleanup = (
             resolve_transcription_models(
                 transcription_model=transcription_model,
@@ -651,12 +651,16 @@ class LiveTranscriptionController:
     def chunk_metadata(self) -> list[ChunkMetadata]:
         return list(self._chunks)
 
-    def abort(self) -> None:
-        logger.warning("Aborting live transcription pipeline.")
+    def request_abort(self) -> None:
+        """Nonblocking intent for UI callers; completion is acknowledged separately."""
         self._abort_event.set()
         with self._capture_lock:
             if not self._capture_closed:
                 self._capture_closed = True
+
+    def abort(self) -> None:
+        logger.warning("Aborting live transcription pipeline.")
+        self.request_abort()
         deadline = time.monotonic() + 2
         for thread in (self._chunker_thread, self._transcriber_thread):
             if thread is not threading.current_thread():
@@ -666,6 +670,16 @@ class LiveTranscriptionController:
         logger.info("Cleaning live transcription workspace.")
         self._cleanup_requested.set()
         self._cleanup_if_finished()
+
+    def wait_closed(self) -> None:
+        """Worker-only completion fence; provider cancellation is cooperative."""
+        for thread in (self._chunker_thread, self._transcriber_thread):
+            thread.join()
+        self.cleanup()
+
+    def invalidate(self, error: Exception) -> None:
+        """Reject an incomplete live timeline; preserved primary audio is authoritative."""
+        self._set_error(error)
 
     def _cleanup_if_finished(self) -> None:
         if (

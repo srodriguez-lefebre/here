@@ -18,10 +18,10 @@ dependencies = [
 ]
 
 [project.scripts]
-here = "here.cli:app"
-here-gui = "here.ui.gui:main"
+here = "here.entrypoints:cli_main"
+here-gui = "here.entrypoints:gui_main"
 here-gui-preview = "here.ui.preview:main"
-record = "here.cli:record_app"
+record = "here.entrypoints:record_main"
 
 [build-system]
 requires = ["setuptools>=68"]

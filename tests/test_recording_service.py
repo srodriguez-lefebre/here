@@ -1,7 +1,25 @@
 from __future__ import annotations
 
+import sys
+from types import SimpleNamespace
+
 import here.recording.service as service_module
 import pytest
+
+
+@pytest.mark.parametrize("name", ["record_mic_linux", "record_os_linux"])
+def test_linux_wrapper_loads_selected_backend_on_explicit_capture(monkeypatch, name):
+    sink = object()
+    expected = object()
+    calls = []
+
+    def capture(sample_rate, *, block_sink):
+        calls.append((sample_rate, block_sink))
+        return expected
+
+    monkeypatch.setitem(sys.modules, "here.recording.linux", SimpleNamespace(**{name: capture}))
+    assert getattr(service_module, name)(22050, block_sink=sink) is expected
+    assert calls == [(22050, sink)]
 
 
 def test_record_mic_until_enter_uses_windows_backend_on_windows(

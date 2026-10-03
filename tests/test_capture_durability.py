@@ -45,12 +45,13 @@ def test_reader_failure_preserves_closed_material_except_explicit_cancel(
     )
     monkeypatch.setattr(windows, "_open_windows_input_stream", lambda *args: (object(), 8000, 1))
 
-    def open_writer(rate, channels):
-        path = tmp_path / f"source-{len(paths)}.wav"
-        writer = sf.SoundFile(path, mode="w", samplerate=rate, channels=channels, subtype="PCM_16")
-        paths.append(path)
-        writers.append(writer)
-        return path, writer
+    original_open = windows.CaptureJournal.open_writer
+
+    def open_writer(journal, **kwargs):
+        writer = original_open(journal, **kwargs)
+        paths.append(writer.path)
+        writers.append(writer._writer)
+        return writer
 
     def reader(stream, **kwargs):
         if kwargs["label"] == "microphone":
@@ -60,7 +61,7 @@ def test_reader_failure_preserves_closed_material_except_explicit_cancel(
             kwargs["errors"].append(cause)
         kwargs["stop_event"].set()
 
-    monkeypatch.setattr(windows, "open_temp_soundfile", open_writer)
+    monkeypatch.setattr(windows.CaptureJournal, "open_writer", open_writer)
     monkeypatch.setattr(windows, "_capture_windows_stream_to_file", reader)
     cancelled = threading.Event()
     if cancel:
@@ -162,7 +163,7 @@ def test_handle_exposes_partial_failure_and_cancel_removes_it(monkeypatch, tmp_p
             raise models.CaptureFailed(session, cause) from cause
 
         monkeypatch.setattr(windows, "_record_windows_controlled", controlled)
-        handle = windows.start_windows_recording("microphone")
+        handle = windows._ThreadedWindowsRecording("microphone")
         if cancel:
             handle.cancel()
             with pytest.raises(RuntimeError, match="cancelled"):
@@ -188,18 +189,15 @@ def test_capture_writer_finalization_error_retains_material(monkeypatch, tmp_pat
     )
     monkeypatch.setattr(windows, "_open_windows_input_stream", lambda *args: (object(), 8000, 1))
     cause = OSError("finalize failed")
-    path = tmp_path / "finalized.wav"
-    writer = sf.SoundFile(path, mode="w", samplerate=8000, channels=1)
+    writers = []
+    original_close = windows.CaptureWriter.close
 
-    class FailingClose:
-        def write(self, data):
-            writer.write(data)
+    def failing_close(writer):
+        original_close(writer)
+        writers.append(writer)
+        raise cause
 
-        def close(self):
-            writer.close()
-            raise cause
-
-    monkeypatch.setattr(windows, "open_temp_soundfile", lambda *args: (path, FailingClose()))
+    monkeypatch.setattr(windows.CaptureWriter, "close", failing_close)
 
     def reader(stream, **kwargs):
         kwargs["writer"].write(np.ones((32, 1)))
@@ -216,8 +214,8 @@ def test_capture_writer_finalization_error_retains_material(monkeypatch, tmp_pat
             ready_event=threading.Event(),
         )
     assert caught.value.__cause__ is cause
-    assert writer.closed
-    assert sf.info(path).frames == 32
+    assert writers[0]._writer.closed
+    assert sf.info(writers[0].path).frames == 32
 
 
 @pytest.mark.parametrize(

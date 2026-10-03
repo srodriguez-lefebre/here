@@ -4,6 +4,7 @@ import math
 import threading
 import time
 from collections.abc import Callable
+from contextvars import copy_context
 from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
@@ -25,11 +26,13 @@ from here.application.processing import (
     SessionProcessor,
     error_metadata,
 )
+from here.config.settings import require_provider_key, settings_operation
 from here.live_processing import LiveTranscriptionController
 from here.output.metadata import SessionEventMetadata
 from here.output.session_writer import SessionArtifactPaths
 from here.recording.control import ControllableRecording
 from here.recording.models import CaptureFailed
+from here.recording.reservation import audio_reservation
 from here.recording.service import start_recording
 
 BlockSink = Callable[[str, np.ndarray, int, int], None]
@@ -47,6 +50,7 @@ def _default_capture_factory(request: StartRequest, block_sink: BlockSink) -> Co
         block_sink=block_sink,
         microphone_device_id=request.microphone_device_id,
         system_device_id=request.system_device_id,
+        sessions_root=request.output_dir,
     )
 
 
@@ -91,7 +95,9 @@ class HereApplicationController:
         self._live: LiveTranscriptionController | None = None
         self._request: StartRequest | None = None
         self._worker: threading.Thread | None = None
+        self._completion: threading.Thread | None = None
         self._cancel_recording = False
+        self._stop_requested = False
         self._processing_cancel = threading.Event()
         self._pause_started_at: datetime | None = None
         self._events: list[SessionEventMetadata] = []
@@ -162,16 +168,18 @@ class HereApplicationController:
 
     def start(self, request: StartRequest) -> None:
         with self._lock:
-            if self._snapshot.state not in self._STARTABLE:
+            if self._snapshot.state not in self._STARTABLE or not self._snapshot.worker_complete:
                 raise InvalidApplicationCommand(
                     f"Cannot start while application is {self._snapshot.state.value}"
                 )
+            audio_reservation.acquire()
             previous = self._snapshot.state
             started_at = self._clock()
             self._request = request
             self._capture = None
             self._live = None
             self._cancel_recording = False
+            self._stop_requested = False
             self._processing_cancel.clear()
             self._pause_started_at = None
             self._events = []
@@ -181,6 +189,7 @@ class HereApplicationController:
             self._snapshot = ApplicationSnapshot(
                 state=ApplicationState.PREPARING,
                 started_at=started_at,
+                worker_complete=False,
             )
             event = ApplicationEvent(
                 kind=EventKind.STATE_CHANGED,
@@ -194,18 +203,15 @@ class HereApplicationController:
                 name="here-application-job",
             )
         self._emit(event)
-        self._worker.start()
+        self._launch_worker(self._worker, release_audio=True)
 
     def _block_sink(self, label: str, data: np.ndarray, sample_rate: int, channels: int) -> None:
         del channels
         with self._lock:
             live = self._live
+            # The sink receives blocks already committed to the disk timeline.
+            # A simultaneous pause/stop must not drop those from live processing.
             state = self._snapshot.state
-            if state not in {
-                ApplicationState.PREPARING,
-                ApplicationState.RECORDING,
-            }:
-                return
         if live is not None:
             live.submit_block(label, data, sample_rate, data.shape[1] if data.ndim > 1 else 1)
 
@@ -246,26 +252,39 @@ class HereApplicationController:
             )
         )
 
+    @settings_operation
     def _run_recording(self) -> None:
         request = self._request
         assert request is not None
         source_count = 2 if request.source_mode.value == "both" else 1
         try:
+            if (
+                self._capture_factory is _default_capture_factory
+                or self._live_factory is _default_live_factory
+            ):
+                require_provider_key()
             live = self._live_factory(source_count, request.use_alt_transcription_model)
             with self._lock:
                 self._live = live
             capture = self._capture_factory(request, self._block_sink)
             with self._lock:
                 self._capture = capture
-                should_cancel = self._cancel_recording
-            if should_cancel:
-                capture.cancel()
-            else:
-                self._transition(ApplicationState.RECORDING, details={"source_count": source_count})
-                with self._lock:
+                self._snapshot = replace(
+                    self._snapshot, opened_sources=tuple(getattr(capture, "opened_sources", ()))
+                )
+                if self._cancel_recording:
+                    capture.cancel()
+                elif self._stop_requested:
+                    capture.stop()
+                else:
+                    self._transition(
+                        ApplicationState.RECORDING, details={"source_count": source_count}
+                    )
                     self._append_session_event("recording", details={"source_count": source_count})
 
             session = capture.wait()
+            if getattr(capture, "live_error", None) is not None:
+                live.invalidate(capture.live_error)
             if not self._begin_processing():
                 session.cleanup()
                 live.abort()
@@ -338,9 +357,34 @@ class HereApplicationController:
                 self._fail("application_job", exc)
         finally:
             with self._lock:
-                if self._worker is threading.current_thread():
-                    self._capture = None
-                    self._live = None
+                live = self._live
+            if live is not None:
+                live.abort()
+                live.cleanup()
+                wait_closed = getattr(live, "wait_closed", None)
+                if wait_closed is not None:
+                    wait_closed()
+            with self._lock:
+                self._capture = None
+                self._live = None
+
+    def _launch_worker(self, worker, *, release_audio=False):
+        # The completion observer, never Qt, joins the actual worker after its finally.
+        def completed():
+            worker.join()
+            with self._lock:
+                if release_audio:
+                    audio_reservation.release()
+                self._snapshot = replace(self._snapshot, worker_complete=True)
+                event = ApplicationEvent(
+                    kind=EventKind.WORKER_COMPLETED, state=self._snapshot.state
+                )
+            self._emit(event)
+
+        observer = threading.Thread(target=completed, name="here-job-completion", daemon=True)
+        self._completion = observer
+        worker.start()
+        observer.start()
 
     def _begin_processing(
         self, *, details: dict[str, str | int | float | bool | None] | None = None
@@ -362,7 +406,13 @@ class HereApplicationController:
         return True
 
     def _finish_capture_failure(self, artifacts: SessionArtifactPaths, exc: CaptureFailed) -> None:
-        metadata = error_metadata("capture", exc)
+        persisted = getattr(artifacts, "errors", None)
+        metadata = next(
+            (error for error in getattr(persisted, "errors", []) if error.stage == "capture"),
+            None,
+        )
+        if metadata is None:
+            metadata = error_metadata("capture", exc)
         error = ApplicationError(
             stage=metadata.stage,
             error_type=metadata.type,
@@ -493,20 +543,25 @@ class HereApplicationController:
 
     def stop(self) -> None:
         with self._lock:
-            if (
-                self._snapshot.state
-                not in {
-                    ApplicationState.RECORDING,
-                    ApplicationState.PAUSED,
-                }
-                or self._capture is None
-            ):
+            state = self._snapshot.state
+            if self._stop_requested or state in {
+                ApplicationState.STOPPING,
+                ApplicationState.PROCESSING,
+            }:
+                return
+            if state not in {
+                ApplicationState.PREPARING,
+                ApplicationState.RECORDING,
+                ApplicationState.PAUSED,
+            }:
                 raise InvalidApplicationCommand("Stop is only available during capture")
-            if self._snapshot.state is ApplicationState.PAUSED:
+            self._stop_requested = True
+            if state is ApplicationState.PAUSED:
                 self._finish_pause()
             self._append_session_event("stopping")
-            self._capture.stop()
-        self._transition(ApplicationState.STOPPING)
+            if self._capture is not None:
+                self._capture.stop()
+            self._transition(ApplicationState.STOPPING)
 
     def cancel(self) -> None:
         with self._lock:
@@ -528,13 +583,15 @@ class HereApplicationController:
                 self._append_session_event("processing_cancelled", details={"recoverable": True})
                 live = self._live
                 if live is not None:
-                    live.abort()
+                    request_abort = getattr(live, "request_abort", None)
+                    if request_abort is not None:
+                        request_abort()
                 return
             raise InvalidApplicationCommand(f"Cannot cancel while application is {state.value}")
 
     def retry(self, session_dir: Path | None = None) -> None:
         with self._lock:
-            if self._snapshot.has_active_work:
+            if self._snapshot.has_active_work or not self._snapshot.worker_complete:
                 raise InvalidApplicationCommand("Cannot retry while work is active")
             target = session_dir or self._snapshot.session_dir
             if target is None:
@@ -545,10 +602,11 @@ class HereApplicationController:
                 self._snapshot,
                 state=ApplicationState.PROCESSING,
                 last_error=None,
+                worker_complete=False,
             )
             worker = threading.Thread(
-                target=self._run_retry,
-                args=(target,),
+                target=copy_context().run,
+                args=(self._run_retry, target),
                 daemon=True,
                 name="here-application-retry",
             )
@@ -561,7 +619,7 @@ class HereApplicationController:
                 details={"retry": True},
             )
         )
-        worker.start()
+        self._launch_worker(worker)
 
     def _run_retry(self, session_dir: Path) -> None:
         try:
@@ -576,7 +634,7 @@ class HereApplicationController:
 
     def wait_until_terminal(self, timeout: float | None = None) -> ApplicationSnapshot:
         with self._lock:
-            worker = self._worker
+            worker = self._completion
         if worker is not None:
             worker.join(timeout)
             if worker.is_alive():

@@ -1,0 +1,916 @@
+{
+  "schema_version": 1,
+  "milestone": "M1",
+  "milestone_complete": false,
+  "desktop_delivery": "PR13 open; empty-background-error fix and test-only CI diagnostics independently accepted; final Windows-only CI and renewed Copilot review pending.",
+  "latest_desktop_source_head": "843279ca42da08cb0bc0116d01c9b5da925011ae",
+  "task_1": {
+    "status": "independent_spec_and_quality_approved",
+    "base": "eba75781c3c317f62e9ec7080fbb9503952b6998",
+    "source_head": "d366711b8f529093baaf3dc18e8eb635f484c3e6",
+    "commits": [
+      "0577dedff9712335c0f1ab396978682adde2a382",
+      "7a8bc7048604bc155253af3f62ab92a205fc32fb",
+      "d366711b8f529093baaf3dc18e8eb635f484c3e6"
+    ],
+    "verification": {
+      "command": "QT_QPA_PLATFORM=offscreen uv run pytest -q",
+      "passed": 524,
+      "skipped": 6,
+      "seconds": 34.02,
+      "skip_reason": "Existing Windows symbolic-link tests require privileges unavailable locally (WinError 1314).",
+      "changed_file_lint_format_and_diff": "passed",
+      "new_real_junction_and_hardlink_cases": "executed",
+      "open_writer_abrupt_kill": "Real subprocess kills with production mono and three-channel writers, followed by exact PCM reads in fresh processes.",
+      "publication_boundary_kills": 6,
+      "additional_in_process_crash_boundaries": 7
+    },
+    "independent_review": {
+      "initial_head": "7a8bc7048604bc155253af3f62ab92a205fc32fb",
+      "important_findings": 1,
+      "finding": "CLI offline provider work began without publishing pending metadata.",
+      "disposition": "Fixed in d366711; shared manifest-only pending publication precedes provider calls.",
+      "corrective_spec_verdict": "approved",
+      "corrective_quality_verdict": "approved",
+      "unaddressed_material_findings": 0
+    },
+    "selected_audio": "Retry and returned audio paths follow the validated recoverable_audio filename, including an owned unique normalized file for managed raw-source attempts.",
+    "limits": [
+      "Process restart evidence does not prove power-loss or fsync durability.",
+      "No hardware, real provider, packaged executable or long recording was executed for Task 1.",
+      "Task 1 does not itself verify diagnostics, opened-device UI or save-exit; Task 2 evidence is recorded below.",
+      "Desktop Copilot review and hosted current-PR-head CI remain pending."
+    ]
+  },
+  "task_2": {
+    "status": "independent_spec_and_quality_approved",
+    "base": "bcf7d0eee1a0ef5db99134d3a9a21ca444379e3a",
+    "source_head": "76d317ae8f8979914f546207363d02405f5bd8b9",
+    "commits": [
+      "de65099d80bebaf830290b570f516b005485cba8",
+      "76d317ae8f8979914f546207363d02405f5bd8b9"
+    ],
+    "verification": {
+      "command": "QT_QPA_PLATFORM=offscreen uv run pytest -q",
+      "passed": 558,
+      "skipped": 6,
+      "seconds": 53.72,
+      "skip_reason": "Existing Windows symbolic-link tests require unavailable local privileges (WinError 1314).",
+      "changed_python_files_lint_and_format": 27,
+      "diff_check": "passed",
+      "final_helper_capture_focus": {
+        "passed": 16,
+        "seconds": 20.8
+      },
+      "controller_ui_processing_focus": {
+        "passed": 93,
+        "seconds": 4.44
+      },
+      "windows_parent_death": "Real synthetic parent was killed; actual kernel Job Object terminated its stalled child. Regression went RED to GREEN.",
+      "pressure": "Real synthetic child WAV checkpoints progress while live callback or pipe delivery is blocked; incomplete live results force offline fallback."
+    },
+    "independent_review": {
+      "spec_verdict": "approved",
+      "quality_verdict": "approved",
+      "unaddressed_material_findings": 0,
+      "minor_finding": "PREPARING-stop test emergency completion latch can mask missing stop delivery; production stop call was inspected and is correct.",
+      "minor_disposition": "Strengthened in 490b77c; suppressed-stop runtime mutation now triggers the assertion. Scoped corrective review accepted."
+    },
+    "helper_contract": "Fixed source module; frozen trusted sibling here-cli.exe, hidden redirected pipes and pre-bootstrap dispatch. Non-inherited Windows kill-on-close Job Object assigned before hardware request.",
+    "provider_shutdown_limit": "Existing synchronous SDK transport defaults are 600 seconds with two retries. In-flight provider cancellation is cooperative; Qt remains responsive and retains ownership until actual cleanup. No short provider shutdown bound is claimed.",
+    "limits": [
+      "Actual frozen helper IPC and installable runtime are distribution-task acceptance, still open.",
+      "No long recording or real provider was executed for Task 2.",
+      "Job Object process-death proof does not establish power-loss durability or a Linux parent-death guarantee.",
+      "Copilot review and current-PR-head hosted checks remain pending."
+    ]
+  },
+  "integrated_correction_1": {
+    "base": "dfbdeb64fa657111b69801a407065e4f85bd3e8b",
+    "source_head": "490b77c7b1a9681ef68cdc0beb8bb7c1823ea206",
+    "initial_whole_branch_verdict": "with_fixes",
+    "important_findings": [
+      {
+        "finding": "Absent normalized WAV hid valid raw-backed sessions during fresh discovery/materialization.",
+        "disposition": "Fixed; only genuine derived-file absence is skipped after safe path validation. Existing corrupt/unsafe audio remains rejected; shared retry rebuilds the selected filename."
+      },
+      {
+        "finding": "Missing-key selected retry cleared recovery choices.",
+        "disposition": "Fixed; present the error while retaining choices and selection, allowing a later explicit same-window retry after editing the effective env file."
+      }
+    ],
+    "minor_stop_test": "Actual stop delivery asserted before success; emergency completion only in teardown. Suppressed-stop in-memory mutation detected.",
+    "regressions": {
+      "red_failed": 5,
+      "green_passed": 11
+    },
+    "focused": {
+      "passed": 170,
+      "skipped": 5,
+      "seconds": 27.22
+    },
+    "final_committed_head_suite": {
+      "passed": 569,
+      "skipped": 6,
+      "seconds": 56.92,
+      "skip_reason": "Existing local Windows symlink cases require unavailable privileges, WinError 1314."
+    },
+    "changed_python_files_lint_and_format": 6,
+    "diff_check": "passed",
+    "scoped_independent_review": "accepted; both P2 findings and P3 test note addressed, no new material findings",
+    "local_whole_branch_gate": "accepted"
+  },
+  "native_recovery_correction": {
+    "source_head": "490b77c7b1a9681ef68cdc0beb8bb7c1823ea206",
+    "status": "passed",
+    "qt_platform": "windows",
+    "provider_calls": 0,
+    "hardware_capture": false,
+    "fresh_raw_backed_discovery_and_materialization_without_derived_wav": true,
+    "missing_key_error_kept_selection_and_retry_action": true,
+    "same_window_explicit_retry_after_editing_effective_env": true,
+    "normalized_frames": 240,
+    "identity_selected_name_and_raw_bytes_preserved": true,
+    "injected_transcriber_calls": 1,
+    "exit_after_actual_worker_and_background_cleanup": true,
+    "qt_heartbeat": {
+      "samples": 22,
+      "max_gap_seconds": 0.03705850000551436
+    },
+    "raw_audio_retained": false,
+    "scope": "Native Qt window/event delivery with authored tiny WAV and injected transcription. No physical capture, real provider, frozen or long-run claim."
+  },
+  "native_desktop_observation": {
+    "observed_at_utc": "2026-10-03T09:48:55Z",
+    "source_head": "76d317ae8f8979914f546207363d02405f5bd8b9",
+    "status": "passed",
+    "qt_platform": "windows",
+    "provider_calls": 0,
+    "network_guard": "Parent socket operations denied; child launches only fixed hardware actions. This is not a system-wide network-denial claim.",
+    "startup_without_key_and_local_recovery": true,
+    "missing_key_start_created_no_capture": true,
+    "missing_key_retry_preserved_unmaterialized_journal": true,
+    "diagnostics": [
+      {
+        "source": "microphone",
+        "device_name": "Microphone (3- Arctis Nova 7P)",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_seconds": 3.0,
+        "peak": 3.0517578125e-05,
+        "rms": 1.4619909052271396e-05,
+        "has_signal": false,
+        "elapsed_seconds": 4.199913199990988
+      },
+      {
+        "source": "system audio",
+        "device_name": "Headphones (3- Arctis Nova 7P) [Loopback]",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_seconds": 3.0,
+        "peak": 0.150115966796875,
+        "rms": 0.10608416795730591,
+        "has_signal": true,
+        "elapsed_seconds": 4.133567600001697
+      }
+    ],
+    "signal_fixture": "Authored 440 Hz PCM tone played locally; signal results report the actual observations.",
+    "saved_exit": {
+      "ordinary_active_close_hid": true,
+      "actual_opened_names_displayed": true,
+      "paused_exit_saved": true,
+      "repeated_exit_idempotent": true,
+      "terminal_state": "failed",
+      "cause": "Intentionally injected local live/offline failure after pending publication; no provider client or request.",
+      "worker_complete": true,
+      "recoverable_audio_and_local_discovery": true,
+      "session_persisted_before_worker_completion": true,
+      "exit_seconds": 0.3718958000099519,
+      "delivered_frames": {
+        "microphone": 99328,
+        "system audio": 107520
+      },
+      "normalized_frames": 36037,
+      "normalized_sample_rate": 16000,
+      "normalized_channels": 1
+    },
+    "idle_close_quit_after_background_cleanup": true,
+    "capture_workers_and_reservation_released": true,
+    "qt_heartbeat": {
+      "samples": 688,
+      "max_gap_seconds": 0.04955320000590291
+    },
+    "raw_audio_retained": false,
+    "scope": "Bounded native source-runtime Qt/device/recovery/exit check. No frozen, real-provider, long-duration or full-M1 completion claim."
+  },
+  "ci_and_copilot_correction_2": {
+    "base": "ef7010e7d12093d817faf3fad0bdbf3bebd0fbb9",
+    "source_head": "98e19b14cd5dd93618b64c8899ddad5d26614c20",
+    "commits": [
+      "cc947e0e77334f573d279706f9b65c7fd3663c55",
+      "98e19b14cd5dd93618b64c8899ddad5d26614c20"
+    ],
+    "pr": "https://github.com/srodriguez-lefebre/here/pull/13",
+    "prior_hosted_run": {
+      "id": 37115691460,
+      "head": "ef7010e7d12093d817faf3fad0bdbf3bebd0fbb9",
+      "status": "failed"
+    },
+    "confirmed_corrections": [
+      "Lazy Linux backend imports keep pure journal/recovery/helper/GUI startup independent of PortAudio initialization; explicit backend forwarding remains tested.",
+      "Per-user path tests cover Windows, XDG and home fallback with a module-local platform mock.",
+      "Preserve the child-finalized interrupted journal and original device error once; parent-only timeout/death errors remain durable."
+    ],
+    "copilot": {
+      "review": 5400263899,
+      "head": "ef7010e7d12093d817faf3fad0bdbf3bebd0fbb9",
+      "state": "COMMENTED",
+      "inline": 4172753832,
+      "body_and_inline_findings": 1,
+      "disposition": "Accepted and fixed in 98e19b1; current-head review still required."
+    },
+    "verification": {
+      "runtime": "CPython 3.13.15 AMD64; PySide6 and Qt 6.11.2",
+      "command": "QT_QPA_PLATFORM=offscreen PYTHONUNBUFFERED=1 python -m pytest -vv",
+      "passed": 581,
+      "skipped": 6,
+      "seconds": 56.67,
+      "skip_reason": "Existing local Windows symbolic-link cases require unavailable privileges (WinError 1314).",
+      "focused": {
+        "passed": 123,
+        "seconds": 39.12
+      },
+      "original_child_error_regression": "Actual synthetic child OSError reproduced duplicate generic parent error before correction; one original error survives journal, materialization and fresh recovery after correction.",
+      "lint_format_diff": "passed"
+    },
+    "scoped_independent_review": "accepted",
+    "windows_native_exception": {
+      "status": "cause unconfirmed; no speculative Qt correction",
+      "bounded_negative_reproduction": "60-case Qt neighborhood, original 203-case prefix and one owner-lifetime barrier probe completed without native exception.",
+      "diagnostics": "Hosted pytest now uses verbose test names and unbuffered output.",
+      "limit": "Local passing results do not diagnose the previous access violation or replace new-head hosted checks."
+    }
+  },
+  "ci_and_copilot_correction_3": {
+    "base": "62089a4c822ea86e53321edf69519be0820926d7",
+    "source_head": "63030f0270b5520d89bcd5bd76fcc3ba18ccec8e",
+    "commits": [
+      "0b29897220562127b7f3ebf912031be8a9c43897",
+      "63030f0270b5520d89bcd5bd76fcc3ba18ccec8e"
+    ],
+    "prior_hosted_run": {
+      "id": 37117155758,
+      "head": "62089a4c822ea86e53321edf69519be0820926d7",
+      "status": "failed",
+      "ubuntu": {
+        "passed": 583,
+        "skipped": 3,
+        "failed": 1
+      },
+      "windows": "Native Qt teardown exception recurred; verbose output narrowed it to the first desktop-controls test."
+    },
+    "copilot": {
+      "review": 5400371073,
+      "head": "62089a4c822ea86e53321edf69519be0820926d7",
+      "state": "COMMENTED",
+      "body_findings": 1,
+      "new_inline_findings": 0,
+      "disposition": "Accepted body finding: stop-requested cleanup uses its closing deadline without the obsolete read-stall check; fixed in 0b29897."
+    },
+    "confirmed_contracts": [
+      "After stop, no new capture frames are expected; the finite close deadline classifies stalled teardown.",
+      "A background job remains busy until its actual sole worker thread exits. Qt polls liveness and emits results/idle on Qt; no join or elapsed-time completion claim.",
+      "Test-owned desktop instances are retained and their jobs drained before Qtbot destroys their widgets."
+    ],
+    "regressions": {
+      "red_failed": 3,
+      "immediate_green_passed": 6,
+      "seconds": 6.64,
+      "scope": "Actual synthetic child enters blocked stop_stream; controlled parent clock proves exact closing cause. Final owned-thread barriers prove busy state through normal/closed delivery."
+    },
+    "verification": {
+      "runtime": "CPython 3.13.15 AMD64; PySide6 and Qt 6.11.2",
+      "command": "QT_QPA_PLATFORM=offscreen PYTHONUNBUFFERED=1 python -m pytest -vv",
+      "passed": 585,
+      "skipped": 6,
+      "seconds": 56.93,
+      "skip_reason": "Existing local Windows symbolic-link cases require unavailable privileges (WinError 1314).",
+      "focused": {
+        "passed": 79,
+        "seconds": 21.51
+      },
+      "changed_python_files_lint_format": 8,
+      "diff_check": "passed"
+    },
+    "scoped_independent_review": "accepted",
+    "native_exception_limit": "Concrete completion/ownership defects are proven and corrected; they do not themselves reproduce or establish the cause of the hosted access violation. New-head hosted checks remain mandatory."
+  },
+  "native_ownership_correction": {
+    "schema_version": 1,
+    "source_head": "63030f0270b5520d89bcd5bd76fcc3ba18ccec8e",
+    "qt_platform": "windows",
+    "provider_calls": 0,
+    "hardware_capture": false,
+    "scope": "Native Windows Qt recovery/retry/exit smoke after background-job lifetime correction, authored PCM and injected transcription; no physical capture, provider, frozen or long-run claim.",
+    "fresh_raw_backed_discovery_and_materialization_without_derived_wav": true,
+    "missing_key_error_kept_selection_and_retry_action": true,
+    "same_window_explicit_retry_after_editing_effective_env": true,
+    "normalized_frames": 240,
+    "identity_selected_name_and_raw_bytes_preserved": true,
+    "transcriber_calls": 1,
+    "exit_after_actual_worker_and_background_cleanup": true,
+    "qt_heartbeat": {
+      "samples": 22,
+      "max_gap_seconds": 0.04179009998915717
+    },
+    "status": "passed",
+    "raw_audio_retained": false,
+    "runtime": "CPython 3.13.15 AMD64; PySide6 and Qt 6.11.2",
+    "host": "Windows 11 Home Single Language, version 10.0.26200, build 26200"
+  },
+  "copilot_correction_4": {
+    "base": "bd90996b80787cc642e76a2606968724366221f0",
+    "source_head": "e3b89173dfdd3283f1789fc20e525b56f216286c",
+    "commits": [
+      "f1411894a13f625d39f11985af7af343b4106dd4",
+      "e3b89173dfdd3283f1789fc20e525b56f216286c"
+    ],
+    "copilot": {
+      "review": 5400431791,
+      "state": "COMMENTED",
+      "inline": 4172887022,
+      "body_findings": 1,
+      "dispositions": [
+        "Accepted high-severity inline: obsolete errors/events move to owned backups before metadata commit; precommit failure restores entries, while owned postcommit cleanup cannot report committed success as failure.",
+        "Accepted medium body finding: empty LOCALAPPDATA and XDG_DATA_HOME use absolute documented home fallback; nonempty paths and explicit environment-file precedence preserved."
+      ]
+    },
+    "regressions": {
+      "red_failed": 13,
+      "green_passed": 15,
+      "green_seconds": 2.59,
+      "scope": "Real tiny authored WAV/prior UUID manifest, targeted move/replace/unlink faults, first/second move and metadata failure restoration, failed rollback backup retention, obsolete/segment/stage postcommit cleanup, and both platform empty/nonempty environment cases."
+    },
+    "verification": {
+      "runtime": "CPython 3.13.15 AMD64; PySide6 and Qt 6.11.2",
+      "command": "QT_QPA_PLATFORM=offscreen python -m pytest -q",
+      "passed": 600,
+      "skipped": 6,
+      "seconds": 57.67,
+      "skip_reason": "Existing local Windows symbolic-link cases require unavailable privileges (WinError 1314).",
+      "focused": {
+        "passed": 222,
+        "skipped": 6,
+        "seconds": 21.15
+      },
+      "changed_files_lint_format": 5,
+      "diff_check": "passed"
+    },
+    "scoped_independent_review": "accepted",
+    "limits": [
+      "Handled-I/O rollback does not claim atomic multi-file publication against process death or concurrent writers.",
+      "A failed postcommit cleanup may retain a logged owned backup; a failed rollback retains its backup with an exception note and attempts other restorations.",
+      "New-head Copilot and hosted checks remain mandatory; prior native Qt proof retains source630 provenance."
+    ]
+  },
+  "hosted_desktop_checkpoint_bd90996": {
+    "head": "bd90996b80787cc642e76a2606968724366221f0",
+    "run": 37118112644,
+    "status": "success",
+    "windows": {
+      "passed": 591,
+      "skipped": 0,
+      "seconds": 50.64
+    },
+    "ubuntu": {
+      "passed": 588,
+      "skipped": 3,
+      "seconds": 33.28,
+      "skip_reason": "Windows process ownership and two Windows-only junction tests."
+    },
+    "wheel_and_source_builds": "passed on both platforms; version 0.1.0",
+    "limit": "No native exception occurred in this hosted run; exact previous access-violation causal mechanism remains unconfirmed. This does not establish checks for later heads."
+  },
+  "copilot_correction_5": {
+    "base": "9299d59e30a4df25d6cbc1501b5d2e28303ba405",
+    "source_head": "e6e93a0c7f5e203cbf6926fdf1443f1d42461ea9",
+    "commits": [
+      "7b5a124caa82e8842ec3d481077ae331f6d5188b",
+      "3100d3e4b9e395468737f954eaff36dac0f3619a",
+      "e6e93a0c7f5e203cbf6926fdf1443f1d42461ea9"
+    ],
+    "copilot": {
+      "review": 5400522452,
+      "state": "COMMENTED",
+      "inline_findings": 0,
+      "body_findings": 2,
+      "dispositions": [
+        "Accepted: identity is scoped to the validated managed directory; metadata supersedes a journal only at its reserved destination, preserving foreign and copied failed sessions.",
+        "Accepted: only capture-file cleanup after completed metadata publication is best effort for expected I/O, path-validation and unreadable-media failures; returned artifacts and persisted events remain truthful."
+      ]
+    },
+    "regressions": {
+      "identity_red_failed": 3,
+      "identity_green_passed": 5,
+      "cleanup_red_failed": 14,
+      "cleanup_green_passed": 19,
+      "scope": "Real authored WAV/journal/copied metadata; byte-preserving discovery; real postcommit source/journal unlink, unreadable original WAV and unsafe-path faults; completed artifacts and controller persisted event; live-closure admission barrier; strict direct discard, cancellation and precommit publication failures."
+    },
+    "initial_verification_at_3100d3e": {
+      "runtime": "CPython 3.13.15 AMD64; PySide6 and Qt 6.11.2",
+      "command": "QT_QPA_PLATFORM=offscreen python -m pytest -q",
+      "passed": 624,
+      "skipped": 6,
+      "seconds": 63.45,
+      "skip_reason": "Existing local Windows symbolic-link cases require unavailable privileges (WinError 1314).",
+      "focused": {
+        "passed": 185,
+        "skipped": 5,
+        "seconds": 43.78
+      },
+      "changed_files_lint_format": 4,
+      "diff_check": "passed"
+    },
+    "independent_integration_followup": {
+      "finding": "Newly offered copied sessions materialized successfully but UUID-only journal association rejected their explicit retry.",
+      "commit": "e6e93a0c7f5e203cbf6926fdf1443f1d42461ea9",
+      "disposition": "Associate the validated journal only at its exact reserved destination; a valid foreign journal is neither media-read nor discarded. Invalid journal/path errors remain strict.",
+      "red_failed": 2,
+      "preservation_guards_passed": 7,
+      "green_passed": 9,
+      "scope": "Full discover/materialize/retry with distinct copied PCM, original interrupted/failed cases, own pending/completed identity, original byte snapshots and recovery, own-journal cleanup and unsafe geometry/media/path/foreign-document guards.",
+      "focused": {
+        "passed": 200,
+        "skipped": 5,
+        "seconds": 31.99
+      }
+    },
+    "scoped_independent_review": "accepted",
+    "verification": {
+      "runtime": "CPython 3.13.15 AMD64; PySide6 and Qt 6.11.2",
+      "command": "QT_QPA_PLATFORM=offscreen python -m pytest -q",
+      "passed": 633,
+      "skipped": 6,
+      "seconds": 64.53,
+      "skip_reason": "Existing local Windows symbolic-link cases require unavailable privileges (WinError 1314).",
+      "focused": {
+        "passed": 200,
+        "skipped": 5,
+        "seconds": 31.99
+      },
+      "changed_files_lint_format": 4,
+      "diff_check": "passed"
+    },
+    "limits": [
+      "Failed postcommit cleanup can retain residual capture files and malformed evidence; it does not promise complete deletion.",
+      "Direct cancellation/discard, precommit/provider/publication failures and actual live/native worker closure remain strict.",
+      "No schema change, atomic process-kill transaction or concurrent-writer guarantee was added; new-head Copilot and hosted checks remain mandatory."
+    ]
+  },
+  "hosted_desktop_checkpoint_9299d59": {
+    "head": "9299d59e30a4df25d6cbc1501b5d2e28303ba405",
+    "run": 37119324471,
+    "status": "success",
+    "windows": {
+      "passed": 606,
+      "skipped": 0,
+      "seconds": 56.09
+    },
+    "ubuntu": {
+      "passed": 603,
+      "skipped": 3,
+      "seconds": 33.85
+    },
+    "wheel_and_source_builds": "passed on both platforms; version 0.1.0",
+    "limit": "Historical head only; new corrections require their own hosted checks. Exact original native-access-violation cause remains unconfirmed."
+  },
+  "copilot_correction_6": {
+    "base": "35aed69607c6ff3e72dde553d4e5232405acc84b",
+    "source_head": "9b21f57f4f7f5929bb8b500eb4f99f8897332802",
+    "commits": [
+      "9b21f57f4f7f5929bb8b500eb4f99f8897332802"
+    ],
+    "copilot": {
+      "review": 5400663671,
+      "state": "COMMENTED",
+      "inline_findings": 0,
+      "body_findings": 1,
+      "disposition": "Accepted; current validated attached-journal capture errors feed failed artifact persistence, shared restart recovery and running-controller desktop error. Explicit overrides/list ownership, empty messages and genuine cause order/time are preserved; transport fallback remains for absent/unusable originals."
+    },
+    "regressions": {
+      "red_failed": 7,
+      "preservation_guards_passed": 11,
+      "green_passed": 18,
+      "green_seconds": 4.71,
+      "scope": "Real authored 80-frame PCM/journal; stale-versus-current events, empty messages, caller lifecycle isolation, explicit override priority/list preservation, normalization failure, running-controller artifacts/UI/event and real synthetic child gated after recording. Further parent read/close timeout and killed-child persistence, no-journal PCM and empty-override guards passed."
+    },
+    "verification": {
+      "runtime": "CPython 3.13.15 AMD64; PySide6 and Qt 6.11.2",
+      "command": "QT_QPA_PLATFORM=offscreen python -m pytest -q",
+      "passed": 654,
+      "skipped": 6,
+      "seconds": 68.06,
+      "skip_reason": "Existing local Windows symbolic-link cases require unavailable privileges (WinError 1314).",
+      "focused": {
+        "passed": 276,
+        "skipped": 5,
+        "seconds": 55.43
+      },
+      "changed_files_lint_format": 5,
+      "diff_check": "passed"
+    },
+    "scoped_independent_review": "accepted",
+    "limits": [
+      "No schema/public DTO, native helper lifecycle or new concurrency/crash guarantee was added.",
+      "Unknown/unusable original details retain the existing transport fallback; remote exception classes are not reconstructed.",
+      "New-head hosted CI and Copilot review remain required; native and long/installed acceptance keep their separate source provenance."
+    ]
+  },
+  "hosted_desktop_checkpoint_35aed69": {
+    "head": "35aed69607c6ff3e72dde553d4e5232405acc84b",
+    "run": 37121611633,
+    "status": "success",
+    "windows": {
+      "passed": 639,
+      "skipped": 0,
+      "seconds": 54.55
+    },
+    "ubuntu": {
+      "passed": 636,
+      "skipped": 3,
+      "seconds": 35.36
+    },
+    "wheel_and_source_builds": "passed on both platforms; version 0.1.0",
+    "limit": "Historical head only; later corrections require their own hosted checks."
+  },
+  "copilot_correction_7": {
+    "base": "8153c49e869cb758708fed59ae4bff395cdf673e",
+    "source_head": "0ca9a3a4356ecdbf99bef7897790584a7f5651e0",
+    "commits": [
+      "0ca9a3a4356ecdbf99bef7897790584a7f5651e0"
+    ],
+    "copilot": {
+      "review": 5400816114,
+      "state": "COMMENTED",
+      "inline_findings": 0,
+      "body_findings": 1,
+      "disposition": "Accepted; validate canonical UUID form before optional journal lookup. Absent, malformed or noncanonical optional IDs associate no journal and preserve their metadata value; selected valid audio can complete retry. Actual canonical load/path/document/media checks and exact reservation ownership remain strict."
+    },
+    "regressions": {
+      "red_failed": 15,
+      "preservation_guards_passed": 17,
+      "green_passed": 32,
+      "green_seconds": 6.55,
+      "added_parameter_cases": 23,
+      "scope": "Real authored PCM/imported metadata and journals through discover/materialize/retry/completed: None/empty/malformed/path-like/uppercase/hex/braced optional IDs, no unusable lookup, identity/human ID/raw/selected PCM/pending preservation, noncanonical foreign capture bytes, strict selected path/geometry/media and canonical malformed JSON/schema guards."
+    },
+    "verification": {
+      "runtime": "CPython 3.13.15 AMD64; PySide6 and Qt 6.11.2",
+      "command": "QT_QPA_PLATFORM=offscreen python -m pytest -q --tb=short",
+      "passed": 677,
+      "skipped": 6,
+      "seconds": 71.7,
+      "skip_reason": "Existing local Windows symbolic-link cases require unavailable privileges (WinError 1314).",
+      "focused": {
+        "passed": 133,
+        "skipped": 0,
+        "seconds": 28.61
+      },
+      "changed_files_lint_format": 2,
+      "diff_check": "passed"
+    },
+    "scoped_independent_review": "accepted",
+    "limits": [
+      "M1 optional metadata compatibility does not certify canonical M2 catalog identity or grant a malformed ID journal authority.",
+      "No metadata schema/identity rewrite, native lifecycle or new concurrency/crash guarantee was added.",
+      "New-head hosted CI and Copilot review remain mandatory; installed and long acceptance remain separate."
+    ]
+  },
+  "hosted_desktop_checkpoint_8153c49": {
+    "head": "8153c49e869cb758708fed59ae4bff395cdf673e",
+    "run": 37123379011,
+    "status": "success",
+    "windows": {
+      "passed": 660,
+      "skipped": 0,
+      "seconds": 64.01
+    },
+    "ubuntu": {
+      "passed": 657,
+      "skipped": 3,
+      "seconds": 29.35
+    },
+    "wheel_and_source_builds": "passed on both platforms; version 0.1.0",
+    "limit": "Historical head only; later corrections require their own hosted checks."
+  },
+  "copilot_correction_8": {
+    "base": "764a316764072a40c444080222b71e8266ba883c",
+    "source_head": "662babafb90ef36894d2dd7a23740cf808e5a353",
+    "commits": [
+      "c724abddf8bb3fa6198a722fed5851672a6ef95b",
+      "662babafb90ef36894d2dd7a23740cf808e5a353"
+    ],
+    "copilot": {
+      "review": 5400937500,
+      "state": "COMMENTED",
+      "submitted_at": "2026-10-03T13:10:34Z",
+      "inline_findings": 0,
+      "body_findings": 2,
+      "disposition": "Both body findings accepted and fixed, independently accepted with actual native reader pause smoke; corrected-head hosted CI and formal Copilot review remain required."
+    },
+    "changes": {
+      "cli_completion": "CLI failure and interrupt exits cancel only active work and independently await unfinished actual worker completion in finally, so cancellation races cannot skip the fence and FAILED is not destructively cancelled. Original failures retain exit 1; original KeyboardInterrupt retains exit 130 with ordinary cleanup failure logged, without claiming a failed wait completed or catching BaseException.",
+      "pause_watchdog": "Each actual child reader advances one monotonic counter only after active IO/write or paused availability/drain operations complete. Existing bounded ticks carry those counters separately from audio/live frames; parent deadlines renew only for strictly increased counters of that source. Missing, stale or lower values preserve history; sender activity and parent pause cannot mask a stalled reader. The separate post-stop closing deadline is unchanged."
+    },
+    "regressions": {
+      "cli_completion": {
+        "red_failed": 4,
+        "preservation_guards_passed": 5,
+        "red_seconds": 2.95,
+        "initial_green_passed": 49,
+        "initial_green_seconds": 4.61
+      },
+      "pause_watchdog": {
+        "red_failed": 9,
+        "preservation_guards_passed": 7,
+        "red_seconds": 55.05,
+        "green_passed": 16,
+        "green_seconds": 41.69,
+        "deselected": 12
+      },
+      "interrupt_policy": {
+        "red_failed": 2,
+        "preservation_guards_passed": 2,
+        "red_seconds": 2.38,
+        "final_cli_green_passed": 53,
+        "final_cli_green_seconds": 4.07
+      },
+      "scope": "Real controller cleanup gates and actual synthetic helper subprocesses: active read, paused drain/availability, either stalled source, healthy data/no-data pauses, resume, rapid pause/resume, paused stop and closing deadline, missing/stale/rollback ticks, recoverable checkpoints/original errors and actual owned closure.",
+      "harness_history": "Exploratory fixture errors and Windows live-journal polling replacement interference were corrected before load-bearing RED. Production journal errors remain strict; no antivirus or original Qt AV diagnosis is claimed."
+    },
+    "regression_summary": "Real-gated CLI regressions reproduced four premature exits and two interrupt cleanup failures; final CLI/controller coverage passed 53 cases. Nine intended real-child watchdog failures became 16 passing pause cases, including either stalled source, blocked paused drain/availability, stale/missing/rollback ticks, healthy pauses, resume and paused stop with actual child/worker closure.",
+    "verification": {
+      "runtime": "CPython 3.13.15 AMD64; PySide6 and Qt 6.11.2",
+      "command": "QT_QPA_PLATFORM=offscreen .superpowers/m1-desktop/venv313/Scripts/python.exe -m pytest -q --tb=short",
+      "passed": 705,
+      "skipped": 6,
+      "seconds": 114.77,
+      "skip_reason": "Existing local Windows symbolic-link cases require unavailable privileges (WinError 1314).",
+      "focused": {
+        "passed": 266,
+        "skipped": 0,
+        "seconds": 96.06,
+        "scope": "Affected focus before the final four interrupt guard cases; final CLI53 and the committed full suite cover the final handler."
+      },
+      "changed_files_lint_format": 7,
+      "diff_check": "passed",
+      "source_or_test_edits_after_full": false
+    },
+    "scoped_independent_review": "accepted",
+    "limits": [
+      "Synthetic subprocess regressions prove software ownership/progress contracts; separate short actual Windows 11 two-device pause/resume/paused-stop smoke passed. No long, GUI or frozen-runtime inference is made.",
+      "No new global concurrency/power-loss, full-M1, frozen-runtime or long-capture guarantee is claimed.",
+      "Existing SDK shutdown remains cooperative; original cleanup errors are reported without certifying actual closure.",
+      "New-head hosted CI and formal Copilot review remain mandatory before merge."
+    ],
+    "native_pause_smoke": {
+      "schema_version": 1,
+      "source_head": "662babafb90ef36894d2dd7a23740cf808e5a353",
+      "runtime": "3.13.15",
+      "qt_version": "6.11.2",
+      "os": "Windows-11-10.0.26200-SP0",
+      "provider_calls": 0,
+      "hardware": true,
+      "parent_network_guard": true,
+      "limit": "Short actual two-device reader/IPC smoke only. No GUI, frozen runtime, long recording, provider or OS-wide network-denial claim. Audio remains local and is removed only after actual owned closure.",
+      "opened_sources": [
+        {
+          "label": "microphone",
+          "device_name": "Microphone (3- Arctis Nova 7P)",
+          "device_index": 1,
+          "sample_rate": 44100,
+          "channels": 2
+        },
+        {
+          "label": "system audio",
+          "device_name": "Headphones (3- Arctis Nova 7P) [Loopback]",
+          "device_index": 31,
+          "sample_rate": 48000,
+          "channels": 2
+        }
+      ],
+      "healthy_pause_seconds": 4.006608600000618,
+      "reader_timeout_seconds": 3.0,
+      "paused_frame_counts_unchanged": true,
+      "resumed_both_sources": true,
+      "paused_stop_seconds": 0.2623710000189021,
+      "saved_sources": [
+        {
+          "label": "microphone",
+          "rate": 44100,
+          "channels": 2,
+          "frames": 96256
+        },
+        {
+          "label": "system audio",
+          "rate": 48000,
+          "channels": 2,
+          "frames": 104448
+        }
+      ],
+      "actual_helper_and_owned_threads_closed": true,
+      "status": "passed",
+      "raw_audio_retained": false
+    }
+  },
+  "hosted_desktop_checkpoint_764a316": {
+    "head": "764a316764072a40c444080222b71e8266ba883c",
+    "run": 37124931881,
+    "status": "success",
+    "windows": {
+      "passed": 683,
+      "skipped": 0,
+      "seconds": 59.97,
+      "os": "Windows Server 2025"
+    },
+    "ubuntu": {
+      "passed": 680,
+      "skipped": 3,
+      "seconds": 37.46
+    },
+    "wheel_and_source_builds": "passed on both platforms; version 0.1.0",
+    "limit": "Historical head only; later corrections require their own hosted gates. Hosted Windows is distinct from local Windows 11 native evidence."
+  },
+  "copilot_correction_9": {
+    "base": "fed9b4c3cdc0882ded216722ee5a4907530f6274",
+    "source_head": "1fa3688d10da4c833ca55da098ae7db71545dcf5",
+    "commits": [
+      "c2c23e0c21bfdac7433d20d1e5d9781cef6d53e5",
+      "1fa3688d10da4c833ca55da098ae7db71545dcf5"
+    ],
+    "copilot": {
+      "review": 5401125631,
+      "state": "COMMENTED",
+      "submitted_at": "2026-10-03T13:59:28Z",
+      "inline_findings": 1,
+      "inline_comment": 4173451519,
+      "body_findings": 1,
+      "disposition": "Both accepted, fixed and independently accepted; reply publication and final-head Windows CI/Copilot gates follow."
+    },
+    "changes": {
+      "catchup_progress": "Each reader advances its progress counter after each successfully inserted silence write and live delivery. Per-block stop/pause checks, explicit scheduling-gap journal evidence, independent reader watchdogs and the distinct closing deadline remain in place; blocked writes still time out.",
+      "normalized_cleanup": "Only after final completed/failed metadata publication, cleanup considers the prior validated recoverable normalized filename (audio.wav or audio_<32 lowercase hex>.wav). It rereads committed metadata, verifies final status/identity/current audio, protects selected input, current output/recoverable references and prior/current capture sources, revalidates containment/link safety, and removes only that single unreferenced prior file. Unknown files/names remain. Expected cleanup faults warn without replacing committed success or the original provider failure. Managed normalization failure preserves all prior manifest/error/audio bytes; new-session failure publication is unchanged."
+    },
+    "regressions": {
+      "catchup": {
+        "red_failed": 3,
+        "red_seconds": 7.57,
+        "green_passed": 5,
+        "green_seconds": 18.51
+      },
+      "cleanup": {
+        "red_failed": 13,
+        "preservation_guards_passed": 2,
+        "red_seconds": 5.53,
+        "initial_green_passed": 23,
+        "initial_green_seconds": 6.05
+      },
+      "reader_focus": {
+        "passed": 107,
+        "seconds": 97.4
+      },
+      "final_cli_output_focus": {
+        "passed": 243,
+        "skipped": 6,
+        "seconds": 28.49
+      },
+      "scope": "Actual synthetic hardware children and tiny authored PCM: healthy catch-up beyond watchdog, stop/pause/blocked single and dual-source writes, actual owned closure; repeated completed/failed retry outcomes, pending/normalization/final publication retention, current/raw/capture/unknown reference safety and postcommit read/path/unlink failures.",
+      "harness_history": "An initial misspelled test path exited before collection and was corrected; initial cleanup focus excluded the pending normalization ruling. Final focus and full suite include the approved guard."
+    },
+    "regression_summary": "Three real-child healthy catch-up RED failures became five passing catch-up cases; reader guards passed 107 cases. Thirteen authored-PCM cleanup/normalization RED failures with two existing publication-retention guards led to a final 243-case CLI/output focus with six existing privilege skips; unknown/current/raw references and cleanup faults are covered.",
+    "verification": {
+      "runtime": "CPython 3.13.15 AMD64; PySide6 and Qt 6.11.2; Windows",
+      "command": "QT_QPA_PLATFORM=offscreen .superpowers/m1-desktop/venv313/Scripts/python.exe -m pytest -q",
+      "passed": 734,
+      "skipped": 6,
+      "seconds": 138.64,
+      "exit_code": 0,
+      "skip_reason": "Existing local Windows symbolic-link cases require unavailable privileges (WinError 1314).",
+      "changed_files_lint_format": 4,
+      "diff_check": "passed",
+      "source_or_test_edits_after_full": false,
+      "scoped_synthetic_process_check": "No remaining owned synthetic child/owner processes."
+    },
+    "scoped_independent_review": "accepted",
+    "limits": [
+      "Conservative postcommit cleanup may retain the known prior WAV if proof or deletion fails; no sweep or general garbage collection.",
+      "No general concurrent-writer or power-loss transaction guarantee.",
+      "Historical short native smoke retains its original source provenance; no new hardware/provider or frozen-runtime inference.",
+      "Two-hour capture/resource and long generated-audio transcription are explicitly omitted by the user, not passed.",
+      "Final-head Windows-only CI, renewed formal Copilot review and all finding dispositions remain required before merge."
+    ]
+  },
+  "current_authorized_scope": {
+    "objective": "Finish remaining M1 on Windows, then stop; M2-M5 outside this run.",
+    "omitted_by_explicit_user_instruction": [
+      "Two-hour capture/pause/recovery/resource run",
+      "Long generated-audio transcription/timestamps/diarization run"
+    ],
+    "omitted_cases_passed": false,
+    "ubuntu": "Retained as manual-only; not run for this delivery."
+  },
+  "hosted_desktop_checkpoint_c207b70": {
+    "head": "c207b70bf63e6b1bdb25bf1008b027b110a62366",
+    "run": 37127558138,
+    "status": "success",
+    "windows": {
+      "passed": 711,
+      "skipped": 0,
+      "seconds": 94.8
+    },
+    "ubuntu": {
+      "passed": 708,
+      "skipped": 3,
+      "seconds": 73.24
+    },
+    "wheel_and_source_builds": "Passed on both; version 0.1.0.",
+    "limit": "Historical pre-scope-change checkpoint. New-head automatic CI is Windows-only; no new Ubuntu run."
+  },
+  "copilot_correction_10": {
+    "base": "d89a38643e9f691ef299ba35e186728a212b970d",
+    "source_head": "843279ca42da08cb0bc0116d01c9b5da925011ae",
+    "commits": [
+      "0576648450fd9c08a01dcaff709d0425b097240b",
+      "843279ca42da08cb0bc0116d01c9b5da925011ae"
+    ],
+    "copilot": {
+      "review": 5402529641,
+      "state": "COMMENTED",
+      "inline_comment": 4174660224,
+      "inline_findings": 1,
+      "body_findings": 0,
+      "ci_observation": "The Windows CI run at the reviewed head was failing.",
+      "disposition": "Accepted, fixed and independently accepted; failing-CI observation receives honest test-only diagnostics and new-head gates."
+    },
+    "changes": {
+      "background_error": "BackgroundJobs preserves each nonempty exception message exactly and uses the actual exception type name when the message is empty. Diagnostics and explicit retry surface the failure; None remains the no-error sentinel. Actual thread/QTimer delivery and closed-job suppression are unchanged.",
+      "ci_diagnostics": "Failure-only pause diagnostics retain individual markers and pre-reap process status; original journal cause is read only after actual child/owner/IPC reaping. Original timeout/watchdogs/recovery assertions remain unchanged. No production or fixture scheduling change is made."
+    },
+    "regressions": {
+      "background_error": {
+        "red_failed": 3,
+        "preservation_guards_passed": 3,
+        "expected_qt_teardown_errors_in_red": 2,
+        "green_passed": 22,
+        "green_seconds": 2.04
+      },
+      "scope": "Actual Qt worker/QTimer/HereDesktop delivery for empty RuntimeError/OSError diagnostics and empty ValueError retry; exact nonempty messages including surrounding spaces and successful None results preserved. Existing thread termination, close, stale results, shutdown and recovery controls included."
+    },
+    "regression_summary": "Three actual Qt empty-message RED failures became 22 passing background/desktop cases, including visible diagnostic errors and retained explicit retry selection. The test-only pause diagnostics separately passed real-child failure-reporting experiments and all 33 isolated-capture cases.",
+    "verification": {
+      "runtime": "CPython 3.13.15 AMD64; PySide6 and Qt 6.11.2; Windows offscreen",
+      "command": "QT_QPA_PLATFORM=offscreen .superpowers/m1-desktop/venv313/Scripts/python.exe -m pytest -q",
+      "passed": 740,
+      "skipped": 6,
+      "seconds": 140.88,
+      "exit_code": 0,
+      "skip_reason": "Existing local Windows symlink privilege cases (WinError 1314).",
+      "changed_file_ruff": "Passed; three product-fix files, plus CI diagnostic file checked separately.",
+      "diff_check": "passed",
+      "source_or_test_edits_after_full": false
+    },
+    "ci_followup": {
+      "head": "d89a38643e9f691ef299ba35e186728a212b970d",
+      "run": 37150084536,
+      "job": 111281926438,
+      "status": "failure",
+      "failed": 1,
+      "passed": 739,
+      "seconds": 119.47,
+      "test": "test_pause_cannot_hide_an_actual_stalled_reader[paused-read-both-7]",
+      "failure": "The original 3-second wait did not observe both fake hardware drain markers.",
+      "original_cause": "Unconfirmed; not reproduced locally.",
+      "exact_case_local": {
+        "passed": 1,
+        "seconds": 5.6
+      },
+      "bounded_real_child_repetitions": {
+        "passed": 12,
+        "failed": 0
+      },
+      "failure_diagnostic_experiment": "Meaningful RED for missing evidence, GREEN for original OSError and healthy missing-marker cases; both actual owned closures checked.",
+      "diagnostic_file_focus": {
+        "passed": 33,
+        "seconds": 78.79
+      },
+      "new_head_ci": "Required before merge; original failure not ignored or declared fixed."
+    },
+    "scoped_independent_review": "accepted",
+    "limits": [
+      "Original historical CI pause-marker failure remains unconfirmed; no speculative runtime cause or deadline weakening.",
+      "No native hardware, provider or frozen-runtime claim from these tests.",
+      "Two-hour capture/resource and long generated-audio transcription are explicitly omitted by the user, not passed.",
+      "Final-head Windows CI, renewed formal Copilot review and finding replies remain required before merge."
+    ]
+  }
+}

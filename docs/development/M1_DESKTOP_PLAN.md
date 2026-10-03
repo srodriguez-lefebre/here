@@ -31,12 +31,13 @@ adapters. Background diagnostics stay separate from capture; explicit exit waits
 `src/recording/shared.py`, `src/recording/windows.py`, `src/recording/service.py`,
 `src/application/recovery.py`, `src/application/controller.py`,
 `src/application/processing.py`, `src/output/session_writer.py`,
-`src/output/metadata.py`, `src/transcription/client.py`, `pyproject.toml`, tests.
+`src/output/metadata.py`, `src/transcription/client.py`, `src/cli.py`, `pyproject.toml`, tests.
 
 **Interfaces:** `get_data_dir() -> Path`; optional API key settings plus explicit
 provider credential validation; `CaptureJournal` with checkpoint/finalization;
 `RecoveryService(root: Path).discover() -> list[RecoveryCandidate]` and explicit local
-recovery materialization. Capture/session fields are additive to M1_CAPTURE interfaces.
+recovery materialization. Capture/session fields are additive to M1_CAPTURE interfaces;
+the journal UUID is preserved in optional `SessionMetadata.meeting_id` for M2 reuse.
 
 - [ ] Write failing path/key tests for normal, frozen and HERE_DATA_DIR/HERE_ENV_FILE.
 - [ ] Implement path precedence and defer key validation to provider boundaries.
@@ -47,6 +48,18 @@ recovery materialization. Capture/session fields are additive to M1_CAPTURE inte
   atomic final metadata committed last. Preserve raw material until commit succeeds.
 - [ ] Test each crash boundary including explicit retry, leftover completed journal,
   malformed/path-traversal/symlink journal/session/destination and destructive cancel.
+- [ ] Cover existing CLI file-transcription reuse: validate neighboring metadata/chunks/
+  errors and advertised references before reading/provider work, with external canaries
+  and zero provider calls for unsafe sessions. Explicit ordinary audio inputs outside
+  a session remain legitimate. Consume the shared artifact validation/staging helpers.
+- [ ] Consolidate the retained private CLI `_save_transcription` helper with shared
+  SessionProcessor persistence. Regression: fail normalization of a real tiny WAV,
+  inspect copied local capture_sources.audio_file and original cause, then retry
+  successfully from that session. Keep compatibility while eliminating duplicate
+  failure-persistence logic; current recording commands already use the controller.
+- [ ] Test stop/cancel/pause inside a large catch-up silence burst; honor intent between
+  blocks, checkpoint and keep persisted/live frame timelines identical. This addresses
+  the existing suspend-gap limitation parked by the first M1 branch review.
 - [ ] Verify credential precedence and real production/default live factory fails locally
   before hardware/temp/provider allocation for missing/empty/whitespace key.
 - [ ] Run focused tests and full Qt-offscreen suite; commit paths and durable recovery

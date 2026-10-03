@@ -1,41 +1,37 @@
-name: CI
+# Legacy validation retained apart by user request; never an automatic delivery gate.
+name: Ubuntu legacy validation (manual)
 
 on:
-  pull_request:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ubuntu-manual-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   tests:
-    name: Tests (${{ matrix.os }}, Python ${{ matrix.python }})
-    runs-on: ${{ matrix.os }}
+    name: Legacy Ubuntu tests (Python 3.13)
+    runs-on: ubuntu-latest
     timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest]
-        python: ['3.13']
     env:
       QT_QPA_PLATFORM: offscreen
       OPENAI_API_KEY: synthetic-test-key
       PYTHONUNBUFFERED: '1'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Install Qt GUI runtime library
+        run: sudo apt-get update && sudo apt-get install --yes libegl1
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
-          python-version: ${{ matrix.python }}
+          python-version: '3.13'
       - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
         with:
           enable-cache: true
       - name: Install locked development dependencies
-        run: uv sync --frozen --dev --python ${{ matrix.python }}
+        run: uv sync --frozen --dev --python 3.13
       - name: Test shared application and Qt presentation
         run: uv run --no-sync pytest -vv
       - name: Build distributable wheel and source archive

@@ -1,9 +1,9 @@
 import sys
 from collections.abc import Callable
+from pathlib import Path
 
 import numpy as np
 from here.recording.control import ControllableRecording
-from here.recording.linux import record_mic_linux, record_os_linux
 from here.recording.models import RecordingSession
 from here.recording.windows import (
     record_both_windows,
@@ -15,12 +15,31 @@ from here.recording.windows import (
 BlockSink = Callable[[str, np.ndarray, int, int], None]
 
 
+def record_mic_linux(
+    sample_rate: int = 16000, *, block_sink: BlockSink | None = None
+) -> RecordingSession:
+    # Loading sounddevice initializes PortAudio. Pure storage/recovery imports and
+    # the Windows helper must remain usable without that optional native backend.
+    from here.recording.linux import record_mic_linux as capture
+
+    return capture(sample_rate, block_sink=block_sink)
+
+
+def record_os_linux(
+    sample_rate: int = 16000, *, block_sink: BlockSink | None = None
+) -> RecordingSession:
+    from here.recording.linux import record_os_linux as capture
+
+    return capture(sample_rate, block_sink=block_sink)
+
+
 def start_recording(
     mode: str = "both",
     *,
     block_sink: BlockSink | None = None,
     microphone_device_id: int | None = None,
     system_device_id: int | None = None,
+    sessions_root: Path | None = None,
 ) -> ControllableRecording:
     """Start a programmatically controlled recording for the Windows application."""
 
@@ -33,6 +52,7 @@ def start_recording(
         block_sink=block_sink,
         microphone_device_id=microphone_device_id,
         system_device_id=system_device_id,
+        sessions_root=sessions_root,
     )
 
 

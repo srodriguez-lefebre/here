@@ -5,9 +5,12 @@ from pathlib import Path
 
 import numpy as np
 import soundfile as sf
+from here.config.settings import get_settings
+from here.recording.control import OpenedSource
+from here.recording.isolated import WindowsRecordingHandle
+from here.recording.journal import CaptureJournal, CaptureWriter
 from here.recording.models import CaptureFailed, RecordedAudioSource, RecordingSession
 from here.recording.shared import (
-    open_temp_soundfile,
     safe_close_soundfile,
 )
 from loguru import logger
@@ -29,88 +32,138 @@ def _capture_windows_stream_to_file(
     written_frames: list[int],
     start_time: float | None = None,
     block_sink: Callable[[str, np.ndarray, int, int], None] | None = None,
+    progress_sink: Callable[[str], None] | None = None,
 ) -> None:
     chunk_duration = chunk / sample_rate
     silence_chunk = np.zeros((chunk, channels), dtype=np.int16)
     next_deadline = start_time if start_time is not None else time.perf_counter()
     was_paused = False
 
-    while True:
-        if pause_event is not None and pause_event.is_set():
-            was_paused = True
-            get_read_available = getattr(stream, "get_read_available", None)
+    try:
+        while True:
+            if stop_event.is_set():
+                break
+            if pause_event is not None and pause_event.is_set():
+                if not was_paused and isinstance(writer, CaptureWriter):
+                    writer.checkpoint()
+                    writer.journal.event("paused", source=label, frames=written_frames[0])
+                was_paused = True
+                get_read_available = getattr(stream, "get_read_available", None)
+                try:
+                    available = (
+                        max(0, int(get_read_available())) if callable(get_read_available) else 0
+                    )
+                    if available > 0:
+                        stream.read(min(chunk, available), exception_on_overflow=False)
+                    if progress_sink is not None:
+                        progress_sink(label)
+                except Exception as exc:
+                    errors.append(exc)
+                    stop_event.set()
+                    break
+                if stop_event.wait(0.01):
+                    break
+                continue
+
+            now = time.perf_counter()
+            if was_paused:
+                next_deadline = now
+                was_paused = False
+                if isinstance(writer, CaptureWriter):
+                    writer.journal.event("resumed", source=label, frames=written_frames[0])
+            if stop_event.is_set() and now < next_deadline:
+                break
+
+            if now + chunk_duration < next_deadline:
+                time.sleep(min(next_deadline - now, 0.01))
+                continue
+
+            frames = silence_chunk.copy()
             try:
-                available = max(0, int(get_read_available())) if callable(get_read_available) else 0
+                gap_start = next_deadline
+                inserted = 0
+                while now >= next_deadline + chunk_duration:
+                    if stop_event.is_set() or (pause_event is not None and pause_event.is_set()):
+                        break
+                    writer.write(silence_chunk)
+                    inserted += chunk
+                    written_frames[0] += chunk
+                    if block_sink is not None:
+                        block_sink(label, silence_chunk, sample_rate, channels)
+                    if progress_sink is not None:
+                        progress_sink(label)
+                    next_deadline += chunk_duration
+                if inserted and isinstance(writer, CaptureWriter):
+                    writer.checkpoint()
+                    writer.journal.event(
+                        "scheduling_gap",
+                        source=label,
+                        gap_seconds=max(0, now - gap_start),
+                        inserted_silence_frames=inserted,
+                        omitted_seconds=max(0, now - next_deadline),
+                    )
+                if stop_event.is_set() or (pause_event is not None and pause_event.is_set()):
+                    continue
+                available = 0
+                get_read_available = getattr(stream, "get_read_available", None)
+                if callable(get_read_available):
+                    available = max(0, int(get_read_available()))
+
                 if available > 0:
-                    stream.read(min(chunk, available), exception_on_overflow=False)
+                    target_read_frames = min(chunk, available)
+                    data = stream.read(target_read_frames, exception_on_overflow=False)
+                    audio = np.frombuffer(data, dtype=np.int16)
+                    usable_samples = (audio.size // channels) * channels
+                    if usable_samples > 0:
+                        reshaped = audio[:usable_samples].reshape(-1, channels)
+                        frames_written = min(chunk, int(reshaped.shape[0]))
+                        frames[:frames_written] = reshaped[:frames_written]
+
+                writer.write(frames)
+                written_frames[0] += chunk
+                if block_sink is not None:
+                    block_sink(label, frames, sample_rate, channels)
+                if progress_sink is not None:
+                    progress_sink(label)
+            except Exception as exc:
+                errors.append(exc)
+                logger.error("Failed to read {label}: {exc}", label=label, exc=exc)
+                stop_event.set()
+                break
+
+            next_deadline += chunk_duration
+    except Exception as exc:
+        errors.append(exc)
+        stop_event.set()
+    finally:
+        if isinstance(writer, CaptureWriter):
+            try:
+                writer.close()
             except Exception as exc:
                 errors.append(exc)
                 stop_event.set()
-                break
-            if stop_event.wait(0.01):
-                break
-            continue
-
-        now = time.perf_counter()
-        if was_paused:
-            next_deadline = now
-            was_paused = False
-        if stop_event.is_set() and now < next_deadline:
-            break
-
-        if now + chunk_duration < next_deadline:
-            time.sleep(min(next_deadline - now, 0.01))
-            continue
-
-        frames = silence_chunk.copy()
-        try:
-            while now >= next_deadline + chunk_duration:
-                writer.write(silence_chunk)
-                written_frames[0] += chunk
-                if block_sink is not None:
-                    block_sink(label, silence_chunk, sample_rate, channels)
-                next_deadline += chunk_duration
-            available = 0
-            get_read_available = getattr(stream, "get_read_available", None)
-            if callable(get_read_available):
-                available = max(0, int(get_read_available()))
-
-            if available > 0:
-                target_read_frames = min(chunk, available)
-                data = stream.read(target_read_frames, exception_on_overflow=False)
-                audio = np.frombuffer(data, dtype=np.int16)
-                usable_samples = (audio.size // channels) * channels
-                if usable_samples > 0:
-                    reshaped = audio[:usable_samples].reshape(-1, channels)
-                    frames_written = min(chunk, int(reshaped.shape[0]))
-                    frames[:frames_written] = reshaped[:frames_written]
-
-            writer.write(frames)
-            written_frames[0] += chunk
-            if block_sink is not None:
-                block_sink(label, frames, sample_rate, channels)
-        except Exception as exc:
-            errors.append(exc)
-            logger.error("Failed to read {label}: {exc}", label=label, exc=exc)
-            stop_event.set()
-            break
-
-        next_deadline += chunk_duration
 
 
-class WindowsRecordingHandle:
-    """Thread-safe programmatic control for a running WASAPI capture."""
+class _ThreadedWindowsRecording:
+    """Hardware worker used only inside the owned helper (or injected backend tests)."""
 
     def __init__(
         self,
         mode: str,
         *,
         block_sink: Callable[[str, np.ndarray, int, int], None] | None = None,
+        progress_sink: Callable[[str], None] | None = None,
         microphone_device_id: int | None = None,
         system_device_id: int | None = None,
+        sessions_root: Path | None = None,
+        journal: CaptureJournal | None = None,
     ) -> None:
+        self._journal = journal
+        self.opened_sources = ()
+        self._sessions_root = sessions_root
         self._mode = mode
         self._block_sink = block_sink
+        self._progress_sink = progress_sink
         self._microphone_device_id = microphone_device_id
         self._system_device_id = system_device_id
         self._stop_event = threading.Event()
@@ -124,6 +177,7 @@ class WindowsRecordingHandle:
         self._thread.start()
         if not self._ready_event.wait(10):
             self._stop_event.set()
+            self._thread.join()
             raise TimeoutError("Timed out while opening Windows audio devices")
         if self._error is not None:
             if isinstance(self._error, CaptureFailed):
@@ -139,8 +193,12 @@ class WindowsRecordingHandle:
                 cancel_event=self._cancel_event,
                 ready_event=self._ready_event,
                 block_sink=self._block_sink,
+                progress_sink=self._progress_sink,
                 microphone_device_id=self._microphone_device_id,
                 system_device_id=self._system_device_id,
+                sessions_root=self._sessions_root,
+                journal=self._journal,
+                opened_sink=lambda sources: setattr(self, "opened_sources", sources),
             )
             if self._cancel_event.is_set() and self._result is not None:
                 self._result.cleanup()
@@ -169,6 +227,7 @@ class WindowsRecordingHandle:
     def wait(self, timeout: float | None = None) -> RecordingSession:
         if not self._done_event.wait(timeout):
             raise TimeoutError("Timed out waiting for audio capture to stop")
+        self._thread.join()
         if self._cancel_event.is_set():
             result = self._result
             if result is not None:
@@ -277,12 +336,17 @@ def _record_windows_controlled(
     block_sink: Callable[[str, np.ndarray, int, int], None] | None = None,
     microphone_device_id: int | None = None,
     system_device_id: int | None = None,
+    sessions_root: Path | None = None,
+    journal: CaptureJournal | None = None,
+    opened_sink=None,
+    progress_sink: Callable[[str], None] | None = None,
 ) -> RecordingSession:
     import pyaudiowpatch as pyaudio
 
     if mode not in {"both", "microphone", "system_audio"}:
         raise ValueError(f"Unsupported capture mode: {mode}")
 
+    journal = journal or CaptureJournal.create(sessions_root or get_settings().TRANSCRIPTIONS_DIR)
     p = pyaudio.PyAudio()
     streams: list[object] = []
     writers: list[sf.SoundFile] = []
@@ -313,7 +377,13 @@ def _record_windows_controlled(
             stream, sample_rate, channels = _open_windows_input_stream(
                 p, pyaudio, device, WINDOWS_CAPTURE_CHUNK
             )
-            path, writer = open_temp_soundfile(sample_rate, channels)
+            writer = journal.open_writer(
+                label=label,
+                sample_rate=sample_rate,
+                channels=channels,
+                device_name=str(device["name"]),
+            )
+            path = writer.path
             written_frames = [0]
             streams.append(stream)
             writers.append(writer)
@@ -335,6 +405,7 @@ def _record_windows_controlled(
                         "written_frames": written_frames,
                         "start_time": start_time,
                         "block_sink": block_sink,
+                        "progress_sink": progress_sink,
                     },
                     daemon=True,
                 )
@@ -342,6 +413,19 @@ def _record_windows_controlled(
 
         for thread in threads:
             thread.start()
+        if opened_sink is not None:
+            opened_sink(
+                tuple(
+                    OpenedSource(
+                        label,
+                        str(device["name"]),
+                        int(device["index"]) if "index" in device else None,
+                        rate,
+                        channels,
+                    )
+                    for label, device, rate, channels, _, _ in captured
+                )
+            )
         ready_event.set()
         stop_event.wait()
         for thread in threads:
@@ -352,7 +436,7 @@ def _record_windows_controlled(
         stop_event.set()
         for thread in threads:
             if thread.is_alive():
-                thread.join(timeout=2)
+                thread.join()
         for stream in streams:
             _safe_close_stream(stream)
         for writer in writers:
@@ -367,18 +451,19 @@ def _record_windows_controlled(
             errors.append(exc)
 
     if cancel_event.is_set():
-        for path in paths:
-            path.unlink(missing_ok=True)
+        journal.discard()
         return RecordingSession(sources=[])
     missing = [label for label, _, _, _, frames, _ in captured if frames[0] <= 0]
     if missing and not errors:
         errors.append(RuntimeError(f"No audio captured from {', '.join(missing)}."))
-    if errors and not any(frames[0] > 0 for _, _, _, _, frames, _ in captured):
-        for path in paths:
-            path.unlink(missing_ok=True)
+    if errors and not captured:
+        journal.finish(errors[0])
         raise errors[0]
 
+    journal.finish(errors[0] if errors else None)
     session = RecordingSession(
+        journal=journal,
+        meeting_id=journal.document.capture_id,
         sources=[
             RecordedAudioSource(
                 path=path,
@@ -389,7 +474,7 @@ def _record_windows_controlled(
                 device_name=str(device["name"]),
             )
             for label, device, sample_rate, channels, frames, path in captured
-        ]
+        ],
     )
     if errors:
         raise CaptureFailed(session, errors[0]) from errors[0]
@@ -402,6 +487,7 @@ def start_windows_recording(
     block_sink: Callable[[str, np.ndarray, int, int], None] | None = None,
     microphone_device_id: int | None = None,
     system_device_id: int | None = None,
+    sessions_root: Path | None = None,
 ) -> WindowsRecordingHandle:
     """Start capture and return once the requested Windows streams are ready."""
 
@@ -410,6 +496,7 @@ def start_windows_recording(
         block_sink=block_sink,
         microphone_device_id=microphone_device_id,
         system_device_id=system_device_id,
+        sessions_root=sessions_root,
     )
 
 

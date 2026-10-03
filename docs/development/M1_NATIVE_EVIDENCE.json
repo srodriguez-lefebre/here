@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "code_head": "5ec4e92326b581409631dc0a22f0ea8606bc0030",
+  "platform": "Windows; actual configured default microphone and WASAPI loopback",
+  "material": "Short local capture; second run played an authored Windows TTS fixture",
+  "provider_called": false,
+  "raw_audio_retained": false,
+  "played_fixture_run": {
+    "report_written_at_utc": "2026-10-03T05:37:19.5492785Z",
+    "wall_seconds": 8.28061840000737,
+    "paused_seconds": 2.000390899993363,
+    "stop_latency_seconds": 0.10736919999180827,
+    "sources": [
+      {
+        "label": "microphone",
+        "device_name": "Microphone (3- Arctis Nova 7P)",
+        "sample_rate": 44100,
+        "channels": 2,
+        "frames": 271360,
+        "duration_seconds": 6.15328798185941,
+        "live_frames": 271360,
+        "frame_count_matches": true
+      },
+      {
+        "label": "system audio",
+        "device_name": "Headphones (3- Arctis Nova 7P) [Loopback]",
+        "sample_rate": 48000,
+        "channels": 2,
+        "frames": 295936,
+        "duration_seconds": 6.165333333333334,
+        "live_frames": 295936,
+        "frame_count_matches": true
+      }
+    ],
+    "loopback_nonzero_signal_observed": true
+  },
+  "quiet_run": {
+    "wall_seconds": 8.298389800009318,
+    "paused_seconds": 2.000231800004258,
+    "stop_latency_seconds": 0.051447199992253445,
+    "sources": [
+      {
+        "label": "microphone",
+        "device_name": "Microphone (3- Arctis Nova 7P)",
+        "sample_rate": 44100,
+        "channels": 2,
+        "frames": 272384,
+        "duration_seconds": 6.176507936507937,
+        "live_frames": 272384,
+        "frame_count_matches": true
+      },
+      {
+        "label": "system audio",
+        "device_name": "Headphones (3- Arctis Nova 7P) [Loopback]",
+        "sample_rate": 48000,
+        "channels": 2,
+        "frames": 295936,
+        "duration_seconds": 6.165333333333334,
+        "live_frames": 295936,
+        "frame_count_matches": true
+      }
+    ]
+  },
+  "limitations": [
+    "Short hardware smoke; does not certify two-hour recording, restart journal, installer or disconnection recovery.",
+    "Peak metrics from the original probe used raw integer samples, so calibrated amplitude and clipping claims are deliberately omitted.",
+    "Process cleanup removed only the probe-owned temporary recordings; no audio was uploaded."
+  ]
+}

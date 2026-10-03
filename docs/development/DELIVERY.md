@@ -5,15 +5,41 @@ Copilot review requests, replies to every review observation and merges on 2026-
 This document is the recovery map for continuous execution; a milestone is not complete
 merely because its code exists or its unit tests pass.
 
+## Current authorized objective
+
+On 2026-10-03 the user narrowed execution to **finish M1, then stop**. M2-M5 remain
+future plans; their implementation is outside this run. The user also requested
+Windows-only development and validation. Automatic CI and release gates use Windows;
+the previous Ubuntu workflow is retained separately for explicit manual dispatch and
+will not be run here. Earlier Ubuntu results below remain historical observations.
+Prioritize the remaining desktop fixes, Windows distribution and necessary M1
+acceptance; no later-milestone work or optional validation expands this scope.
+
+The user's latest explicit instruction on 2026-10-03 omits both the two-hour
+capture/pause/recovery/resource run and long generated-audio transcription with
+timestamps/diarization. These cases are excluded from this delivery, not passed.
+Complete the remaining Windows distribution, actual runtime/installation checks,
+notices/checksums, reviewed PRs and evidence audit; then close M1 under this revised
+scope and stop. Existing short hardware/fault/provider observations retain their
+actual provenance. M2-M5 remain outside this run.
+
 ## Product authority and architecture
 
 `docs/MASTER_PLAN.md` defines the five milestones. `docs/MILESTONE_1_PLAN.md` and
-`docs/LIVE_LOGO_PLAN.md` govern capture and the overlay. Retain one Python process,
+`docs/LIVE_LOGO_PLAN.md` govern capture and the overlay. Retain one application owner,
 PySide6 Widgets, a shared application controller, Windows 11 support, explicit
 cancellation semantics and local user-owned audio. Derived knowledge must always link
 to its supporting meeting and original segment; missing timestamps or speakers stay
 missing. No cloud synchronization, accounts, unsolicited transmission or automatic
 audio deletion is introduced.
+
+Ruling: allow a short-lived isolated hardware helper where the backend cannot safely
+bound opening, reading or cancellation. The desktop spec permits that isolation;
+the GUI, overlay and shared controller remain one application, with no persistent
+service. A timeout cannot release audio resources until the helper actually closes.
+This is a deliberate refinement of the original single-Python-process design, needed
+to recover from a stalled driver without destroying a resource-owning thread. Cost
+if wrong: bounded IPC complexity and runtime overhead, to verify in desktop/bundle tests.
 
 For structured memory use transactional SQLite with foreign keys and versioned
 migrations, retaining portable recoverable session artifacts. Browsing and local search
@@ -45,6 +71,194 @@ lifecycle/erasure (4–5) and shared persistence (6–7); M3 search/actions (1�
 library/CLI/evidence (3–6); M4 grounded core (1–5) and product flows/evidence (6–8);
 M5 settings/runtime (1–2), portability/privacy (3–5) and updates/product acceptance
 (6–8). These are delivery boundaries, not completed milestones or published releases.
+
+The first group, M1 capture reliability, merged as [PR #12](https://github.com/srodriguez-lefebre/here/pull/12)
+on 2026-10-03 07:52:15 UTC, merge `ca07aed8f6d5abf43c85e03ca0107d60096c3e03`.
+The next branch is `codex/m1-desktop-recovery`; its two planned tasks implement the
+restart-safe storage and desktop controls. All five milestones remain open.
+
+Desktop Task 1 is independently approved at `d366711`: per-user configuration,
+optional credentials, writer-owned WAV/journal checkpoints, stable capture UUID and
+local recovery, shared CLI pending publication and interruptible catch-up. One
+important independent finding was fixed before approval: file transcription now
+publishes recoverable pending metadata before provider work. The final source-head
+suite passed 524 tests with six existing Windows symlink-privilege skips (34.02 s);
+new real junction/hardlink and subprocess-kill cases ran. No desktop Copilot review,
+hardware-long, installer or whole-M1 completion is claimed here.
+
+Desktop Task 2 is independently approved at `76d317a`: immutable actual opened devices,
+asynchronous diagnostics/recovery, atomic preparation stop, completion-gated stop/save
+exit and bounded hardware helpers. Actual Windows Job Object parent-death and stalled
+backend/IPC-pressure regressions ran. Final source-head suite: 558 passed, six existing
+symlink-privilege skips in 53.72 s; changed-file lint/format and diff checks passed.
+The current synchronous provider transport remains cooperative and can wait through
+its SDK timeout/retries; Qt retains ownership without blocking its event loop.
+
+A bounded native Qt Windows check at that same source head passed without provider
+calls: no-key startup, local interrupted discovery, key preflight preserving the journal,
+actual default-device names, three-second microphone no-signal and authored-tone
+loopback signal diagnostics, ordinary active close/hide and repeated Salir from pause.
+An intentional local transcription failure left discoverable audio; exit followed
+durable persistence and actual cleanup (0.372 s for this local fixture only).
+Qt heartbeat maximum observed gap was 49.6 ms across 688 samples. Probe-owned raw
+audio was removed after worker/reservation cleanup. Real frozen helper launch,
+installation, long recording and real-provider long acceptance remain open.
+Safe observations: [`M1_DESKTOP_EVIDENCE.json`](M1_DESKTOP_EVIDENCE.json).
+
+Whole-branch review found two recovery integration defects: a missing normalized WAV
+hid valid raw-backed sessions, and a missing-key retry removed the selector choices.
+Commit `490b77c` fixes both and strengthens the preparation-stop test. Five failing
+regressions became eleven passing; the final committed-head suite passed 569 tests
+with six existing symlink-privilege skips (56.92 s). Scoped independent review accepts
+the whole-branch source gate. A separate native Qt authored-WAV probe at `490b77c`
+confirmed fresh raw-backed recovery, retained choices after missing-key error and one
+explicit same-window retry after editing the effective env file, reconstructing 240
+frames with UUID, human ID, selected filename and raw bytes preserved. No hardware
+or provider was used for this correction probe. External Copilot and head CI gates
+still precede merge; installer and full-M1 acceptance remain separate.
+
+The legacy private CLI helper deferred in PR #12 review `5399598693` is consolidated
+with SessionProcessor in desktop Task 1; its actual tiny-WAV normalization-failure,
+preserved-local-source and later-retry regression passes. The original deferral below
+records the historical first-PR disposition, rather than an outstanding source defect.
+
+
+PR [#13](https://github.com/srodriguez-lefebre/here/pull/13) is open. Initial hosted
+checks at `ef7010e` failed: Ubuntu exposed eager PortAudio initialization in pure
+subprocess imports and a Windows-only path assumption in a test; Windows reported a
+native Qt teardown exception whose cause remains unconfirmed. Commits `cc947e0` and
+`98e19b1` defer unrelated Linux hardware loading, make platform tests explicit, and
+address Copilot review `5400263899`/inline `4172753832`: retain the original child
+capture error once instead of obscuring it with a generic parent error. Real child
+failure/timeout/death regressions passed. The final committed-source suite on actual
+Python 3.13.15/Qt 6.11.2 passed 581 tests with six existing local privilege skips
+(56.67 s); scoped independent review accepted the corrections. Bounded Qt diagnostics
+did not reproduce the native exception; verbose hosted diagnostics were added without
+a speculative product patch. A new current-head Copilot review and hosted checks
+still precede merge. Installer and long-duration M1 acceptance remain open.
+
+
+A second hosted run at `62089a4` exposed a post-stop read-watchdog race and repeated
+the native Qt teardown failure. Copilot review `5400371073` also identified the
+watchdog issue in its body. Commits `0b29897` and `63030f0` use the dedicated closing
+deadline after stop, deliver background results only after actual worker-thread exit,
+and retain/drain test desktops before widget destruction. Three deterministic failing
+regressions verify the closing cause and normal/closed job ownership; six corrected
+cases pass. Final source `63030f0`, Python 3.13.15/Qt 6.11.2: 585 passed, six existing
+local privilege skips (56.93 s), scoped independent acceptance. A native Windows 11
+Qt authored-WAV recovery/retry/exit check also passed with actual cleanup, no provider
+or hardware, and 41.8 ms maximum heartbeat gap. These contract corrections do not
+prove the original access-violation cause; new-head hosted checks and Copilot review
+remain merge gates. M1 installer and long-duration acceptance are still open.
+
+
+Hosted CI at `bd90996` passed 591 Windows tests (50.64 s, no skips), 588 Ubuntu
+tests (33.28 s, three Windows-only skips), and wheel/source builds on both. Copilot
+review `5400431791` then identified a high-severity postcommit cleanup defect and a
+medium empty-directory-variable defect; both were accepted. Commits `f141189` and
+`e3b8917` stage obsolete files before metadata-last publication, restore on handled
+precommit failure, retain failed-rollback evidence, and keep owned cleanup failures
+from falsifying committed success; empty LOCALAPPDATA/XDG uses the home fallback.
+Thirteen RED cases became fifteen GREEN cases. Final committed-source suite:
+600 passed, six existing local privilege skips (57.67 s), with scoped independent
+acceptance. New-head hosted checks and Copilot review remain merge gates. Retained
+owned backups and handled-I/O rollback are explicit limits; no atomic process-kill
+transaction or full-M1 completion is claimed.
+
+
+Hosted checkpoint `9299d59` passed 606 Windows tests (56.09 s, no skips),
+603 Ubuntu tests (33.85 s, three Windows-only skips), and wheel/source builds.
+Copilot review `5400522452` then found two medium body issues. Both are fixed:
+`7b5a124` scopes recovery identity to its validated directory and journal
+reservation; `3100d3e` makes only completed capture-file cleanup best effort,
+preserving completed artifacts and persisted events even when residual WAV/path
+validation or deletion fails. Direct discard/cancellation, precommit/provider/
+publication failures and actual live/native closure remain strict. Seventeen RED
+failures became twenty-four GREEN cases at `3100d3e` (624 passed, six existing
+local privilege skips, 63.45 s). Scoped review exposed a copied-session retry
+association defect: `e6e93a0` associates only the exact journal reservation,
+leaving foreign bytes intact and invalid journal/path guards strict. Two RED
+public-flow failures became nine GREEN cases. Final committed-source suite:
+633 passed, 6 existing local privilege skips
+(64.53 s); scoped corrective review accepted.
+Residual capture evidence can remain after cleanup faults. Current-head hosted
+checks and Copilot are still required before merge; full M1 remains open.
+
+
+Copilot body review `5400663671` identified loss of original child-device errors
+in a running controller: persistence and the UI selected the IPC wrapper even
+though the journal retained the original cause. The accepted correction at
+`9b21f57` derives capture errors from current validated journal events and
+uses the persisted capture metadata in the desktop, preserving type, message
+and occurrence time. Restart recovery uses the same persistence selection;
+no-journal/parent-only failures retain a valid fallback. Meaningful regressions:
+7 RED failures became
+18 GREEN cases. Final committed-source suite:
+654 passed, 6 existing local privilege
+skips (68.06 s), with scoped independent acceptance. Previous
+`35aed69` hosted CI passed 639 Windows/636 Ubuntu tests and both builds; new-head
+Copilot and hosted checks are still required. Raw recovery and actual worker
+ownership remain intact; no full-M1 or installed-runtime completion is claimed.
+
+
+Copilot body review `5400816114` identified retryable audio candidates blocked by
+a malformed optional meeting ID being used as a capture-journal locator.
+Correction `0ca9a3a` checks canonical UUID form before journal lookup; absent,
+malformed or noncanonical optional IDs associate no journal. Selected audio and
+metadata remain validated, with their original identity values preserved. Canonical
+journal document/path/media checks and exact reservation ownership remain strict.
+This M1 compatibility rule grants no journal authority and does not certify M2
+canonical catalog identity. Regressions: 15 RED
+failures became 32 GREEN cases. Final source
+suite: 677 passed, 6 existing local
+privilege skips (71.7 s); scoped independent review accepted.
+New-head hosted checks and Copilot remain merge gates; full M1 remains open.
+
+
+Copilot body review `5400937500` identified CLI failure exits before actual worker
+completion and pause requests hiding stalled device readers. Correction `662baba`:
+CLI failure and interrupt exits cancel only active work and independently await unfinished actual worker completion in finally, so cancellation races cannot skip the fence and FAILED is not destructively cancelled. Original failures retain exit 1; original KeyboardInterrupt retains exit 130 with ordinary cleanup failure logged, without claiming a failed wait completed or catching BaseException.
+Each actual child reader advances one monotonic counter only after active IO/write or paused availability/drain operations complete. Existing bounded ticks carry those counters separately from audio/live frames; parent deadlines renew only for strictly increased counters of that source. Missing, stale or lower values preserve history; sender activity and parent pause cannot mask a stalled reader. The separate post-stop closing deadline is unchanged.
+Reader health originates from each actual child reader; parent pause state and
+sender activity cannot certify device progress. Terminal failure does not grant
+destructive cancellation. Real-gated CLI regressions reproduced four premature exits and two interrupt cleanup failures; final CLI/controller coverage passed 53 cases. Nine intended real-child watchdog failures became 16 passing pause cases, including either stalled source, blocked paused drain/availability, stale/missing/rollback ticks, healthy pauses, resume and paused stop with actual child/worker closure.
+Final source suite: 705 passed, 6
+existing local privilege skips (114.77 s); scoped independent
+review accepted. New-head hosted checks and Copilot remain required; full M1 is open.
+Actual Windows 11 two-source smoke at this source passed: 44.1/48 kHz stereo, 4.007 s healthy pause with a 3 s reader deadline and unchanged primary frame counts, both sources resumed, then paused stop in 0.262 s. Actual helper/owned threads closed; provider calls were zero and owned raw audio was removed after closure. This is short native reader/IPC proof, separate from GUI, frozen and long acceptance.
+
+
+Copilot review `5401125631` identified healthy inserted-silence catch-up being
+classified as a stalled reader and prior normalized WAVs remaining orphaned after
+managed raw-audio retries. Both findings were accepted. Final source `1fa3688`:
+Each reader advances its progress counter after each successfully inserted silence write and live delivery. Per-block stop/pause checks, explicit scheduling-gap journal evidence, independent reader watchdogs and the distinct closing deadline remain in place; blocked writes still time out.
+Only after final completed/failed metadata publication, cleanup considers the prior validated recoverable normalized filename (audio.wav or audio_<32 lowercase hex>.wav). It rereads committed metadata, verifies final status/identity/current audio, protects selected input, current output/recoverable references and prior/current capture sources, revalidates containment/link safety, and removes only that single unreferenced prior file. Unknown files/names remain. Expected cleanup faults warn without replacing committed success or the original provider failure. Managed normalization failure preserves all prior manifest/error/audio bytes; new-session failure publication is unchanged.
+Three real-child healthy catch-up RED failures became five passing catch-up cases; reader guards passed 107 cases. Thirteen authored-PCM cleanup/normalization RED failures with two existing publication-retention guards led to a final 243-case CLI/output focus with six existing privilege skips; unknown/current/raw references and cleanup faults are covered.
+Final committed-source suite on CPython 3.13.15 / Qt 6.11.2: 734
+passed, 6 existing local privilege skips, 138.64 s.
+Changed-file lint/format and diff checks passed; scoped independent review accepted.
+New-head Windows-only CI and formal Copilot review remain required before merge.
+The user explicitly omitted two-hour capture/resource and long generated-audio
+transcription acceptance; neither is run or claimed as passing. Finish remaining
+Windows distribution and revised-scope M1 closure, then stop.
+
+
+Copilot review `5402529641` found message-less background exceptions becoming
+empty error strings and being treated as successful diagnostics/retry. Source
+`843279c` now preserves nonempty messages and reports the actual exception type
+when its message is empty; `None` remains the success sentinel. Actual worker/QTimer
+ownership and closed-job delivery semantics remain unchanged.
+Three actual Qt empty-message RED failures became 22 passing background/desktop cases, including visible diagnostic errors and retained explicit retry selection. The test-only pause diagnostics separately passed real-child failure-reporting experiments and all 33 isolated-capture cases.
+Final committed-source Windows suite: 740 passed,
+6 existing local privilege skips in 140.88 s;
+changed-file checks and scoped independent review passed.
+Historical Windows CI `37150084536` at `d89a386` failed one pause-marker assertion
+with 739 other cases passing. The exact case and 12 bounded real-child repetitions
+passed locally; its original cause remains unconfirmed. Test-only commit `0576648`
+adds failure diagnostics after actual owned reap without changing timeouts,
+watchdogs or active journal access. Its isolated-capture focus passed 33 cases.
+New-head Windows CI and formal Copilot review remain gates. User-omitted long
+capture/resource and long transcription cases remain omitted, not passed.
 
 ## Review and merge gates
 
@@ -144,10 +358,42 @@ open wherever it has not actually been observed.
   junction cases passed. Focused security suite: 129 passed/6 skipped; focused timing
   suite: 168 passed/1 skipped. Ruff, format and diff checks passed. This local result
   does not substitute for hosted CI of the final PR head.
+- Final capture corrections: `ac46ff8` validates every referenced WAV geometry before
+  retry normalization/provider work and derives provenance duration from the header;
+  `3162a74` coerces direct typed bounds before order checks, preserving valid companion
+  values and source text. Review `5399510672` findings were replied to and resolved;
+  independent scoped review accepted requirements and quality. Final code suite:
+  463 passed/6 local symlink-privilege skips in 12.98 s. Hosted CI `37107198007`
+  at exact `3162a74` passed 469 Windows tests without skips and 467 Ubuntu tests with
+  two Windows-only junction skips; both distributions built on both systems.
+- Copilot review `5399598693` inspected exact `3162a74` and confirmed those two fixes.
+  Its body also identifies a retained private CLI helper's normalization-failure
+  record without local raw references. The complete source call graph shows only test
+  callers of `_save_transcription`; current recording commands use the shared
+  controller/SessionProcessor, whose failure persistence already owns local sources.
+  Ruling: consolidate this pre-existing helper in desktop Task 1, with a real tiny-WAV
+  failure-to-local-retry regression, alongside early CLI managed-session preflight;
+  it does not block the delivered production capture subset. Cost if wrong: external
+  callers of this private helper need their original temporary audio until that PR.
+  The observation is accepted and publicly answered in comment `5966927016`, not
+  declared fixed or silently discarded. M1 stays open until consolidation is verified.
+- All six inline threads were replied to/resolved and every review-body observation
+  dispositioned before merge. PR #12 merged using the configured administrator
+  permission and exact-head guard at `3162a74`, preserving its commit history in
+  `ca07aed`. This is a COMMENTED Copilot review plus independent agent reviews, not a
+  human APPROVED review. Full immutable evidence is in
+  [`M1_CAPTURE_EVIDENCE.json`](M1_CAPTURE_EVIDENCE.json); short native observations are
+  in [`M1_NATIVE_EVIDENCE.json`](M1_NATIVE_EVIDENCE.json), with original code provenance.
+
+Desktop Task 1 also closes the parked catch-up control and CLI early-read boundaries
+and preserves capture UUID as additive `meeting_id` for M2. These amendments are in
+the desktop spec/plan. Journals, optional credentials and desktop controls are now
+implemented and independently reviewed on this branch, with their own observations;
+they were not facts implied by the first capture merge.
 
 This register records immutable observed checkpoints. The live
 [PR review/check/merge record](https://github.com/srodriguez-lefebre/here/pull/12)
 is the authority for subsequent review dispositions, final-head CI and merge status;
 earlier passing runs never waive a later-head gate. No milestone is complete here:
-desktop journals/restart, per-user paths, diagnostics/save-exit, installed distribution,
-two-hour acceptance and M2–M5 implementation still require their planned evidence.
+the desktop branch still needs its whole-branch/Copilot/current-head CI merge gates;
+installed distribution, two-hour acceptance and M2–M5 still need their planned evidence.

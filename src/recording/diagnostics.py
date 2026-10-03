@@ -6,7 +6,6 @@ import time
 from dataclasses import dataclass
 
 import numpy as np
-
 from here.recording.windows import (
     WINDOWS_CAPTURE_CHUNK,
     _get_default_windows_input_device,
@@ -18,7 +17,7 @@ from here.recording.windows import (
 SIGNAL_PEAK_THRESHOLD = 0.01
 
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
 class AudioDeviceInfo:
     source: str
     name: str
@@ -27,7 +26,7 @@ class AudioDeviceInfo:
     channels: int
 
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
 class SignalTestResult:
     source: str
     device: AudioDeviceInfo
@@ -102,7 +101,9 @@ def test_windows_audio_signal(
     if samples:
         combined = np.concatenate(samples)
         peak = float(np.max(np.abs(combined))) if combined.size else 0.0
-        rms = float(np.sqrt(np.mean(np.square(combined), dtype=np.float32))) if combined.size else 0.0
+        rms = (
+            float(np.sqrt(np.mean(np.square(combined), dtype=np.float32))) if combined.size else 0.0
+        )
     else:
         peak = 0.0
         rms = 0.0

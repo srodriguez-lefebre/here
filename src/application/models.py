@@ -7,6 +7,8 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Mapping
 
+from here.recording.control import OpenedSource
+
 
 class ApplicationState(StrEnum):
     """Observable lifecycle states for one application-owned job."""
@@ -29,6 +31,7 @@ class EventKind(StrEnum):
     AUDIO_LEVEL = "audio_level"
     ERROR_RECORDED = "error_recorded"
     SESSION_PERSISTED = "session_persisted"
+    WORKER_COMPLETED = "worker_completed"
 
 
 class SourceMode(StrEnum):
@@ -80,6 +83,11 @@ class ApplicationSnapshot:
     total_paused_seconds: float = 0.0
     recoverable: bool = False
     last_error: ApplicationError | None = None
+    opened_sources: tuple[OpenedSource, ...] = ()
+    worker_complete: bool = True
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "opened_sources", tuple(self.opened_sources))
 
     @property
     def has_active_work(self) -> bool:
