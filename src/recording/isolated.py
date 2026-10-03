@@ -136,7 +136,10 @@ class WindowsRecordingHandle:
                     journal.discard()
                     self._error = RuntimeError("Windows audio capture was cancelled")
                 else:
-                    if self._error is not None:
+                    # The child owns the original device exception in durable storage.
+                    # IPC wraps it for transport; don't append that wrapper as a new cause.
+                    # Parent-only timeout/death failures still finalize unfinished journals.
+                    if self._error is not None and journal.document.state != "interrupted":
                         journal.finish(self._error)
                     self._result = journal.recording_session()
                     if self._error is not None and self._result.sources:

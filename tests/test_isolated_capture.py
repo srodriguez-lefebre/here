@@ -12,10 +12,14 @@ FAKE_BACKEND = """
 import sys, time, types
 behavior = BEHAVIOR
 class Stream:
+    reads = 0
     def get_read_available(self): return 1024
     def read(self, frames, **kwargs):
+        self.reads += 1
         if behavior == "read": time.sleep(60)
         if behavior == "error": raise RuntimeError("Synthetic device disconnected")
+        if behavior == "error_after_audio" and self.reads > 2:
+            raise OSError("Synthetic original device failure")
         return b"\\x01\\x00" * frames
     def stop_stream(self):
         if behavior == "close": time.sleep(60)
@@ -80,6 +84,14 @@ def test_stalled_open_has_owner_until_reaped_and_keeps_journal(tmp_path, behavio
     assert helpers[0].process.poll() is not None
     assert not helpers[0].reader.is_alive()
     assert list((tmp_path / "sessions" / ".captures").glob("*/journal.json"))
+    capture_id = next((tmp_path / "sessions" / ".captures").iterdir()).name
+    journal = CaptureJournal.load(tmp_path / "sessions", capture_id)
+    errors = [event for event in journal.document.events if event["kind"] == "capture_error"]
+    assert len(errors) == 1
+    assert errors[0]["details"] == {
+        "error_type": "TimeoutError",
+        "error_message": "Timed out while opening Windows audio devices",
+    }
 
 
 @pytest.mark.parametrize("behavior", ["read", "close"])
@@ -95,6 +107,47 @@ def test_stalled_read_or_close_reaps_and_preserves_capture(tmp_path, behavior):
         handle.wait(4)
     assert helpers[0].process.poll() is not None
     assert handle._journal.directory.exists()
+    journal = CaptureJournal.load(handle._journal.root, handle._journal.document.capture_id)
+    errors = [event for event in journal.document.events if event["kind"] == "capture_error"]
+    assert len(errors) == 1
+    assert errors[0]["details"] == {
+        "error_type": "TimeoutError",
+        "error_message": (
+            "Windows audio reader stopped responding"
+            if behavior == "read"
+            else "Timed out closing Windows audio devices"
+        ),
+    }
+
+
+def test_unexpected_child_death_keeps_parent_cause(tmp_path):
+    launch, helpers = factory(tmp_path)
+    audio = threading.Event()
+    handle = WindowsRecordingHandle(
+        "microphone",
+        sessions_root=tmp_path / "sessions",
+        helper_factory=launch,
+        block_sink=lambda *args: audio.set(),
+        timeout=3,
+    )
+    try:
+        assert audio.wait(3)
+        helpers[0].process.kill()
+        with pytest.raises(CaptureFailed, match="ended unexpectedly"):
+            handle.wait(4)
+    finally:
+        if helpers[0].process.poll() is None:
+            helpers[0].process.kill()
+        handle._thread.join(4)
+    assert not handle._thread.is_alive()
+    assert not helpers[0].reader.is_alive()
+    journal = CaptureJournal.load(handle._journal.root, handle._journal.document.capture_id)
+    errors = [event for event in journal.document.events if event["kind"] == "capture_error"]
+    assert len(errors) == 1
+    assert errors[0]["details"] == {
+        "error_type": "RuntimeError",
+        "error_message": "Windows audio helper ended unexpectedly",
+    }
 
 
 def test_blocked_live_consumer_does_not_block_primary_and_is_owned(tmp_path):
@@ -159,6 +212,43 @@ def test_spontaneous_device_failure_exits_child_cleanly(tmp_path):
         with pytest.raises(CaptureFailed, match="Synthetic device disconnected"):
             handle.wait(4)
     assert helpers[0].process.returncode == 1
+
+
+def test_original_child_error_survives_parent_and_local_recovery(tmp_path):
+    from here.application.recovery import RecoveryService
+    from here.output.metadata import ErrorMetadataDocument
+
+    launch, helpers = factory(tmp_path, "error_after_audio")
+    root = tmp_path / "sessions"
+    try:
+        handle = WindowsRecordingHandle(
+            "microphone", sessions_root=root, helper_factory=launch, timeout=3
+        )
+    except CaptureFailed:
+        pass
+    else:
+        with pytest.raises(CaptureFailed):
+            handle.wait(4)
+    assert helpers[0].process.returncode == 1
+    capture_id = next((root / ".captures").iterdir()).name
+    journal = CaptureJournal.load(root, capture_id)
+    errors = [event for event in journal.document.events if event["kind"] == "capture_error"]
+    assert journal.document.state == "interrupted"
+    assert len(errors) == 1
+    assert errors[0]["details"] == {
+        "error_type": "OSError",
+        "error_message": "Synthetic original device failure",
+    }
+    recovery = RecoveryService(root)
+    (candidate,) = recovery.discover()
+    assert candidate.can_retry
+    directory = recovery.materialize(candidate)
+    metadata = ErrorMetadataDocument.model_validate_json((directory / "errors.json").read_text())
+    assert [(error.type, error.message) for error in metadata.errors] == [
+        ("OSError", "Synthetic original device failure")
+    ]
+    (recovered,) = recovery.discover()
+    assert recovered.error_summary == "Synthetic original device failure"
 
 
 def test_slow_pipe_never_blocks_primary_writer_and_rejects_partial_live(tmp_path, monkeypatch):
