@@ -166,6 +166,22 @@ public-flow failures became nine GREEN cases. Final committed-source suite:
 Residual capture evidence can remain after cleanup faults. Current-head hosted
 checks and Copilot are still required before merge; full M1 remains open.
 
+
+Copilot body review `5400663671` identified loss of original child-device errors
+in a running controller: persistence and the UI selected the IPC wrapper even
+though the journal retained the original cause. The accepted correction at
+`9b21f57` derives capture errors from current validated journal events and
+uses the persisted capture metadata in the desktop, preserving type, message
+and occurrence time. Restart recovery uses the same persistence selection;
+no-journal/parent-only failures retain a valid fallback. Meaningful regressions:
+7 RED failures became
+18 GREEN cases. Final committed-source suite:
+654 passed, 6 existing local privilege
+skips (68.06 s), with scoped independent acceptance. Previous
+`35aed69` hosted CI passed 639 Windows/636 Ubuntu tests and both builds; new-head
+Copilot and hosted checks are still required. Raw recovery and actual worker
+ownership remain intact; no full-M1 or installed-runtime completion is claimed.
+
 ## Review and merge gates
 
 - Each implementation task follows meaningful red/green tests and self-review.

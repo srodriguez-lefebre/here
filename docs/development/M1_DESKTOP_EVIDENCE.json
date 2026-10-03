@@ -2,8 +2,8 @@
   "schema_version": 1,
   "milestone": "M1",
   "milestone_complete": false,
-  "desktop_delivery": "PR13 open; round-five corrections independently accepted, new-head Copilot and hosted checks pending.",
-  "latest_desktop_source_head": "e6e93a0c7f5e203cbf6926fdf1443f1d42461ea9",
+  "desktop_delivery": "PR13 open; running capture-error provenance correction independently accepted, new-head Copilot and hosted checks pending.",
+  "latest_desktop_source_head": "9b21f57f4f7f5929bb8b500eb4f99f8897332802",
   "task_1": {
     "status": "independent_spec_and_quality_approved",
     "base": "eba75781c3c317f62e9ec7080fbb9503952b6998",
@@ -483,5 +483,64 @@
     },
     "wheel_and_source_builds": "passed on both platforms; version 0.1.0",
     "limit": "Historical head only; new corrections require their own hosted checks. Exact original native-access-violation cause remains unconfirmed."
+  },
+  "copilot_correction_6": {
+    "base": "35aed69607c6ff3e72dde553d4e5232405acc84b",
+    "source_head": "9b21f57f4f7f5929bb8b500eb4f99f8897332802",
+    "commits": [
+      "9b21f57f4f7f5929bb8b500eb4f99f8897332802"
+    ],
+    "copilot": {
+      "review": 5400663671,
+      "state": "COMMENTED",
+      "inline_findings": 0,
+      "body_findings": 1,
+      "disposition": "Accepted; current validated attached-journal capture errors feed failed artifact persistence, shared restart recovery and running-controller desktop error. Explicit overrides/list ownership, empty messages and genuine cause order/time are preserved; transport fallback remains for absent/unusable originals."
+    },
+    "regressions": {
+      "red_failed": 7,
+      "preservation_guards_passed": 11,
+      "green_passed": 18,
+      "green_seconds": 4.71,
+      "scope": "Real authored 80-frame PCM/journal; stale-versus-current events, empty messages, caller lifecycle isolation, explicit override priority/list preservation, normalization failure, running-controller artifacts/UI/event and real synthetic child gated after recording. Further parent read/close timeout and killed-child persistence, no-journal PCM and empty-override guards passed."
+    },
+    "verification": {
+      "runtime": "CPython 3.13.15 AMD64; PySide6 and Qt 6.11.2",
+      "command": "QT_QPA_PLATFORM=offscreen python -m pytest -q",
+      "passed": 654,
+      "skipped": 6,
+      "seconds": 68.06,
+      "skip_reason": "Existing local Windows symbolic-link cases require unavailable privileges (WinError 1314).",
+      "focused": {
+        "passed": 276,
+        "skipped": 5,
+        "seconds": 55.43
+      },
+      "changed_files_lint_format": 5,
+      "diff_check": "passed"
+    },
+    "scoped_independent_review": "accepted",
+    "limits": [
+      "No schema/public DTO, native helper lifecycle or new concurrency/crash guarantee was added.",
+      "Unknown/unusable original details retain the existing transport fallback; remote exception classes are not reconstructed.",
+      "New-head hosted CI and Copilot review remain required; native and long/installed acceptance keep their separate source provenance."
+    ]
+  },
+  "hosted_desktop_checkpoint_35aed69": {
+    "head": "35aed69607c6ff3e72dde553d4e5232405acc84b",
+    "run": 37121611633,
+    "status": "success",
+    "windows": {
+      "passed": 639,
+      "skipped": 0,
+      "seconds": 54.55
+    },
+    "ubuntu": {
+      "passed": 636,
+      "skipped": 3,
+      "seconds": 35.36
+    },
+    "wheel_and_source_builds": "passed on both platforms; version 0.1.0",
+    "limit": "Historical head only; later corrections require their own hosted checks."
   }
 }
