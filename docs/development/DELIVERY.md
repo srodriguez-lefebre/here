@@ -66,8 +66,26 @@ important independent finding was fixed before approval: file transcription now
 publishes recoverable pending metadata before provider work. The final source-head
 suite passed 524 tests with six existing Windows symlink-privilege skips (34.02 s);
 new real junction/hardlink and subprocess-kill cases ran. No desktop Copilot review,
-hardware-long, installer or whole-M1 completion is claimed here. Desktop Task 2 follows
-these reviewed contracts. Safe observations: [`M1_DESKTOP_EVIDENCE.json`](M1_DESKTOP_EVIDENCE.json).
+hardware-long, installer or whole-M1 completion is claimed here.
+
+Desktop Task 2 is independently approved at `76d317a`: immutable actual opened devices,
+asynchronous diagnostics/recovery, atomic preparation stop, completion-gated stop/save
+exit and bounded hardware helpers. Actual Windows Job Object parent-death and stalled
+backend/IPC-pressure regressions ran. Final source-head suite: 558 passed, six existing
+symlink-privilege skips in 53.72 s; changed-file lint/format and diff checks passed.
+The current synchronous provider transport remains cooperative and can wait through
+its SDK timeout/retries; Qt retains ownership without blocking its event loop.
+
+A bounded native Qt Windows check at that same source head passed without provider
+calls: no-key startup, local interrupted discovery, key preflight preserving the journal,
+actual default-device names, three-second microphone no-signal and authored-tone
+loopback signal diagnostics, ordinary active close/hide and repeated Salir from pause.
+An intentional local transcription failure left discoverable audio; exit followed
+durable persistence and actual cleanup (0.372 s for this local fixture only).
+Qt heartbeat maximum observed gap was 49.6 ms across 688 samples. Probe-owned raw
+audio was removed after worker/reservation cleanup. Real frozen helper launch,
+installation, long recording and real-provider long acceptance remain open.
+Safe observations: [`M1_DESKTOP_EVIDENCE.json`](M1_DESKTOP_EVIDENCE.json).
 
 ## Review and merge gates
 
@@ -196,12 +214,13 @@ open wherever it has not actually been observed.
 
 Desktop Task 1 also closes the parked catch-up control and CLI early-read boundaries
 and preserves capture UUID as additive `meeting_id` for M2. These amendments are in
-the desktop spec/plan; journals, optional credentials and UI/installer acceptance are
-future implementation rather than facts implied by the first merge.
+the desktop spec/plan. Journals, optional credentials and desktop controls are now
+implemented and independently reviewed on this branch, with their own observations;
+they were not facts implied by the first capture merge.
 
 This register records immutable observed checkpoints. The live
 [PR review/check/merge record](https://github.com/srodriguez-lefebre/here/pull/12)
 is the authority for subsequent review dispositions, final-head CI and merge status;
 earlier passing runs never waive a later-head gate. No milestone is complete here:
-desktop journals/restart, per-user paths, diagnostics/save-exit, installed distribution,
-two-hour acceptance and M2–M5 implementation still require their planned evidence.
+the desktop branch still needs its whole-branch/Copilot/current-head CI merge gates;
+installed distribution, two-hour acceptance and M2–M5 still need their planned evidence.

@@ -37,9 +37,82 @@
     "limits": [
       "Process restart evidence does not prove power-loss or fsync durability.",
       "No hardware, real provider, packaged executable or long recording was executed for Task 1.",
-      "Task 2 diagnostics, opened-device UI and save-exit completion remain pending.",
+      "Task 1 does not itself verify diagnostics, opened-device UI or save-exit; Task 2 evidence is recorded below.",
       "Desktop Copilot review and hosted current-PR-head CI remain pending."
     ]
   },
-  "task_2": { "status": "not_started" }
+  "task_2": {
+    "status": "independent_spec_and_quality_approved",
+    "base": "bcf7d0eee1a0ef5db99134d3a9a21ca444379e3a",
+    "source_head": "76d317ae8f8979914f546207363d02405f5bd8b9",
+    "commits": [
+      "de65099d80bebaf830290b570f516b005485cba8",
+      "76d317ae8f8979914f546207363d02405f5bd8b9"
+    ],
+    "verification": {
+      "command": "QT_QPA_PLATFORM=offscreen uv run pytest -q",
+      "passed": 558,
+      "skipped": 6,
+      "seconds": 53.72,
+      "skip_reason": "Existing Windows symbolic-link tests require unavailable local privileges (WinError 1314).",
+      "changed_python_files_lint_and_format": 27,
+      "diff_check": "passed",
+      "final_helper_capture_focus": { "passed": 16, "seconds": 20.80 },
+      "controller_ui_processing_focus": { "passed": 93, "seconds": 4.44 },
+      "windows_parent_death": "Real synthetic parent was killed; actual kernel Job Object terminated its stalled child. Regression went RED to GREEN.",
+      "pressure": "Real synthetic child WAV checkpoints progress while live callback or pipe delivery is blocked; incomplete live results force offline fallback."
+    },
+    "independent_review": {
+      "spec_verdict": "approved",
+      "quality_verdict": "approved",
+      "unaddressed_material_findings": 0,
+      "minor_finding": "PREPARING-stop test emergency completion latch can mask missing stop delivery; production stop call was inspected and is correct.",
+      "minor_disposition": "Accepted as nonblocking test-strengthening follow-up; source and reviewed ownership contract are approved."
+    },
+    "helper_contract": "Fixed source module; frozen trusted sibling here-cli.exe, hidden redirected pipes and pre-bootstrap dispatch. Non-inherited Windows kill-on-close Job Object assigned before hardware request.",
+    "provider_shutdown_limit": "Existing synchronous SDK transport defaults are 600 seconds with two retries. In-flight provider cancellation is cooperative; Qt remains responsive and retains ownership until actual cleanup. No short provider shutdown bound is claimed.",
+    "limits": [
+      "Actual frozen helper IPC and installable runtime are distribution-task acceptance, still open.",
+      "No long recording or real provider was executed for Task 2.",
+      "Job Object process-death proof does not establish power-loss durability or a Linux parent-death guarantee.",
+      "Copilot review and current-PR-head hosted checks remain pending."
+    ]
+  },
+  "native_desktop_observation": {
+    "observed_at_utc": "2026-10-03T09:48:55Z",
+    "source_head": "76d317ae8f8979914f546207363d02405f5bd8b9",
+    "status": "passed",
+    "qt_platform": "windows",
+    "provider_calls": 0,
+    "network_guard": "Parent socket operations denied; child launches only fixed hardware actions. This is not a system-wide network-denial claim.",
+    "startup_without_key_and_local_recovery": true,
+    "missing_key_start_created_no_capture": true,
+    "missing_key_retry_preserved_unmaterialized_journal": true,
+    "diagnostics": [
+      { "source": "microphone", "device_name": "Microphone (3- Arctis Nova 7P)", "sample_rate": 44100, "channels": 2, "duration_seconds": 3.0, "peak": 0.000030517578125, "rms": 0.000014619909052271396, "has_signal": false, "elapsed_seconds": 4.199913199990988 },
+      { "source": "system audio", "device_name": "Headphones (3- Arctis Nova 7P) [Loopback]", "sample_rate": 48000, "channels": 2, "duration_seconds": 3.0, "peak": 0.150115966796875, "rms": 0.10608416795730591, "has_signal": true, "elapsed_seconds": 4.133567600001697 }
+    ],
+    "signal_fixture": "Authored 440 Hz PCM tone played locally; signal results report the actual observations.",
+    "saved_exit": {
+      "ordinary_active_close_hid": true,
+      "actual_opened_names_displayed": true,
+      "paused_exit_saved": true,
+      "repeated_exit_idempotent": true,
+      "terminal_state": "failed",
+      "cause": "Intentionally injected local live/offline failure after pending publication; no provider client or request.",
+      "worker_complete": true,
+      "recoverable_audio_and_local_discovery": true,
+      "session_persisted_before_worker_completion": true,
+      "exit_seconds": 0.3718958000099519,
+      "delivered_frames": { "microphone": 99328, "system audio": 107520 },
+      "normalized_frames": 36037,
+      "normalized_sample_rate": 16000,
+      "normalized_channels": 1
+    },
+    "idle_close_quit_after_background_cleanup": true,
+    "capture_workers_and_reservation_released": true,
+    "qt_heartbeat": { "samples": 688, "max_gap_seconds": 0.04955320000590291 },
+    "raw_audio_retained": false,
+    "scope": "Bounded native source-runtime Qt/device/recovery/exit check. No frozen, real-provider, long-duration or full-M1 completion claim."
+  }
 }

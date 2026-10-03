@@ -8,9 +8,9 @@ must be synthetic; credentials and private conversations never enter evidence fi
 |---|---|---|---|
 | M1 | Both default Windows sources captured at 44.1/48 kHz | Actual device/format and WAV frame/duration report | Short actual two-source capture passed; long run open |
 | M1 | Two-hour meeting without unbounded growth or unexplained gaps | Frames/known markers, peak memory, disk, queue and final artifacts | Open |
-| M1 | Pause/resume audio timeline, destructive cancel and saved exit | Qt and Windows synthetic marker runs | Short native pause/resume passed; saved exit and restart open |
+| M1 | Pause/resume audio timeline, destructive cancel and saved exit | Qt and Windows synthetic marker runs | Short native pause/resume and paused save-exit passed; synthetic restart/exit barriers passed; long/installed checks open |
 | M1 | Provider/timestamps and diarization | Synthetic real-provider run and segment output inspected | Single/multiple-source TTS smokes passed; long diarization open |
-| M1 | Failure/crash/network/disconnection/disk-pressure recovery | Fault-injection plus bounded hardware run | PR12 fault regressions passed; journal/crash and device matrix open |
+| M1 | Failure/crash/network/disconnection/disk-pressure recovery | Fault-injection plus bounded hardware run | PR12 faults, writer/publication process kills and helper-owner death passed; native recoverable saved failure passed; long/installed fault matrix open |
 | M1 | Installed application opens, records and uninstalls | Fresh Windows installation and bundled-runtime smoke | Open |
 | M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | Open |
 | M2 | Deletion clears managed memory without resurrection | DB/FTS/files/answers/backup inspection after restart | Open |
@@ -88,6 +88,16 @@ session paths, credentials or private recordings are published.
   [`M1_NATIVE_EVIDENCE.json`](M1_NATIVE_EVIDENCE.json).
 
 ## Measurement decisions
+
+Desktop source `76d317a` passed 558 tests with six existing local symlink-privilege
+skips (53.72 s), separate Task 1/2 independent reviews and a bounded native Qt check.
+The native check observed actual 44.1/48 kHz default-device names, asynchronous
+three-second quiet microphone and authored-tone loopback diagnostics, credential-free
+local recovery and a paused save-exit with intentionally injected local transcription
+failure. Audio remained locally retryable until probe-owned cleanup; no provider call
+was issued. The maximum Qt heartbeat gap was 49.6 ms. This is source-runtime evidence,
+not frozen or long-provider acceptance; details and limits are in
+[`M1_DESKTOP_EVIDENCE.json`](M1_DESKTOP_EVIDENCE.json).
 
 Long meeting means at least 7,200 seconds of recording wall time excluding deliberate
 pauses. Compare known playback markers and recorded durations; do not require exact
