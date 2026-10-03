@@ -3,6 +3,7 @@
 import json
 import os
 import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -66,3 +67,57 @@ def test_installer_mutex_blocks_only_while_owned_process_is_alive():
         assert handle
         kernel.CloseHandle(handle)
     assert not kernel.OpenMutexW(0x00100000, False, name)
+
+
+def test_windows_acceptance_isolates_and_restores_inherited_transcription_path(tmp_path):
+    if os.name != "nt":
+        pytest.skip("Windows acceptance script environment")
+    root = Path(__file__).resolve().parents[1]
+    trap = tmp_path / "outside transcript trap"
+    trap.mkdir()
+    canary = trap / "preserve.txt"
+    canary.write_text("owned external data", encoding="utf-8")
+    bundle = tmp_path / "fake bundle"
+    bundle.mkdir()
+    evidence = tmp_path / "evidence"
+    harness = tmp_path / "spawn-boundary.ps1"
+    harness.write_text(
+        """param($SmokeScript, $Bundle, $Evidence, $Trap)
+$ErrorActionPreference = 'Stop'
+$env:TRANSCRIPTIONS_DIR = $Trap
+function Start-Process {
+    param($FilePath, $ArgumentList, $WorkingDirectory, [switch]$PassThru, $WindowStyle)
+    if ($env:TRANSCRIPTIONS_DIR) { throw 'Inherited external transcripts reached child spawn' }
+    # Deliberately stop at the real script's first process boundary: no app launched.
+    throw 'expected-isolated-spawn-boundary'
+}
+try {
+    & $SmokeScript -BundlePath $Bundle -EvidenceDirectory $Evidence
+    throw 'Acceptance unexpectedly bypassed the spawn boundary'
+} catch {
+    if ($_.Exception.Message -ne 'expected-isolated-spawn-boundary') { throw }
+}
+if ($env:TRANSCRIPTIONS_DIR -ne $Trap) { throw 'Inherited transcripts were not restored' }
+Write-Output 'isolated process environment and restored caller environment'
+""",
+        encoding="utf-8",
+    )
+    result = subprocess.run(
+        [
+            "pwsh",
+            "-NoProfile",
+            "-File",
+            str(harness),
+            str(root / "scripts/smoke_windows.ps1"),
+            str(bundle),
+            str(evidence),
+            str(trap),
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stderr.decode(errors="replace")
+    assert b"restored caller environment" in result.stdout
+    assert canary.read_text(encoding="utf-8") == "owned external data"
+    assert sorted(path.name for path in trap.iterdir()) == ["preserve.txt"]

@@ -21,13 +21,13 @@ $taskCanary = Join-Path $taskData 'preserve.txt'
 [IO.File]::WriteAllText($taskCanary, 'owned synthetic user data must survive')
 $taskCanaryHash = (Get-FileHash -LiteralPath $taskCanary).Hash
 $taskEnvironment = @{}
-foreach ($taskVariable in @('HERE_DATA_DIR','HERE_ENV_FILE','HERE_SETTINGS_FILE','OPENAI_API_KEY','PYTHONPATH','QT_QPA_PLATFORM')) {
+foreach ($taskVariable in @('HERE_DATA_DIR','HERE_ENV_FILE','HERE_SETTINGS_FILE','TRANSCRIPTIONS_DIR','OPENAI_API_KEY','PYTHONPATH','QT_QPA_PLATFORM')) {
     $taskEnvironment[$taskVariable] = [Environment]::GetEnvironmentVariable($taskVariable, 'Process')
 }
 $env:HERE_DATA_DIR = $taskData
 $env:HERE_ENV_FILE = Join-Path $taskOwned 'absent.env'
 $env:HERE_SETTINGS_FILE = Join-Path $taskOwned 'preferences.ini'
-Remove-Item Env:OPENAI_API_KEY, Env:PYTHONPATH, Env:QT_QPA_PLATFORM -ErrorAction SilentlyContinue
+Remove-Item Env:TRANSCRIPTIONS_DIR, Env:OPENAI_API_KEY, Env:PYTHONPATH, Env:QT_QPA_PLATFORM -ErrorAction SilentlyContinue
 $taskResult = [ordered]@{schema=1; os=[Environment]::OSVersion.VersionString; bundle=$taskBundle;
     installer=$InstallerPath; app_id=$AppId; group=$Group; owned_root=$taskOwned;
     status='failed'; checks=[ordered]@{} }
