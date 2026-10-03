@@ -3,7 +3,7 @@
   "milestone": "M1",
   "milestone_complete": false,
   "desktop_delivery": "PR13 open; local corrections independently accepted, new-head Copilot and hosted checks pending.",
-  "latest_desktop_source_head": "98e19b14cd5dd93618b64c8899ddad5d26614c20",
+  "latest_desktop_source_head": "63030f0270b5520d89bcd5bd76fcc3ba18ccec8e",
   "task_1": {
     "status": "independent_spec_and_quality_approved",
     "base": "eba75781c3c317f62e9ec7080fbb9503952b6998",
@@ -250,5 +250,82 @@
       "diagnostics": "Hosted pytest now uses verbose test names and unbuffered output.",
       "limit": "Local passing results do not diagnose the previous access violation or replace new-head hosted checks."
     }
+  },
+  "ci_and_copilot_correction_3": {
+    "base": "62089a4c822ea86e53321edf69519be0820926d7",
+    "source_head": "63030f0270b5520d89bcd5bd76fcc3ba18ccec8e",
+    "commits": [
+      "0b29897220562127b7f3ebf912031be8a9c43897",
+      "63030f0270b5520d89bcd5bd76fcc3ba18ccec8e"
+    ],
+    "prior_hosted_run": {
+      "id": 37117155758,
+      "head": "62089a4c822ea86e53321edf69519be0820926d7",
+      "status": "failed",
+      "ubuntu": {
+        "passed": 583,
+        "skipped": 3,
+        "failed": 1
+      },
+      "windows": "Native Qt teardown exception recurred; verbose output narrowed it to the first desktop-controls test."
+    },
+    "copilot": {
+      "review": 5400371073,
+      "head": "62089a4c822ea86e53321edf69519be0820926d7",
+      "state": "COMMENTED",
+      "body_findings": 1,
+      "new_inline_findings": 0,
+      "disposition": "Accepted body finding: stop-requested cleanup uses its closing deadline without the obsolete read-stall check; fixed in 0b29897."
+    },
+    "confirmed_contracts": [
+      "After stop, no new capture frames are expected; the finite close deadline classifies stalled teardown.",
+      "A background job remains busy until its actual sole worker thread exits. Qt polls liveness and emits results/idle on Qt; no join or elapsed-time completion claim.",
+      "Test-owned desktop instances are retained and their jobs drained before Qtbot destroys their widgets."
+    ],
+    "regressions": {
+      "red_failed": 3,
+      "immediate_green_passed": 6,
+      "seconds": 6.64,
+      "scope": "Actual synthetic child enters blocked stop_stream; controlled parent clock proves exact closing cause. Final owned-thread barriers prove busy state through normal/closed delivery."
+    },
+    "verification": {
+      "runtime": "CPython 3.13.15 AMD64; PySide6 and Qt 6.11.2",
+      "command": "QT_QPA_PLATFORM=offscreen PYTHONUNBUFFERED=1 python -m pytest -vv",
+      "passed": 585,
+      "skipped": 6,
+      "seconds": 56.93,
+      "skip_reason": "Existing local Windows symbolic-link cases require unavailable privileges (WinError 1314).",
+      "focused": {
+        "passed": 79,
+        "seconds": 21.51
+      },
+      "changed_python_files_lint_format": 8,
+      "diff_check": "passed"
+    },
+    "scoped_independent_review": "accepted",
+    "native_exception_limit": "Concrete completion/ownership defects are proven and corrected; they do not themselves reproduce or establish the cause of the hosted access violation. New-head hosted checks remain mandatory."
+  },
+  "native_ownership_correction": {
+    "schema_version": 1,
+    "source_head": "63030f0270b5520d89bcd5bd76fcc3ba18ccec8e",
+    "qt_platform": "windows",
+    "provider_calls": 0,
+    "hardware_capture": false,
+    "scope": "Native Windows Qt recovery/retry/exit smoke after background-job lifetime correction, authored PCM and injected transcription; no physical capture, provider, frozen or long-run claim.",
+    "fresh_raw_backed_discovery_and_materialization_without_derived_wav": true,
+    "missing_key_error_kept_selection_and_retry_action": true,
+    "same_window_explicit_retry_after_editing_effective_env": true,
+    "normalized_frames": 240,
+    "identity_selected_name_and_raw_bytes_preserved": true,
+    "transcriber_calls": 1,
+    "exit_after_actual_worker_and_background_cleanup": true,
+    "qt_heartbeat": {
+      "samples": 22,
+      "max_gap_seconds": 0.04179009998915717
+    },
+    "status": "passed",
+    "raw_audio_retained": false,
+    "runtime": "CPython 3.13.15 AMD64; PySide6 and Qt 6.11.2",
+    "host": "Windows 11 Home Single Language, version 10.0.26200, build 26200"
   }
 }

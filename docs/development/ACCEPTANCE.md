@@ -121,6 +121,20 @@ did not reproduce the native exception; verbose hosted diagnostics were added wi
 a speculative product patch. A new current-head Copilot review and hosted checks
 still precede merge. Installer and long-duration M1 acceptance remain open.
 
+
+A second hosted run at `62089a4` exposed a post-stop read-watchdog race and repeated
+the native Qt teardown failure. Copilot review `5400371073` also identified the
+watchdog issue in its body. Commits `0b29897` and `63030f0` use the dedicated closing
+deadline after stop, deliver background results only after actual worker-thread exit,
+and retain/drain test desktops before widget destruction. Three deterministic failing
+regressions verify the closing cause and normal/closed job ownership; six corrected
+cases pass. Final source `63030f0`, Python 3.13.15/Qt 6.11.2: 585 passed, six existing
+local privilege skips (56.93 s), scoped independent acceptance. A native Windows 11
+Qt authored-WAV recovery/retry/exit check also passed with actual cleanup, no provider
+or hardware, and 41.8 ms maximum heartbeat gap. These contract corrections do not
+prove the original access-violation cause; new-head hosted checks and Copilot review
+remain merge gates. M1 installer and long-duration acceptance are still open.
+
 Long meeting means at least 7,200 seconds of recording wall time excluding deliberate
 pauses. Compare known playback markers and recorded durations; do not require exact
 hardware-clock synchronization between two sources. Initial marker seek tolerance is
