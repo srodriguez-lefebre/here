@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import numpy as np
@@ -36,7 +36,10 @@ def make_session(tmp_path: Path) -> RecordingSession:
     )
 
 
-def test_process_materializes_audio_transcribes_and_persists_events(tmp_path: Path) -> None:
+@pytest.mark.parametrize("offset_hours", [0, -3])
+def test_process_materializes_audio_transcribes_and_persists_events(
+    tmp_path: Path, offset_hours: int
+) -> None:
     session = make_session(tmp_path)
     calls = 0
 
@@ -47,7 +50,7 @@ def test_process_materializes_audio_transcribes_and_persists_events(tmp_path: Pa
         return TranscriptionResult(raw_text="hola", final_text="Hola")
 
     processor = SessionProcessor(transcribe=transcribe, retry_delays=())
-    started_at = datetime.now().astimezone()
+    started_at = datetime(2026, 10, 3, 5, 15, 53, 734566, timezone(timedelta(hours=offset_hours)))
     events = [
         SessionEventMetadata(
             kind="paused",
@@ -69,7 +72,7 @@ def test_process_materializes_audio_transcribes_and_persists_events(tmp_path: Pa
     assert artifacts.audio_path is not None and artifacts.audio_path.exists()
     assert artifacts.transcript_path.read_text(encoding="utf-8-sig") == "Hola"
     metadata = json.loads(artifacts.metadata_path.read_text(encoding="utf-8"))
-    assert metadata["started_at"] == started_at.isoformat()
+    assert datetime.fromisoformat(metadata["started_at"]) == started_at
     assert metadata["total_paused_seconds"] == 12.5
     persisted_events = json.loads(artifacts.events_path.read_text(encoding="utf-8"))
     assert persisted_events["events"][0]["kind"] == "paused"
