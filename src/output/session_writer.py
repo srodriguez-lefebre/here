@@ -26,6 +26,7 @@ from here.output.paths import (
 )
 from here.recording.models import RecordingSession
 from here.transcription.segments import TranscriptSegment
+from loguru import logger
 
 TRANSCRIPT_ENCODING = "utf-8-sig"
 METADATA_ENCODING = "utf-8"
@@ -121,16 +122,20 @@ def _stage_document(destination: Path, content: str) -> Path:
 
 
 def _publish_metadata_and_segments(
-    metadata_path: Path, metadata_json: str, segments_json: str | None
+    metadata_path: Path,
+    metadata_json: str,
+    segments_json: str | None,
+    obsolete_paths: tuple[Path, ...] = (),
 ) -> None:
-    """Publish metadata last and roll back segment changes on handled I/O failure.
+    """Publish metadata last; restore segments and obsolete entries on I/O failure.
 
+    Cleanup of owned temporary paths cannot invalidate committed metadata.
     This is not a multi-file transaction against process termination or concurrent writers.
     """
     segments_path = metadata_path.parent / SEGMENTS_FILE
     staged_paths: list[Path] = []
-    backup: Path | None = None
-    backup_moved = False
+    backups: dict[Path, Path] = {}
+    moved_backups: set[Path] = set()
     segment_published = False
     committed = False
     try:
@@ -141,33 +146,57 @@ def _publish_metadata_and_segments(
         staged_metadata = _stage_document(metadata_path, metadata_json)
         staged_paths.append(staged_metadata)
 
-        if segments_path.is_symlink() or segments_path.exists():
-            backup = reserve_artifact_path(segments_path, ".backup")
-            # Rename the entry itself, without reading through an external link.
-            segments_path.replace(backup)
-            backup_moved = True
+        for destination in (segments_path, *obsolete_paths):
+            if destination.is_symlink() or destination.exists():
+                backup = reserve_artifact_path(destination, ".backup")
+                backups[destination] = backup
+                # Rename the validated entry itself, without following a redirect.
+                destination.replace(backup)
+                moved_backups.add(destination)
         if staged_segments is not None:
             staged_segments.replace(segments_path)
             segment_published = True
         staged_metadata.replace(metadata_path)
         committed = True
-    except OSError:
-        if backup_moved:
-            assert backup is not None
+    except OSError as publication_error:
+        rollback_error: OSError | None = None
+        for destination, backup in reversed(backups.items()):
+            if destination not in moved_backups:
+                continue
             try:
-                backup.replace(segments_path)
-            except OSError as rollback_error:
-                rollback_error.add_note(f"Previous segment evidence retained at {backup}")
-                raise
-            backup_moved = False
-        elif segment_published:
-            segments_path.unlink(missing_ok=True)
+                backup.replace(destination)
+            except OSError as error:
+                rollback_error = rollback_error or error
+                rollback_error.add_note(
+                    f"Previous {destination.name} retained at {backup}: {error}"
+                )
+            else:
+                moved_backups.remove(destination)
+        if segments_path not in backups and segment_published:
+            try:
+                segments_path.unlink(missing_ok=True)
+            except OSError as error:
+                rollback_error = rollback_error or error
+                rollback_error.add_note(f"Could not remove uncommitted {segments_path}: {error}")
+        if rollback_error is not None:
+            raise rollback_error from publication_error
         raise
     finally:
-        for staged in staged_paths:
-            staged.unlink(missing_ok=True)
-        if backup is not None and (committed or not backup_moved):
-            backup.unlink(missing_ok=True)
+        cleanup_paths = [
+            *staged_paths,
+            *(backup for path, backup in backups.items() if committed or path not in moved_backups),
+        ]
+        for owned_path in cleanup_paths:
+            try:
+                owned_path.unlink(missing_ok=True)
+            except OSError as error:
+                if not committed:
+                    raise
+                logger.warning(
+                    "Session metadata committed; cleanup of transaction-owned path {} failed: {}",
+                    owned_path,
+                    error,
+                )
 
 
 def write_session_artifacts(
@@ -285,11 +314,14 @@ def write_session_artifacts(
             encoding=METADATA_ENCODING,
         )
 
-    _publish_metadata_and_segments(metadata_path, metadata.model_dump_json(indent=2), segments_json)
-    # Obsolete artifacts are removed only after the new manifest commits.
-    for filename, retain in ((ERRORS_FILE, errors), (EVENTS_FILE, events)):
-        if not retain:
-            session_artifact_path(session_dir, filename).unlink(missing_ok=True)
+    obsolete_paths = tuple(
+        session_artifact_path(session_dir, filename)
+        for filename, retain in ((ERRORS_FILE, errors), (EVENTS_FILE, events))
+        if not retain
+    )
+    _publish_metadata_and_segments(
+        metadata_path, metadata.model_dump_json(indent=2), segments_json, obsolete_paths
+    )
 
     return SessionArtifactPaths(
         session_dir=session_dir,

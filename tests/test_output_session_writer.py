@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import wave
 from datetime import datetime
 from pathlib import Path
 from typing import Literal
@@ -576,3 +577,239 @@ def test_direct_numeric_strings_use_numeric_validation_before_persistence(
     assert (segment["start"], segment["end"]) == expected
     assert segment["text"] == "evidence"
     assert segment["speaker"] == "A"
+
+
+@pytest.fixture
+def prior_failed_session(tmp_path):
+    """Author an existing recovery session independently of the writer under test."""
+    directory = tmp_path / "sessions" / "saved"
+    directory.mkdir(parents=True)
+    audio = directory / AUDIO_FILE
+    with wave.open(str(audio), "wb") as wav:
+        wav.setnchannels(1)
+        wav.setsampwidth(2)
+        wav.setframerate(8000)
+        wav.writeframes(b"\x01\x00" * 80)
+    meeting_id = "4800458c-c1f5-44e5-83d4-31823519a135"
+    documents = {
+        METADATA_FILE: {
+            "schema_version": 1,
+            "session_id": "saved",
+            "meeting_id": meeting_id,
+            "started_at": "2026-10-03T10:00:00",
+            "completed_at": "2026-10-03T10:00:01",
+            "duration_seconds": 0.01,
+            "status": "failed",
+            "failure_stage": "offline_transcription",
+            "recoverable_audio": AUDIO_FILE,
+            "sources": [
+                {
+                    "label": "mic",
+                    "sample_rate": 8000,
+                    "channels": 1,
+                    "frames": 80,
+                    "duration_seconds": 0.01,
+                }
+            ],
+            "transcription_model": "authored",
+            "cleanup_model": "authored",
+            "cleanup_enabled": False,
+            "alt_model_used": False,
+            "live_pipeline_attempted": False,
+            "live_pipeline_used": False,
+            "fallback_used": False,
+            "output_files": [
+                METADATA_FILE,
+                AUDIO_FILE,
+                CHUNKS_FILE,
+                SEGMENTS_FILE,
+                "errors.json",
+                "events.json",
+            ],
+        },
+        CHUNKS_FILE: {"schema_version": 1, "chunks": []},
+        SEGMENTS_FILE: {"schema_version": 1, "segments": [{"text": "old evidence"}]},
+        "errors.json": {
+            "schema_version": 1,
+            "errors": [
+                {
+                    "stage": "offline_transcription",
+                    "type": "OSError",
+                    "message": "authored failure",
+                    "retryable": True,
+                    "occurred_at": "2026-10-03T10:00:01",
+                }
+            ],
+        },
+        "events.json": {
+            "schema_version": 1,
+            "events": [
+                {
+                    "kind": "stopped",
+                    "occurred_at": "2026-10-03T10:00:01",
+                    "recorded_duration_seconds": 0.01,
+                }
+            ],
+        },
+    }
+    for name, document in documents.items():
+        (directory / name).write_text(json.dumps(document, indent=2), encoding="utf-8")
+    session = RecordingSession(
+        [RecordedAudioSource(audio, 8000, 1, 80, "mic")], meeting_id=meeting_id
+    )
+    return directory, session, {path.name: path.read_bytes() for path in directory.iterdir()}
+
+
+def _complete_failed_session(directory, session, *, segments):
+    return write_session_artifacts(
+        session=session,
+        session_dir=directory,
+        target_dir=directory.parent,
+        completed_at=datetime(2026, 10, 3, 10, 0, 2),
+        transcription_model="authored",
+        cleanup_model="authored",
+        cleanup_enabled=False,
+        alt_model_used=False,
+        live_pipeline_attempted=False,
+        live_pipeline_used=False,
+        fallback_used=False,
+        transcript_text="current transcript",
+        recoverable_audio=AUDIO_FILE,
+        segments=segments,
+    )
+
+
+@pytest.mark.parametrize("failed_file", ["errors.json", "events.json"])
+def test_obsolete_move_failure_preserves_prior_recovery(
+    prior_failed_session, monkeypatch, failed_file
+):
+    from here.application.recovery import RecoveryService
+
+    directory, session, before = prior_failed_session
+    replace = Path.replace
+
+    def fail_obsolete_move(path, target):
+        if path == directory / failed_file:
+            if failed_file == "events.json":
+                assert not (directory / "errors.json").exists()
+            raise PermissionError("synthetic obsolete move failure")
+        return replace(path, target)
+
+    monkeypatch.setattr(Path, "replace", fail_obsolete_move)
+    with pytest.raises(PermissionError, match="synthetic obsolete move failure"):
+        _complete_failed_session(directory, session, segments=[TranscriptSegment("new evidence")])
+
+    for name, content in before.items():
+        assert (directory / name).read_bytes() == content
+    (candidate,) = RecoveryService(directory.parent).discover()
+    assert candidate.status == "failed"
+    assert candidate.can_retry
+    assert candidate.error_summary == "authored failure"
+    assert not list(directory.glob(".*.backup"))
+    assert not list(directory.glob(".*.stage"))
+
+
+@pytest.mark.parametrize("segments", [None, [], [TranscriptSegment("new evidence")]])
+def test_metadata_replace_failure_restores_obsolete_entries(
+    prior_failed_session, monkeypatch, segments
+):
+    directory, session, before = prior_failed_session
+    replace = Path.replace
+
+    def fail_metadata_replace(path, target):
+        if Path(target) == directory / METADATA_FILE:
+            assert not (directory / "errors.json").exists()
+            assert not (directory / "events.json").exists()
+            assert (directory / METADATA_FILE).read_bytes() == before[METADATA_FILE]
+            raise PermissionError("synthetic metadata replace failure")
+        return replace(path, target)
+
+    monkeypatch.setattr(Path, "replace", fail_metadata_replace)
+    with pytest.raises(PermissionError, match="synthetic metadata replace failure"):
+        _complete_failed_session(directory, session, segments=segments)
+
+    for name, content in before.items():
+        assert (directory / name).read_bytes() == content
+    assert not list(directory.glob(".*.backup"))
+    assert not list(directory.glob(".*.stage"))
+
+
+def test_obsolete_rollback_failure_retains_backup_and_restores_other_entries(
+    prior_failed_session, monkeypatch
+):
+    directory, session, before = prior_failed_session
+    replace = Path.replace
+
+    def fail_publication_and_one_rollback(path, target):
+        if Path(target) == directory / METADATA_FILE:
+            raise OSError("synthetic metadata replace failure")
+        if path.suffix == ".backup" and Path(target) == directory / "errors.json":
+            raise OSError("synthetic obsolete rollback failure")
+        return replace(path, target)
+
+    monkeypatch.setattr(Path, "replace", fail_publication_and_one_rollback)
+    with pytest.raises(OSError, match="synthetic obsolete rollback failure") as failure:
+        _complete_failed_session(directory, session, segments=[TranscriptSegment("new evidence")])
+
+    for name in (METADATA_FILE, SEGMENTS_FILE, "events.json", AUDIO_FILE):
+        assert (directory / name).read_bytes() == before[name]
+    (backup,) = directory.glob(".*.backup")
+    assert backup.read_bytes() == before["errors.json"]
+    assert str(backup) in " ".join(failure.value.__notes__)
+    assert not list(directory.glob(".*.stage"))
+
+
+@pytest.mark.parametrize(
+    "failed_file,suffix",
+    [
+        ("errors.json", ".backup"),
+        ("events.json", ".backup"),
+        (SEGMENTS_FILE, ".backup"),
+        (SEGMENTS_FILE, ".stage"),
+        (METADATA_FILE, ".stage"),
+    ],
+)
+def test_postcommit_cleanup_failure_returns_completed_session(
+    prior_failed_session, monkeypatch, failed_file, suffix
+):
+    from here.application.recovery import RecoveryService
+
+    directory, session, before = prior_failed_session
+    unknown = directory / ".errors.json.unowned.backup"
+    unknown.write_bytes(b"unrelated operation")
+    unlink = Path.unlink
+
+    def fail_owned_cleanup(path, *args, **kwargs):
+        if path != unknown and (
+            path.name == failed_file
+            or (path.name.startswith(f".{failed_file}.") and path.suffix == suffix)
+        ):
+            metadata = json.loads((directory / METADATA_FILE).read_bytes())
+            if metadata["status"] == "completed":
+                raise PermissionError("synthetic owned cleanup failure")
+        return unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "unlink", fail_owned_cleanup)
+    artifacts = _complete_failed_session(
+        directory, session, segments=[TranscriptSegment("new evidence")]
+    )
+
+    assert artifacts.metadata.status == "completed"
+    metadata = json.loads(artifacts.metadata_path.read_bytes())
+    assert metadata["status"] == "completed"
+    assert metadata["meeting_id"] == "4800458c-c1f5-44e5-83d4-31823519a135"
+    assert "errors.json" not in metadata["output_files"]
+    assert "events.json" not in metadata["output_files"]
+    assert not artifacts.errors_path.exists()
+    assert not artifacts.events_path.exists()
+    assert artifacts.transcript_path.read_text(encoding=TRANSCRIPT_ENCODING) == "current transcript"
+    assert json.loads(artifacts.segments_path.read_bytes())["segments"][0]["text"] == "new evidence"
+    assert artifacts.audio_path.read_bytes() == before[AUDIO_FILE]
+    assert RecoveryService(directory.parent).discover() == []
+    assert unknown.read_bytes() == b"unrelated operation"
+    retained = [path for path in directory.glob(".*.backup") if path != unknown]
+    if suffix == ".backup":
+        (backup,) = retained
+        assert backup.read_bytes() == before[failed_file]
+    else:
+        assert retained == []
