@@ -32,13 +32,17 @@ and writes a safe report without recording, provider calls or opening real sessi
 This is build validation, not a product user flow. Normal GUI startup keeps implementation
 details out of the UI.
 
-CI tests the locked project on Windows/Linux, builds Windows executables/installer,
+CI tests the locked project on Windows only, builds Windows executables/installer,
 checks their startup without the repo/venv on import paths, records SHA-256 checksums,
 and uploads installable artifacts. Installer acceptance in a clean Windows runner is
 separate from local hardware capture acceptance. Exercise install, Start shortcut,
 launch, reinstall/update and uninstall under an isolated per-user program directory;
 synthetic user-data canaries survive each step. A real user's installation/data is never
 overwritten or uninstalled for testing.
+
+User scope update on 2026-10-03: finish M1 and stop. Ubuntu validation is retained
+apart as an optional manual workflow, is not run in this delivery, and is not a
+release gate. The M2-M5 roadmap remains outside the current implementation run.
 
 ## Acceptance
 

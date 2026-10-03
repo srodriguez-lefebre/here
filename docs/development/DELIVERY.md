@@ -5,6 +5,16 @@ Copilot review requests, replies to every review observation and merges on 2026-
 This document is the recovery map for continuous execution; a milestone is not complete
 merely because its code exists or its unit tests pass.
 
+## Current authorized objective
+
+On 2026-10-03 the user narrowed execution to **finish M1, then stop**. M2-M5 remain
+future plans; their implementation is outside this run. The user also requested
+Windows-only development and validation. Automatic CI and release gates use Windows;
+the previous Ubuntu workflow is retained separately for explicit manual dispatch and
+will not be run here. Earlier Ubuntu results below remain historical observations.
+Prioritize the remaining desktop fixes, Windows distribution and necessary M1
+acceptance; no later-milestone work or optional validation expands this scope.
+
 ## Product authority and architecture
 
 `docs/MASTER_PLAN.md` defines the five milestones. `docs/MILESTONE_1_PLAN.md` and

@@ -76,3 +76,8 @@ está en [`development/PRODUCT_DESIGN.md`](development/PRODUCT_DESIGN.md). La ma
 de [`development/ACCEPTANCE.md`](development/ACCEPTANCE.md) distingue código,
 verificación automatizada y aceptación con hardware/instalador/proveedor. Cada hito
 permanece abierto hasta demostrar conjuntamente su definición de terminado.
+
+El 2026-10-03 el usuario acotó la ejecución actual: cerrar el hito 1 en Windows
+y terminar ahí. Los hitos 2–5 conservan su lugar en este plan maestro, pero su
+implementación queda fuera de esta ejecución. La validación de Ubuntu se conserva
+aparte y no se ejecuta ni condiciona el cierre del hito 1.
