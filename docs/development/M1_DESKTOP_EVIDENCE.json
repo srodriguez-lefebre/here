@@ -2,8 +2,8 @@
   "schema_version": 1,
   "milestone": "M1",
   "milestone_complete": false,
-  "desktop_delivery": "PR13 open; catch-up progress and prior normalized-audio cleanup corrections independently accepted; final Windows-only CI and renewed Copilot review pending.",
-  "latest_desktop_source_head": "1fa3688d10da4c833ca55da098ae7db71545dcf5",
+  "desktop_delivery": "PR13 open; empty-background-error fix and test-only CI diagnostics independently accepted; final Windows-only CI and renewed Copilot review pending.",
+  "latest_desktop_source_head": "843279ca42da08cb0bc0116d01c9b5da925011ae",
   "task_1": {
     "status": "independent_spec_and_quality_approved",
     "base": "eba75781c3c317f62e9ec7080fbb9503952b6998",
@@ -835,5 +835,82 @@
     },
     "wheel_and_source_builds": "Passed on both; version 0.1.0.",
     "limit": "Historical pre-scope-change checkpoint. New-head automatic CI is Windows-only; no new Ubuntu run."
+  },
+  "copilot_correction_10": {
+    "base": "d89a38643e9f691ef299ba35e186728a212b970d",
+    "source_head": "843279ca42da08cb0bc0116d01c9b5da925011ae",
+    "commits": [
+      "0576648450fd9c08a01dcaff709d0425b097240b",
+      "843279ca42da08cb0bc0116d01c9b5da925011ae"
+    ],
+    "copilot": {
+      "review": 5402529641,
+      "state": "COMMENTED",
+      "inline_comment": 4174660224,
+      "inline_findings": 1,
+      "body_findings": 0,
+      "ci_observation": "The Windows CI run at the reviewed head was failing.",
+      "disposition": "Accepted, fixed and independently accepted; failing-CI observation receives honest test-only diagnostics and new-head gates."
+    },
+    "changes": {
+      "background_error": "BackgroundJobs preserves each nonempty exception message exactly and uses the actual exception type name when the message is empty. Diagnostics and explicit retry surface the failure; None remains the no-error sentinel. Actual thread/QTimer delivery and closed-job suppression are unchanged.",
+      "ci_diagnostics": "Failure-only pause diagnostics retain individual markers and pre-reap process status; original journal cause is read only after actual child/owner/IPC reaping. Original timeout/watchdogs/recovery assertions remain unchanged. No production or fixture scheduling change is made."
+    },
+    "regressions": {
+      "background_error": {
+        "red_failed": 3,
+        "preservation_guards_passed": 3,
+        "expected_qt_teardown_errors_in_red": 2,
+        "green_passed": 22,
+        "green_seconds": 2.04
+      },
+      "scope": "Actual Qt worker/QTimer/HereDesktop delivery for empty RuntimeError/OSError diagnostics and empty ValueError retry; exact nonempty messages including surrounding spaces and successful None results preserved. Existing thread termination, close, stale results, shutdown and recovery controls included."
+    },
+    "regression_summary": "Three actual Qt empty-message RED failures became 22 passing background/desktop cases, including visible diagnostic errors and retained explicit retry selection. The test-only pause diagnostics separately passed real-child failure-reporting experiments and all 33 isolated-capture cases.",
+    "verification": {
+      "runtime": "CPython 3.13.15 AMD64; PySide6 and Qt 6.11.2; Windows offscreen",
+      "command": "QT_QPA_PLATFORM=offscreen .superpowers/m1-desktop/venv313/Scripts/python.exe -m pytest -q",
+      "passed": 740,
+      "skipped": 6,
+      "seconds": 140.88,
+      "exit_code": 0,
+      "skip_reason": "Existing local Windows symlink privilege cases (WinError 1314).",
+      "changed_file_ruff": "Passed; three product-fix files, plus CI diagnostic file checked separately.",
+      "diff_check": "passed",
+      "source_or_test_edits_after_full": false
+    },
+    "ci_followup": {
+      "head": "d89a38643e9f691ef299ba35e186728a212b970d",
+      "run": 37150084536,
+      "job": 111281926438,
+      "status": "failure",
+      "failed": 1,
+      "passed": 739,
+      "seconds": 119.47,
+      "test": "test_pause_cannot_hide_an_actual_stalled_reader[paused-read-both-7]",
+      "failure": "The original 3-second wait did not observe both fake hardware drain markers.",
+      "original_cause": "Unconfirmed; not reproduced locally.",
+      "exact_case_local": {
+        "passed": 1,
+        "seconds": 5.6
+      },
+      "bounded_real_child_repetitions": {
+        "passed": 12,
+        "failed": 0
+      },
+      "failure_diagnostic_experiment": "Meaningful RED for missing evidence, GREEN for original OSError and healthy missing-marker cases; both actual owned closures checked.",
+      "diagnostic_file_focus": {
+        "passed": 33,
+        "seconds": 78.79
+      },
+      "new_head_ci": "Required before merge; original failure not ignored or declared fixed."
+    },
+    "scoped_independent_review": "accepted",
+    "limits": [
+      "Original historical CI pause-marker failure remains unconfirmed; no speculative runtime cause or deadline weakening.",
+      "No native hardware, provider or frozen-runtime claim from these tests.",
+      "Two-hour capture/resource and long generated-audio transcription are explicitly omitted by the user, not passed.",
+      "Final-head Windows CI, renewed formal Copilot review and finding replies remain required before merge."
+    ]
   }
 }

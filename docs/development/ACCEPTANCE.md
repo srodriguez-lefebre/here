@@ -240,6 +240,24 @@ The user explicitly omitted two-hour capture/resource and long generated-audio
 transcription acceptance; neither is run or claimed as passing. Finish remaining
 Windows distribution and revised-scope M1 closure, then stop.
 
+
+Copilot review `5402529641` found message-less background exceptions becoming
+empty error strings and being treated as successful diagnostics/retry. Source
+`843279c` now preserves nonempty messages and reports the actual exception type
+when its message is empty; `None` remains the success sentinel. Actual worker/QTimer
+ownership and closed-job delivery semantics remain unchanged.
+Three actual Qt empty-message RED failures became 22 passing background/desktop cases, including visible diagnostic errors and retained explicit retry selection. The test-only pause diagnostics separately passed real-child failure-reporting experiments and all 33 isolated-capture cases.
+Final committed-source Windows suite: 740 passed,
+6 existing local privilege skips in 140.88 s;
+changed-file checks and scoped independent review passed.
+Historical Windows CI `37150084536` at `d89a386` failed one pause-marker assertion
+with 739 other cases passing. The exact case and 12 bounded real-child repetitions
+passed locally; its original cause remains unconfirmed. Test-only commit `0576648`
+adds failure diagnostics after actual owned reap without changing timeouts,
+watchdogs or active journal access. Its isolated-capture focus passed 33 cases.
+New-head Windows CI and formal Copilot review remain gates. User-omitted long
+capture/resource and long transcription cases remain omitted, not passed.
+
 Long meeting means at least 7,200 seconds of recording wall time excluding deliberate
 pauses. Compare known playback markers and recorded durations; do not require exact
 hardware-clock synchronization between two sources. Initial marker seek tolerance is
