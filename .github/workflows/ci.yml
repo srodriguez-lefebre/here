@@ -25,6 +25,7 @@ jobs:
     env:
       QT_QPA_PLATFORM: offscreen
       OPENAI_API_KEY: synthetic-test-key
+      PYTHONUNBUFFERED: '1'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Install Qt GUI runtime library on Linux
@@ -39,6 +40,6 @@ jobs:
       - name: Install locked development dependencies
         run: uv sync --frozen --dev --python ${{ matrix.python }}
       - name: Test shared application and Qt presentation
-        run: uv run --no-sync pytest -q
+        run: uv run --no-sync pytest -vv
       - name: Build distributable wheel and source archive
         run: uv build

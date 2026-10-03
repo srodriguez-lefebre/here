@@ -1,17 +1,35 @@
 import sys
+from types import SimpleNamespace
 
 import pytest
 from here.config import settings
 
 
-def test_optional_key_and_user_paths(tmp_path, monkeypatch):
+@pytest.mark.parametrize(
+    ("platform", "override", "relative"),
+    [
+        ("win32", True, "local/here/sessions"),
+        ("linux", True, "xdg/here/sessions"),
+        ("win32", False, "home/AppData/Local/here/sessions"),
+        ("linux", False, "home/.local/share/here/sessions"),
+    ],
+)
+def test_optional_key_and_user_paths(tmp_path, monkeypatch, platform, override, relative):
+    from here.config import paths
+
+    # Keep platform selection local: background workers share the real sys module.
+    monkeypatch.setattr(paths, "sys", SimpleNamespace(platform=platform))
+    monkeypatch.setattr(paths.Path, "home", lambda: tmp_path / "home")
     monkeypatch.delenv("OPENAI_API_KEY")
     monkeypatch.delenv("HERE_DATA_DIR")
-    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+    for variable, directory in [("LOCALAPPDATA", "local"), ("XDG_DATA_HOME", "xdg")]:
+        monkeypatch.delenv(variable, raising=False)
+        if override:
+            monkeypatch.setenv(variable, str(tmp_path / directory))
     monkeypatch.setenv("HERE_ENV_FILE", str(tmp_path / "missing.env"))
     value = settings.Settings()
     assert value.OPENAI_API_KEY is None
-    assert value.TRANSCRIPTIONS_DIR == tmp_path / "here" / "sessions"
+    assert value.TRANSCRIPTIONS_DIR == tmp_path / relative
 
 
 def test_effective_file_precedence_and_refresh(tmp_path, monkeypatch):
