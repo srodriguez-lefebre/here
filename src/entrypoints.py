@@ -7,18 +7,30 @@ def gui_main() -> int:
     result = dispatch_internal_helper()
     if result is not None:
         return result
+    from here.distribution import ApplicationMutex, dispatch_smoke_check
+
+    result = dispatch_smoke_check()
+    if result is not None:
+        return result
     from here.ui.gui import main
 
-    return main()
+    with ApplicationMutex():
+        return main()
 
 
 def cli_main() -> None:
     result = dispatch_internal_helper()
     if result is not None:
         raise SystemExit(result)
+    from here.distribution import ApplicationMutex, dispatch_smoke_check
+
+    result = dispatch_smoke_check()
+    if result is not None:
+        raise SystemExit(result)
     from here.cli import app
 
-    app()
+    with ApplicationMutex():
+        app()
 
 
 def record_main() -> None:
