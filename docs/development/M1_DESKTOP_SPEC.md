@@ -111,6 +111,14 @@ open/read/cancellation (an isolated helper process can be terminated safely afte
 deadline); a UI timer alone is not resource cleanup. Discovery/normalization also runs
 off the GUI thread.
 
+The application owns any short-lived isolated hardware helper; it is not a persistent
+service or independent resident application. This explicitly refines the original
+single-Python-process design when a backend cannot safely bound open/read/cancellation.
+The fixed internal launcher must work in source and frozen GUI/CLI runtimes, dispatch
+before GUI/provider bootstrap, use bounded trusted IPC and retain ownership through
+actual helper completion. Validate the runtime overhead and cleanup boundaries rather
+than assuming a timeout terminates a resource-owning thread.
+
 Add an explicit `Salir` action. While recording/paused it requests stop and waits for
 terminal persistence; while preparing it requests stop as soon as recording is ready;
 while stopping/processing it waits. It never routes through destructive cancel.

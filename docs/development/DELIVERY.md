@@ -8,12 +8,20 @@ merely because its code exists or its unit tests pass.
 ## Product authority and architecture
 
 `docs/MASTER_PLAN.md` defines the five milestones. `docs/MILESTONE_1_PLAN.md` and
-`docs/LIVE_LOGO_PLAN.md` govern capture and the overlay. Retain one Python process,
+`docs/LIVE_LOGO_PLAN.md` govern capture and the overlay. Retain one application owner,
 PySide6 Widgets, a shared application controller, Windows 11 support, explicit
 cancellation semantics and local user-owned audio. Derived knowledge must always link
 to its supporting meeting and original segment; missing timestamps or speakers stay
 missing. No cloud synchronization, accounts, unsolicited transmission or automatic
 audio deletion is introduced.
+
+Ruling: allow a short-lived isolated hardware helper where the backend cannot safely
+bound opening, reading or cancellation. The desktop spec permits that isolation;
+the GUI, overlay and shared controller remain one application, with no persistent
+service. A timeout cannot release audio resources until the helper actually closes.
+This is a deliberate refinement of the original single-Python-process design, needed
+to recover from a stalled driver without destroying a resource-owning thread. Cost
+if wrong: bounded IPC complexity and runtime overhead, to verify in desktop/bundle tests.
 
 For structured memory use transactional SQLite with foreign keys and versioned
 migrations, retaining portable recoverable session artifacts. Browsing and local search
@@ -50,6 +58,16 @@ The first group, M1 capture reliability, merged as [PR #12](https://github.com/s
 on 2026-10-03 07:52:15 UTC, merge `ca07aed8f6d5abf43c85e03ca0107d60096c3e03`.
 The next branch is `codex/m1-desktop-recovery`; its two planned tasks implement the
 restart-safe storage and desktop controls. All five milestones remain open.
+
+Desktop Task 1 is independently approved at `d366711`: per-user configuration,
+optional credentials, writer-owned WAV/journal checkpoints, stable capture UUID and
+local recovery, shared CLI pending publication and interruptible catch-up. One
+important independent finding was fixed before approval: file transcription now
+publishes recoverable pending metadata before provider work. The final source-head
+suite passed 524 tests with six existing Windows symlink-privilege skips (34.02 s);
+new real junction/hardlink and subprocess-kill cases ran. No desktop Copilot review,
+hardware-long, installer or whole-M1 completion is claimed here. Desktop Task 2 follows
+these reviewed contracts. Safe observations: [`M1_DESKTOP_EVIDENCE.json`](M1_DESKTOP_EVIDENCE.json).
 
 ## Review and merge gates
 

@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "milestone": "M1",
+  "milestone_complete": false,
+  "desktop_pr_created": false,
+  "task_1": {
+    "status": "independent_spec_and_quality_approved",
+    "base": "eba75781c3c317f62e9ec7080fbb9503952b6998",
+    "source_head": "d366711b8f529093baaf3dc18e8eb635f484c3e6",
+    "commits": [
+      "0577dedff9712335c0f1ab396978682adde2a382",
+      "7a8bc7048604bc155253af3f62ab92a205fc32fb",
+      "d366711b8f529093baaf3dc18e8eb635f484c3e6"
+    ],
+    "verification": {
+      "command": "QT_QPA_PLATFORM=offscreen uv run pytest -q",
+      "passed": 524,
+      "skipped": 6,
+      "seconds": 34.02,
+      "skip_reason": "Existing Windows symbolic-link tests require privileges unavailable locally (WinError 1314).",
+      "changed_file_lint_format_and_diff": "passed",
+      "new_real_junction_and_hardlink_cases": "executed",
+      "open_writer_abrupt_kill": "Real subprocess kills with production mono and three-channel writers, followed by exact PCM reads in fresh processes.",
+      "publication_boundary_kills": 6,
+      "additional_in_process_crash_boundaries": 7
+    },
+    "independent_review": {
+      "initial_head": "7a8bc7048604bc155253af3f62ab92a205fc32fb",
+      "important_findings": 1,
+      "finding": "CLI offline provider work began without publishing pending metadata.",
+      "disposition": "Fixed in d366711; shared manifest-only pending publication precedes provider calls.",
+      "corrective_spec_verdict": "approved",
+      "corrective_quality_verdict": "approved",
+      "unaddressed_material_findings": 0
+    },
+    "selected_audio": "Retry and returned audio paths follow the validated recoverable_audio filename, including an owned unique normalized file for managed raw-source attempts.",
+    "limits": [
+      "Process restart evidence does not prove power-loss or fsync durability.",
+      "No hardware, real provider, packaged executable or long recording was executed for Task 1.",
+      "Task 2 diagnostics, opened-device UI and save-exit completion remain pending.",
+      "Desktop Copilot review and hosted current-PR-head CI remain pending."
+    ]
+  },
+  "task_2": { "status": "not_started" }
+}
