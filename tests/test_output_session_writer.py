@@ -475,3 +475,21 @@ def test_linked_segment_entry_is_rejected_without_modifying_external_target(
         assert previous.segments_path.is_symlink()
     else:
         assert previous.segments_path.samefile(external)
+
+
+def test_direct_typed_reversed_evidence_is_persisted_without_contradictory_times(tmp_path):
+    artifacts = _write_segment_artifacts(
+        tmp_path,
+        segments=[TranscriptSegment("original evidence", 2.0, 1.0, "A", 3, "chunk:3")],
+    )
+    document = json.loads(artifacts.segments_path.read_text(encoding="utf-8"))
+    assert document["segments"] == [
+        {
+            "text": "original evidence",
+            "start": None,
+            "end": None,
+            "speaker": "A",
+            "chunk_index": 3,
+            "speaker_scope": "chunk:3",
+        }
+    ]

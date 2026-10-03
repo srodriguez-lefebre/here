@@ -22,6 +22,11 @@ class TranscriptSegment:
     chunk_index: int | None = None
     speaker_scope: str | None = None
 
+    def __post_init__(self) -> None:
+        if self.start is not None and self.end is not None and self.end < self.start:
+            object.__setattr__(self, "start", None)
+            object.__setattr__(self, "end", None)
+
     @property
     def has_timestamps(self) -> bool:
         return self.start is not None and self.end is not None
@@ -165,10 +170,6 @@ def parse_transcript_segments(
             continue
 
         start, end = _extract_timing_bounds(candidate)
-        if start is not None:
-            start += offset_seconds
-        if end is not None:
-            end += offset_seconds
 
         segments.append(
             TranscriptSegment(
@@ -179,7 +180,7 @@ def parse_transcript_segments(
             )
         )
 
-    return segments
+    return shift_segments(segments, offset_seconds)
 
 
 def shift_segments(
