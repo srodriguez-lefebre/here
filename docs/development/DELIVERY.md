@@ -99,6 +99,16 @@ neither is executed or claimed as passing. Desktop delivery alone does not close
 After the remaining reviewed delivery merges and evidence is recorded, close M1
 under this revised scope and stop. M2-M5 remain future work outside this run.
 
+Distribution local delivery at clean incorporated-source build `1740b2d` now passed:
+locked noneditable 0.2.0 wheel, windowed GUI/console CLI, bounded no-key/off-repo Qt
+and helper smoke, complete native/notice inventory, and actual stable per-user
+installer Start launch, active replacement refusal, reinstall/uninstall and preserved
+synthetic data. See [`M1_DISTRIBUTION_EVIDENCE.json`](M1_DISTRIBUTION_EVIDENCE.json)
+for hashes and exact runtime/source limits. Distribution peer review, actual clean
+Windows source/package CI and guarded merge remain; local proof does not close those
+gates or certify repeated installed hardware/fault tests. After those gates pass,
+record the actual merge, close M1 under the revised scope and stop.
+
 Desktop Task 1 is independently approved at `d366711`: per-user configuration,
 optional credentials, writer-owned WAV/journal checkpoints, stable capture UUID and
 local recovery, shared CLI pending publication and interruptible catch-up. One

@@ -50,13 +50,13 @@ The user also made review `5402608228` the last Copilot review; do not request a
 `scripts/smoke_windows.ps1`, `.github/workflows/windows-package.yml`,
 `pyproject.toml`, `uv.lock`, `src/ui/gui.py` and safe bootstrap as needed, tests/docs.
 
-- [ ] Add failing packaged-startup/import/path acceptance checks using actual wheel and
+- [x] Add failing packaged-startup/import/path acceptance checks using actual wheel and
   isolated environment. Configuration-only scripts are verified by actual execution.
-- [ ] Add locked build group and build script with explicit compiler path/download
+- [x] Add locked build group and build script with explicit compiler path/download
   verification, non-editable project layout and resource/notice inclusion.
-- [ ] Implement windowed and CLI entries, spec and current-user installer.
-- [ ] Build installer, launch off-repo with no key, and inspect report/bundle inventory.
-- [ ] Test isolated install/reinstall/uninstall with synthetic canaries and Start entries.
+- [x] Implement windowed and CLI entries, spec and current-user installer.
+- [x] Build installer, launch off-repo with no key, and inspect report/bundle inventory.
+- [x] Test isolated install/reinstall/uninstall with synthetic canaries and Start entries.
 - [ ] Run Windows packaging CI, upload artifacts/checksums and record exact evidence.
 - [ ] Update installation docs/architecture/What's New; make cohesive build/runtime and
   verification/documentation commits. Independent review and Windows source/package CI precede merge; no further Copilot request per explicit user instruction.
@@ -69,8 +69,14 @@ Included in the remaining distribution PR; no separate long-acceptance PR.
 authoritative plans and delivery ledger.
 
 - [ ] Record exact source, frozen-runtime, installer and clean Windows CI evidence.
-- [ ] Reconcile each remaining M1 criterion with its actual observed proof and limits.
-- [ ] Mark the two-hour capture/resource and long generated-audio transcription cases
+- [x] Reconcile each remaining M1 criterion with its actual observed proof and limits.
+- [x] Mark the two-hour capture/resource and long generated-audio transcription cases
   omitted by explicit user instruction; do not execute replacement long-run tests.
 - [ ] Record the reviewed merge and close M1 under the revised scope, then stop.
   Leave M2-M5 plans intact without implementing them.
+
+Local incorporated-source delivery at clean build head `1740b2d` passed the complete
+locked build command and actual stable-AppId installer lifecycle on Windows 11 26200.
+Sanitized artifacts, hashes, runtime and limits are in `M1_DISTRIBUTION_EVIDENCE.json`.
+Documentation and implementation commits are complete; independent review, actual
+Windows source/package CI and guarded merge remain coordinator-owned gates.
