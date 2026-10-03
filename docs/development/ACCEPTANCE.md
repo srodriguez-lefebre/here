@@ -21,7 +21,7 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M5 | Offline first run, settings, tray/startup and safe exit | Qt, process concurrency and Windows settings tests | Open |
 | M5 | Portable data including optional audio and citations | Export/import on a fresh root, hashes and hostile ZIP tests | Open |
 | M5 | Install/update/uninstall preserve user memory | N to N+1 installation and separate uninstall test | Open |
-| All | PR groups reviewed and merged | PR URLs, reviewed heads, comment dispositions, CI and merge SHAs | PR12 merged; remaining M1 integration/peer review/Windows CI open. User stopped new Copilot requests after desktop review 5402608228; distribution uses peer review and CI. M2–M5 outside this run |
+| All | PR groups reviewed and merged | PR URLs, reviewed heads, comment dispositions, CI and merge SHAs | PR12 and desktop/recovery PR13 merged; remaining Windows distribution peer review and CI open. User stopped new Copilot requests after desktop review 5402608228; distribution uses peer review and CI. M2–M5 outside this run |
 
 ## Current execution scope
 

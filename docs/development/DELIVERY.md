@@ -15,6 +15,12 @@ will not be run here. Earlier Ubuntu results below remain historical observation
 Prioritize the remaining desktop fixes, Windows distribution and necessary M1
 acceptance; no later-milestone work or optional validation expands this scope.
 
+The user subsequently instructed that Copilot review `5402608228` is the last.
+No further Copilot review requests will be made, including for distribution.
+Remaining delivery uses independent peer review and actual Windows source/package
+CI, with replies to all already-received findings. This explicitly supersedes the
+original recurring Copilot-request gate below.
+
 The user's latest explicit instruction on 2026-10-03 omits both the two-hour
 capture/pause/recovery/resource run and long generated-audio transcription with
 timestamps/diarization. These cases are excluded from this delivery, not passed.
@@ -74,8 +80,24 @@ M5 settings/runtime (1–2), portability/privacy (3–5) and updates/product acc
 
 The first group, M1 capture reliability, merged as [PR #12](https://github.com/srodriguez-lefebre/here/pull/12)
 on 2026-10-03 07:52:15 UTC, merge `ca07aed8f6d5abf43c85e03ca0107d60096c3e03`.
-The next branch is `codex/m1-desktop-recovery`; its two planned tasks implement the
-restart-safe storage and desktop controls. All five milestones remain open.
+The desktop/recovery group merged as [PR #13](https://github.com/srodriguez-lefebre/here/pull/13)
+at 2026-10-03T20:41:23Z, merge `7ed78afc551c09729ebd886c27089b9c989bbafe`. Its final source is
+`843279c` and reviewed PR head is `cb4fa9d`:
+746 Windows tests with
+0 skips, plus wheel/source builds passed.
+Ubuntu remains a separate manual-only workflow and was not run for this delivery.
+Copilot review `5402608228` and all earlier inline/body findings
+were evaluated and answered; independent review accepted the corrected source.
+Configured administrator merge permission was used with an exact-head guard.
+Historical task/checkpoint observations below retain their original source heads.
+
+The next branch is `codex/m1-windows-distribution`. Ruling: split distribution into
+the remaining M1 delivery PR: actual frozen runtime, installer, notices,
+clean installation proof and the revised-scope closure audit. The user explicitly
+omitted the two-hour capture/resource run and long generated-audio transcription;
+neither is executed or claimed as passing. Desktop delivery alone does not close M1.
+After the remaining reviewed delivery merges and evidence is recorded, close M1
+under this revised scope and stop. M2-M5 remain future work outside this run.
 
 Desktop Task 1 is independently approved at `d366711`: per-user configuration,
 optional credentials, writer-owned WAV/journal checkpoints, stable capture UUID and

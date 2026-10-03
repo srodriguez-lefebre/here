@@ -17,6 +17,16 @@ notices/checksums, reviewed PRs and evidence audit; then close M1 under this rev
 scope and stop. Existing short hardware/fault/provider observations retain their
 actual provenance. M2-M5 remain outside this run.
 
+
+Execution status: predecessor desktop/recovery PR #13 is merged. Task 1 starts on
+`codex/m1-windows-distribution` from that verified main revision. Director ruling:
+deliver build/installer/clean-runtime proof and the revised-scope closure audit in
+the remaining M1 PR, preserving commits, independent review, dispositions of all
+received Copilot findings, Windows CI and guarded merge. The user explicitly
+omitted long capture/resource and long generated-audio transcription runs. No bundle
+or installation completion is inferred from predecessor desktop evidence. Stop after M1.
+The user also made review `5402608228` the last Copilot review; do not request another.
+
 ## Global Constraints
 
 - Windows 11 x64; no system service or automatic recording/startup.
@@ -49,7 +59,7 @@ actual provenance. M2-M5 remain outside this run.
 - [ ] Test isolated install/reinstall/uninstall with synthetic canaries and Start entries.
 - [ ] Run Windows packaging CI, upload artifacts/checksums and record exact evidence.
 - [ ] Update installation docs/architecture/What's New; make cohesive build/runtime and
-  verification/documentation commits. Independent review then Copilot/CI gates precede merge.
+  verification/documentation commits. Independent review and Windows source/package CI precede merge; no further Copilot request per explicit user instruction.
 
 ### Task 2: Revised-scope milestone closure audit
 

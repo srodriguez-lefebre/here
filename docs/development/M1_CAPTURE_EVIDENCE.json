@@ -185,5 +185,20 @@
     "Pre-existing filesystem tampering validation; no concurrent attacker exclusion",
     "Handled I/O rollback; no process-kill or power-loss durability claim in this group",
     "Short native and authored-provider smokes are separate evidence; no long-meeting/installer certification"
+  ],
+  "deferred_legacy_cli_delivery": {
+    "original_review": 5399598693,
+    "original_deferral_reply": 5966927016,
+    "implementation_followup_reply": 5968171316,
+    "independently_approved_task_1_source": "d366711b8f529093baaf3dc18e8eb635f484c3e6",
+    "delivered_pr": 13,
+    "merge_commit": "7ed78afc551c09729ebd886c27089b9c989bbafe",
+    "merged_at": "2026-10-03T20:41:23Z",
+    "status": "fulfilled; shared persistence preserves real-WAV normalization-failure raw source and explicit retry",
+    "history_note": "Original deferral and remaining_m1 reflect PR12 merge time; their source-head facts are retained unchanged."
+  },
+  "remaining_m1_after_desktop_merge": [
+    "Installer and clean runtime acceptance",
+    "Final revised-scope evidence and closure (long capture/provider runs explicitly omitted by the user)"
   ]
 }
