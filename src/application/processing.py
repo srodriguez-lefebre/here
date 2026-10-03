@@ -47,6 +47,7 @@ from here.output.session_writer import (
 from here.recording.models import CaptureFailed, RecordedAudioSource, RecordingSession
 from here.transcriber import transcribe_recording_session
 from here.transcription.client import TranscriptionResult
+from loguru import logger
 
 
 class ProcessingCancelled(RuntimeError):
@@ -143,6 +144,23 @@ def _validated_recovery_source(
         label=expected.label if expected is not None else audio_path.stem,
         device_name=expected.device_name if expected is not None else audio_path.name,
     )
+
+
+def _cleanup_capture_after_commit(cleanup: Callable[[], None], session_dir: Path) -> None:
+    """Remove capture files after completed metadata commits, retaining cleanup failures.
+
+    Only file/journal cleanup belongs here; live/native worker closure stays strict.
+    Journal validation may reject residual paths or unreadable media before removal.
+    """
+    try:
+        cleanup()
+    except (OSError, ValueError, RuntimeError) as exc:
+        logger.warning(
+            "Session metadata committed at {}; capture file cleanup failed; "
+            "remaining capture files retained: {}",
+            session_dir,
+            exc,
+        )
 
 
 class SessionProcessor:
@@ -679,7 +697,7 @@ class SessionProcessor:
             started_at=started_at,
             total_paused_seconds=total_paused_seconds,
         )
-        session.cleanup()
+        _cleanup_capture_after_commit(session.cleanup, artifacts.session_dir)
         if live_controller is not None:
             live_controller.cleanup()
         return artifacts
@@ -931,5 +949,5 @@ class SessionProcessor:
         )
 
         if journal is not None:
-            journal.discard()
+            _cleanup_capture_after_commit(journal.discard, artifacts.session_dir)
         return artifacts
