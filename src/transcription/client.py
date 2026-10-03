@@ -2,12 +2,11 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from loguru import logger
-from openai import BadRequestError, OpenAI
-
 from here.config.settings import get_settings
 from here.output.metadata import ChunkMetadata
 from here.transcription.segments import TranscriptSegment, parse_transcript_segments
+from loguru import logger
+from openai import BadRequestError, OpenAI
 
 
 @dataclass(slots=True)
@@ -15,6 +14,7 @@ class TranscriptionResult:
     raw_text: str
     final_text: str
     chunks: list[ChunkMetadata] = field(default_factory=list)
+    segments: list[TranscriptSegment] = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -115,7 +115,9 @@ def resolve_transcription_models(
 ) -> tuple[str, str, bool]:
     settings = get_settings()
     default_transcription_model = (
-        settings.ALT_TRANSCRIPTION_MODEL if use_alt_transcription_model else settings.TRANSCRIPTION_MODEL
+        settings.ALT_TRANSCRIPTION_MODEL
+        if use_alt_transcription_model
+        else settings.TRANSCRIPTION_MODEL
     )
     resolved_transcription_model = transcription_model or default_transcription_model
     resolved_cleanup_model = cleanup_model or settings.CLEANUP_MODEL
@@ -140,7 +142,9 @@ def model_supports_prompt(model: str) -> bool:
     return not _uses_diarized_output(model)
 
 
-def _build_transcription_request(model: str, *, prompt: str | None, response_format: str) -> dict[str, object]:
+def _build_transcription_request(
+    model: str, *, prompt: str | None, response_format: str
+) -> dict[str, object]:
     request: dict[str, object] = {
         "model": model,
         "response_format": response_format,
@@ -200,7 +204,9 @@ def transcribe_audio_file(
         try:
             response = client.audio.transcriptions.create(**request)
         except BadRequestError as exc:
-            if request["response_format"] != "verbose_json" or not _is_unsupported_response_format_error(exc):
+            if request[
+                "response_format"
+            ] != "verbose_json" or not _is_unsupported_response_format_error(exc):
                 raise
 
             logger.warning(
@@ -250,7 +256,10 @@ def finalize_transcription(
     cleanup_model: str,
     should_cleanup: bool,
     chunks: list[ChunkMetadata] | None = None,
+    segments: list[TranscriptSegment] | None = None,
 ) -> TranscriptionResult:
     final_text = cleanup_transcript(client, raw_text, cleanup_model) if should_cleanup else raw_text
     logger.success("Transcription complete.")
-    return TranscriptionResult(raw_text=raw_text, final_text=final_text, chunks=chunks or [])
+    return TranscriptionResult(
+        raw_text=raw_text, final_text=final_text, chunks=chunks or [], segments=segments or []
+    )

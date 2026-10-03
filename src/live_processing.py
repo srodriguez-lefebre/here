@@ -4,6 +4,7 @@ import queue
 import shutil
 import tempfile
 import threading
+import time
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
@@ -33,7 +34,12 @@ from here.transcription.client import (
     resolve_transcription_models,
     transcribe_audio_file,
 )
-from here.transcription.segments import SegmentTimeline, TranscriptSegment, shift_segments
+from here.transcription.segments import (
+    SegmentTimeline,
+    TranscriptSegment,
+    scoped_segments,
+    shift_segments,
+)
 from loguru import logger
 
 PCM_SUBTYPE = "PCM_16"
@@ -228,8 +234,11 @@ class LiveTranscriptionController:
         self.expected_source_count = expected_source_count
         self.config = chunking_config or ChunkingConfig()
         self.working_dir = Path(tempfile.mkdtemp(prefix="here_live_"))
-        self._capture_queue: queue.SimpleQueue[CapturedAudioBlock | None] = queue.SimpleQueue()
-        self._chunk_queue: queue.SimpleQueue[LiveChunkJob | None] = queue.SimpleQueue()
+        self._capture_queue: queue.Queue[CapturedAudioBlock] = queue.Queue(maxsize=256)
+        self._chunk_queue: queue.Queue[LiveChunkJob] = queue.Queue(maxsize=8)
+        self._chunker_done = threading.Event()
+        self._transcriber_done = threading.Event()
+        self._cleanup_requested = threading.Event()
         self._source_states: dict[str, BufferedSourceState] = {}
         self._capture_closed = False
         self._abort_event = threading.Event()
@@ -268,20 +277,32 @@ class LiveTranscriptionController:
         sample_rate: int,
         channels: int,
     ) -> None:
-        if self._capture_closed or self._abort_event.is_set():
-            return
-        self._capture_queue.put(
-            CapturedAudioBlock(
-                label=label,
-                data=data.copy(),
-                sample_rate=sample_rate,
-                channels=channels,
-            )
-        )
+        with self._capture_lock:
+            if self._capture_closed or self._abort_event.is_set():
+                return
+            try:
+                self._capture_queue.put_nowait(
+                    CapturedAudioBlock(
+                        label=label,
+                        data=data.copy(),
+                        sample_rate=sample_rate,
+                        channels=channels,
+                    )
+                )
+            except queue.Full:
+                self._set_error(
+                    RuntimeError(
+                        "Live capture queue exceeded 256 blocks; offline fallback required"
+                    )
+                )
 
     def _source_state_for(self, block: CapturedAudioBlock) -> BufferedSourceState:
         state = self._source_states.get(block.label)
         if state is None:
+            if len(self._source_states) >= self.expected_source_count:
+                raise RuntimeError(
+                    "Live capture received an unexpected source; offline fallback required"
+                )
             logger.info(
                 "Live capture connected for {label} ({sample_rate} Hz, {channels} channel(s)).",
                 label=block.label,
@@ -340,16 +361,24 @@ class LiveTranscriptionController:
             sources=len(segments),
             offset=start_offset_seconds,
         )
-        self._chunk_queue.put(
-            LiveChunkJob(
-                index=index,
-                session=RecordingSession(sources=[segment.source for segment in segments]),
-                start_offset_seconds=start_offset_seconds,
-            )
+        job = LiveChunkJob(
+            index=index,
+            session=RecordingSession(sources=[segment.source for segment in segments]),
+            start_offset_seconds=start_offset_seconds,
         )
+        if self._abort_event.is_set():
+            self._cleanup_chunk_job(job)
+            return
+        try:
+            self._chunk_queue.put_nowait(job)
+        except queue.Full:
+            self._cleanup_chunk_job(job)
+            self._set_error(
+                RuntimeError("Live transcription queue exceeded 8 jobs; offline fallback required")
+            )
 
     def _maybe_enqueue_live_chunks(self) -> None:
-        while self._live_cut_ready():
+        while not self._abort_event.is_set() and self._live_cut_ready():
             proxy_audio = self._build_boundary_proxy()
             if proxy_audio is None:
                 return
@@ -393,21 +422,37 @@ class LiveTranscriptionController:
         with self._error_lock:
             if self._error is None:
                 self._error = exc
+        self._abort_event.set()
 
     def _chunker_worker(self) -> None:
         try:
-            while True:
-                block = self._capture_queue.get()
-                if block is None:
-                    logger.info(
-                        "Live capture finished. Flushing pending audio into final chunk(s)."
-                    )
-                    break
+            while not self._abort_event.is_set():
+                try:
+                    block = self._capture_queue.get(timeout=0.05)
+                except queue.Empty:
+                    if self._capture_closed:
+                        break
+                    continue
                 state = self._source_state_for(block)
                 state.append_block(block.data)
                 self._maybe_enqueue_live_chunks()
+                buffer_budget = (
+                    self.config.live_chunk_seconds
+                    + self.config.silence_search_seconds
+                    + self.config.overlap_seconds
+                )
+                if any(
+                    source.duration_seconds > buffer_budget for source in self._ordered_states()
+                ):
+                    raise RuntimeError(
+                        "Live source buffer exceeded its duration budget; offline fallback required"
+                    )
 
             if not self._abort_event.is_set():
+                if len(self._source_states) != self.expected_source_count:
+                    raise RuntimeError(
+                        "Live capture is missing a source; offline fallback required"
+                    )
                 segments = [
                     segment
                     for state in self._ordered_states()
@@ -417,17 +462,23 @@ class LiveTranscriptionController:
                 if len(segments) == self.expected_source_count:
                     self._enqueue_live_job(segments)
                 elif segments:
-                    logger.warning(
-                        "Discarding partial final live chunk because only "
-                        "{count}/{expected} source(s) produced audio.",
-                        count=len(segments),
-                        expected=self.expected_source_count,
+                    self._set_error(
+                        RuntimeError(
+                            "Live final chunk is missing source material; offline fallback required"
+                        )
                     )
         except Exception as exc:
             logger.error("Live chunk generation failed: {exc}", exc=exc)
             self._set_error(exc)
         finally:
-            self._chunk_queue.put(None)
+            while True:
+                try:
+                    self._capture_queue.get_nowait()
+                except queue.Empty:
+                    break
+            self._source_states.clear()
+            self._chunker_done.set()
+            self._cleanup_if_finished()
 
     def _cleanup_chunk_job(self, job: LiveChunkJob) -> None:
         try:
@@ -460,12 +511,16 @@ class LiveTranscriptionController:
     def _transcriber_worker(self) -> None:
         merged_raw_text = ""
         segment_timeline: SegmentTimeline | None = SegmentTimeline()
+        evidence: list[TranscriptSegment] = []
         failed = False
         try:
             while True:
-                job = self._chunk_queue.get()
-                if job is None:
-                    break
+                try:
+                    job = self._chunk_queue.get(timeout=0.05)
+                except queue.Empty:
+                    if self._chunker_done.is_set():
+                        break
+                    continue
 
                 if failed or self._abort_event.is_set():
                     self._cleanup_chunk_job(job)
@@ -507,6 +562,13 @@ class LiveTranscriptionController:
                             transcription_started_at=transcription_started_at,
                             transcription_finished_at=transcription_finished_at,
                             status="completed",
+                        )
+                    )
+                    evidence.extend(
+                        scoped_segments(
+                            transcription.segments,
+                            chunk_index=job.index,
+                            offset_seconds=job.start_offset_seconds,
                         )
                     )
                     merged_raw_text, segment_timeline = self._merge_chunk_transcription(
@@ -552,21 +614,33 @@ class LiveTranscriptionController:
                     cleanup_model=self._resolved_cleanup_model,
                     should_cleanup=self._should_cleanup,
                     chunks=self._chunks,
+                    segments=evidence,
                 )
                 logger.success("Live transcription complete.")
         except Exception as exc:
             logger.error("Live transcription finalization failed: {exc}", exc=exc)
             self._set_error(exc)
+        finally:
+            while True:
+                try:
+                    self._cleanup_chunk_job(self._chunk_queue.get_nowait())
+                except queue.Empty:
+                    break
+            self._transcriber_done.set()
+            self._cleanup_if_finished()
 
     def complete(self) -> TranscriptionResult:
         with self._capture_lock:
             if not self._capture_closed:
                 self._capture_closed = True
-                self._capture_queue.put(None)
 
         logger.info("Waiting for live chunking and transcription workers to finish.")
-        self._chunker_thread.join()
-        self._transcriber_thread.join()
+        while self._chunker_thread.is_alive() or self._transcriber_thread.is_alive():
+            if self._abort_event.is_set():
+                self.abort()
+                break
+            self._chunker_thread.join(timeout=0.05)
+            self._transcriber_thread.join(timeout=0.05)
 
         if self._error is not None:
             raise RuntimeError("Live transcription failed") from self._error
@@ -583,12 +657,20 @@ class LiveTranscriptionController:
         with self._capture_lock:
             if not self._capture_closed:
                 self._capture_closed = True
-                self._capture_queue.put(None)
-        if self._chunker_thread.is_alive():
-            self._chunker_thread.join(timeout=2)
-        if self._transcriber_thread.is_alive():
-            self._transcriber_thread.join(timeout=2)
+        deadline = time.monotonic() + 2
+        for thread in (self._chunker_thread, self._transcriber_thread):
+            if thread is not threading.current_thread():
+                thread.join(timeout=max(0.0, deadline - time.monotonic()))
 
     def cleanup(self) -> None:
         logger.info("Cleaning live transcription workspace.")
-        shutil.rmtree(self.working_dir, ignore_errors=True)
+        self._cleanup_requested.set()
+        self._cleanup_if_finished()
+
+    def _cleanup_if_finished(self) -> None:
+        if (
+            self._cleanup_requested.is_set()
+            and self._chunker_done.is_set()
+            and self._transcriber_done.is_set()
+        ):
+            shutil.rmtree(self.working_dir, ignore_errors=True)

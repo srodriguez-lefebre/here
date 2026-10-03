@@ -1,0 +1,79 @@
+# Windows desktop reliability implementation plan
+
+> **For agentic workers:** Use superpowers:subagent-driven-development, task-by-task.
+> User delegated autonomous decisions and execution.
+
+**Goal:** A recoverable Windows capture experience that works across process restarts.
+**Architecture:** Per-user settings and disk journals feed application recovery and Qt
+adapters. Background diagnostics stay separate from capture; explicit exit waits for save.
+**Tech Stack:** Python, Pydantic settings, soundfile, PySide6, pytest.
+**Spec:** `docs/development/M1_DESKTOP_SPEC.md`.
+
+## Global Constraints
+
+- Ordinary idle close exits; ordinary active close hides; explicit exit stops/saves.
+- No automatic recording or provider retry on startup.
+- No fabricated timestamps, source names or speaker identity.
+- Data paths come from per-user configuration; journal paths are validated below root.
+- No real credentials/private recordings in tests, artifacts or logs.
+
+## Review Focus
+
+- Crash between journal creation, WAV flush, normalization and pending metadata.
+- Full exit requested before the capture factory reports ready.
+- Missing API key while opening GUI or listing local recovery candidates.
+- Tampered journal uses absolute paths, symlinks or `..`.
+- Diagnostic callback arriving after recording began/window shutdown.
+
+### Task 1: Paths, optional credentials and restart-safe capture
+
+**Files:** `src/config/paths.py`, `src/config/settings.py`, `src/recording/journal.py`,
+`src/recording/shared.py`, `src/recording/windows.py`, `src/recording/service.py`,
+`src/application/recovery.py`, `src/application/controller.py`,
+`src/application/processing.py`, `src/output/session_writer.py`,
+`src/output/metadata.py`, `src/transcription/client.py`, `pyproject.toml`, tests.
+
+**Interfaces:** `get_data_dir() -> Path`; optional API key settings plus explicit
+provider credential validation; `CaptureJournal` with checkpoint/finalization;
+`RecoveryService(root: Path).discover() -> list[RecoveryCandidate]` and explicit local
+recovery materialization. Capture/session fields are additive to M1_CAPTURE interfaces.
+
+- [ ] Write failing path/key tests for normal, frozen and HERE_DATA_DIR/HERE_ENV_FILE.
+- [ ] Implement path precedence and defer key validation to provider boundaries.
+- [ ] Write failing subprocess-kill/idempotent recovery tests with production writer
+  still open, checkpoint handshake and expected mono/multichannel sample values.
+- [ ] Implement owned journal/raw source paths, flush/checkpoint, pending processing
+  publication and startup recovery with stable mapping before destination creation and
+  atomic final metadata committed last. Preserve raw material until commit succeeds.
+- [ ] Test each crash boundary including explicit retry, leftover completed journal,
+  malformed/path-traversal/symlink journal/session/destination and destructive cancel.
+- [ ] Verify credential precedence and real production/default live factory fails locally
+  before hardware/temp/provider allocation for missing/empty/whitespace key.
+- [ ] Run focused tests and full Qt-offscreen suite; commit paths and durable recovery
+  in separate cohesive commits; write red/green report.
+
+### Task 2: Device diagnostics, recovery actions and graceful exit
+
+**Files:** `src/application/diagnostics.py`, `src/application/models.py`,
+`src/ui/main_window.py`, `src/ui/app.py`, `src/ui/contract.py`, `src/ui/bridge.py`,
+`src/ui/gui.py`, `src/application/contracts.py`, `src/application/controller.py`,
+`src/recording/control.py`, capture adapters, test doubles and Qt tests.
+
+**Interfaces:** `AudioDiagnosticsService` returns existing `AudioDeviceInfo` and
+`SignalTestResult`; UI adapter invokes shared recovery/diagnostic use cases. Actual opened
+devices are immutable application snapshot fields/events, not parsed logs.
+
+- [ ] Write failing Qt tests: missing-key startup, actual names, async no-signal/error,
+  startup recovery selection/retry and exit in each lifecycle state.
+- [ ] Add background diagnostic worker and truthful results; refresh opened device
+  names from immutable ready-handle descriptors through the shared snapshot. Keep
+  default capture IDs unpinned. Expose background recovery selector and explicit retry.
+- [ ] Test stalled enumeration/read, timeout cleanup ownership and stale result after
+  capture/shutdown; isolated diagnostic helpers have bounded termination/cleanup.
+- [ ] Add explicit exit intent waiting for stop/save/persisted terminal state, including
+  preparation via controller atomic stop latch; require worker completion acknowledgement
+  after persisted terminal state. Test barrier races/opening timeout/delayed cleanup.
+  Retain ordinary-close and overlay semantics; never synchronously wait in Qt.
+- [ ] Run focused Qt/application tests plus full suite, self-review and create commits.
+- [ ] Record Windows device/signal/close/recovery smoke evidence using synthetic or
+  explicitly bounded audio, without capturing private conversations for tests.

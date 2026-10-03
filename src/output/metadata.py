@@ -16,6 +16,27 @@ class SourceMetadata(BaseModel):
     duration_seconds: float
 
 
+class CaptureSourceMetadata(SourceMetadata):
+    audio_file: str | None = None
+
+
+class TranscriptSegmentMetadata(BaseModel):
+    text: str
+    start: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    end: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    speaker: str | None = None
+    chunk_index: int | None = None
+    speaker_scope: str | None = None
+
+
+class TranscriptSegmentDocument(BaseModel):
+    schema_version: int = Field(default=1)
+    semantics: Literal["provider_evidence"] = "provider_evidence"
+    timing_reference: Literal["recording_seconds"] = "recording_seconds"
+    speaker_identity_scope: Literal["request"] = "request"
+    segments: list[TranscriptSegmentMetadata]
+
+
 class SessionMetadata(BaseModel):
     schema_version: int = Field(default=1)
     session_id: str
@@ -26,6 +47,7 @@ class SessionMetadata(BaseModel):
     failure_stage: str | None = None
     recoverable_audio: str | None = None
     sources: list[SourceMetadata]
+    capture_sources: list[CaptureSourceMetadata] = Field(default_factory=list)
     transcription_model: str
     cleanup_model: str
     cleanup_enabled: bool
@@ -94,6 +116,12 @@ def source_metadata(source: RecordedAudioSource) -> SourceMetadata:
     )
 
 
+def capture_metadata(session: RecordingSession) -> list[CaptureSourceMetadata]:
+    return [
+        CaptureSourceMetadata(**source_metadata(source).model_dump()) for source in session.sources
+    ]
+
+
 def build_session_metadata(
     *,
     session_id: str,
@@ -112,6 +140,7 @@ def build_session_metadata(
     started_at: datetime | None = None,
     total_paused_seconds: float = 0.0,
     output_files: list[str],
+    capture_sources: list[CaptureSourceMetadata] | None = None,
 ) -> SessionMetadata:
     duration_seconds = session.duration_seconds
     return SessionMetadata(
@@ -123,6 +152,7 @@ def build_session_metadata(
         failure_stage=failure_stage,
         recoverable_audio=recoverable_audio,
         sources=[source_metadata(source) for source in session.sources],
+        capture_sources=capture_sources or [],
         transcription_model=transcription_model,
         cleanup_model=cleanup_model,
         cleanup_enabled=cleanup_enabled,

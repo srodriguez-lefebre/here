@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import threading
 import time
 from collections.abc import Callable, Sequence
@@ -12,6 +13,7 @@ from here.audio.mix import materialize_normalized_session
 from here.config.settings import get_settings
 from here.live_processing import LiveTranscriptionController
 from here.output.metadata import (
+    CaptureSourceMetadata,
     ChunkMetadata,
     ChunkMetadataDocument,
     ErrorMetadata,
@@ -19,6 +21,15 @@ from here.output.metadata import (
     SessionEventMetadata,
     SessionEventMetadataDocument,
     SessionMetadata,
+    SourceMetadata,
+    capture_metadata,
+    source_metadata,
+)
+from here.output.paths import (
+    UnsafeSessionPath,
+    session_artifact_path,
+    staged_artifact_path,
+    write_artifact_text,
 )
 from here.output.session_writer import (
     AUDIO_FILE,
@@ -28,9 +39,10 @@ from here.output.session_writer import (
     METADATA_FILE,
     SessionArtifactPaths,
     create_session_dir,
+    validate_session_artifacts,
     write_session_artifacts,
 )
-from here.recording.models import RecordedAudioSource, RecordingSession
+from here.recording.models import CaptureFailed, RecordedAudioSource, RecordingSession
 from here.transcriber import transcribe_recording_session
 from here.transcription.client import TranscriptionResult
 
@@ -102,6 +114,35 @@ def session_from_audio_file(audio_path: Path) -> RecordingSession:
     )
 
 
+def session_audio_path(session_dir: Path, audio_file: str) -> Path:
+    """Only persisted local filenames may select audio during recovery."""
+    return session_artifact_path(session_dir, audio_file)
+
+
+def _validated_recovery_source(
+    audio_path: Path, expected: SourceMetadata | None = None
+) -> RecordedAudioSource:
+    info = sf.info(audio_path)
+    if info.samplerate <= 0 or info.channels <= 0 or info.frames < 0:
+        raise ValueError(f"Invalid recovery audio geometry: {audio_path.name}")
+    if expected is not None and (info.samplerate, info.channels, info.frames) != (
+        expected.sample_rate,
+        expected.channels,
+        expected.frames,
+    ):
+        raise ValueError(
+            f"Recovery audio geometry disagrees with session metadata: {audio_path.name}"
+        )
+    return RecordedAudioSource(
+        path=audio_path,
+        sample_rate=info.samplerate,
+        channels=info.channels,
+        frames=info.frames,
+        label=expected.label if expected is not None else audio_path.stem,
+        device_name=expected.device_name if expected is not None else audio_path.name,
+    )
+
+
 def _read_model(path: Path, model: type[SessionMetadata]) -> SessionMetadata | None:
     if not path.exists():
         return None
@@ -121,6 +162,103 @@ class SessionProcessor:
         self._transcribe = transcribe
         self._retry_delays = tuple(retry_delays)
         self._sleeper = sleeper
+
+    def _preserve_sources(
+        self, session: RecordingSession, session_dir: Path
+    ) -> list[CaptureSourceMetadata]:
+        validate_session_artifacts(
+            session_dir, [f"source_{index:02d}.wav" for index in range(1, len(session.sources) + 1)]
+        )
+        provenance = []
+        for index, source in enumerate(session.sources, start=1):
+            metadata = CaptureSourceMetadata(**source_metadata(source).model_dump())
+            if source.path.exists():
+                name = f"source_{index:02d}.wav"
+                with staged_artifact_path(session_dir / name) as staged:
+                    shutil.copy2(source.path, staged)
+                metadata.audio_file = name
+            provenance.append(metadata)
+        return provenance
+
+    def persist_capture_failure(
+        self,
+        failure: CaptureFailed,
+        target_dir: Path,
+        *,
+        use_alt_transcription_model: bool = False,
+        events: list[SessionEventMetadata] | None = None,
+        started_at: datetime | None = None,
+        total_paused_seconds: float = 0.0,
+    ) -> SessionArtifactPaths:
+        settings = get_settings()
+        completed_at = datetime.now().astimezone()
+        session_id, session_dir = create_session_dir(target_dir, completed_at)
+        session = failure.session
+        provenance = self._preserve_sources(session, session_dir)
+        errors = [error_metadata("capture", failure)]
+        recoverable_audio = None
+        try:
+            material = RecordingSession([source for source in session.sources if source.frames > 0])
+            normalized = materialize_normalized_session(
+                material, session_dir, output_name=AUDIO_FILE
+            )
+            recoverable_audio = AUDIO_FILE
+        except UnsafeSessionPath:
+            raise
+        except Exception as exc:
+            (session_dir / AUDIO_FILE).unlink(missing_ok=True)
+            errors.append(error_metadata("recoverable_audio", exc))
+            normalized = session
+        artifacts = write_session_artifacts(
+            session=normalized,
+            target_dir=target_dir,
+            completed_at=completed_at,
+            transcription_model=settings.ALT_TRANSCRIPTION_MODEL
+            if use_alt_transcription_model
+            else settings.TRANSCRIPTION_MODEL,
+            cleanup_model=settings.CLEANUP_MODEL,
+            cleanup_enabled=settings.CLEANUP_ENABLED,
+            alt_model_used=use_alt_transcription_model,
+            live_pipeline_attempted=False,
+            live_pipeline_used=False,
+            fallback_used=False,
+            errors=errors,
+            status="failed",
+            failure_stage="capture",
+            recoverable_audio=recoverable_audio,
+            session_dir=session_dir,
+            session_id=session_id,
+            events=events,
+            started_at=started_at,
+            total_paused_seconds=total_paused_seconds,
+            capture_sources=provenance,
+        )
+        session.cleanup()
+        return artifacts
+
+    def mark_capture_failure_cancelled(
+        self, artifacts: SessionArtifactPaths, *, events: list[SessionEventMetadata]
+    ) -> None:
+        """Finalize a recovery cancellation without losing the capture-error evidence."""
+        extra_files = list(artifacts.metadata.output_files)
+        extra_files.extend(
+            source.audio_file for source in artifacts.metadata.capture_sources if source.audio_file
+        )
+        if artifacts.metadata.recoverable_audio:
+            extra_files.append(artifacts.metadata.recoverable_audio)
+        validate_session_artifacts(artifacts.session_dir, extra_files)
+        metadata = artifacts.metadata.model_copy(
+            update={"status": "cancelled", "failure_stage": "processing_cancelled"}
+        )
+        write_artifact_text(
+            artifacts.session_dir / EVENTS_FILE,
+            SessionEventMetadataDocument(events=events).model_dump_json(indent=2),
+            encoding="utf-8",
+        )
+        write_artifact_text(
+            artifacts.session_dir / METADATA_FILE, metadata.model_dump_json(indent=2)
+        )
+        artifacts.metadata = metadata
 
     def _offline_with_retries(
         self,
@@ -228,7 +366,11 @@ class SessionProcessor:
                 session_dir,
                 output_name=AUDIO_FILE,
             )
+        except UnsafeSessionPath:
+            raise
         except Exception as exc:
+            (session_dir / AUDIO_FILE).unlink(missing_ok=True)
+            provenance = self._preserve_sources(session, session_dir)
             write_session_artifacts(
                 session=session,
                 target_dir=target_dir,
@@ -248,13 +390,14 @@ class SessionProcessor:
                 events=events,
                 started_at=started_at,
                 total_paused_seconds=total_paused_seconds,
+                capture_sources=provenance,
             )
             if live_controller is not None:
                 live_controller.abort()
             raise SessionProcessingFailed(
                 "Recoverable audio preparation failed",
                 session_dir,
-                recoverable=False,
+                recoverable=any(source.audio_file and source.frames > 0 for source in provenance),
             ) from exc
 
         if cancellation.is_set():
@@ -298,6 +441,7 @@ class SessionProcessor:
         except TranscriptionFailure as exc:
             artifacts = write_session_artifacts(
                 session=recoverable,
+                capture_sources=capture_metadata(session),
                 target_dir=target_dir,
                 completed_at=completed_at,
                 transcription_model=transcription_model,
@@ -345,8 +489,10 @@ class SessionProcessor:
 
         artifacts = write_session_artifacts(
             session=recoverable,
+            capture_sources=capture_metadata(session),
             target_dir=target_dir,
             transcript_text=outcome.result.final_text,
+            segments=getattr(outcome.result, "segments", None),
             completed_at=completed_at,
             transcription_model=transcription_model,
             cleanup_model=settings.CLEANUP_MODEL,
@@ -391,6 +537,7 @@ class SessionProcessor:
             live_controller.cleanup()
         artifacts = write_session_artifacts(
             session=recoverable,
+            capture_sources=capture_metadata(original),
             target_dir=target_dir,
             completed_at=completed_at,
             transcription_model=transcription_model,
@@ -418,11 +565,50 @@ class SessionProcessor:
         *,
         cancel_event: threading.Event | None = None,
     ) -> SessionArtifactPaths:
-        audio_path = session_dir / AUDIO_FILE
-        if not audio_path.exists():
-            raise RuntimeError(f"Recoverable audio does not exist: {audio_path}")
+        validate_session_artifacts(session_dir)
+        audio_path = session_audio_path(session_dir, AUDIO_FILE)
         metadata_path = session_dir / METADATA_FILE
         metadata = _read_model(metadata_path, SessionMetadata)
+        raw_sources = []
+        if metadata is not None:
+            extra_files = list(metadata.output_files)
+            extra_files.extend(
+                source.audio_file for source in metadata.capture_sources if source.audio_file
+            )
+            if metadata.recoverable_audio:
+                extra_files.append(metadata.recoverable_audio)
+            validate_session_artifacts(session_dir, extra_files)
+            for item in metadata.capture_sources:
+                if item.audio_file:
+                    actual = _validated_recovery_source(
+                        session_audio_path(session_dir, item.audio_file), item
+                    )
+                    raw_sources.append(actual)
+                    item.duration_seconds = actual.duration_seconds
+
+        if audio_path.exists():
+            # Only this shape identifies a single persisted source as audio.wav;
+            # legacy multi-source manifests may instead describe the original inputs.
+            expected = (
+                metadata.sources[0]
+                if metadata is not None
+                and metadata.recoverable_audio == AUDIO_FILE
+                and len(metadata.sources) == 1
+                else None
+            )
+            recovered_source = _validated_recovery_source(audio_path, expected)
+        else:
+            raw_sources = [source for source in raw_sources if source.frames > 0]
+            if not raw_sources:
+                raise RuntimeError(f"Recoverable audio does not exist: {audio_path}")
+            try:
+                materialize_normalized_session(
+                    RecordingSession(raw_sources), session_dir, output_name=AUDIO_FILE
+                )
+            except Exception:
+                audio_path.unlink(missing_ok=True)
+                raise
+            recovered_source = _validated_recovery_source(audio_path)
         chunks_path = session_dir / CHUNKS_FILE
         errors_path = session_dir / ERRORS_FILE
         events_path = session_dir / EVENTS_FILE
@@ -447,7 +633,7 @@ class SessionProcessor:
             if events_path.exists()
             else []
         )
-        source = session_from_audio_file(audio_path)
+        source = RecordingSession([recovered_source])
         cancellation = cancel_event or threading.Event()
         settings = get_settings()
         try:
@@ -470,6 +656,7 @@ class SessionProcessor:
             )
             write_session_artifacts(
                 session=source,
+                capture_sources=metadata.capture_sources if metadata else None,
                 target_dir=session_dir.parent,
                 completed_at=metadata.completed_at if metadata else datetime.now().astimezone(),
                 transcription_model=metadata.transcription_model
@@ -497,6 +684,7 @@ class SessionProcessor:
             failure = error_metadata("offline_transcription", exc)
             write_session_artifacts(
                 session=source,
+                capture_sources=metadata.capture_sources if metadata else None,
                 target_dir=session_dir.parent,
                 completed_at=metadata.completed_at if metadata else datetime.now().astimezone(),
                 transcription_model=metadata.transcription_model
@@ -529,6 +717,8 @@ class SessionProcessor:
             session=source,
             target_dir=session_dir.parent,
             transcript_text=result.final_text,
+            segments=getattr(result, "segments", None),
+            capture_sources=metadata.capture_sources if metadata else None,
             completed_at=metadata.completed_at if metadata else datetime.now().astimezone(),
             transcription_model=metadata.transcription_model
             if metadata

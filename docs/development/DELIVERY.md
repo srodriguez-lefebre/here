@@ -1,0 +1,153 @@
+# Autonomous product delivery
+
+The user delegated product decisions, implementation, verification, GitHub pull requests,
+Copilot review requests, replies to every review observation and merges on 2026-10-03.
+This document is the recovery map for continuous execution; a milestone is not complete
+merely because its code exists or its unit tests pass.
+
+## Product authority and architecture
+
+`docs/MASTER_PLAN.md` defines the five milestones. `docs/MILESTONE_1_PLAN.md` and
+`docs/LIVE_LOGO_PLAN.md` govern capture and the overlay. Retain one Python process,
+PySide6 Widgets, a shared application controller, Windows 11 support, explicit
+cancellation semantics and local user-owned audio. Derived knowledge must always link
+to its supporting meeting and original segment; missing timestamps or speakers stay
+missing. No cloud synchronization, accounts, unsolicited transmission or automatic
+audio deletion is introduced.
+
+For structured memory use transactional SQLite with foreign keys and versioned
+migrations, retaining portable recoverable session artifacts. Browsing and local search
+must work without an API key. Remote intelligence must be an explicit user command,
+with source validation and a labeled offline extractive path. The detailed specifications
+and individual execution plans are added here before their implementation.
+
+## Delivery sequence
+
+1. M1 capture reliability: preserve partial capture on failures, bounded live queues,
+   structured timestamps/speakers at the artifact boundary; then default devices,
+   diagnostics, restart recovery, stop-save-exit, per-user paths; then Windows installer
+   and an honest acceptance matrix. Split into independently reviewable PRs.
+2. M2 structured memory: durable identities, transcript revisions, segments,
+   participants, atomic catalog updates and recovery reconciliation; lifecycle and
+   deletion integrity; migration of existing artifact sessions.
+3. M3 navigation: GUI and CLI meeting list/detail/filter/search, contextual results
+   and original-audio playback at recorded timestamps. Missing timing never implies
+   a fabricated seek position.
+4. M4 intelligence: retrieve across selected meetings, answer and extract decisions,
+   tasks and blockers with validated evidence references, explicit uncertainty and
+   preserved generation provenance.
+5. M5 daily product: configuration, data control, export/import, reliable startup and
+   logs, installer/uninstaller, explicit update checks and practical interoperability.
+
+Planned PR groups preserve task commits and independent task reviews: M1 capture,
+desktop recovery and distribution/acceptance; M2 immutable catalog (tasks 1–3),
+lifecycle/erasure (4–5) and shared persistence (6–7); M3 search/actions (1–2) and
+library/CLI/evidence (3–6); M4 grounded core (1–5) and product flows/evidence (6–8);
+M5 settings/runtime (1–2), portability/privacy (3–5) and updates/product acceptance
+(6–8). These are delivery boundaries, not completed milestones or published releases.
+
+## Review and merge gates
+
+- Each implementation task follows meaningful red/green tests and self-review.
+- A fresh independent reviewer checks task requirements and code quality.
+- Each PR has multiple cohesive commits where appropriate and is validated on its head.
+- Push and create the PR, attach it to this chat, request `@copilot` with GitHub CLI.
+- Wait for Copilot review of the current head; reply to every inline observation with
+  its disposition, evidence and fix commit or reasoned rejection. Fix real defects.
+- Re-request review after substantive fixes; merge only after successful checks and
+  no unresolved material findings. Never treat review silence as approval.
+- Use merge commits to preserve the requested commit groups. Update this ledger with
+  PR, head, review and validation evidence before proceeding.
+- Main ruleset `14750729` requires an approving/code-owner review and explicitly
+  permits repository administrators to merge. The delegated owner account has ADMIN
+  permission. Use that configured exception, without changing rules, only after the
+  gates above pass and with `--match-head-commit`. Copilot's COMMENTED reviews and
+  independent agent reviews are recorded as such; neither is a human APPROVED review.
+
+## Acceptance and evidence
+
+Baseline: main `2bdb6ef`, 163 passing tests on the original workspace. Work occurs in
+`C:/Users/savar/.codex/worktrees/five-milestones/here`, not the user's main checkout.
+The local Windows default devices enumerate at 44.1 kHz microphone and 48 kHz loopback.
+Enumeration does not certify captured signal, long meetings or a clean installation.
+
+Define a long meeting as at least two hours. Automated virtual-duration tests measure
+bounded resource behavior and completeness, but do not replace a two-hour hardware
+run. Keep manual/hardware/provider/clean-install evidence explicit and leave acceptance
+open wherever it has not actually been observed.
+
+## Progress
+
+- 2026-10-03: user delegation recorded; isolated managed worktree created.
+- GitHub admin/push access and Copilot reviewer availability confirmed.
+- Read-only capture audit and product architecture delegated to independent agents.
+- Ruling: use the explicit autonomous delegation instead of repeated design approvals;
+  preserve written specs and plans for review. Cost if wrong: reversible implementation
+  rework, visible in committed decisions and PRs.
+- Ruling: retain historical local docs ignored; version only the authoritative plans
+  and new `docs/development/` evidence. Cost if wrong: older documents need explicit
+  inclusion later; no private local scratch is accidentally published.
+- Ruling: preserve supplied audio and facts; do not certify unobserved hardware tests.
+  Cost if wrong: release acceptance takes longer, while code can continue advancing.
+- M1 capture implementation: commits `c20ac3b` and `081ef94`; synthetic full suite
+  reached 194 passing tests. Real synthetic TTS/provider smoke preserved four timed,
+  scoped utterances. Wheel built and installed non-editably into isolated Python 3.13;
+  GUI imports, Qt offscreen initialization and actual CLI help passed off-repository.
+- Independent capture review reproduced two P1 defects: catch-up silence was omitted
+  from the live timeline, and destructive cancellation during failure cleanup could
+  still persist discarded audio. Both accepted for correction before PR creation.
+- Ruling: serialize capture cancellation against the recovery-persistence cutover.
+  Accepted capture cancellation deletes its partial sources; cancellation after the
+  atomic processing cutover preserves audio and reports recoverable cancellation.
+  Cost if wrong: recovery-state implementation rework; discarded private material
+  must never survive an accepted destructive cancellation.
+- Independent desktop-plan review adopted seven amendments covering actual WAV header
+  checkpoints, atomic publication, preparation exit, diagnostic ownership, path
+  validation, ready-time device provenance and credential precedence.
+- Release decision: planned M1 Windows delivery is `v0.2.0`; the complete five-milestone
+  product targets `v0.3.0`. These are targets until built, reviewed and published.
+  Existing official release is tag `MVP`, display name `v0.1.0`, published 2026-04-11,
+  without runtime assets. Treat that non-version tag as a legacy release, not a
+  trusted comparable installer update. Reuse the actual M1 artifact for M5 upgrade tests.
+- Review corrections in `7602c18`: every catch-up silence block follows disk order into
+  live capture; shared atomic cutover prevents accepted destructive cancellation from
+  persisting audio, and late processing cancellation retains matching metadata.
+  Six regression cases and affected suites passed (55); full committed-head suite:
+  200 passed in 16.86 seconds. Independent re-review precedes PR creation.
+- First M1 subset PR: https://github.com/srodriguez-lefebre/here/pull/12. Independent
+  task and whole-branch reviews accepted the implementation. GitHub recorded the
+  requested Copilot review; review `5399146085` inspected head `c3dc790` and identified
+  two accepted defects (comments `4171819200`, `4171819228`). Commit `4860095` fixes
+  successful-result cleanup after late cancellation and valid nested timestamp alias
+  fallback. Ten cases reproduced nine failures before correction; 57 focused tests
+  and the full suite of 211 passed. Both observations were replied to and resolved.
+- Initial CI exposed an existing UTC string-comparison assumption and a missing EGL
+  runtime on Ubuntu. Commit `545174e` adds deterministic UTC/non-UTC checks using aware
+  datetime equality and installs libegl1. Windows and Ubuntu jobs both passed on that
+  head (run `37099618688`). Later review-fix CI runs `37102433292` (`6f1f88d`) and
+  `37103530702` (`240858e`) also passed. The latter ran 266 tests on each platform,
+  including the symlink case omitted locally, and built wheel/source distributions.
+- Further Copilot observations were accepted and replied to: oversized timestamp
+  integers (`5399210060`) fixed in `6ac6a0f`; stale segment evidence (`5399274184`)
+  fixed in `e48f9ee`; cleanup ordering tightened in `6f1f88d` and explained in the
+  reply to review `5399321887`. Pair-publication failure (`5399348275`, inline
+  `4171988549`) fixed in `240858e`, independently accepted, replied to and resolved.
+- Review `5399404470` of `240858e`, received 2026-10-03 06:39:41 UTC, identified
+  unsafe recovery output entries (inline `4172034351`) and reversed timing pairs.
+  Commit `a9cb09a` rejects pre-existing redirects, hardlinks and nonregular managed
+  entries before retry reads/provider calls and stages text, normalized WAV and source
+  copies before replacement. Commit `7ed996a` keeps segment text/speaker but sets both
+  contradictory time bounds to null before offsets, including directly typed segments.
+  The stale-ledger observation is addressed by this event register.
+- Corrective-code checkpoint `7ed996a`: full offscreen suite **385 passed, 6 skipped
+  in 10.62 s**. All skips need local Windows symlink privileges; real hardlink and
+  junction cases passed. Focused security suite: 129 passed/6 skipped; focused timing
+  suite: 168 passed/1 skipped. Ruff, format and diff checks passed. This local result
+  does not substitute for hosted CI of the final PR head.
+
+This register records immutable observed checkpoints. The live
+[PR review/check/merge record](https://github.com/srodriguez-lefebre/here/pull/12)
+is the authority for subsequent review dispositions, final-head CI and merge status;
+earlier passing runs never waive a later-head gate. No milestone is complete here:
+desktop journals/restart, per-user paths, diagnostics/save-exit, installed distribution,
+two-hour acceptance and M2–M5 implementation still require their planned evidence.

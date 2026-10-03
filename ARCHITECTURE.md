@@ -9,12 +9,12 @@ The main flow is:
 
 1. An interface creates the application controller and starts a recording.
 2. Recording backend captures microphone, system audio, or both.
-3. Captured blocks are sent to the live transcription pipeline.
+3. Capture writes its primary WAV before offering blocks to live processing.
 4. Live processing cuts chunks near silence, normalizes/mixes audio, and
    transcribes chunks in the background.
 5. Once recording ends, output creates a recoverable session folder and
    materializes normalized/mixed `audio.wav`.
-6. If live processing fails, the application layer falls back to offline session
+6. If live processing fails or exceeds its queue budget, the application layer falls back to offline session
    transcription using the recoverable audio.
 7. Output writing creates completed or failed artifacts.
 
@@ -88,6 +88,38 @@ text, or duplicated global fields.
 Failed sessions are still persisted. They include `audio.wav`, `session.json`,
 `chunks.json`, and `errors.json`, so API/provider failures can be retried without
 re-recording.
+
+`CaptureFailed` exposes a partial `RecordingSession` and its original cause after
+writers close. Application persistence records failed capture without claiming a
+completed transcript. When normalization fails, local `source_*.wav` copies and
+their provenance remain available for retry; recovery validates each filename
+and resolved path within the session. Destructive recording cancellation takes
+precedence over recovery and leaves no session.
+
+Catch-up silence is offered to live processing in disk-write order so both paths
+share the recording timeline. Capture completion and failure recovery atomically
+leave destructive-cancellation states; any later accepted cancellation preserves
+the session and publishes matching cancelled metadata and application state.
+
+The capture queue holds 256 blocks and the transcription queue eight pending jobs.
+Both producers use nonblocking handoff. Overflow disables live work and requires
+offline transcription from complete saved audio, including after partial live
+success. Completion events replace queue sentinels, so full queues cannot block
+shutdown. Abort waits at most two seconds for workers; an already-issued provider
+request may finish later, and workspace cleanup waits for worker completion.
+
+Each source buffer is limited to the live chunk duration plus silence search and
+overlap. A stalled or missing source that exceeds that skew budget disables live
+work; an incomplete final source set also requires offline fallback.
+
+`segments.json` has a versioned provider-evidence envelope. Segment text and
+nullable timestamps/speakers survive optional display cleanup. Chunk segments
+receive recording-time offsets once and carry request-local `chunk_index` and
+`speaker_scope`; repeated labels across requests do not establish a human
+identity. Original overlapping provider segments stay in order even when the
+display timeline merges them. Invalid timestamps become missing; valid zero
+timestamps remain zero. `session.json.capture_sources` separately retains original
+device names and raw audio properties when `sources` describes a normalized mix.
 
 `events.json` is written when lifecycle events exist. Pause and resume events
 contain both wall-clock time and the duration of material actually recorded.

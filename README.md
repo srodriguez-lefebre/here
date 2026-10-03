@@ -82,11 +82,24 @@ transcriptions/YYYYMMDD_HHMMSS/
   transcript.md
   session.json
   chunks.json
+  segments.json
 ```
 
 If transcription fails, the audio and diagnostic metadata remain available so
 the session can be retried without recording it again. Failed sessions also
 include an `errors.json` file.
+
+An unexpected Windows capture failure also preserves finalized audio and a failed
+session for retry. If mixing fails, source WAV copies remain in that session.
+Explicit recording cancellation deletes captured audio and creates no session.
+Live handoff queues hold at most 256 audio blocks and eight transcription jobs;
+exceeding either budget triggers offline transcription of the saved audio.
+
+`segments.json` stores versioned provider evidence: original segment text,
+nullable timing/speaker values, and request scope for chunk-local speaker labels.
+It retains overlapping chunk evidence separately from the merged or cleaned
+display transcript. `session.json.capture_sources` preserves original device names,
+sample rates, channels, and frame counts after mixing.
 
 Application-driven recordings can also include `events.json`, which records
 pause/resume and processing lifecycle events without storing raw audio blocks.

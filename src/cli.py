@@ -22,6 +22,7 @@ from here.output.metadata import (
     ErrorMetadata,
     ErrorMetadataDocument,
     SessionMetadata,
+    capture_metadata,
 )
 from here.output.session_writer import (
     AUDIO_FILE,
@@ -198,6 +199,7 @@ def _save_transcription(
     except Exception as exc:
         write_session_artifacts(
             session=session,
+            capture_sources=capture_metadata(session),
             target_dir=target_dir,
             completed_at=recording_completed_at,
             transcription_model=transcription_model,
@@ -228,6 +230,7 @@ def _save_transcription(
     except _TranscriptionFailure as exc:
         write_session_artifacts(
             session=recoverable_session or session,
+            capture_sources=capture_metadata(session),
             target_dir=target_dir,
             completed_at=recording_completed_at,
             transcription_model=transcription_model,
@@ -263,8 +266,10 @@ def _save_transcription(
 
     artifacts = write_session_artifacts(
         session=recoverable_session,
+        capture_sources=capture_metadata(session),
         target_dir=target_dir,
         transcript_text=outcome.result.final_text,
+        segments=getattr(outcome.result, "segments", None),
         completed_at=recording_completed_at,
         transcription_model=transcription_model,
         cleanup_model=settings.CLEANUP_MODEL,
@@ -331,6 +336,9 @@ def _transcribe_audio_path(
         ]
         write_session_artifacts(
             session=source_session,
+            capture_sources=existing_metadata.capture_sources
+            if existing_metadata
+            else capture_metadata(source_session),
             target_dir=target_dir,
             completed_at=existing_metadata.completed_at if existing_metadata else completed_at,
             transcription_model=transcription_model,
@@ -364,6 +372,9 @@ def _transcribe_audio_path(
         ]
         write_session_artifacts(
             session=recoverable_session,
+            capture_sources=existing_metadata.capture_sources
+            if existing_metadata
+            else capture_metadata(source_session),
             target_dir=target_dir,
             completed_at=existing_metadata.completed_at if existing_metadata else completed_at,
             transcription_model=transcription_model,
@@ -387,8 +398,12 @@ def _transcribe_audio_path(
 
     artifacts = write_session_artifacts(
         session=recoverable_session,
+        capture_sources=existing_metadata.capture_sources
+        if existing_metadata
+        else capture_metadata(source_session),
         target_dir=target_dir,
         transcript_text=result.final_text,
+        segments=getattr(result, "segments", None),
         completed_at=existing_metadata.completed_at if existing_metadata else completed_at,
         transcription_model=transcription_model,
         cleanup_model=settings.CLEANUP_MODEL,
