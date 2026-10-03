@@ -163,7 +163,7 @@ def test_handle_exposes_partial_failure_and_cancel_removes_it(monkeypatch, tmp_p
             raise models.CaptureFailed(session, cause) from cause
 
         monkeypatch.setattr(windows, "_record_windows_controlled", controlled)
-        handle = windows.start_windows_recording("microphone")
+        handle = windows._ThreadedWindowsRecording("microphone")
         if cancel:
             handle.cancel()
             with pytest.raises(RuntimeError, match="cancelled"):

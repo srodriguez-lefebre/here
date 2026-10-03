@@ -6,6 +6,8 @@ from pathlib import Path
 import numpy as np
 import soundfile as sf
 from here.config.settings import get_settings
+from here.recording.control import OpenedSource
+from here.recording.isolated import WindowsRecordingHandle
 from here.recording.journal import CaptureJournal, CaptureWriter
 from here.recording.models import CaptureFailed, RecordedAudioSource, RecordingSession
 from here.recording.shared import (
@@ -135,8 +137,8 @@ def _capture_windows_stream_to_file(
                 stop_event.set()
 
 
-class WindowsRecordingHandle:
-    """Thread-safe programmatic control for a running WASAPI capture."""
+class _ThreadedWindowsRecording:
+    """Hardware worker used only inside the owned helper (or injected backend tests)."""
 
     def __init__(
         self,
@@ -146,7 +148,10 @@ class WindowsRecordingHandle:
         microphone_device_id: int | None = None,
         system_device_id: int | None = None,
         sessions_root: Path | None = None,
+        journal: CaptureJournal | None = None,
     ) -> None:
+        self._journal = journal
+        self.opened_sources = ()
         self._sessions_root = sessions_root
         self._mode = mode
         self._block_sink = block_sink
@@ -163,6 +168,7 @@ class WindowsRecordingHandle:
         self._thread.start()
         if not self._ready_event.wait(10):
             self._stop_event.set()
+            self._thread.join()
             raise TimeoutError("Timed out while opening Windows audio devices")
         if self._error is not None:
             if isinstance(self._error, CaptureFailed):
@@ -181,6 +187,8 @@ class WindowsRecordingHandle:
                 microphone_device_id=self._microphone_device_id,
                 system_device_id=self._system_device_id,
                 sessions_root=self._sessions_root,
+                journal=self._journal,
+                opened_sink=lambda sources: setattr(self, "opened_sources", sources),
             )
             if self._cancel_event.is_set() and self._result is not None:
                 self._result.cleanup()
@@ -209,6 +217,7 @@ class WindowsRecordingHandle:
     def wait(self, timeout: float | None = None) -> RecordingSession:
         if not self._done_event.wait(timeout):
             raise TimeoutError("Timed out waiting for audio capture to stop")
+        self._thread.join()
         if self._cancel_event.is_set():
             result = self._result
             if result is not None:
@@ -318,13 +327,15 @@ def _record_windows_controlled(
     microphone_device_id: int | None = None,
     system_device_id: int | None = None,
     sessions_root: Path | None = None,
+    journal: CaptureJournal | None = None,
+    opened_sink=None,
 ) -> RecordingSession:
     import pyaudiowpatch as pyaudio
 
     if mode not in {"both", "microphone", "system_audio"}:
         raise ValueError(f"Unsupported capture mode: {mode}")
 
-    journal = CaptureJournal.create(sessions_root or get_settings().TRANSCRIPTIONS_DIR)
+    journal = journal or CaptureJournal.create(sessions_root or get_settings().TRANSCRIPTIONS_DIR)
     p = pyaudio.PyAudio()
     streams: list[object] = []
     writers: list[sf.SoundFile] = []
@@ -390,6 +401,19 @@ def _record_windows_controlled(
 
         for thread in threads:
             thread.start()
+        if opened_sink is not None:
+            opened_sink(
+                tuple(
+                    OpenedSource(
+                        label,
+                        str(device["name"]),
+                        int(device["index"]) if "index" in device else None,
+                        rate,
+                        channels,
+                    )
+                    for label, device, rate, channels, _, _ in captured
+                )
+            )
         ready_event.set()
         stop_event.wait()
         for thread in threads:

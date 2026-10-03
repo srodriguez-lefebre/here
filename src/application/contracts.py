@@ -24,7 +24,13 @@ class ApplicationController(Protocol):
 
     def resume(self) -> None: ...
 
-    def stop(self) -> None: ...
+    def stop(self) -> None:
+        """Idempotent stop/save; PREPARING accepts an atomic stop intent.
+
+        Terminal state alone is not shutdown permission. Await a snapshot with
+        worker_complete=True / WORKER_COMPLETED after actual resource cleanup.
+        """
+        ...
 
     def cancel(self) -> None: ...
 

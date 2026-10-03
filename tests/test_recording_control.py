@@ -94,7 +94,7 @@ def test_programmatic_handle_stop_returns_recording(monkeypatch: pytest.MonkeyPa
         return expected
 
     monkeypatch.setattr(windows_module, "_record_windows_controlled", controlled)
-    handle = windows_module.start_windows_recording("microphone")
+    handle = windows_module._ThreadedWindowsRecording("microphone")
 
     handle.stop()
 
@@ -127,7 +127,7 @@ def test_programmatic_handle_cancel_deletes_temporary_sources(
         return session
 
     monkeypatch.setattr(windows_module, "_record_windows_controlled", controlled)
-    handle = windows_module.start_windows_recording("microphone")
+    handle = windows_module._ThreadedWindowsRecording("microphone")
 
     handle.cancel()
 

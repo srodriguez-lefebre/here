@@ -46,6 +46,145 @@ class FakeCapture:
         return self.session
 
 
+def test_preparing_stop_is_atomic_idempotent_and_saves(tmp_path):
+    entered, release = threading.Event(), threading.Event()
+    capture, live = FakeCapture(), FakeLive()
+    processor = FakeProcessor(tmp_path / "saved")
+    processor.release.set()
+
+    def factory(request, sink):
+        entered.set()
+        assert release.wait(2)
+        return capture
+
+    core = HereApplicationController(
+        capture_factory=factory, live_factory=lambda *args: live, processor=processor
+    )
+    core.start(StartRequest(output_dir=tmp_path))
+    assert entered.wait(2)
+    try:
+        core.stop()
+        core.stop()
+    finally:
+        release.set()
+        capture.done.set()
+    result = core.wait_until_terminal(3)
+    assert result.state is ApplicationState.COMPLETED
+    assert result.worker_complete
+    assert not capture.cancelled
+
+
+def test_completion_waits_for_real_live_cleanup(tmp_path):
+    entered, release = threading.Event(), threading.Event()
+
+    class SlowLive(FakeLive):
+        def wait_closed(self):
+            entered.set()
+            assert release.wait(3)
+
+    capture = FakeCapture()
+    processor = FakeProcessor(tmp_path / "saved")
+    processor.release.set()
+    core = HereApplicationController(
+        capture_factory=lambda *args: capture,
+        live_factory=lambda *args: SlowLive(),
+        processor=processor,
+    )
+    events = []
+    core.subscribe(events.append)
+    core.start(StartRequest(output_dir=tmp_path))
+    wait_for_state(core, ApplicationState.RECORDING)
+    core.stop()
+    try:
+        assert entered.wait(2)
+        assert core.snapshot.state is ApplicationState.COMPLETED
+        assert not core.snapshot.worker_complete
+        with pytest.raises(InvalidApplicationCommand):
+            core.start(StartRequest(output_dir=tmp_path))
+    finally:
+        release.set()
+    assert core.wait_until_terminal(3).worker_complete
+    assert events[-1].kind is EventKind.WORKER_COMPLETED
+
+
+def test_processing_cancel_never_joins_live_workers_on_calling_thread(tmp_path):
+    caller = threading.get_ident()
+    requested = threading.Event()
+
+    class Live(FakeLive):
+        def request_abort(self):
+            requested.set()
+
+        def abort(self):
+            assert threading.get_ident() != caller
+            super().abort()
+
+    processor = FakeProcessor(tmp_path / "session")
+    core = HereApplicationController(
+        capture_factory=lambda *args: FakeCapture(),
+        live_factory=lambda *args: Live(),
+        processor=processor,
+    )
+    core.start(StartRequest(output_dir=tmp_path))
+    wait_for_state(core, ApplicationState.RECORDING)
+    core.stop()
+    assert processor.called.wait(2)
+    try:
+        core.cancel()
+        assert requested.is_set()
+    finally:
+        processor.release.set()
+        core.wait_until_terminal(3)
+
+
+def test_incomplete_capture_live_timeline_is_invalidated_before_processing(tmp_path):
+    capture = FakeCapture()
+    capture.live_error = RuntimeError("Live IPC incomplete")
+    invalidated = []
+
+    class Live(FakeLive):
+        def invalidate(self, error):
+            invalidated.append(error)
+
+    class Processor(FakeProcessor):
+        def process(self, *args, **kwargs):
+            assert invalidated == [capture.live_error]
+            return SimpleNamespace(session_dir=self.session_dir)
+
+    core = HereApplicationController(
+        capture_factory=lambda *args: capture,
+        live_factory=lambda *args: Live(),
+        processor=Processor(tmp_path / "session"),
+    )
+    core.start(StartRequest(output_dir=tmp_path))
+    wait_for_state(core, ApplicationState.RECORDING)
+    core.stop()
+    assert core.wait_until_terminal(3).state is ApplicationState.COMPLETED
+
+
+def test_retry_worker_inherits_materialization_operation_configuration(tmp_path, monkeypatch):
+    from here.config.settings import get_settings, settings_operation
+
+    observed = []
+
+    class Processor(FakeProcessor):
+        def retry(self, target, **kwargs):
+            observed.append(get_settings().TRANSCRIPTION_MODEL)
+            return SimpleNamespace(session_dir=target)
+
+    core = HereApplicationController(processor=Processor(tmp_path / "session"))
+    monkeypatch.setenv("TRANSCRIPTION_MODEL", "selected-model")
+
+    @settings_operation
+    def materialize_and_retry():
+        monkeypatch.setenv("TRANSCRIPTION_MODEL", "later-model")
+        core.retry(tmp_path / "session")
+
+    materialize_and_retry()
+    core.wait_until_terminal(3)
+    assert observed == ["selected-model"]
+
+
 class DelayedStopCapture(FakeCapture):
     def __init__(self) -> None:
         super().__init__()
@@ -67,6 +206,9 @@ class FakeLive:
         self.blocks.append(args)
 
     def abort(self) -> None:
+        self.aborted = True
+
+    def request_abort(self) -> None:
         self.aborted = True
 
     def cleanup(self) -> None:

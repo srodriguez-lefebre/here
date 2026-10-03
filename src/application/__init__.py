@@ -10,6 +10,7 @@ from here.application.models import (
     ApplicationState,
     AudioLevel,
     EventKind,
+    OpenedSource,
     SourceMode,
     StartRequest,
 )
@@ -23,6 +24,7 @@ __all__ = [
     "AudioLevel",
     "create_default_controller",
     "EventKind",
+    "OpenedSource",
     "EventListener",
     "HereApplicationController",
     "InvalidApplicationCommand",
