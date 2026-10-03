@@ -32,6 +32,59 @@ def test_optional_key_and_user_paths(tmp_path, monkeypatch, platform, override, 
     assert value.TRANSCRIPTIONS_DIR == tmp_path / relative
 
 
+@pytest.mark.parametrize(
+    "platform,variable,relative",
+    [
+        ("win32", "LOCALAPPDATA", "home/AppData/Local/here"),
+        ("linux", "XDG_DATA_HOME", "home/.local/share/here"),
+    ],
+)
+def test_empty_user_data_environment_uses_absolute_home_fallback(
+    tmp_path, monkeypatch, platform, variable, relative
+):
+    from here.config import paths
+
+    monkeypatch.setattr(paths, "sys", SimpleNamespace(platform=platform, frozen=True))
+    monkeypatch.setattr(paths.Path, "home", lambda: tmp_path / "home")
+    monkeypatch.delenv("HERE_DATA_DIR")
+    monkeypatch.delenv("HERE_ENV_FILE")
+    monkeypatch.setenv(variable, "")
+    monkeypatch.chdir(tmp_path)
+
+    expected = tmp_path / relative
+    assert paths.get_data_dir() == expected
+    assert paths.get_data_dir().is_absolute()
+    assert paths.get_env_file() == expected / ".env"
+    assert settings.Settings().TRANSCRIPTIONS_DIR == expected / "sessions"
+    assert not (tmp_path / "here").exists()
+
+
+@pytest.mark.parametrize(
+    "platform,variable", [("win32", "LOCALAPPDATA"), ("linux", "XDG_DATA_HOME")]
+)
+def test_user_data_paths_preserve_nonempty_values_and_explicit_overrides(
+    tmp_path, monkeypatch, platform, variable
+):
+    from here.config import paths
+
+    monkeypatch.setattr(paths, "sys", SimpleNamespace(platform=platform, frozen=True))
+    monkeypatch.delenv("HERE_DATA_DIR")
+    monkeypatch.delenv("HERE_ENV_FILE")
+    user_directory = tmp_path / "user data with spaces"
+    monkeypatch.setenv(variable, str(user_directory))
+    assert settings.Settings().TRANSCRIPTIONS_DIR == user_directory / "here" / "sessions"
+    assert paths.get_env_file() == user_directory / "here" / ".env"
+
+    explicit = tmp_path / "explicit data"
+    monkeypatch.setenv("HERE_DATA_DIR", str(explicit))
+    monkeypatch.setenv(variable, "")
+    assert settings.Settings().TRANSCRIPTIONS_DIR == explicit / "sessions"
+    assert paths.get_env_file() == explicit / ".env"
+    # An explicitly present empty env-file selection keeps its existing meaning.
+    monkeypatch.setenv("HERE_ENV_FILE", "")
+    assert paths.get_env_file() == paths.Path("")
+
+
 def test_effective_file_precedence_and_refresh(tmp_path, monkeypatch):
     monkeypatch.delenv("OPENAI_API_KEY")
     monkeypatch.delenv("HERE_ENV_FILE")

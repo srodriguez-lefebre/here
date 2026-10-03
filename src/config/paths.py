@@ -11,8 +11,8 @@ def get_data_dir() -> Path:
     if override := os.environ.get("HERE_DATA_DIR"):
         return Path(override).expanduser()
     if sys.platform == "win32":
-        return Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / "here"
-    return Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share")) / "here"
+        return Path(os.environ.get("LOCALAPPDATA") or Path.home() / "AppData" / "Local") / "here"
+    return Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local" / "share") / "here"
 
 
 def get_env_file() -> Path:
