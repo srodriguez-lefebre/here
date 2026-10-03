@@ -20,7 +20,9 @@ from here.output.metadata import (
     ErrorMetadataDocument,
     SessionEventMetadata,
     SessionEventMetadataDocument,
+    SessionMetadata,
     SourceMetadata,
+    build_session_metadata,
     capture_metadata,
     source_metadata,
 )
@@ -160,6 +162,96 @@ class SessionProcessor:
         self._transcribe = transcribe
         self._retry_delays = tuple(retry_delays)
         self._sleeper = sleeper
+
+    def publish_pending(
+        self,
+        session: RecordingSession,
+        session_dir: Path,
+        *,
+        session_id: str,
+        completed_at: datetime,
+        recoverable_audio: str,
+        use_alt_transcription_model: bool = False,
+        capture_sources: list[CaptureSourceMetadata] | None = None,
+        newly_owned_audio: bool = False,
+    ) -> SessionMetadata:
+        """Commit only the pending manifest, preserving all prior artifact bytes.
+
+        Callers preparing different audio for an existing session must use a new
+        owned filename so the old manifest remains coherent until this commit.
+        """
+        previous = read_session_metadata(session_dir)
+        references = list(previous.output_files) if previous else [METADATA_FILE]
+        references.append(recoverable_audio)
+        provenance = (
+            capture_sources
+            if capture_sources is not None
+            else (previous.capture_sources if previous else capture_metadata(session))
+        )
+        references.extend(item.audio_file for item in provenance if item.audio_file)
+        validate_session_artifacts(session_dir, references)
+        for source in session.sources:
+            if getattr(source, "path", None) is not None:
+                path = session_artifact_path(session_dir, source.path.name)
+                if path.absolute() != source.path.absolute():
+                    raise UnsafeSessionPath("Pending audio must belong to its session")
+                _validated_recovery_source(path, source_metadata(source))
+        for item in provenance:
+            if item.audio_file:
+                _validated_recovery_source(
+                    session_artifact_path(session_dir, item.audio_file), item
+                )
+        settings = get_settings()
+        metadata = build_session_metadata(
+            session=session,
+            session_id=previous.session_id if previous else session_id,
+            completed_at=previous.completed_at if previous else completed_at,
+            transcription_model=settings.ALT_TRANSCRIPTION_MODEL
+            if use_alt_transcription_model
+            else settings.TRANSCRIPTION_MODEL,
+            cleanup_model=settings.CLEANUP_MODEL,
+            cleanup_enabled=settings.CLEANUP_ENABLED,
+            alt_model_used=use_alt_transcription_model,
+            live_pipeline_attempted=previous.live_pipeline_attempted if previous else False,
+            live_pipeline_used=previous.live_pipeline_used if previous else False,
+            fallback_used=previous.fallback_used if previous else False,
+            status="pending",
+            recoverable_audio=recoverable_audio,
+            started_at=previous.started_at if previous else None,
+            total_paused_seconds=previous.total_paused_seconds if previous else 0.0,
+            output_files=list(dict.fromkeys(references)),
+            capture_sources=provenance,
+        )
+        if previous is not None:
+            metadata.meeting_id = previous.meeting_id
+        try:
+            write_artifact_text(session_dir / METADATA_FILE, metadata.model_dump_json(indent=2))
+        except Exception as publication_error:
+            if newly_owned_audio:
+                try:
+                    # A failure can be reported after replace succeeded. Re-read
+                    # authority before removing only this operation's new audio.
+                    current = read_session_metadata(session_dir)
+                    referenced = set(current.output_files) if current else set()
+                    if current:
+                        referenced.add(current.recoverable_audio)
+                        referenced.update(item.audio_file for item in current.capture_sources)
+                    if recoverable_audio not in referenced:
+                        owned = session_artifact_path(session_dir, recoverable_audio)
+                        _validated_recovery_source(owned)
+                        owned.unlink()
+                        if previous is None:
+                            try:
+                                session_dir.rmdir()  # succeeds only for an empty owned directory
+                            except OSError:
+                                pass
+                except Exception as cleanup_error:
+                    publication_error.add_note(
+                        "Prepared audio retained because cleanup failed: "
+                        f"{type(cleanup_error).__name__}"
+                    )
+            raise
+        return metadata
 
     def _materialize(
         self, session: RecordingSession, directory: Path, *, output_name: str
@@ -646,8 +738,11 @@ class SessionProcessor:
         if self._transcribe is transcribe_recording_session:
             require_provider_key()
         validate_session_artifacts(session_dir)
-        audio_path = session_audio_path(session_dir, AUDIO_FILE)
         metadata = read_session_metadata(session_dir)
+        audio_file = (
+            metadata.recoverable_audio if metadata and metadata.recoverable_audio else AUDIO_FILE
+        )
+        audio_path = session_audio_path(session_dir, audio_file)
         journal = None
         if metadata is not None and metadata.meeting_id is not None:
             from here.recording.journal import CaptureJournal
@@ -683,7 +778,7 @@ class SessionProcessor:
             expected = (
                 metadata.sources[0]
                 if metadata is not None
-                and metadata.recoverable_audio == AUDIO_FILE
+                and metadata.recoverable_audio == audio_file
                 and len(metadata.sources) == 1
                 else None
             )
@@ -692,7 +787,7 @@ class SessionProcessor:
             raw_sources = [source for source in raw_sources if source.frames > 0]
             if not raw_sources:
                 raise RuntimeError(f"Recoverable audio does not exist: {audio_path}")
-            self._materialize(RecordingSession(raw_sources), session_dir, output_name=AUDIO_FILE)
+            self._materialize(RecordingSession(raw_sources), session_dir, output_name=audio_file)
             recovered_source = _validated_recovery_source(audio_path)
         chunks_path = session_dir / CHUNKS_FILE
         errors_path = session_dir / ERRORS_FILE
@@ -723,29 +818,14 @@ class SessionProcessor:
         )
         cancellation = cancel_event or threading.Event()
         settings = get_settings()
-        write_session_artifacts(
-            session=source,
-            capture_sources=metadata.capture_sources if metadata else None,
-            target_dir=session_dir.parent,
-            completed_at=metadata.completed_at if metadata else datetime.now().astimezone(),
-            transcription_model=settings.ALT_TRANSCRIPTION_MODEL
-            if metadata and metadata.alt_model_used
-            else settings.TRANSCRIPTION_MODEL,
-            cleanup_model=settings.CLEANUP_MODEL,
-            cleanup_enabled=settings.CLEANUP_ENABLED,
-            alt_model_used=metadata.alt_model_used if metadata else False,
-            live_pipeline_attempted=metadata.live_pipeline_attempted if metadata else False,
-            live_pipeline_used=False,
-            fallback_used=metadata.fallback_used if metadata else False,
-            chunks=chunks,
-            errors=errors,
-            status="pending",
-            recoverable_audio=AUDIO_FILE,
-            session_dir=session_dir,
+        self.publish_pending(
+            source,
+            session_dir,
             session_id=metadata.session_id if metadata else session_dir.name,
-            events=events,
-            started_at=metadata.started_at if metadata else None,
-            total_paused_seconds=metadata.total_paused_seconds if metadata else 0.0,
+            completed_at=metadata.completed_at if metadata else self._clock(),
+            recoverable_audio=audio_file,
+            use_alt_transcription_model=metadata.alt_model_used if metadata else False,
+            capture_sources=metadata.capture_sources if metadata else None,
         )
         try:
             result = self._offline_with_retries(
@@ -783,7 +863,7 @@ class SessionProcessor:
                 errors=errors,
                 status="cancelled",
                 failure_stage="processing_cancelled",
-                recoverable_audio=AUDIO_FILE,
+                recoverable_audio=audio_file,
                 session_dir=session_dir,
                 session_id=metadata.session_id if metadata else session_dir.name,
                 events=events,
@@ -811,7 +891,7 @@ class SessionProcessor:
                 errors=[*errors, failure],
                 status="failed",
                 failure_stage="offline_transcription",
-                recoverable_audio=AUDIO_FILE,
+                recoverable_audio=audio_file,
                 session_dir=session_dir,
                 session_id=metadata.session_id if metadata else session_dir.name,
                 events=events,
@@ -842,7 +922,7 @@ class SessionProcessor:
             fallback_used=metadata.fallback_used if metadata else False,
             chunks=chunks + list(getattr(result, "chunks", [])),
             status="completed",
-            recoverable_audio=AUDIO_FILE,
+            recoverable_audio=audio_file,
             session_dir=session_dir,
             session_id=metadata.session_id if metadata else session_dir.name,
             events=events,

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated
+from uuid import uuid4
 
 import soundfile as sf
 import typer
@@ -226,16 +227,26 @@ def _transcribe_audio_path(
     else:
         session_id, session_dir = create_session_dir(target_dir, completed_at)
 
+    recoverable_audio = AUDIO_FILE
+    if existing_metadata is not None:
+        if audio_path.name == existing_metadata.recoverable_audio:
+            recoverable_audio = audio_path.name
+        else:
+            # A managed raw input must not replace audio referenced by the old
+            # completed manifest before pending publication has committed.
+            recoverable_audio = f"audio_{uuid4().hex}.wav"
     recoverable_session: RecordingSession | None = None
+    newly_owned_audio = False
     try:
-        if audio_path.parent == session_dir and audio_path.name == AUDIO_FILE:
+        if audio_path.parent == session_dir and audio_path.name == recoverable_audio:
             recoverable_session = source_session
         else:
             recoverable_session = materialize_normalized_session(
                 source_session,
                 session_dir,
-                output_name=AUDIO_FILE,
+                output_name=recoverable_audio,
             )
+            newly_owned_audio = True
     except Exception as exc:
         errors = [
             *previous_errors,
@@ -266,6 +277,18 @@ def _transcribe_audio_path(
         )
         raise RuntimeError("Recoverable audio preparation failed") from exc
 
+    SessionProcessor().publish_pending(
+        recoverable_session,
+        session_dir,
+        session_id=session_id,
+        completed_at=completed_at,
+        recoverable_audio=recoverable_audio,
+        use_alt_transcription_model=use_alt_transcription_model,
+        capture_sources=existing_metadata.capture_sources
+        if existing_metadata
+        else capture_metadata(source_session),
+        newly_owned_audio=newly_owned_audio,
+    )
     try:
         result = transcribe_recording_session(
             recoverable_session,
@@ -297,7 +320,7 @@ def _transcribe_audio_path(
             errors=errors,
             status="failed",
             failure_stage="offline_transcription",
-            recoverable_audio=AUDIO_FILE,
+            recoverable_audio=recoverable_audio,
             session_dir=session_dir,
             session_id=session_id,
         )
@@ -323,7 +346,7 @@ def _transcribe_audio_path(
         fallback_used=existing_metadata.fallback_used if existing_metadata else False,
         chunks=previous_chunks + list(getattr(result, "chunks", [])),
         status="completed",
-        recoverable_audio=AUDIO_FILE,
+        recoverable_audio=recoverable_audio,
         session_dir=session_dir,
         session_id=session_id,
     )
