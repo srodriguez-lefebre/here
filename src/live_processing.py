@@ -34,7 +34,12 @@ from here.transcription.client import (
     resolve_transcription_models,
     transcribe_audio_file,
 )
-from here.transcription.segments import SegmentTimeline, TranscriptSegment, shift_segments
+from here.transcription.segments import (
+    SegmentTimeline,
+    TranscriptSegment,
+    scoped_segments,
+    shift_segments,
+)
 from loguru import logger
 
 PCM_SUBTYPE = "PCM_16"
@@ -294,6 +299,10 @@ class LiveTranscriptionController:
     def _source_state_for(self, block: CapturedAudioBlock) -> BufferedSourceState:
         state = self._source_states.get(block.label)
         if state is None:
+            if len(self._source_states) >= self.expected_source_count:
+                raise RuntimeError(
+                    "Live capture received an unexpected source; offline fallback required"
+                )
             logger.info(
                 "Live capture connected for {label} ({sample_rate} Hz, {channels} channel(s)).",
                 label=block.label,
@@ -427,8 +436,23 @@ class LiveTranscriptionController:
                 state = self._source_state_for(block)
                 state.append_block(block.data)
                 self._maybe_enqueue_live_chunks()
+                buffer_budget = (
+                    self.config.live_chunk_seconds
+                    + self.config.silence_search_seconds
+                    + self.config.overlap_seconds
+                )
+                if any(
+                    source.duration_seconds > buffer_budget for source in self._ordered_states()
+                ):
+                    raise RuntimeError(
+                        "Live source buffer exceeded its duration budget; offline fallback required"
+                    )
 
             if not self._abort_event.is_set():
+                if len(self._source_states) != self.expected_source_count:
+                    raise RuntimeError(
+                        "Live capture is missing a source; offline fallback required"
+                    )
                 segments = [
                     segment
                     for state in self._ordered_states()
@@ -438,11 +462,10 @@ class LiveTranscriptionController:
                 if len(segments) == self.expected_source_count:
                     self._enqueue_live_job(segments)
                 elif segments:
-                    logger.warning(
-                        "Discarding partial final live chunk because only "
-                        "{count}/{expected} source(s) produced audio.",
-                        count=len(segments),
-                        expected=self.expected_source_count,
+                    self._set_error(
+                        RuntimeError(
+                            "Live final chunk is missing source material; offline fallback required"
+                        )
                     )
         except Exception as exc:
             logger.error("Live chunk generation failed: {exc}", exc=exc)
@@ -488,6 +511,7 @@ class LiveTranscriptionController:
     def _transcriber_worker(self) -> None:
         merged_raw_text = ""
         segment_timeline: SegmentTimeline | None = SegmentTimeline()
+        evidence: list[TranscriptSegment] = []
         failed = False
         try:
             while True:
@@ -540,6 +564,13 @@ class LiveTranscriptionController:
                             status="completed",
                         )
                     )
+                    evidence.extend(
+                        scoped_segments(
+                            transcription.segments,
+                            chunk_index=job.index,
+                            offset_seconds=job.start_offset_seconds,
+                        )
+                    )
                     merged_raw_text, segment_timeline = self._merge_chunk_transcription(
                         merged_raw_text,
                         segment_timeline,
@@ -583,6 +614,7 @@ class LiveTranscriptionController:
                     cleanup_model=self._resolved_cleanup_model,
                     should_cleanup=self._should_cleanup,
                     chunks=self._chunks,
+                    segments=evidence,
                 )
                 logger.success("Live transcription complete.")
         except Exception as exc:

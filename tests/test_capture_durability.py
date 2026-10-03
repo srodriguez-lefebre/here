@@ -218,3 +218,114 @@ def test_capture_writer_finalization_error_retains_material(monkeypatch, tmp_pat
     assert caught.value.__cause__ is cause
     assert writer.closed
     assert sf.info(path).frames == 32
+
+
+@pytest.mark.parametrize(
+    "unsafe", ["../outside.wav", "/outside.wav", "C:\\outside.wav", "nested/../../outside.wav"]
+)
+def test_retry_rejects_raw_audio_paths_outside_session(monkeypatch, tmp_path, unsafe):
+    import here.application.processing as processing
+
+    session = audio_session(tmp_path)
+    monkeypatch.setattr(
+        processing,
+        "materialize_normalized_session",
+        lambda *args, **kwargs: (_ for _ in ()).throw(OSError("failed")),
+    )
+    processor = SessionProcessor(retry_delays=())
+    with pytest.raises(SessionProcessingFailed) as caught:
+        processor.process(session, tmp_path / "sessions")
+    metadata_path = caught.value.session_dir / "session.json"
+    metadata = json.loads(metadata_path.read_text())
+    metadata["capture_sources"][0]["audio_file"] = unsafe
+    metadata_path.write_text(json.dumps(metadata))
+    observed = []
+    monkeypatch.setattr(
+        processing,
+        "materialize_normalized_session",
+        lambda *args, **kwargs: (
+            observed.append(args) or (_ for _ in ()).throw(OSError("opened unsafe path"))
+        ),
+    )
+    with pytest.raises(ValueError, match="session"):
+        processor.retry(caught.value.session_dir)
+    assert observed == [], "unsafe source must be rejected before normalization opens it"
+    assert session.sources[0].path.exists()
+
+
+@pytest.mark.parametrize(
+    "name,mode",
+    [
+        ("record_mic_windows", "microphone"),
+        ("record_os_windows", "system_audio"),
+        ("record_both_windows", "both"),
+    ],
+)
+def test_legacy_enter_adapter_uses_shared_controlled_capture(monkeypatch, name, mode):
+    session = RecordingSession([])
+    calls = []
+    stopped = []
+    handle = SimpleNamespace(stop=lambda: stopped.append(True), wait=lambda: session)
+    monkeypatch.setattr(
+        windows,
+        "start_windows_recording",
+        lambda actual_mode, **kwargs: calls.append((actual_mode, kwargs)) or handle,
+    )
+    monkeypatch.setattr(
+        windows,
+        "_get_default_windows_input_device",
+        lambda: (_ for _ in ()).throw(RuntimeError("legacy capture path reached")),
+    )
+    monkeypatch.setattr(
+        windows,
+        "_get_default_windows_loopback_device",
+        lambda: (_ for _ in ()).throw(RuntimeError("legacy capture path reached")),
+    )
+    monkeypatch.setattr("builtins.input", lambda: "")
+    sink = object()
+    assert getattr(windows, name)(block_sink=sink) is session
+    assert calls == [(mode, {"block_sink": sink})]
+    assert stopped == [True]
+
+
+def test_enter_adapter_interrupt_cancels_shared_handle(monkeypatch):
+    cancelled = []
+    handle = SimpleNamespace(
+        cancel=lambda: cancelled.append(True),
+        wait=lambda: (_ for _ in ()).throw(RuntimeError("cancelled")),
+    )
+    monkeypatch.setattr(windows, "start_windows_recording", lambda *args, **kwargs: handle)
+    monkeypatch.setattr("builtins.input", lambda: (_ for _ in ()).throw(KeyboardInterrupt()))
+    with pytest.raises(KeyboardInterrupt):
+        windows.record_mic_windows()
+    assert cancelled == [True]
+
+
+def test_retry_rejects_source_symlink_resolving_outside_session(monkeypatch, tmp_path):
+    import here.application.processing as processing
+
+    session = audio_session(tmp_path)
+    normalize = processing.materialize_normalized_session
+    monkeypatch.setattr(
+        processing,
+        "materialize_normalized_session",
+        lambda *args, **kwargs: (_ for _ in ()).throw(OSError("failed")),
+    )
+    processor = SessionProcessor(retry_delays=())
+    with pytest.raises(SessionProcessingFailed) as caught:
+        processor.process(session, tmp_path / "sessions")
+    raw_path = caught.value.session_dir / "source_01.wav"
+    outside = tmp_path / "outside.wav"
+    outside.write_bytes(b"synthetic outside sentinel")
+    original_resolve = Path.resolve
+
+    def resolve(path, *args, **kwargs):
+        if path == raw_path:
+            return outside
+        return original_resolve(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "resolve", resolve)
+    monkeypatch.setattr(processing, "materialize_normalized_session", normalize)
+    with pytest.raises(ValueError, match="resolve inside the session"):
+        processor.retry(caught.value.session_dir)
+    assert outside.read_bytes() == b"synthetic outside sentinel"

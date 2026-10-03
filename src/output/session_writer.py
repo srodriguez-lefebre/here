@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Literal
@@ -15,9 +15,11 @@ from here.output.metadata import (
     SessionEventMetadata,
     SessionEventMetadataDocument,
     SessionMetadata,
+    TranscriptSegmentDocument,
     build_session_metadata,
 )
 from here.recording.models import RecordingSession
+from here.transcription.segments import TranscriptSegment
 
 TRANSCRIPT_ENCODING = "utf-8-sig"
 METADATA_ENCODING = "utf-8"
@@ -29,6 +31,7 @@ CHUNKS_FILE = "chunks.json"
 AUDIO_FILE = "audio.wav"
 ERRORS_FILE = "errors.json"
 EVENTS_FILE = "events.json"
+SEGMENTS_FILE = "segments.json"
 
 
 @dataclass(slots=True)
@@ -44,6 +47,7 @@ class SessionArtifactPaths:
     metadata: SessionMetadata
     chunks: ChunkMetadataDocument
     errors: ErrorMetadataDocument
+    segments_path: Path | None = None
 
 
 def _session_id_from_datetime(value: datetime) -> str:
@@ -91,6 +95,7 @@ def write_session_artifacts(
     started_at: datetime | None = None,
     total_paused_seconds: float = 0.0,
     capture_sources: list[CaptureSourceMetadata] | None = None,
+    segments: list[TranscriptSegment] | None = None,
 ) -> SessionArtifactPaths:
     if session_dir is None:
         session_id, session_dir = create_session_dir(target_dir, completed_at)
@@ -99,6 +104,8 @@ def write_session_artifacts(
         session_id = session_id or session_dir.name
 
     output_files = [METADATA_FILE, CHUNKS_FILE]
+    if segments is not None:
+        output_files.append(SEGMENTS_FILE)
     if transcript_text is not None:
         output_files = [TRANSCRIPT_FILE, MARKDOWN_FILE, *output_files]
     if recoverable_audio is not None:
@@ -139,6 +146,14 @@ def write_session_artifacts(
     chunks_document = ChunkMetadataDocument(chunks=chunks or [])
     errors_document = ErrorMetadataDocument(errors=errors or [])
     events_document = SessionEventMetadataDocument(events=events or [])
+    segments_path = session_dir / SEGMENTS_FILE if segments is not None else None
+    if segments_path is not None:
+        segments_path.write_text(
+            TranscriptSegmentDocument(
+                segments=[asdict(segment) for segment in segments]
+            ).model_dump_json(indent=2),
+            encoding=METADATA_ENCODING,
+        )
 
     if transcript_text is not None:
         transcript_path.write_text(transcript_text, encoding=TRANSCRIPT_ENCODING)
@@ -181,4 +196,5 @@ def write_session_artifacts(
         metadata=metadata,
         chunks=chunks_document,
         errors=errors_document,
+        segments_path=segments_path,
     )

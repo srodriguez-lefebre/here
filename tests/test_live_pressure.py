@@ -107,3 +107,89 @@ def test_capture_pressure_fallback_transcribes_complete_primary_audio(monkeypatc
         gate.set()
         controller.abort()
         controller.cleanup()
+
+
+def test_full_job_queue_does_not_wait_for_provider_and_cleanup_waits_for_workers(
+    monkeypatch, tmp_path
+):
+    from here.audio.models import ChunkingConfig
+
+    entered = threading.Event()
+    release = threading.Event()
+    monkeypatch.setattr(live, "build_client", lambda: object())
+    monkeypatch.setattr(
+        live, "resolve_transcription_models", lambda **kwargs: ("model", "cleanup", False)
+    )
+
+    def provider(*args, **kwargs):
+        entered.set()
+        release.wait(8)
+        return "in flight text"
+
+    monkeypatch.setattr(live, "transcribe_audio_file", provider)
+    controller = live.LiveTranscriptionController(
+        expected_source_count=1,
+        chunking_config=ChunkingConfig(
+            target_sample_rate=4, live_chunk_seconds=2, overlap_seconds=1, silence_search_seconds=0
+        ),
+    )
+    try:
+        controller.submit_block("mic", np.full(8, 0.25, dtype=np.float32), 4, 1)
+        assert entered.wait(2)
+        for index in range(9):
+            path = tmp_path / f"pending-{index}.wav"
+            sf.write(path, np.full(4, 0.25), 4)
+            controller._enqueue_live_job(
+                [live.SourceSegment(index + 2, RecordedAudioSource(path, 4, 1, 4, "mic"), 0.0)]
+            )
+        started = time.monotonic()
+        with pytest.raises(RuntimeError, match="Live transcription failed"):
+            controller.complete()
+        assert time.monotonic() - started < 3
+        controller.cleanup()
+        assert controller.working_dir.exists(), "in-flight provider still owns its chunk workspace"
+        assert controller._transcriber_thread.is_alive()
+        release.set()
+        controller._transcriber_thread.join(3)
+        controller._chunker_thread.join(3)
+        assert not controller.working_dir.exists()
+        assert controller._result is None
+    finally:
+        release.set()
+        controller.abort()
+        controller.cleanup()
+
+
+@pytest.mark.parametrize("frames", [4, 16])
+def test_missing_second_source_exceeds_buffer_budget_and_falls_back(monkeypatch, frames):
+    from here.audio.models import ChunkingConfig
+
+    monkeypatch.setattr(live, "build_client", lambda: object())
+    monkeypatch.setattr(
+        live, "resolve_transcription_models", lambda **kwargs: ("model", "cleanup", False)
+    )
+    controller = live.LiveTranscriptionController(
+        expected_source_count=2,
+        chunking_config=ChunkingConfig(
+            target_sample_rate=4, live_chunk_seconds=2, overlap_seconds=1, silence_search_seconds=0
+        ),
+    )
+    consumed = threading.Event()
+    original_append = live.BufferedSourceState.append_block
+
+    def append(state, data):
+        original_append(state, data)
+        consumed.set()
+
+    monkeypatch.setattr(live.BufferedSourceState, "append_block", append)
+    try:
+        controller.submit_block("mic", np.full(frames, 0.25, dtype=np.float32), 4, 1)
+        assert consumed.wait(2)
+        with pytest.raises(RuntimeError, match="Live transcription failed") as caught:
+            controller.complete()
+        assert ("buffer" if frames == 16 else "source") in str(caught.value.__cause__).lower()
+        assert controller._result is None
+        assert controller._source_states == {}
+    finally:
+        controller.abort()
+        controller.cleanup()

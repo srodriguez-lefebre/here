@@ -6,7 +6,7 @@ import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 import soundfile as sf
 from here.audio.mix import materialize_normalized_session
@@ -21,6 +21,7 @@ from here.output.metadata import (
     SessionEventMetadata,
     SessionEventMetadataDocument,
     SessionMetadata,
+    capture_metadata,
     source_metadata,
 )
 from here.output.session_writer import (
@@ -105,6 +106,25 @@ def session_from_audio_file(audio_path: Path) -> RecordingSession:
     )
 
 
+def session_audio_path(session_dir: Path, audio_file: str) -> Path:
+    """Only persisted local filenames may select audio during recovery."""
+    windows_path = PureWindowsPath(audio_file)
+    if (
+        not audio_file
+        or Path(audio_file).name != audio_file
+        or windows_path.name != audio_file
+        or windows_path.drive
+        or windows_path.root
+        or audio_file in {".", ".."}
+        or ":" in audio_file
+    ):
+        raise ValueError("Recoverable audio must be a filename inside the session")
+    path = session_dir / audio_file
+    if not path.resolve().is_relative_to(session_dir.resolve()):
+        raise ValueError("Recoverable audio must resolve inside the session")
+    return path
+
+
 def _read_model(path: Path, model: type[SessionMetadata]) -> SessionMetadata | None:
     if not path.exists():
         return None
@@ -162,6 +182,7 @@ class SessionProcessor:
             )
             recoverable_audio = AUDIO_FILE
         except Exception as exc:
+            (session_dir / AUDIO_FILE).unlink(missing_ok=True)
             errors.append(error_metadata("recoverable_audio", exc))
             normalized = session
         artifacts = write_session_artifacts(
@@ -298,6 +319,7 @@ class SessionProcessor:
                 output_name=AUDIO_FILE,
             )
         except Exception as exc:
+            (session_dir / AUDIO_FILE).unlink(missing_ok=True)
             provenance = self._preserve_sources(session, session_dir)
             write_session_artifacts(
                 session=session,
@@ -369,6 +391,7 @@ class SessionProcessor:
         except TranscriptionFailure as exc:
             artifacts = write_session_artifacts(
                 session=recoverable,
+                capture_sources=capture_metadata(session),
                 target_dir=target_dir,
                 completed_at=completed_at,
                 transcription_model=transcription_model,
@@ -416,8 +439,10 @@ class SessionProcessor:
 
         artifacts = write_session_artifacts(
             session=recoverable,
+            capture_sources=capture_metadata(session),
             target_dir=target_dir,
             transcript_text=outcome.result.final_text,
+            segments=getattr(outcome.result, "segments", None),
             completed_at=completed_at,
             transcription_model=transcription_model,
             cleanup_model=settings.CLEANUP_MODEL,
@@ -462,6 +487,7 @@ class SessionProcessor:
             live_controller.cleanup()
         artifacts = write_session_artifacts(
             session=recoverable,
+            capture_sources=capture_metadata(original),
             target_dir=target_dir,
             completed_at=completed_at,
             transcription_model=transcription_model,
@@ -489,14 +515,14 @@ class SessionProcessor:
         *,
         cancel_event: threading.Event | None = None,
     ) -> SessionArtifactPaths:
-        audio_path = session_dir / AUDIO_FILE
+        audio_path = session_audio_path(session_dir, AUDIO_FILE)
         metadata_path = session_dir / METADATA_FILE
         metadata = _read_model(metadata_path, SessionMetadata)
         if not audio_path.exists():
             raw_sources = (
                 [
                     RecordedAudioSource(
-                        path=session_dir / item.audio_file,
+                        path=session_audio_path(session_dir, item.audio_file),
                         sample_rate=item.sample_rate,
                         channels=item.channels,
                         frames=item.frames,
@@ -511,9 +537,13 @@ class SessionProcessor:
             )
             if not raw_sources:
                 raise RuntimeError(f"Recoverable audio does not exist: {audio_path}")
-            materialize_normalized_session(
-                RecordingSession(raw_sources), session_dir, output_name=AUDIO_FILE
-            )
+            try:
+                materialize_normalized_session(
+                    RecordingSession(raw_sources), session_dir, output_name=AUDIO_FILE
+                )
+            except Exception:
+                audio_path.unlink(missing_ok=True)
+                raise
         chunks_path = session_dir / CHUNKS_FILE
         errors_path = session_dir / ERRORS_FILE
         events_path = session_dir / EVENTS_FILE
@@ -561,6 +591,7 @@ class SessionProcessor:
             )
             write_session_artifacts(
                 session=source,
+                capture_sources=metadata.capture_sources if metadata else None,
                 target_dir=session_dir.parent,
                 completed_at=metadata.completed_at if metadata else datetime.now().astimezone(),
                 transcription_model=metadata.transcription_model
@@ -588,6 +619,7 @@ class SessionProcessor:
             failure = error_metadata("offline_transcription", exc)
             write_session_artifacts(
                 session=source,
+                capture_sources=metadata.capture_sources if metadata else None,
                 target_dir=session_dir.parent,
                 completed_at=metadata.completed_at if metadata else datetime.now().astimezone(),
                 transcription_model=metadata.transcription_model
@@ -620,6 +652,7 @@ class SessionProcessor:
             session=source,
             target_dir=session_dir.parent,
             transcript_text=result.final_text,
+            segments=getattr(result, "segments", None),
             capture_sources=metadata.capture_sources if metadata else None,
             completed_at=metadata.completed_at if metadata else datetime.now().astimezone(),
             transcription_model=metadata.transcription_model

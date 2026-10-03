@@ -20,6 +20,23 @@ class CaptureSourceMetadata(SourceMetadata):
     audio_file: str | None = None
 
 
+class TranscriptSegmentMetadata(BaseModel):
+    text: str
+    start: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    end: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    speaker: str | None = None
+    chunk_index: int | None = None
+    speaker_scope: str | None = None
+
+
+class TranscriptSegmentDocument(BaseModel):
+    schema_version: int = Field(default=1)
+    semantics: Literal["provider_evidence"] = "provider_evidence"
+    timing_reference: Literal["recording_seconds"] = "recording_seconds"
+    speaker_identity_scope: Literal["request"] = "request"
+    segments: list[TranscriptSegmentMetadata]
+
+
 class SessionMetadata(BaseModel):
     schema_version: int = Field(default=1)
     session_id: str
@@ -97,6 +114,12 @@ def source_metadata(source: RecordedAudioSource) -> SourceMetadata:
         frames=source.frames,
         duration_seconds=source.duration_seconds,
     )
+
+
+def capture_metadata(session: RecordingSession) -> list[CaptureSourceMetadata]:
+    return [
+        CaptureSourceMetadata(**source_metadata(source).model_dump()) for source in session.sources
+    ]
 
 
 def build_session_metadata(

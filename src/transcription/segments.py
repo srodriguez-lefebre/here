@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import math
 import re
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, field
-
+from dataclasses import dataclass, field, replace
 
 _SEGMENT_CONTAINER_KEYS = ("segments", "items", "results")
 _TEXT_KEYS = ("text", "transcript", "utterance")
@@ -19,6 +19,8 @@ class TranscriptSegment:
     start: float | None = None
     end: float | None = None
     speaker: str | None = None
+    chunk_index: int | None = None
+    speaker_scope: str | None = None
 
     @property
     def has_timestamps(self) -> bool:
@@ -67,13 +69,14 @@ def _coerce_float(value: object | None) -> float | None:
     if isinstance(value, bool):
         return None
     if isinstance(value, (int, float)):
-        return float(value)
+        number = float(value)
+        return number if math.isfinite(number) and number >= 0 else None
     if isinstance(value, str):
         stripped = value.strip()
         if not stripped:
             return None
         try:
-            return float(stripped)
+            return _coerce_float(float(stripped))
         except ValueError:
             return None
     return None
@@ -111,17 +114,21 @@ def _extract_timing_bounds(payload: object) -> tuple[float | None, float | None]
     for key in _TIMESTAMP_KEYS:
         timestamps = _value_from_payload(payload, key)
         if isinstance(timestamps, Mapping):
-            start = _coerce_float(
-                timestamps.get("start")
-                or timestamps.get("begin")
-                or timestamps.get("from")
-                or timestamps.get("start_time")
+            start = next(
+                (
+                    _coerce_float(timestamps[key])
+                    for key in ("start", "begin", "from", "start_time")
+                    if key in timestamps
+                ),
+                None,
             )
-            end = _coerce_float(
-                timestamps.get("end")
-                or timestamps.get("finish")
-                or timestamps.get("to")
-                or timestamps.get("end_time")
+            end = next(
+                (
+                    _coerce_float(timestamps[key])
+                    for key in ("end", "finish", "to", "end_time")
+                    if key in timestamps
+                ),
+                None,
             )
             if start is not None or end is not None:
                 return start, end
@@ -153,7 +160,9 @@ def _extract_segment_speaker(payload: object) -> str | None:
     return None
 
 
-def parse_transcript_segments(payload: object, *, offset_seconds: float = 0.0) -> list[TranscriptSegment]:
+def parse_transcript_segments(
+    payload: object, *, offset_seconds: float = 0.0
+) -> list[TranscriptSegment]:
     segments: list[TranscriptSegment] = []
     for candidate in _iter_candidate_segments(payload):
         text = _extract_segment_text(candidate)
@@ -178,20 +187,25 @@ def parse_transcript_segments(payload: object, *, offset_seconds: float = 0.0) -
     return segments
 
 
-def shift_segments(segments: Sequence[TranscriptSegment], offset_seconds: float) -> list[TranscriptSegment]:
+def shift_segments(
+    segments: Sequence[TranscriptSegment], offset_seconds: float
+) -> list[TranscriptSegment]:
     shifted: list[TranscriptSegment] = []
     for segment in segments:
         start = segment.start + offset_seconds if segment.start is not None else None
         end = segment.end + offset_seconds if segment.end is not None else None
-        shifted.append(
-            TranscriptSegment(
-                text=segment.text,
-                start=start,
-                end=end,
-                speaker=segment.speaker,
-            )
-        )
+        shifted.append(replace(segment, start=start, end=end))
     return shifted
+
+
+def scoped_segments(
+    segments: Sequence[TranscriptSegment], *, chunk_index: int, offset_seconds: float
+) -> list[TranscriptSegment]:
+    """Keep provider evidence; labels only identify speakers within this request."""
+    return [
+        replace(segment, chunk_index=chunk_index, speaker_scope=f"chunk:{chunk_index}")
+        for segment in shift_segments(segments, offset_seconds)
+    ]
 
 
 def _normalized_words(text: str) -> list[str]:
@@ -234,7 +248,9 @@ def _segments_overlap(previous: TranscriptSegment, current: TranscriptSegment) -
     return min(previous.end, current.end) > max(previous.start, current.start)
 
 
-def _merge_segment_pair(previous: TranscriptSegment, current: TranscriptSegment) -> TranscriptSegment:
+def _merge_segment_pair(
+    previous: TranscriptSegment, current: TranscriptSegment
+) -> TranscriptSegment:
     start = previous.start
     if current.start is not None:
         start = current.start if start is None else min(start, current.start)
@@ -293,4 +309,6 @@ def merge_segment_payloads(
     *,
     offset_seconds: float = 0.0,
 ) -> list[TranscriptSegment]:
-    return merge_segments(existing, parse_transcript_segments(payload, offset_seconds=offset_seconds))
+    return merge_segments(
+        existing, parse_transcript_segments(payload, offset_seconds=offset_seconds)
+    )
