@@ -2,7 +2,7 @@
   "schema_version": 1,
   "milestone": "M1",
   "milestone_complete": false,
-  "desktop_delivery": "PR13 open; empty-background-error fix and test-only CI diagnostics independently accepted; final Windows-only CI and renewed Copilot review pending.",
+  "desktop_delivery": "PR13 merged after current-head Windows CI, final authorized Copilot dispositions and independent acceptance; Windows distribution and revised-scope closure remain open.",
   "latest_desktop_source_head": "843279ca42da08cb0bc0116d01c9b5da925011ae",
   "task_1": {
     "status": "independent_spec_and_quality_approved",
@@ -912,5 +912,65 @@
       "Two-hour capture/resource and long generated-audio transcription are explicitly omitted by the user, not passed.",
       "Final-head Windows CI, renewed formal Copilot review and finding replies remain required before merge."
     ]
+  },
+  "desktop_external_gate": {
+    "state": "MERGED",
+    "pr": 13,
+    "url": "https://github.com/srodriguez-lefebre/here/pull/13",
+    "head": "cb4fa9d0303e6f7d50b30db4ededdecbc8ccc57c",
+    "source_head": "843279ca42da08cb0bc0116d01c9b5da925011ae",
+    "merge_commit": "7ed78afc551c09729ebd886c27089b9c989bbafe",
+    "merged_at": "2026-10-03T20:41:23Z",
+    "all_findings_dispositioned": true,
+    "all_inline_threads_resolved": true,
+    "inline_threads": 4,
+    "independent_review": "accepted",
+    "local": {
+      "passed": 740,
+      "skipped": 6,
+      "seconds": 140.88,
+      "runtime": "CPython 3.13.15 / Qt 6.11.2 on Windows",
+      "exit_code": 0
+    },
+    "ci": {
+      "head": "cb4fa9d0303e6f7d50b30db4ededdecbc8ccc57c",
+      "status": "success",
+      "run": 37151433211,
+      "windows": {
+        "passed": 746,
+        "skipped": 0,
+        "seconds": 128.04,
+        "os": "Windows Server 2025"
+      },
+      "builds": "Wheel and source archive 0.1.0 passed; Windows only."
+    },
+    "copilot": {
+      "head": "cb4fa9d0303e6f7d50b30db4ededdecbc8ccc57c",
+      "review": 5402608228,
+      "state": "COMMENTED",
+      "submitted_at": "2026-10-03T20:30:15Z",
+      "last_authorized_review": true,
+      "final_body_disposition": "Rejected: locked SDK already owns/closes the stream; actual-method synthetic probe and independent adjudication corroborate the single-failure path.",
+      "final_body_reply": 5973284154
+    },
+    "sdk_cleanup_probe": {
+      "version": "PyAudioWPatch 0.2.12.8",
+      "first_and_second_writer_failure": "All SDK-owned streams closed once; original cause preserved.",
+      "hardware": false,
+      "provider_calls": 0,
+      "limit": "Actual SDK ownership methods with synthetic native boundaries; not physical-close or multi-fault certification."
+    },
+    "merge_policy": "Configured administrator permission; exact-head merge preserving commits; no human APPROVED review claimed.",
+    "authorized_scope": {
+      "objective": "Finish remaining Windows M1, then stop.",
+      "omitted": [
+        "Two-hour capture/resource/pause/recovery run",
+        "Long generated-audio transcription/timestamps/diarization"
+      ],
+      "no_further_copilot_requests": true,
+      "remaining_review": "Independent peer review and actual Windows source/package CI.",
+      "ubuntu": "Manual-only retained; not run in this delivery.",
+      "m2_m5": "Outside this run."
+    }
   }
 }

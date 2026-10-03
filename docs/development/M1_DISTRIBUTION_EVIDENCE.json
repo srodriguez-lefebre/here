@@ -1,0 +1,217 @@
+{
+  "schema": 1,
+  "observed_at_utc": "2026-10-03T20:54:27.599652+00:00",
+  "status": "local integrated build and installer accepted; external gates pending",
+  "version": "0.2.0",
+  "source": {
+    "build_commit": "1740b2d46b576d5fcacf2b3a7fa33fffac29c322",
+    "tracked_tree_dirty": false,
+    "incorporated_desktop_merge": "7ed78afc551c09729ebd886c27089b9c989bbafe"
+  },
+  "runtime": {
+    "python": "3.13.15 (main, Aug 25 2026, 14:00:51) [MSC v.1944 64 bit (AMD64)]",
+    "os": "Windows-11-10.0.26200-SP0",
+    "python_toolchain_files": {
+      "python.exe": "493a90f47d3640a87c325edd55db560d6794860241ed4863e95bc874a113aef9",
+      "python313.dll": "1e01a0359c35dbd41bb4b2155a6e4157db9805ea1c192bb6b4b0d61deafd83ff"
+    },
+    "observed_native_versions": {
+      "Expat": "expat_2.8.2",
+      "OpenSSL": "OpenSSL 3.5.8 25 Aug 2026",
+      "zlib": "1.3.2"
+    },
+    "unexposed_internal_versions": [
+      "FLAC",
+      "Ogg",
+      "Vorbis",
+      "Opus",
+      "LAME",
+      "mpg123",
+      "libffi",
+      "liblzma",
+      "mpdecimal"
+    ]
+  },
+  "build": {
+    "script": "scripts/build_windows.ps1",
+    "exit_code": 0,
+    "pyinstaller_seconds": 114.442,
+    "payload_inventory_files": 730,
+    "native_payloads": 71,
+    "verified_upstream_notice_hashes": 147,
+    "lock_sha256": "27683b94206636cdea6ba8904da2cd23cd828cab2e38dceeff1bf84cb22a27d8",
+    "inno_engine": "6.7.0",
+    "unsigned": true,
+    "dependency_archives": "Hash-enforced frozen lock sets; raw ZIPs not retained or claimed observed."
+  },
+  "artifacts": {
+    "build-provenance.json": {
+      "sha256": "ed2e0dc1b848b81aadc5590bb0cd4cdc724ec0e8246eebb9edf10efdfce55aa2",
+      "bytes": 31159
+    },
+    "bundle-inventory.json": {
+      "sha256": "81cf89b267281dc45a8086d7cebe71e00638086b4b2b3f5e22349b6af6d26eeb",
+      "bytes": 159598
+    },
+    "compiler-provenance.json": {
+      "sha256": "b6332898d505c6d341c8dc07243d4a8a4c8d12709c8a55ab5dca4366e7e5b71e",
+      "bytes": 109
+    },
+    "here-0.2.0-py3-none-any.whl": {
+      "sha256": "1eda4f004c53d6bb182395276fe8ed3e9ea5c12289c4001572cfcdb09ae09dbf",
+      "bytes": 98263
+    },
+    "here-0.2.0-windows-x64-setup.exe": {
+      "sha256": "fc22c977e148790edbf8ea88d02be7042aafc37277d4224e517b4a062b6ad805",
+      "bytes": 54090991
+    },
+    "here-0.2.0-windows-x64.zip": {
+      "sha256": "8528c43a1ecea4fd632bacfab8385f56d70b9888393c5412b599c9fb621e2daf",
+      "bytes": 66410379
+    }
+  },
+  "installer": {
+    "script": "scripts/smoke_windows.ps1",
+    "exit_code": 0,
+    "app_id": "{94BE3378-6B95-48A1-BD13-C534746C7319}",
+    "checks": {
+      "offrepo-no-key": true,
+      "current_user_entries": true,
+      "no_automatic_startup": true,
+      "installed-no-key": true,
+      "installer_payload_matches_bundle": true,
+      "start_shortcut_gui_opened": true,
+      "active_update_refused_exit": 1,
+      "idle_gui_exit": true,
+      "reinstalled-no-key": true,
+      "reinstall_preserves_data": true,
+      "uninstall_preserves_data": true
+    },
+    "owned_data": "Unique synthetic temporary root; canary survived; registration/Start/program removed."
+  },
+  "frozen_reports": [
+    {
+      "stage": "offrepo-no-key",
+      "executable": "here.exe",
+      "qt": "6.11.2",
+      "libsndfile": "1.2.2",
+      "checks": {
+        "desktop_visible": true,
+        "provider_configured": false,
+        "hardware_opened": false,
+        "recording_started": false,
+        "editable_finder": false,
+        "windowed_stdio_absent": true,
+        "jobs_drained": true,
+        "helper_rejected_request": true,
+        "helper_timeout_reaped": true
+      }
+    },
+    {
+      "stage": "offrepo-no-key",
+      "executable": "here-cli.exe",
+      "qt": "6.11.2",
+      "libsndfile": "1.2.2",
+      "checks": {
+        "desktop_visible": true,
+        "provider_configured": false,
+        "hardware_opened": false,
+        "recording_started": false,
+        "editable_finder": false,
+        "windowed_stdio_absent": false,
+        "jobs_drained": true,
+        "helper_rejected_request": true,
+        "helper_timeout_reaped": true
+      }
+    },
+    {
+      "stage": "installed-no-key",
+      "executable": "here.exe",
+      "qt": "6.11.2",
+      "libsndfile": "1.2.2",
+      "checks": {
+        "desktop_visible": true,
+        "provider_configured": false,
+        "hardware_opened": false,
+        "recording_started": false,
+        "editable_finder": false,
+        "windowed_stdio_absent": true,
+        "jobs_drained": true,
+        "helper_rejected_request": true,
+        "helper_timeout_reaped": true
+      }
+    },
+    {
+      "stage": "installed-no-key",
+      "executable": "here-cli.exe",
+      "qt": "6.11.2",
+      "libsndfile": "1.2.2",
+      "checks": {
+        "desktop_visible": true,
+        "provider_configured": false,
+        "hardware_opened": false,
+        "recording_started": false,
+        "editable_finder": false,
+        "windowed_stdio_absent": false,
+        "jobs_drained": true,
+        "helper_rejected_request": true,
+        "helper_timeout_reaped": true
+      }
+    },
+    {
+      "stage": "reinstalled-no-key",
+      "executable": "here.exe",
+      "qt": "6.11.2",
+      "libsndfile": "1.2.2",
+      "checks": {
+        "desktop_visible": true,
+        "provider_configured": false,
+        "hardware_opened": false,
+        "recording_started": false,
+        "editable_finder": false,
+        "windowed_stdio_absent": true,
+        "jobs_drained": true,
+        "helper_rejected_request": true,
+        "helper_timeout_reaped": true
+      }
+    },
+    {
+      "stage": "reinstalled-no-key",
+      "executable": "here-cli.exe",
+      "qt": "6.11.2",
+      "libsndfile": "1.2.2",
+      "checks": {
+        "desktop_visible": true,
+        "provider_configured": false,
+        "hardware_opened": false,
+        "recording_started": false,
+        "editable_finder": false,
+        "windowed_stdio_absent": false,
+        "jobs_drained": true,
+        "helper_rejected_request": true,
+        "helper_timeout_reaped": true
+      }
+    }
+  ],
+  "focused_tests": {
+    "passed": 32,
+    "seconds": 9.83,
+    "python": "3.13.15",
+    "qt": "6.11.2",
+    "source_import": "This checkout src/__init__.py; wheel subprocesses use build/windows/venv."
+  },
+  "limits": [
+    "No installed hardware recording or installed fault-matrix claim from startup smoke.",
+    "Prior short native/provider observations retain their original source/runtime.",
+    "Two-hour capture/resource and long generated-audio transcription runs omitted by user.",
+    "Ubuntu not run; M2-M5 outside this delivery.",
+    "No public release upload or application signing."
+  ],
+  "remaining_gates": [
+    "Final committed-source full suite recorded by coordinator after this audit commit.",
+    "Independent distribution peer review.",
+    "Actual hosted Windows source/package CI.",
+    "Guarded distribution merge and revised-scope M1 closure."
+  ],
+  "review_policy": "No further Copilot requests after desktop review 5402608228, per explicit user instruction."
+}

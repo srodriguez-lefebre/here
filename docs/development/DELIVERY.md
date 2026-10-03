@@ -15,6 +15,12 @@ will not be run here. Earlier Ubuntu results below remain historical observation
 Prioritize the remaining desktop fixes, Windows distribution and necessary M1
 acceptance; no later-milestone work or optional validation expands this scope.
 
+The user subsequently instructed that Copilot review `5402608228` is the last.
+No further Copilot review requests will be made, including for distribution.
+Remaining delivery uses independent peer review and actual Windows source/package
+CI, with replies to all already-received findings. This explicitly supersedes the
+original recurring Copilot-request gate below.
+
 The user's latest explicit instruction on 2026-10-03 omits both the two-hour
 capture/pause/recovery/resource run and long generated-audio transcription with
 timestamps/diarization. These cases are excluded from this delivery, not passed.
@@ -74,8 +80,34 @@ M5 settings/runtime (1–2), portability/privacy (3–5) and updates/product acc
 
 The first group, M1 capture reliability, merged as [PR #12](https://github.com/srodriguez-lefebre/here/pull/12)
 on 2026-10-03 07:52:15 UTC, merge `ca07aed8f6d5abf43c85e03ca0107d60096c3e03`.
-The next branch is `codex/m1-desktop-recovery`; its two planned tasks implement the
-restart-safe storage and desktop controls. All five milestones remain open.
+The desktop/recovery group merged as [PR #13](https://github.com/srodriguez-lefebre/here/pull/13)
+at 2026-10-03T20:41:23Z, merge `7ed78afc551c09729ebd886c27089b9c989bbafe`. Its final source is
+`843279c` and reviewed PR head is `cb4fa9d`:
+746 Windows tests with
+0 skips, plus wheel/source builds passed.
+Ubuntu remains a separate manual-only workflow and was not run for this delivery.
+Copilot review `5402608228` and all earlier inline/body findings
+were evaluated and answered; independent review accepted the corrected source.
+Configured administrator merge permission was used with an exact-head guard.
+Historical task/checkpoint observations below retain their original source heads.
+
+The next branch is `codex/m1-windows-distribution`. Ruling: split distribution into
+the remaining M1 delivery PR: actual frozen runtime, installer, notices,
+clean installation proof and the revised-scope closure audit. The user explicitly
+omitted the two-hour capture/resource run and long generated-audio transcription;
+neither is executed or claimed as passing. Desktop delivery alone does not close M1.
+After the remaining reviewed delivery merges and evidence is recorded, close M1
+under this revised scope and stop. M2-M5 remain future work outside this run.
+
+Distribution local delivery at clean incorporated-source build `1740b2d` now passed:
+locked noneditable 0.2.0 wheel, windowed GUI/console CLI, bounded no-key/off-repo Qt
+and helper smoke, complete native/notice inventory, and actual stable per-user
+installer Start launch, active replacement refusal, reinstall/uninstall and preserved
+synthetic data. See [`M1_DISTRIBUTION_EVIDENCE.json`](M1_DISTRIBUTION_EVIDENCE.json)
+for hashes and exact runtime/source limits. Distribution peer review, actual clean
+Windows source/package CI and guarded merge remain; local proof does not close those
+gates or certify repeated installed hardware/fault tests. After those gates pass,
+record the actual merge, close M1 under the revised scope and stop.
 
 Desktop Task 1 is independently approved at `d366711`: per-user configuration,
 optional credentials, writer-owned WAV/journal checkpoints, stable capture UUID and
@@ -394,6 +426,11 @@ they were not facts implied by the first capture merge.
 This register records immutable observed checkpoints. The live
 [PR review/check/merge record](https://github.com/srodriguez-lefebre/here/pull/12)
 is the authority for subsequent review dispositions, final-head CI and merge status;
-earlier passing runs never waive a later-head gate. No milestone is complete here:
-the desktop branch still needs its whole-branch/Copilot/current-head CI merge gates;
-installed distribution, two-hour acceptance and M2–M5 still need their planned evidence.
+earlier passing runs never waive a later-head gate. Desktop PR #13 is now merged
+as `7ed78af`; its final review findings were adjudicated and replied to. The remaining
+distribution PR incorporates that merge and has a clean-source Windows build,
+actual local installer lifecycle proof and a final suite of 743 passed with six
+local symlink-privilege skips at `e5520c6`. Independent distribution review,
+current-head Windows source/package CI and its guarded merge complete the revised
+M1 delivery. The two long acceptance runs are omitted by explicit user instruction;
+M2–M5 are future plans outside this run. No further Copilot request is authorized.

@@ -1,6 +1,6 @@
 [project]
 name = "here"
-version = "0.1.0"
+version = "0.2.0"
 description = "CLI para grabar y transcribir audio"
 readme = "README.md"
 requires-python = ">=3.12.6"
@@ -50,6 +50,15 @@ packages = [
 "here.ui" = "src/ui"
 
 [dependency-groups]
+build = [
+    "pyinstaller==6.22.3",
+    "pyinstaller-hooks-contrib==2026.8",
+    "altgraph==0.17.5",
+    "packaging==26.3",
+    "pefile==2024.8.26; sys_platform == 'win32'",
+    "pywin32-ctypes==0.2.3; sys_platform == 'win32'",
+    "setuptools==84.0.0",
+]
 dev = [
     "httpx>=0.27,<1",
     "mypy>=1.19.1",

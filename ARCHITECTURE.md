@@ -37,6 +37,21 @@ The main flow is:
 
 ## Windows Presentation Layer
 
+Windows distribution starts with a locked noneditable 0.2.0 wheel installed into
+a dedicated CPython 3.13.15 AMD64 build environment. PyInstaller creates windowed
+`here.exe` and console `here-cli.exe` sharing one inspectable `_internal` directory.
+The fixed audio child dispatch runs before Qt/provider bootstrap and uses the
+console sibling with bounded pipes and process ownership. A Windows lifetime
+mutex lets the per-user Inno Setup installer refuse replacement while here runs.
+
+Build DLL discovery uses owned Python/wheel paths and Windows system paths.
+Current M1 uses raster-painted Qt Widgets; unused multimedia, image/icon codecs,
+QML/virtual keyboard, PDF/SVG and software OpenGL fallback are omitted. Actual
+native files and full namespaced notices accompany the build; wheel/runtime,
+source input and native hashes are recorded. The deterministic packaged smoke
+creates temporary local settings, initializes the real desktop, drains owned jobs,
+and checks rejected/timeout child IPC without hardware, sessions or provider calls.
+
 The Windows interface and live logo run in the same process as the application
 controller. `ApplicationEventBridge` is the only asynchronous entry into Qt: it
 marshals application callbacks onto the UI event loop, then distributes immutable

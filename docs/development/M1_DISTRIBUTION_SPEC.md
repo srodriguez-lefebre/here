@@ -56,6 +56,10 @@ QtMultimedia/playback belongs to future navigation work and is not imported by
 current M1 source. Do not add playback functionality or force unused QtMultimedia/
 FFmpeg into this delivery. Include notices for the actual shipped dependencies.
 
+The user's final review instruction makes Copilot review `5402608228` the last.
+No further Copilot request is made for this delivery; use independent peer review,
+actual Windows source/package CI and guarded merge.
+
 ## Acceptance
 
 - Build commands work on Windows from a fresh locked environment.
