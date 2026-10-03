@@ -164,7 +164,10 @@ def test_failed_manifest_copies_with_same_uuid_are_both_discoverable(tmp_path):
 
 
 @pytest.mark.parametrize("original_status", ["interrupted", "failed"])
-def test_retry_copied_session_preserves_independent_capture(tmp_path, original_status):
+@pytest.mark.parametrize("identity_spelling", ["canonical", "hex", "braced"])
+def test_retry_copied_session_preserves_independent_capture(
+    tmp_path, original_status, identity_spelling
+):
     from here.application.processing import SessionProcessor
     from here.application.recovery import RecoveryService
     from here.transcription.client import TranscriptionResult
@@ -175,6 +178,14 @@ def test_retry_copied_session_preserves_independent_capture(tmp_path, original_s
     write_recovery_manifest(seed, capture.document.capture_id, "failed")
     copied = root / "copied-session"
     shutil.copytree(seed, copied)
+    meeting_id = capture.document.capture_id
+    if identity_spelling == "hex":
+        meeting_id = meeting_id.replace("-", "")
+    elif identity_spelling == "braced":
+        meeting_id = "{" + meeting_id + "}"
+    metadata = json.loads((copied / "session.json").read_text())
+    metadata["meeting_id"] = meeting_id
+    (copied / "session.json").write_text(json.dumps(metadata), encoding="utf-8")
     sf.write(copied / "audio.wav", np.full(80, 4321, dtype=np.int16), 8000, subtype="PCM_16")
     if original_status == "failed":
         shutil.copytree(seed, capture.destination)
@@ -187,6 +198,7 @@ def test_retry_copied_session_preserves_independent_capture(tmp_path, original_s
     service = RecoveryService(root)
     candidate = next(item for item in service.discover() if item.session_dir == copied)
     assert candidate.can_retry
+    assert candidate.capture_id == meeting_id
     selected = service.materialize(candidate)
     assert selected == copied
     seen = []
@@ -197,7 +209,7 @@ def test_retry_copied_session_preserves_independent_capture(tmp_path, original_s
         np.testing.assert_array_equal(
             sf.read(session.sources[0].path, dtype="int16")[0], [4321] * 80
         )
-        assert session.meeting_id == capture.document.capture_id
+        assert session.meeting_id == meeting_id
         assert json.loads((copied / "session.json").read_text())["status"] == "pending"
         return TranscriptionResult("copied words", "Recovered copy")
 
@@ -206,7 +218,7 @@ def test_retry_copied_session_preserves_independent_capture(tmp_path, original_s
     assert seen == [copied / "audio.wav"]
     assert result.session_dir == copied
     assert result.metadata.status == "completed"
-    assert result.metadata.meeting_id == capture.document.capture_id
+    assert result.metadata.meeting_id == meeting_id
     assert result.metadata.session_id == "copied-human-id"
     assert result.transcript_path.read_text(encoding="utf-8-sig") == "Recovered copy"
     assert (copied / "audio.wav").read_bytes() == copied_audio
@@ -222,6 +234,116 @@ def test_retry_copied_session_preserves_independent_capture(tmp_path, original_s
     assert remaining.can_retry
     original_source = capture.recording_session().sources[0]
     np.testing.assert_array_equal(sf.read(original_source.path, dtype="int16")[0], [1234] * 80)
+
+
+@pytest.mark.parametrize(
+    "meeting_id",
+    [
+        pytest.param(None, id="absent"),
+        pytest.param("", id="empty"),
+        pytest.param("imported-legacy-id", id="malformed"),
+        pytest.param("../outside", id="posix-path"),
+        pytest.param(r"..\outside", id="windows-path"),
+        pytest.param("12345678-1234-4ABC-8DEF-123456789ABC", id="uppercase"),
+        pytest.param("1234567812344abc8def123456789abc", id="hex"),
+        pytest.param("{12345678-1234-4abc-8def-123456789abc}", id="braced"),
+    ],
+)
+def test_retry_optional_identity_preserves_selected_audio_and_metadata(
+    tmp_path, monkeypatch, meeting_id
+):
+    from here.application.processing import SessionProcessor
+    from here.application.recovery import RecoveryService
+    from here.output.session_writer import read_session_metadata
+    from here.transcription.client import TranscriptionResult
+
+    directory = tmp_path / "imported-session"
+    write_recovery_manifest(directory, meeting_id, "failed")
+    sf.write(directory / "raw.wav", np.full(80, 4321, dtype=np.int16), 8000, subtype="PCM_16")
+    metadata = json.loads((directory / "session.json").read_text())
+    raw_metadata = {
+        **metadata["sources"][0],
+        "audio_file": "raw.wav",
+        "device_name": "original microphone",
+    }
+    metadata["capture_sources"] = [raw_metadata]
+    metadata["output_files"].append("raw.wav")
+    (directory / "session.json").write_text(json.dumps(metadata), encoding="utf-8")
+    before = {path.name: path.read_bytes() for path in directory.iterdir()}
+    service = RecoveryService(tmp_path)
+
+    (candidate,) = service.discover()
+    assert candidate.can_retry and candidate.capture_id == meeting_id
+    assert candidate.display_id == "copied-human-id"
+    selected = service.materialize(candidate)
+    assert selected == directory
+    assert {path.name: path.read_bytes() for path in directory.iterdir()} == before
+    journal_loads = []
+    load = journal_type().load
+
+    def observe_load(root, capture_id):
+        journal_loads.append(capture_id)
+        return load(root, capture_id)
+
+    monkeypatch.setattr(journal_type(), "load", staticmethod(observe_load))
+    seen = []
+
+    def transcribe(session, **kwargs):
+        (source,) = session.sources
+        seen.append(source.path)
+        assert source.path == directory / "audio.wav"
+        np.testing.assert_array_equal(sf.read(source.path, dtype="int16")[0], [1234] * 80)
+        assert session.meeting_id == meeting_id
+        pending = read_session_metadata(directory)
+        assert pending.status == "pending"
+        assert pending.meeting_id == meeting_id
+        assert pending.session_id == "copied-human-id"
+        return TranscriptionResult("selected words", "Recovered import")
+
+    result = SessionProcessor(transcribe=transcribe, retry_delays=()).retry(selected)
+
+    assert seen == [directory / "audio.wav"]
+    assert journal_loads == []
+    assert result.metadata == read_session_metadata(directory)
+    assert result.metadata.status == "completed"
+    assert result.metadata.meeting_id == meeting_id
+    assert result.metadata.session_id == "copied-human-id"
+    assert [item.model_dump() for item in result.metadata.capture_sources] == [raw_metadata]
+    assert result.transcript_path.read_text(encoding="utf-8-sig") == "Recovered import"
+    assert (directory / "audio.wav").read_bytes() == before["audio.wav"]
+    assert (directory / "raw.wav").read_bytes() == before["raw.wav"]
+    assert service.discover() == []
+
+
+@pytest.mark.parametrize(
+    "meeting_id", [None, "imported-legacy-id", "{12345678-1234-4abc-8def-123456789abc}"]
+)
+@pytest.mark.parametrize("fault", ["path", "geometry", "media"])
+def test_retry_optional_identity_keeps_selected_audio_preflight(tmp_path, meeting_id, fault):
+    from here.application.processing import SessionProcessor
+
+    directory = tmp_path / "imported-session"
+    write_recovery_manifest(directory, meeting_id, "failed")
+    metadata_path = directory / "session.json"
+    metadata = json.loads(metadata_path.read_text())
+    if fault == "path":
+        metadata["recoverable_audio"] = "../outside.wav"
+    elif fault == "geometry":
+        metadata["sources"][0]["frames"] = 160
+    else:
+        (directory / "audio.wav").write_bytes(b"invalid selected WAV")
+    metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
+    before = {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()}
+
+    with pytest.raises(
+        RuntimeError if fault == "media" else ValueError,
+        match="geometry" if fault == "geometry" else None,
+    ):
+        SessionProcessor(transcribe=lambda *a, **kw: pytest.fail("provider called")).retry(
+            directory
+        )
+
+    assert {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()} == before
 
 
 @pytest.mark.parametrize("fault", [None, "geometry", "media", "path"])
@@ -263,7 +385,7 @@ def test_retry_own_reservation_keeps_journal_validation_and_cleanup(tmp_path, fa
         assert result.audio_path.read_bytes() == before[capture.destination / "audio.wav"]
 
 
-@pytest.mark.parametrize("fault", ["identity", "destination", "source_path"])
+@pytest.mark.parametrize("fault", ["identity", "destination", "source_path", "schema", "json"])
 def test_retry_copy_rejects_invalid_journal_before_association(tmp_path, fault):
     from here.application.processing import SessionProcessor
     from here.output.paths import UnsafeSessionPath
@@ -277,11 +399,13 @@ def test_retry_copy_rejects_invalid_journal_before_association(tmp_path, fault):
         document["capture_id"] = "12345678-1234-1234-1234-123456789abc"
     elif fault == "destination":
         document["destination"] = "../outside"
-    else:
+    elif fault == "schema":
+        document["schema_version"] = 2
+    elif fault == "source_path":
         document["sources"][0]["audio_file"] = "../outside.wav"
-    journal_path.write_text(json.dumps(document))
+    journal_path.write_text("{" if fault == "json" else json.dumps(document))
     before = {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()}
-    with pytest.raises(UnsafeSessionPath):
+    with pytest.raises(ValueError if fault in {"schema", "json"} else UnsafeSessionPath):
         SessionProcessor(transcribe=lambda *a, **kw: pytest.fail("provider called")).retry(copied)
     assert {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()} == before
 

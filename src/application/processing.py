@@ -7,6 +7,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from uuid import UUID
 
 import soundfile as sf
 from here.audio.mix import materialize_normalized_session
@@ -120,6 +121,15 @@ def session_from_audio_file(audio_path: Path) -> RecordingSession:
 def session_audio_path(session_dir: Path, audio_file: str) -> Path:
     """Only persisted local filenames may select audio during recovery."""
     return session_artifact_path(session_dir, audio_file)
+
+
+def _is_canonical_capture_id(capture_id: str) -> bool:
+    """An optional session identity may locate a journal only as a canonical UUID."""
+    try:
+        identity = UUID(capture_id)
+    except ValueError:
+        return False
+    return str(identity) == capture_id
 
 
 def _validated_recovery_source(
@@ -782,7 +792,11 @@ class SessionProcessor:
         )
         audio_path = session_audio_path(session_dir, audio_file)
         journal = None
-        if metadata is not None and metadata.meeting_id is not None:
+        if (
+            metadata is not None
+            and metadata.meeting_id is not None
+            and _is_canonical_capture_id(metadata.meeting_id)
+        ):
             from here.recording.journal import CaptureJournal
 
             try:
