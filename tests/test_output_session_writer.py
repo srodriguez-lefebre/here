@@ -238,3 +238,31 @@ def test_explicit_empty_segment_evidence_writes_current_document(
     assert document["schema_version"] == 1
     assert document["semantics"] == "provider_evidence"
     assert document["segments"] == []
+
+
+def test_failed_metadata_publication_preserves_previous_segment_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    previous = _write_segment_artifacts(
+        tmp_path, segments=[TranscriptSegment("old provider evidence", 0.0, 1.0, "A")]
+    )
+    assert previous.segments_path is not None
+    previous_metadata = previous.metadata_path.read_bytes()
+    previous_segments = previous.segments_path.read_bytes()
+    assert SEGMENTS_FILE in json.loads(previous_metadata)["output_files"]
+    write_text = Path.write_text
+
+    def fail_metadata_publication(path: Path, *args, **kwargs):
+        if path == previous.metadata_path:
+            raise OSError("synthetic metadata publication failure")
+        return write_text(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "write_text", fail_metadata_publication)
+
+    with pytest.raises(OSError, match="synthetic metadata publication failure"):
+        _write_segment_artifacts(
+            tmp_path, segments=None, session_dir=previous.session_dir, status="failed"
+        )
+
+    assert previous.metadata_path.read_bytes() == previous_metadata
+    assert previous.segments_path.read_bytes() == previous_segments

@@ -154,8 +154,6 @@ def write_session_artifacts(
             ).model_dump_json(indent=2),
             encoding=METADATA_ENCODING,
         )
-    else:
-        (session_dir / SEGMENTS_FILE).unlink(missing_ok=True)
 
     if transcript_text is not None:
         transcript_path.write_text(transcript_text, encoding=TRANSCRIPT_ENCODING)
@@ -185,6 +183,9 @@ def write_session_artifacts(
         )
     elif events_path.exists():
         events_path.unlink()
+
+    if segments is None:
+        (session_dir / SEGMENTS_FILE).unlink(missing_ok=True)
 
     return SessionArtifactPaths(
         session_dir=session_dir,
