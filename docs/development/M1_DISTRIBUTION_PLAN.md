@@ -9,6 +9,14 @@ installer; clean-runner verification plus independent local capture acceptance.
 **Tech Stack:** uv, PyInstaller, Inno Setup 6.7.0, PowerShell, GitHub Actions.
 **Spec:** `docs/development/M1_DISTRIBUTION_SPEC.md`.
 
+The user's latest explicit instruction on 2026-10-03 omits both the two-hour
+capture/pause/recovery/resource run and long generated-audio transcription with
+timestamps/diarization. These cases are excluded from this delivery, not passed.
+Complete the remaining Windows distribution, actual runtime/installation checks,
+notices/checksums, reviewed PRs and evidence audit; then close M1 under this revised
+scope and stop. Existing short hardware/fault/provider observations retain their
+actual provenance. M2-M5 remain outside this run.
+
 ## Global Constraints
 
 - Windows 11 x64; no system service or automatic recording/startup.
@@ -21,7 +29,7 @@ installer; clean-runner verification plus independent local capture acceptance.
 
 - Explicit src-to-here package mapping must work without an editable finder.
 - Windowed app has no stderr/stdout; logging/errors cannot crash normal launch.
-- Missing Qt multimedia, WASAPI or soundfile DLL in frozen bundle.
+- Missing required Qt plugins, WASAPI or soundfile DLL in frozen bundle.
 - Update while recording must preserve current work and prevent unsafe replacement.
 - Installer/script paths with spaces, existing data and nonadministrator user.
 
@@ -43,19 +51,16 @@ installer; clean-runner verification plus independent local capture acceptance.
 - [ ] Update installation docs/architecture/What's New; make cohesive build/runtime and
   verification/documentation commits. Independent review then Copilot/CI gates precede merge.
 
-### Task 2: Capture acceptance and milestone closure audit
+### Task 2: Revised-scope milestone closure audit
 
-**Files:** `scripts/validate_capture.py`, `docs/development/M1_EVIDENCE.md`,
-`docs/development/ACCEPTANCE.md`, authoritative plans and delivery ledger.
+Included in the remaining distribution PR; no separate long-acceptance PR.
 
-- [ ] Define executable synthetic marker/resource tests with a 7,200-second audio
-  timeline; bounded duration-memory/queue tests must exercise the production pipeline.
-- [ ] Run provider smoke on generated Windows TTS only, never upload private audio;
-  inspect source segment timing, speaker availability and recovery artifacts.
-- [ ] Run bounded Windows device/signal and pause/stop/cancel/recovery checks; document
-  exact tested devices, duration and any unsupported conditions.
-- [ ] Execute available long real-hardware and clean-installed scenarios from the
-  acceptance matrix; record frame/marker/memory/disk results and explicit open cases.
-- [ ] Compare every M1 finished criterion with authoritative evidence. Close only proven
-  criteria; retain original scope and progress on later milestones if hardware evidence
-  needs an external environment.
+**Files:** `docs/development/M1_EVIDENCE.md`, `docs/development/ACCEPTANCE.md`,
+authoritative plans and delivery ledger.
+
+- [ ] Record exact source, frozen-runtime, installer and clean Windows CI evidence.
+- [ ] Reconcile each remaining M1 criterion with its actual observed proof and limits.
+- [ ] Mark the two-hour capture/resource and long generated-audio transcription cases
+  omitted by explicit user instruction; do not execute replacement long-run tests.
+- [ ] Record the reviewed merge and close M1 under the revised scope, then stop.
+  Leave M2-M5 plans intact without implementing them.

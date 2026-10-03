@@ -81,3 +81,14 @@ El 2026-10-03 el usuario acotó la ejecución actual: cerrar el hito 1 en Window
 y terminar ahí. Los hitos 2–5 conservan su lugar en este plan maestro, pero su
 implementación queda fuera de esta ejecución. La validación de Ubuntu se conserva
 aparte y no se ejecuta ni condiciona el cierre del hito 1.
+
+
+### Alcance final autorizado del hito 1 — 2026-10-03
+
+Por indicación explícita del usuario, se omiten la prueba de captura de
+al menos dos horas con pausas, recuperación y medición de recursos, y la
+transcripción larga con audio generado, timestamps y diarización. No se
+ejecutan ni se presentan como aprobadas. El cierre de M1 se evalúa con
+el alcance restante en Windows: correcciones, distribución instalable,
+verificaciones de runtime/instalación, avisos, checksums y PR revisadas
+y mergeadas. Al cerrar M1 termina esta ejecución; M2-M5 quedan pendientes.

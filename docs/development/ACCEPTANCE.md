@@ -7,9 +7,9 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | Milestone | Acceptance requirement | Evidence required | Current state |
 |---|---|---|---|
 | M1 | Both default Windows sources captured at 44.1/48 kHz | Actual device/format and WAV frame/duration report | Short actual two-source capture passed; long run open |
-| M1 | Two-hour meeting without unbounded growth or unexplained gaps | Frames/known markers, peak memory, disk, queue and final artifacts | Open |
+| M1 | Two-hour meeting without unbounded growth or unexplained gaps | Frames/known markers, peak memory, disk, queue and final artifacts | Omitted by explicit user instruction; not run |
 | M1 | Pause/resume audio timeline, destructive cancel and saved exit | Qt and Windows synthetic marker runs | Short native pause/resume and paused save-exit passed; synthetic restart/exit barriers passed; long/installed checks open |
-| M1 | Provider/timestamps and diarization | Synthetic real-provider run and segment output inspected | Single/multiple-source TTS smokes passed; long diarization open |
+| M1 | Provider/timestamps and diarization | Synthetic real-provider run and segment output inspected | Single/multiple-source TTS smokes passed; long transcription/diarization omitted by explicit user instruction |
 | M1 | Failure/crash/network/disconnection/disk-pressure recovery | Fault-injection plus bounded hardware run | PR12 faults, writer/publication process kills and helper-owner death passed; native recoverable saved failure passed; long/installed fault matrix open |
 | M1 | Installed application opens, records and uninstalls | Fresh Windows installation and bundled-runtime smoke | Open |
 | M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | Open |
@@ -22,6 +22,20 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M5 | Portable data including optional audio and citations | Export/import on a fresh root, hashes and hostile ZIP tests | Open |
 | M5 | Install/update/uninstall preserve user memory | N to N+1 installation and separate uninstall test | Open |
 | All | PR groups reviewed by Copilot and merged | PR URLs, reviewed heads, comment dispositions, CI and merge SHAs | First M1 capture group PR12 merged; remaining groups open |
+
+## Current execution scope
+
+The user's latest explicit instruction on 2026-10-03 omits both the two-hour
+capture/pause/recovery/resource run and long generated-audio transcription with
+timestamps/diarization. These cases are excluded from this delivery, not passed.
+Complete the remaining Windows distribution, actual runtime/installation checks,
+notices/checksums, reviewed PRs and evidence audit; then close M1 under this revised
+scope and stop. Existing short hardware/fault/provider observations retain their
+actual provenance. M2-M5 remain outside this run.
+
+The historical matrix and runs below retain the original requirements and observations.
+The long-run exclusions above override their earlier open status for this delivery.
+No omitted requirement is represented as tested or passing.
 
 ## Runs
 

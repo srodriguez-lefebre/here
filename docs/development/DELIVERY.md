@@ -15,6 +15,14 @@ will not be run here. Earlier Ubuntu results below remain historical observation
 Prioritize the remaining desktop fixes, Windows distribution and necessary M1
 acceptance; no later-milestone work or optional validation expands this scope.
 
+The user's latest explicit instruction on 2026-10-03 omits both the two-hour
+capture/pause/recovery/resource run and long generated-audio transcription with
+timestamps/diarization. These cases are excluded from this delivery, not passed.
+Complete the remaining Windows distribution, actual runtime/installation checks,
+notices/checksums, reviewed PRs and evidence audit; then close M1 under this revised
+scope and stop. Existing short hardware/fault/provider observations retain their
+actual provenance. M2-M5 remain outside this run.
+
 ## Product authority and architecture
 
 `docs/MASTER_PLAN.md` defines the five milestones. `docs/MILESTONE_1_PLAN.md` and
