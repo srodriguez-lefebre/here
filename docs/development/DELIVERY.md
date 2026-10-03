@@ -46,6 +46,11 @@ library/CLI/evidence (3–6); M4 grounded core (1–5) and product flows/evidenc
 M5 settings/runtime (1–2), portability/privacy (3–5) and updates/product acceptance
 (6–8). These are delivery boundaries, not completed milestones or published releases.
 
+The first group, M1 capture reliability, merged as [PR #12](https://github.com/srodriguez-lefebre/here/pull/12)
+on 2026-10-03 07:52:15 UTC, merge `ca07aed8f6d5abf43c85e03ca0107d60096c3e03`.
+The next branch is `codex/m1-desktop-recovery`; its two planned tasks implement the
+restart-safe storage and desktop controls. All five milestones remain open.
+
 ## Review and merge gates
 
 - Each implementation task follows meaningful red/green tests and self-review.
@@ -144,6 +149,37 @@ open wherever it has not actually been observed.
   junction cases passed. Focused security suite: 129 passed/6 skipped; focused timing
   suite: 168 passed/1 skipped. Ruff, format and diff checks passed. This local result
   does not substitute for hosted CI of the final PR head.
+- Final capture corrections: `ac46ff8` validates every referenced WAV geometry before
+  retry normalization/provider work and derives provenance duration from the header;
+  `3162a74` coerces direct typed bounds before order checks, preserving valid companion
+  values and source text. Review `5399510672` findings were replied to and resolved;
+  independent scoped review accepted requirements and quality. Final code suite:
+  463 passed/6 local symlink-privilege skips in 12.98 s. Hosted CI `37107198007`
+  at exact `3162a74` passed 469 Windows tests without skips and 467 Ubuntu tests with
+  two Windows-only junction skips; both distributions built on both systems.
+- Copilot review `5399598693` inspected exact `3162a74` and confirmed those two fixes.
+  Its body also identifies a retained private CLI helper's normalization-failure
+  record without local raw references. The complete source call graph shows only test
+  callers of `_save_transcription`; current recording commands use the shared
+  controller/SessionProcessor, whose failure persistence already owns local sources.
+  Ruling: consolidate this pre-existing helper in desktop Task 1, with a real tiny-WAV
+  failure-to-local-retry regression, alongside early CLI managed-session preflight;
+  it does not block the delivered production capture subset. Cost if wrong: external
+  callers of this private helper need their original temporary audio until that PR.
+  The observation is accepted and publicly answered in comment `5966927016`, not
+  declared fixed or silently discarded. M1 stays open until consolidation is verified.
+- All six inline threads were replied to/resolved and every review-body observation
+  dispositioned before merge. PR #12 merged using the configured administrator
+  permission and exact-head guard at `3162a74`, preserving its commit history in
+  `ca07aed`. This is a COMMENTED Copilot review plus independent agent reviews, not a
+  human APPROVED review. Full immutable evidence is in
+  [`M1_CAPTURE_EVIDENCE.json`](M1_CAPTURE_EVIDENCE.json); short native observations are
+  in [`M1_NATIVE_EVIDENCE.json`](M1_NATIVE_EVIDENCE.json), with original code provenance.
+
+Desktop Task 1 also closes the parked catch-up control and CLI early-read boundaries
+and preserves capture UUID as additive `meeting_id` for M2. These amendments are in
+the desktop spec/plan; journals, optional credentials and UI/installer acceptance are
+future implementation rather than facts implied by the first merge.
 
 This register records immutable observed checkpoints. The live
 [PR review/check/merge record](https://github.com/srodriguez-lefebre/here/pull/12)

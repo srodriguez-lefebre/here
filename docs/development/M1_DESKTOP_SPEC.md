@@ -40,9 +40,18 @@ use same-directory temporary plus replace. Source paths
 must be beneath this capture directory; journal content is data, not authority to read
 arbitrary files. Preserve useful material if startup finds an interrupted journal.
 
+Long scheduling or suspend gaps must not make catch-up silence uninterruptible. Check
+stop, cancellation and pause intent between inserted blocks, checkpoint before closing,
+and send only actually persisted frames to live processing in disk order. A bounded
+control request must not drain an entire historical silence backlog before it acts.
+Record the interruption/gap truthfully; a silent placeholder is not captured speech.
+
 The journal lives until the final recoverable session metadata is persisted. Allocate
 capture UUID and final destination mapping before normalization creates a destination;
-reuse the same identity/path after restart. Live provider work can run during capture,
+reuse the same identity/path after restart. Persist that UUID as additive optional
+`SessionMetadata.meeting_id`; keep the existing human-readable `session_id` unchanged.
+M2 consumes the same UUID rather than allocating another identity for recovered audio.
+Live provider work can run during capture,
 protected by primary audio/journal. Before post-capture provider finalization or offline
 processing, close/validate normalized audio and atomically publish pending metadata.
 Stage audio and metadata under owned paths and replace in-directory, preserving the
@@ -59,6 +68,22 @@ source reference against the expected owned directory/root before opening, copyi
 normalizing, writing or deleting. Reject absolute/traversal paths and resolved
 outside-root links/reparse points, and revalidate at retry rather than trusting an old
 discovery result. A malformed entry preserves its files and cannot hide valid candidates.
+
+The existing CLI file-transcription path also reads neighboring session metadata and
+may reuse that directory. When reusing managed session state, preflight metadata,
+chunks/errors, every advertised audio/output reference and destination before reads
+or provider allocation. Preserve ordinary explicit file transcription: a user-supplied
+original input outside a session remains legitimate; neighboring metadata is never
+authority to follow a redirected managed entry. Both interfaces use the shared safe
+artifact helpers rather than assuming writer validation protects earlier reads.
+
+Consolidate the retained private CLI `_save_transcription` compatibility helper with
+the shared SessionProcessor. Current recording commands already use the shared
+controller; this helper is exercised by compatibility tests. Its normalization-
+failure record must likewise preserve and reference locally retryable raw sources,
+with geometry, original cause and safe owned paths. Leaving anonymous temporary WAVs
+outside a failed session is not recoverable session evidence. Test an actual tiny
+WAV, normalization failure, preserved local source and successful later retry.
 
 `RecoveryService.discover() -> list[RecoveryCandidate]` returns session directory,
 display ID, recorded duration, status, error summary and can_retry. It uses original
@@ -118,6 +143,8 @@ persistence failure leaves the journal for recovery.
   persistence plus worker completion before quit.
 - Stalled diagnostics, capture attempts during timeout cleanup and stale delivery after
   shutdown demonstrate no overlapping streams or running-thread destruction.
+- A large deterministic clock jump followed by stop, cancel or pause during catch-up
+  demonstrates bounded reader operations and matching persisted/live frame order.
 - Exit while recording, paused, preparing and processing follows stop/save semantics;
   idle close, hidden work and terminal overlay behavior remain unchanged.
 - Unit tests and Qt integration tests cover the new flow; real Windows smoke is logged

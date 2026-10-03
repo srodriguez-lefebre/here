@@ -8,9 +8,9 @@ must be synthetic; credentials and private conversations never enter evidence fi
 |---|---|---|---|
 | M1 | Both default Windows sources captured at 44.1/48 kHz | Actual device/format and WAV frame/duration report | Short actual two-source capture passed; long run open |
 | M1 | Two-hour meeting without unbounded growth or unexplained gaps | Frames/known markers, peak memory, disk, queue and final artifacts | Open |
-| M1 | Pause/resume audio timeline, destructive cancel and saved exit | Qt and Windows synthetic marker runs | Open |
+| M1 | Pause/resume audio timeline, destructive cancel and saved exit | Qt and Windows synthetic marker runs | Short native pause/resume passed; saved exit and restart open |
 | M1 | Provider/timestamps and diarization | Synthetic real-provider run and segment output inspected | Single/multiple-source TTS smokes passed; long diarization open |
-| M1 | Failure/crash/network/disconnection/disk-pressure recovery | Fault-injection plus bounded hardware run | Open |
+| M1 | Failure/crash/network/disconnection/disk-pressure recovery | Fault-injection plus bounded hardware run | PR12 fault regressions passed; journal/crash and device matrix open |
 | M1 | Installed application opens, records and uninstalls | Fresh Windows installation and bundled-runtime smoke | Open |
 | M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | Open |
 | M2 | Deletion clears managed memory without resurrection | DB/FTS/files/answers/backup inspection after restart | Open |
@@ -21,7 +21,7 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M5 | Offline first run, settings, tray/startup and safe exit | Qt, process concurrency and Windows settings tests | Open |
 | M5 | Portable data including optional audio and citations | Export/import on a fresh root, hashes and hostile ZIP tests | Open |
 | M5 | Install/update/uninstall preserve user memory | N to N+1 installation and separate uninstall test | Open |
-| All | PR groups reviewed by Copilot and merged | PR URLs, reviewed heads, comment dispositions, CI and merge SHAs | Open |
+| All | PR groups reviewed by Copilot and merged | PR URLs, reviewed heads, comment dispositions, CI and merge SHAs | First M1 capture group PR12 merged; remaining groups open |
 
 ## Runs
 
@@ -74,6 +74,18 @@ session paths, credentials or private recordings are published.
   and reversed timing across aliases/objects/typed serialization. Real hardlinks and
   junctions passed; six symlink cases require local Windows privileges. Hosted checks
   for the final PR head are recorded in the PR and evaluated before merge.
+
+- First M1 capture group merged 2026-10-03 07:52:15 UTC: PR #12, exact reviewed
+  head `3162a74`, merge `ca07aed`. Current-head CI `37107198007` passed 469 tests
+  on Windows (14.24 s, no skips), 467 on Ubuntu (7.97 s, two Windows-only junction
+  skips), and wheel/source builds on both. All six locally skipped symlink cases
+  ran successfully on both hosts. Local final-code suite: 463 passed/6 skipped in
+  12.98 s; independent review accepted the two latest corrections. Final Copilot
+  review `5399598693` confirms the fixes and records the legacy private CLI helper
+  limitation assigned to desktop Task 1; no full-M1 completion is claimed. Details:
+  [`M1_CAPTURE_EVIDENCE.json`](M1_CAPTURE_EVIDENCE.json). Short physical observations
+  retain their original code provenance in
+  [`M1_NATIVE_EVIDENCE.json`](M1_NATIVE_EVIDENCE.json).
 
 ## Measurement decisions
 

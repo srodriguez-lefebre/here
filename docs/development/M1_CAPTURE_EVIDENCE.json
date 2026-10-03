@@ -1,0 +1,189 @@
+{
+  "schema_version": 1,
+  "milestone": "M1",
+  "group": "capture reliability",
+  "milestone_complete": false,
+  "pull_request": "https://github.com/srodriguez-lefebre/here/pull/12",
+  "reviewed_head": "3162a74cbdb74d5e3a288c5cbb49965e70ecfece",
+  "merge_commit": "ca07aed8f6d5abf43c85e03ca0107d60096c3e03",
+  "merged_at_utc": "2026-10-03T07:52:15Z",
+  "merge_method": "merge commit, exact-head guard, configured administrator bypass",
+  "merge_permission": {
+    "ruleset_id": 14750729,
+    "actor_role": "ADMIN",
+    "bypass_mode": "always",
+    "human_approved_review": false
+  },
+  "copilot_reviews": [
+    {
+      "id": 5399146085,
+      "head": "c3dc790",
+      "state": "COMMENTED"
+    },
+    {
+      "id": 5399210060,
+      "head": "5ec4e92",
+      "state": "COMMENTED"
+    },
+    {
+      "id": 5399274184,
+      "head": "6ac6a0f",
+      "state": "COMMENTED"
+    },
+    {
+      "id": 5399321887,
+      "head": "e48f9ee",
+      "state": "COMMENTED"
+    },
+    {
+      "id": 5399348275,
+      "head": "6f1f88d",
+      "state": "COMMENTED"
+    },
+    {
+      "id": 5399404470,
+      "head": "240858e",
+      "state": "COMMENTED"
+    },
+    {
+      "id": 5399510672,
+      "head": "3b8a1ea",
+      "state": "COMMENTED"
+    },
+    {
+      "id": 5399598693,
+      "head": "3162a74",
+      "state": "COMMENTED",
+      "submitted_at_utc": "2026-10-03T07:46:58Z"
+    }
+  ],
+  "findings": [
+    {
+      "subject": "late successful capture cancellation cleanup",
+      "comment": 4171819200,
+      "fix": "4860095",
+      "reply": 4171851858,
+      "status": "fixed, replied, resolved"
+    },
+    {
+      "subject": "valid nested timestamp alias fallback",
+      "comment": 4171819228,
+      "fix": "4860095",
+      "reply": 4171851904,
+      "status": "fixed, replied, resolved"
+    },
+    {
+      "subject": "oversized timestamp integer",
+      "review": 5399210060,
+      "fix": "6ac6a0f",
+      "reply_issue_comment": 5966092317,
+      "status": "fixed, replied"
+    },
+    {
+      "subject": "stale segment evidence on rewrite",
+      "review": 5399274184,
+      "fix": "e48f9ee",
+      "reply_issue_comment": 5966173165,
+      "status": "fixed, replied"
+    },
+    {
+      "subject": "handled metadata/segment pair publication failure",
+      "comment": 4171988549,
+      "fix": "240858e",
+      "reply": 4172023206,
+      "status": "fixed, replied, resolved"
+    },
+    {
+      "subject": "unsafe managed output paths and partial writes",
+      "comment": 4172034351,
+      "fix": "a9cb09a",
+      "reply": 4172115204,
+      "status": "fixed, replied, resolved"
+    },
+    {
+      "subject": "contradictory timestamp intervals",
+      "review": 5399404470,
+      "fix": "7ed996a",
+      "reply_issue_comment": 5966655267,
+      "status": "fixed, replied"
+    },
+    {
+      "subject": "stale public verification ledger",
+      "review": 5399404470,
+      "fix": "3b8a1ea",
+      "reply_issue_comment": 5966655267,
+      "status": "updated, replied"
+    },
+    {
+      "subject": "untrusted manifest WAV geometry",
+      "comment": 4172130486,
+      "fix": "ac46ff8",
+      "reply": 4172194204,
+      "status": "fixed, replied, resolved"
+    },
+    {
+      "subject": "invalid direct typed segment bounds",
+      "comment": 4172130509,
+      "fix": "3162a74",
+      "reply": 4172194281,
+      "status": "fixed, replied, resolved"
+    },
+    {
+      "subject": "legacy private CLI helper normalization failure omits local source references",
+      "review": 5399598693,
+      "reply_issue_comment": 5966927016,
+      "status": "accepted, nonblocking deferral to immediately following M1_DESKTOP Task 1",
+      "rationale": "Only test callers found; production recording uses the shared controller/SessionProcessor recovery owner. Pre-existing helper behavior; M1 remains open until consolidation and real-WAV local retry regression.",
+      "cost_if_wrong": "External private-helper callers need their original temporary audio until the next PR."
+    }
+  ],
+  "independent_review": {
+    "scope": "Whole capture branch plus scoped corrections",
+    "final_range": "3b8a1ea..3162a74",
+    "spec_compliance": "ACCEPT",
+    "code_quality": "ACCEPT",
+    "material_fix_findings_open": 0,
+    "human_approval": false
+  },
+  "local_verification": {
+    "head": "3162a74cbdb74d5e3a288c5cbb49965e70ecfece",
+    "passed": 463,
+    "skipped": 6,
+    "seconds": 12.98,
+    "skip_reason": "Windows symlink creation privileges",
+    "ruff": "passed",
+    "format": "passed",
+    "diff_checks": "passed"
+  },
+  "hosted_ci": {
+    "run_id": 37107198007,
+    "url": "https://github.com/srodriguez-lefebre/here/actions/runs/37107198007",
+    "head": "3162a74cbdb74d5e3a288c5cbb49965e70ecfece",
+    "conclusion": "success",
+    "windows": {
+      "passed": 469,
+      "skipped": 0,
+      "seconds": 14.24
+    },
+    "ubuntu": {
+      "passed": 467,
+      "skipped": 2,
+      "seconds": 7.97,
+      "skip_reason": "Windows-only junction tests"
+    },
+    "local_skipped_symlinks": "Passed on both hosted systems",
+    "wheel_and_sdist": "Built on both; project version 0.1.0"
+  },
+  "remaining_m1": [
+    "Desktop journals/restart recovery and per-user paths",
+    "Optional credentials, diagnostics and stop-save-exit",
+    "CLI managed-session preflight and compatibility helper consolidation",
+    "Installer and clean runtime acceptance",
+    "Two-hour hardware/resource and long-provider acceptance"
+  ],
+  "limits": [
+    "Pre-existing filesystem tampering validation; no concurrent attacker exclusion",
+    "Handled I/O rollback; no process-kill or power-loss durability claim in this group",
+    "Short native and authored-provider smokes are separate evidence; no long-meeting/installer certification"
+  ]
+}
