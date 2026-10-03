@@ -196,6 +196,19 @@ suite: 677 passed, 6 existing local
 privilege skips (71.7 s); scoped independent review accepted.
 New-head hosted checks and Copilot remain merge gates; full M1 remains open.
 
+
+Copilot body review `5400937500` identified CLI failure exits before actual worker
+completion and pause requests hiding stalled device readers. Correction `662baba`:
+CLI failure and interrupt exits cancel only active work and independently await unfinished actual worker completion in finally, so cancellation races cannot skip the fence and FAILED is not destructively cancelled. Original failures retain exit 1; original KeyboardInterrupt retains exit 130 with ordinary cleanup failure logged, without claiming a failed wait completed or catching BaseException.
+Each actual child reader advances one monotonic counter only after active IO/write or paused availability/drain operations complete. Existing bounded ticks carry those counters separately from audio/live frames; parent deadlines renew only for strictly increased counters of that source. Missing, stale or lower values preserve history; sender activity and parent pause cannot mask a stalled reader. The separate post-stop closing deadline is unchanged.
+Reader health originates from each actual child reader; parent pause state and
+sender activity cannot certify device progress. Terminal failure does not grant
+destructive cancellation. Real-gated CLI regressions reproduced four premature exits and two interrupt cleanup failures; final CLI/controller coverage passed 53 cases. Nine intended real-child watchdog failures became 16 passing pause cases, including either stalled source, blocked paused drain/availability, stale/missing/rollback ticks, healthy pauses, resume and paused stop with actual child/worker closure.
+Final source suite: 705 passed, 6
+existing local privilege skips (114.77 s); scoped independent
+review accepted. New-head hosted checks and Copilot remain required; full M1 is open.
+Actual Windows 11 two-source smoke at this source passed: 44.1/48 kHz stereo, 4.007 s healthy pause with a 3 s reader deadline and unchanged primary frame counts, both sources resumed, then paused stop in 0.262 s. Actual helper/owned threads closed; provider calls were zero and owned raw audio was removed after closure. This is short native reader/IPC proof, separate from GUI, frozen and long acceptance.
+
 ## Review and merge gates
 
 - Each implementation task follows meaningful red/green tests and self-review.
