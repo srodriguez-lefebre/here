@@ -122,7 +122,10 @@ class HereDesktop:
         self._check_exit()
 
     def _application_event(self, event):
-        if event.kind is EventKind.WORKER_COMPLETED and not self._exit_intent:
+        if event.kind is EventKind.ERROR_RECORDED and not self._exit_intent:
+            self.restore_main_window()
+            QApplication.alert(self.main_window)
+        elif event.kind is EventKind.WORKER_COMPLETED and not self._exit_intent:
             self._discover()
         elif event.kind is EventKind.STATE_CHANGED and event.state is ApplicationState.PREPARING:
             # Immutable events retain fast lifecycle transitions even if queued snapshot

@@ -57,6 +57,22 @@ from the production entry point.
 
 ## Configuration
 
+Open **Configuración** in the desktop to edit the OpenAI key, transcription models,
+cleanup option and session folder. The key is masked and settings are saved to the
+selected local `.env`, preserving other entries and comments. Process environment
+variables take precedence; the dialog names any such overrides. Changes apply to
+the next operation; configuration is disabled while work is active.
+
+The **Indicador** tab controls size (48–208 px) and transparency (0–80%). Appearance
+is applied after saving and persists between launches. Cancel discards changes.
+
+Missing credentials are explained before recording starts. Other operation errors
+restore the main window with a cause and next step. Structural diagnostics are
+retained in `%LOCALAPPDATA%\here\logs\here.log` (or the selected HERE_DATA_DIR),
+rotating at 1 MB with three backups. They exclude API keys, raw exception messages,
+audio and transcript content. **Abrir carpeta de registros** opens their location.
+Logging failures never replace the original operation error.
+
 For an installed application, place configuration in
 `%LOCALAPPDATA%\here\.env`, or select one file explicitly with `HERE_ENV_FILE`.
 For source development, `.env.example` may be copied to a repository `.env`.

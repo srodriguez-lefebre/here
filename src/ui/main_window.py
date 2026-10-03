@@ -5,6 +5,7 @@ from __future__ import annotations
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QCloseEvent, QColor, QPalette
 from PySide6.QtWidgets import (
+    QApplication,
     QColorDialog,
     QComboBox,
     QHBoxLayout,
@@ -102,6 +103,9 @@ class MainWindow(QMainWindow):
         self._exit_button = QPushButton("Salir")
         self._exit_button.setObjectName("exitButton")
         self._exit_button.clicked.connect(self.exitRequested)
+        self._configuration_button = QPushButton("Configuración")
+        self._configuration_button.setObjectName("configurationButton")
+        self._configuration_button.clicked.connect(self._configure)
         self._diagnostics_label = QLabel()
         self._diagnostics_label.setObjectName("diagnosticsLabel")
         self._diagnostics_label.setWordWrap(True)
@@ -157,6 +161,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(self._recover_button)
         layout.addLayout(actions)
         layout.addWidget(self._color_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        layout.addWidget(self._configuration_button)
         layout.addWidget(self._exit_button, alignment=Qt.AlignmentFlag.AlignRight)
 
         central = QWidget()
@@ -184,13 +189,24 @@ class MainWindow(QMainWindow):
 
         detail = ""
         if snapshot.last_error is not None:
-            detail = snapshot.last_error.message
+            from here.diagnostics import explain_error
+
+            detail = explain_error(
+                snapshot.last_error.message,
+                snapshot.last_error.error_type,
+                recoverable=snapshot.recoverable,
+            )
+            if snapshot.session_dir is None and state is ApplicationState.FAILED:
+                self._state_label.setText("No se pudo iniciar la operación")
         elif snapshot.recoverable and state in {
             ApplicationState.FAILED,
             ApplicationState.CANCELLED,
         }:
             detail = "El audio está guardado y la sesión se puede reintentar."
         self._detail_label.setText(detail)
+        self._detail_label.setStyleSheet(
+            "color: #e89624; font-weight: 600" if snapshot.last_error else ""
+        )
         self._detail_label.setVisible(bool(detail))
 
         recording = state in {ApplicationState.RECORDING, ApplicationState.PAUSED}
@@ -231,8 +247,38 @@ class MainWindow(QMainWindow):
         try:
             operation()
         except Exception as exc:
-            self._detail_label.setText(str(exc))
-            self._detail_label.show()
+            self._show_error("command", exc)
+
+    def _show_error(self, stage, error):
+        from here.diagnostics import explain_error, record_error
+
+        record_error(stage, error)
+        self._detail_label.setText(explain_error(str(error), type(error).__name__))
+        self._detail_label.setStyleSheet("color: #e89624; font-weight: 600")
+        self._detail_label.show()
+        self.setWindowState(self.windowState() & ~Qt.WindowState.WindowMinimized)
+        self.show()
+        self.raise_()
+        QApplication.alert(self)
+
+    def _configure(self):
+        from .configuration import ConfigurationDialog
+
+        if self._controller.snapshot.has_active_work:
+            return
+        dialog = ConfigurationDialog(self._preferences, self)
+        if dialog.exec() == dialog.DialogCode.Accepted:
+            try:
+                self._controller.refresh_configuration()
+            except Exception as error:
+                self._show_error("configuration_reload", error)
+            else:
+                self._destination_label.setText(f"Destino: {self._controller.output_dir}")
+                self._detail_label.setText(
+                    "Configuración guardada. Podés iniciar una nueva grabación."
+                )
+                self._detail_label.setStyleSheet("")
+                self._detail_label.show()
 
     def set_background_busy(self, busy, *, exiting=False):
         self._background_busy = busy
@@ -248,6 +294,7 @@ class MainWindow(QMainWindow):
         )
         for button in [self._start_button, self._retry_button, *self._diagnostic_buttons]:
             button.setEnabled(idle)
+        self._configuration_button.setEnabled(idle)
         self._recovery_selector.setEnabled(idle)
         candidate = self._recovery_selector.currentData()
         self._recover_button.setEnabled(idle and candidate is not None and candidate.can_retry)
@@ -259,6 +306,7 @@ class MainWindow(QMainWindow):
 
     def set_diagnostics(self, value, error=None):
         if error:
+            self._show_error("audio_diagnostics", RuntimeError(error))
             text = f"Error de audio: {error}"
         elif isinstance(value, tuple):
             text = " · ".join(f"{item.source}: {item.name}" for item in value)
@@ -270,8 +318,11 @@ class MainWindow(QMainWindow):
     def set_recovery_error(self, error):
         """A failed explicit retry leaves the current selection available to try again."""
         self._recovery_label.setText(error)
+        self._show_error("recovery", RuntimeError(error))
 
     def set_recovery(self, candidates, error=None):
+        if error:
+            self._show_error("recovery_discovery", RuntimeError(error))
         self._recovery_selector.clear()
         for item in candidates or []:
             text = f"{item.display_id} · {item.status} · {item.recorded_duration_seconds:.1f} s"

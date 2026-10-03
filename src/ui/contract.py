@@ -95,9 +95,15 @@ class ApplicationUiAdapter:
         return self._controller.subscribe(listener)
 
     def start_recording(self) -> None:
+        require_provider_key()
         self._controller.start(
             StartRequest(output_dir=self._output_dir, source_mode=SourceMode.BOTH)
         )
+
+    def refresh_configuration(self) -> None:
+        from here.config.settings import get_settings
+
+        self._output_dir = get_settings().TRANSCRIPTIONS_DIR
 
     def stop_and_process(self) -> None:
         self._controller.stop()
