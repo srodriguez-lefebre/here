@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+import tempfile
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
@@ -69,6 +71,74 @@ def _reserve_session_dir(target_dir: Path, session_id: str) -> tuple[str, Path]:
 def create_session_dir(target_dir: Path, completed_at: datetime) -> tuple[str, Path]:
     target_dir.mkdir(parents=True, exist_ok=True)
     return _reserve_session_dir(target_dir, _session_id_from_datetime(completed_at))
+
+
+def _reserve_artifact_path(destination: Path, suffix: str) -> Path:
+    descriptor, name = tempfile.mkstemp(
+        dir=destination.parent, prefix=f".{destination.name}.", suffix=suffix
+    )
+    os.close(descriptor)
+    return Path(name)
+
+
+def _stage_document(destination: Path, content: str) -> Path:
+    staged = _reserve_artifact_path(destination, ".stage")
+    try:
+        staged.write_text(content, encoding=METADATA_ENCODING)
+    except BaseException:
+        staged.unlink(missing_ok=True)
+        raise
+    return staged
+
+
+def _publish_metadata_and_segments(
+    metadata_path: Path, metadata_json: str, segments_json: str | None
+) -> None:
+    """Publish metadata last and roll back segment changes on handled I/O failure.
+
+    This is not a multi-file transaction against process termination or concurrent writers.
+    """
+    segments_path = metadata_path.parent / SEGMENTS_FILE
+    staged_paths: list[Path] = []
+    backup: Path | None = None
+    backup_moved = False
+    segment_published = False
+    committed = False
+    try:
+        staged_segments = None
+        if segments_json is not None:
+            staged_segments = _stage_document(segments_path, segments_json)
+            staged_paths.append(staged_segments)
+        staged_metadata = _stage_document(metadata_path, metadata_json)
+        staged_paths.append(staged_metadata)
+
+        if segments_path.is_symlink() or segments_path.exists():
+            backup = _reserve_artifact_path(segments_path, ".backup")
+            # Rename the entry itself, without reading through an external link.
+            segments_path.replace(backup)
+            backup_moved = True
+        if staged_segments is not None:
+            staged_segments.replace(segments_path)
+            segment_published = True
+        staged_metadata.replace(metadata_path)
+        committed = True
+    except OSError:
+        if backup_moved:
+            assert backup is not None
+            try:
+                backup.replace(segments_path)
+            except OSError as rollback_error:
+                rollback_error.add_note(f"Previous segment evidence retained at {backup}")
+                raise
+            backup_moved = False
+        elif segment_published:
+            segments_path.unlink(missing_ok=True)
+        raise
+    finally:
+        for staged in staged_paths:
+            staged.unlink(missing_ok=True)
+        if backup is not None and (committed or not backup_moved):
+            backup.unlink(missing_ok=True)
 
 
 def write_session_artifacts(
@@ -147,13 +217,13 @@ def write_session_artifacts(
     errors_document = ErrorMetadataDocument(errors=errors or [])
     events_document = SessionEventMetadataDocument(events=events or [])
     segments_path = session_dir / SEGMENTS_FILE if segments is not None else None
-    if segments_path is not None:
-        segments_path.write_text(
-            TranscriptSegmentDocument(
-                segments=[asdict(segment) for segment in segments]
-            ).model_dump_json(indent=2),
-            encoding=METADATA_ENCODING,
-        )
+    segments_json = (
+        TranscriptSegmentDocument(
+            segments=[asdict(segment) for segment in segments]
+        ).model_dump_json(indent=2)
+        if segments is not None
+        else None
+    )
 
     if transcript_text is not None:
         transcript_path.write_text(transcript_text, encoding=TRANSCRIPT_ENCODING)
@@ -161,10 +231,6 @@ def write_session_artifacts(
             render_transcript_markdown(metadata, transcript_text),
             encoding=MARKDOWN_ENCODING,
         )
-    metadata_path.write_text(
-        metadata.model_dump_json(indent=2),
-        encoding=METADATA_ENCODING,
-    )
     chunks_path.write_text(
         chunks_document.model_dump_json(indent=2),
         encoding=METADATA_ENCODING,
@@ -184,8 +250,7 @@ def write_session_artifacts(
     elif events_path.exists():
         events_path.unlink()
 
-    if segments is None:
-        (session_dir / SEGMENTS_FILE).unlink(missing_ok=True)
+    _publish_metadata_and_segments(metadata_path, metadata.model_dump_json(indent=2), segments_json)
 
     return SessionArtifactPaths(
         session_dir=session_dir,
