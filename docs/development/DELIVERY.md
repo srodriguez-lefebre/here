@@ -426,6 +426,11 @@ they were not facts implied by the first capture merge.
 This register records immutable observed checkpoints. The live
 [PR review/check/merge record](https://github.com/srodriguez-lefebre/here/pull/12)
 is the authority for subsequent review dispositions, final-head CI and merge status;
-earlier passing runs never waive a later-head gate. No milestone is complete here:
-the desktop branch still needs its whole-branch/Copilot/current-head CI merge gates;
-installed distribution, two-hour acceptance and M2–M5 still need their planned evidence.
+earlier passing runs never waive a later-head gate. Desktop PR #13 is now merged
+as `7ed78af`; its final review findings were adjudicated and replied to. The remaining
+distribution PR incorporates that merge and has a clean-source Windows build,
+actual local installer lifecycle proof and a final suite of 743 passed with six
+local symlink-privilege skips at `e5520c6`. Independent distribution review,
+current-head Windows source/package CI and its guarded merge complete the revised
+M1 delivery. The two long acceptance runs are omitted by explicit user instruction;
+M2–M5 are future plans outside this run. No further Copilot request is authorized.

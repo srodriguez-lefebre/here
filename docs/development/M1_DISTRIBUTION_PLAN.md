@@ -58,7 +58,7 @@ The user also made review `5402608228` the last Copilot review; do not request a
 - [x] Build installer, launch off-repo with no key, and inspect report/bundle inventory.
 - [x] Test isolated install/reinstall/uninstall with synthetic canaries and Start entries.
 - [ ] Run Windows packaging CI, upload artifacts/checksums and record exact evidence.
-- [ ] Update installation docs/architecture/What's New; make cohesive build/runtime and
+- [x] Update installation docs/architecture/What's New; make cohesive build/runtime and
   verification/documentation commits. Independent review and Windows source/package CI precede merge; no further Copilot request per explicit user instruction.
 
 ### Task 2: Revised-scope milestone closure audit

@@ -15,6 +15,13 @@ not run or passed. Ubuntu is optional manual-only; M2–M5 remain outside this r
 | Notices, payload and exact provenance | `THIRD_PARTY_NOTICES.md`, full component text trees, `bundle-inventory.json`, `build-provenance.json`, `compiler-provenance.json` and `SHA256SUMS.txt` accompany artifacts. Unexposed native versions remain explicitly unknown. |
 | PR review, Copilot dispositions, CI, merge | Desktop PR13 merged as `7ed78af`; distribution incorporates it. Root records remaining distribution peer review, actual Windows source/package CI and guarded merge. User stopped Copilot requests after desktop review 5402608228; no new distribution request. Local runtime proof does not imply hosted results or a merged distribution. |
 
+The final committed-source local suite at `e5520c6` passed 743 tests in 149.09 s,
+with six existing local Windows symlink-privilege skips. The two new real noneditable
+wheel entry cases ran. Only audit documentation differs from clean build `1740b2d`;
+runtime and build inputs are unchanged. Current-head hosted checks and reviewed
+merge are recorded in the remaining distribution PR, whose completed gates close
+M1 under the revised scope without requiring another self-referential audit PR.
+
 The package check never opens audio devices, starts recording, calls providers, or
 reads existing sessions/preferences. Installed recording/fault behavior is not
 inferred from a startup report: earlier hardware/provider observations and source
