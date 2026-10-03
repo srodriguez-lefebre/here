@@ -2,7 +2,8 @@
   "schema_version": 1,
   "milestone": "M1",
   "milestone_complete": false,
-  "desktop_pr_created": false,
+  "desktop_delivery": "Local source gates accepted; Copilot review and current-head hosted checks pending.",
+  "latest_desktop_source_head": "490b77c7b1a9681ef68cdc0beb8bb7c1823ea206",
   "task_1": {
     "status": "independent_spec_and_quality_approved",
     "base": "eba75781c3c317f62e9ec7080fbb9503952b6998",
@@ -67,7 +68,7 @@
       "quality_verdict": "approved",
       "unaddressed_material_findings": 0,
       "minor_finding": "PREPARING-stop test emergency completion latch can mask missing stop delivery; production stop call was inspected and is correct.",
-      "minor_disposition": "Accepted as nonblocking test-strengthening follow-up; source and reviewed ownership contract are approved."
+      "minor_disposition": "Strengthened in 490b77c; suppressed-stop runtime mutation now triggers the assertion. Scoped corrective review accepted."
     },
     "helper_contract": "Fixed source module; frozen trusted sibling here-cli.exe, hidden redirected pipes and pre-bootstrap dispatch. Non-inherited Windows kill-on-close Job Object assigned before hardware request.",
     "provider_shutdown_limit": "Existing synchronous SDK transport defaults are 600 seconds with two retries. In-flight provider cancellation is cooperative; Qt remains responsive and retains ownership until actual cleanup. No short provider shutdown bound is claimed.",
@@ -77,6 +78,40 @@
       "Job Object process-death proof does not establish power-loss durability or a Linux parent-death guarantee.",
       "Copilot review and current-PR-head hosted checks remain pending."
     ]
+  },
+  "integrated_correction_1": {
+    "base": "dfbdeb64fa657111b69801a407065e4f85bd3e8b",
+    "source_head": "490b77c7b1a9681ef68cdc0beb8bb7c1823ea206",
+    "initial_whole_branch_verdict": "with_fixes",
+    "important_findings": [
+      { "finding": "Absent normalized WAV hid valid raw-backed sessions during fresh discovery/materialization.", "disposition": "Fixed; only genuine derived-file absence is skipped after safe path validation. Existing corrupt/unsafe audio remains rejected; shared retry rebuilds the selected filename." },
+      { "finding": "Missing-key selected retry cleared recovery choices.", "disposition": "Fixed; present the error while retaining choices and selection, allowing a later explicit same-window retry after editing the effective env file." }
+    ],
+    "minor_stop_test": "Actual stop delivery asserted before success; emergency completion only in teardown. Suppressed-stop in-memory mutation detected.",
+    "regressions": { "red_failed": 5, "green_passed": 11 },
+    "focused": { "passed": 170, "skipped": 5, "seconds": 27.22 },
+    "final_committed_head_suite": { "passed": 569, "skipped": 6, "seconds": 56.92, "skip_reason": "Existing local Windows symlink cases require unavailable privileges, WinError 1314." },
+    "changed_python_files_lint_and_format": 6,
+    "diff_check": "passed",
+    "scoped_independent_review": "accepted; both P2 findings and P3 test note addressed, no new material findings",
+    "local_whole_branch_gate": "accepted"
+  },
+  "native_recovery_correction": {
+    "source_head": "490b77c7b1a9681ef68cdc0beb8bb7c1823ea206",
+    "status": "passed",
+    "qt_platform": "windows",
+    "provider_calls": 0,
+    "hardware_capture": false,
+    "fresh_raw_backed_discovery_and_materialization_without_derived_wav": true,
+    "missing_key_error_kept_selection_and_retry_action": true,
+    "same_window_explicit_retry_after_editing_effective_env": true,
+    "normalized_frames": 240,
+    "identity_selected_name_and_raw_bytes_preserved": true,
+    "injected_transcriber_calls": 1,
+    "exit_after_actual_worker_and_background_cleanup": true,
+    "qt_heartbeat": { "samples": 22, "max_gap_seconds": 0.03705850000551436 },
+    "raw_audio_retained": false,
+    "scope": "Native Qt window/event delivery with authored tiny WAV and injected transcription. No physical capture, real provider, frozen or long-run claim."
   },
   "native_desktop_observation": {
     "observed_at_utc": "2026-10-03T09:48:55Z",

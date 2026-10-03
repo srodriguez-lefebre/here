@@ -87,6 +87,23 @@ audio was removed after worker/reservation cleanup. Real frozen helper launch,
 installation, long recording and real-provider long acceptance remain open.
 Safe observations: [`M1_DESKTOP_EVIDENCE.json`](M1_DESKTOP_EVIDENCE.json).
 
+Whole-branch review found two recovery integration defects: a missing normalized WAV
+hid valid raw-backed sessions, and a missing-key retry removed the selector choices.
+Commit `490b77c` fixes both and strengthens the preparation-stop test. Five failing
+regressions became eleven passing; the final committed-head suite passed 569 tests
+with six existing symlink-privilege skips (56.92 s). Scoped independent review accepts
+the whole-branch source gate. A separate native Qt authored-WAV probe at `490b77c`
+confirmed fresh raw-backed recovery, retained choices after missing-key error and one
+explicit same-window retry after editing the effective env file, reconstructing 240
+frames with UUID, human ID, selected filename and raw bytes preserved. No hardware
+or provider was used for this correction probe. External Copilot and head CI gates
+still precede merge; installer and full-M1 acceptance remain separate.
+
+The legacy private CLI helper deferred in PR #12 review `5399598693` is consolidated
+with SessionProcessor in desktop Task 1; its actual tiny-WAV normalization-failure,
+preserved-local-source and later-retry regression passes. The original deferral below
+records the historical first-PR disposition, rather than an outstanding source defect.
+
 ## Review and merge gates
 
 - Each implementation task follows meaningful red/green tests and self-review.

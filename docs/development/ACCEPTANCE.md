@@ -99,6 +99,13 @@ was issued. The maximum Qt heartbeat gap was 49.6 ms. This is source-runtime evi
 not frozen or long-provider acceptance; details and limits are in
 [`M1_DESKTOP_EVIDENCE.json`](M1_DESKTOP_EVIDENCE.json).
 
+Whole-branch corrective source `490b77c` passed 569 tests with six existing local
+symlink-privilege skips (56.92 s) and scoped independent acceptance. A native Qt
+authored-WAV probe confirmed recovery when the normalized file is already absent,
+retained choices after missing-key failure, and an explicit retry after editing the
+effective configuration in the same window. It rebuilt 240 frames while preserving
+identity/selected filename/raw bytes; no physical capture or provider was used.
+
 Long meeting means at least 7,200 seconds of recording wall time excluding deliberate
 pauses. Compare known playback markers and recorded durations; do not require exact
 hardware-clock synchronization between two sources. Initial marker seek tolerance is
