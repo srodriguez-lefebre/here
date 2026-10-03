@@ -481,6 +481,9 @@ class HereApplicationController:
         )
 
     def _fail(self, stage: str, exc: BaseException) -> None:
+        from here.diagnostics import record_error
+
+        record_error(stage, exc)
         metadata = error_metadata(stage, exc)
         error = ApplicationError(
             stage=metadata.stage,

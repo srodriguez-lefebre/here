@@ -1,5 +1,15 @@
 # What's new
 
+## Desktop configuration and error feedback
+
+- Local configuration editor for provider credentials, models, cleanup and sessions.
+- Persistent indicator size and transparency controls.
+- Missing-key explanation before capture, visible error attention and bounded
+  structural diagnostics even when a session has not been created.
+
+These changes are reviewed in their own PR after the M1 delivery; merging them
+requires a later user instruction. No new Copilot review is requested.
+
 ## 0.2.0 — Windows M1 delivery
 
 - Production Qt desktop and recording overlay share the application controller.

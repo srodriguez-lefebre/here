@@ -46,7 +46,8 @@ class LiveLogoOverlay(QWidget):
         self._dragged = False
 
         self.setObjectName("liveLogoOverlay")
-        self.setFixedSize(104, 104)
+        self.setFixedSize(preferences.size, preferences.size)
+        self.setWindowOpacity(preferences.opacity)
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint
             | Qt.WindowType.WindowStaysOnTopHint
@@ -66,7 +67,14 @@ class LiveLogoOverlay(QWidget):
         self._terminal_timer.timeout.connect(self._finish_terminal_display)
 
         self._preferences.accentChanged.connect(lambda _color: self.update())
+        self._preferences.sizeChanged.connect(self._set_size)
+        self._preferences.opacityChanged.connect(self.setWindowOpacity)
         self.set_snapshot(self._snapshot)
+
+    @Slot(int)
+    def _set_size(self, size: int) -> None:
+        self.setFixedSize(size, size)
+        self.update()
 
     @property
     def snapshot(self) -> ApplicationSnapshot:
@@ -239,6 +247,7 @@ class LiveLogoOverlay(QWidget):
     def paintEvent(self, _event: object) -> None:  # noqa: N802
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.scale(self.width() / 104, self.height() / 104)
         state = self._snapshot.state
         if state is ApplicationState.RECORDING:
             self._paint_recording(painter)
@@ -343,18 +352,14 @@ class LiveLogoOverlay(QWidget):
         painter.drawPath(path)
 
     def _paint_completed(self, painter: QPainter) -> None:
-        painter.setPen(
-            QPen(QColor("#21b36b"), 8, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap)
-        )
+        painter.setPen(QPen(QColor("#21b36b"), 8, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
         path = QPainterPath(QPointF(27, 53))
         path.lineTo(45, 70)
         path.lineTo(79, 33)
         painter.drawPath(path)
 
     def _paint_failed(self, painter: QPainter) -> None:
-        painter.setPen(
-            QPen(QColor("#e5484d"), 8, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap)
-        )
+        painter.setPen(QPen(QColor("#e5484d"), 8, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
         painter.drawLine(QPointF(31, 31), QPointF(73, 73))
         painter.drawLine(QPointF(73, 31), QPointF(31, 73))
 

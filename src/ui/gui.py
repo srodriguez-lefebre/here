@@ -15,6 +15,9 @@ def create_production_desktop() -> HereDesktop:
     """Compose Qt with the real application controller, never the CLI or preview."""
 
     application = application_instance(sys.argv)
+    from here.diagnostics import record_event
+
+    record_event("desktop", "started")
     controller = create_default_controller()
     output_dir = get_settings().TRANSCRIPTIONS_DIR
     if settings_file := os.environ.get("HERE_SETTINGS_FILE"):
@@ -31,7 +34,17 @@ def create_production_desktop() -> HereDesktop:
 
 def main() -> int:
     application = application_instance(sys.argv)
-    desktop = create_production_desktop()
+    try:
+        desktop = create_production_desktop()
+    except Exception as error:
+        from here.diagnostics import explain_error, record_error
+        from PySide6.QtWidgets import QMessageBox
+
+        record_error("startup", error)
+        QMessageBox.critical(
+            None, "here no pudo iniciar", explain_error(str(error), type(error).__name__)
+        )
+        return 1
     desktop.show()
     return int(application.exec())
 

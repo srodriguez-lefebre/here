@@ -44,6 +44,8 @@ class VisualController(Protocol):
 
     def start_recording(self) -> None: ...
 
+    def refresh_configuration(self) -> None: ...
+
     def stop_and_process(self) -> None: ...
 
     def pause_recording(self) -> None: ...
@@ -95,9 +97,23 @@ class ApplicationUiAdapter:
         return self._controller.subscribe(listener)
 
     def start_recording(self) -> None:
+        require_provider_key()
         self._controller.start(
             StartRequest(output_dir=self._output_dir, source_mode=SourceMode.BOTH)
         )
+
+    def refresh_configuration(self) -> None:
+        from here.config.settings import get_settings
+
+        if self.snapshot.has_active_work or not self.snapshot.worker_complete:
+            raise RuntimeError(
+                "Esperá a que termine la operación antes de cambiar la configuración."
+            )
+        selected = get_settings().TRANSCRIPTIONS_DIR
+        if selected != self._output_dir:
+            recovery = RecoveryService(selected)
+            self._output_dir = selected
+            self._recovery = recovery
 
     def stop_and_process(self) -> None:
         self._controller.stop()

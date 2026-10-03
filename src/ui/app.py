@@ -51,6 +51,7 @@ class HereDesktop:
         self.main_window.exitRequested.connect(self.request_exit)
         self.main_window.diagnosticsRequested.connect(self._diagnose)
         self.main_window.recoveryRequested.connect(self._recover)
+        self.main_window.configurationSaved.connect(self._configuration_changed)
         self.jobs.finished.connect(self._job_finished)
         self.jobs.idleChanged.connect(self._jobs_changed)
         self.bridge.snapshotChanged.connect(self._snapshot_changed)
@@ -87,6 +88,11 @@ class HereDesktop:
         self._refresh_pending = False
         self._submit("recovery", self.controller.discover_recovery)
 
+    def _configuration_changed(self):
+        self._epoch += 1
+        self.main_window.set_recovery([])
+        self._discover()
+
     def _diagnose(self, source):
         if self.controller.snapshot.has_active_work:
             return
@@ -122,7 +128,10 @@ class HereDesktop:
         self._check_exit()
 
     def _application_event(self, event):
-        if event.kind is EventKind.WORKER_COMPLETED and not self._exit_intent:
+        if event.kind is EventKind.ERROR_RECORDED and not self._exit_intent:
+            self.restore_main_window()
+            QApplication.alert(self.main_window)
+        elif event.kind is EventKind.WORKER_COMPLETED and not self._exit_intent:
             self._discover()
         elif event.kind is EventKind.STATE_CHANGED and event.state is ApplicationState.PREPARING:
             # Immutable events retain fast lifecycle transitions even if queued snapshot
