@@ -26,4 +26,12 @@ transcriptions/
 *.swp
 *.swo
 
-docs/
+docs/*
+!docs/MASTER_PLAN.md
+!docs/MILESTONE_1_PLAN.md
+!docs/LIVE_LOGO_PLAN.md
+!docs/development/
+.superpowers/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
