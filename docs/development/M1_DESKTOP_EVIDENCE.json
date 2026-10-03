@@ -3,7 +3,7 @@
   "milestone": "M1",
   "milestone_complete": false,
   "desktop_delivery": "PR13 open; local corrections independently accepted, new-head Copilot and hosted checks pending.",
-  "latest_desktop_source_head": "63030f0270b5520d89bcd5bd76fcc3ba18ccec8e",
+  "latest_desktop_source_head": "e3b89173dfdd3283f1789fc20e525b56f216286c",
   "task_1": {
     "status": "independent_spec_and_quality_approved",
     "base": "eba75781c3c317f62e9ec7080fbb9503952b6998",
@@ -327,5 +327,68 @@
     "raw_audio_retained": false,
     "runtime": "CPython 3.13.15 AMD64; PySide6 and Qt 6.11.2",
     "host": "Windows 11 Home Single Language, version 10.0.26200, build 26200"
+  },
+  "copilot_correction_4": {
+    "base": "bd90996b80787cc642e76a2606968724366221f0",
+    "source_head": "e3b89173dfdd3283f1789fc20e525b56f216286c",
+    "commits": [
+      "f1411894a13f625d39f11985af7af343b4106dd4",
+      "e3b89173dfdd3283f1789fc20e525b56f216286c"
+    ],
+    "copilot": {
+      "review": 5400431791,
+      "state": "COMMENTED",
+      "inline": 4172887022,
+      "body_findings": 1,
+      "dispositions": [
+        "Accepted high-severity inline: obsolete errors/events move to owned backups before metadata commit; precommit failure restores entries, while owned postcommit cleanup cannot report committed success as failure.",
+        "Accepted medium body finding: empty LOCALAPPDATA and XDG_DATA_HOME use absolute documented home fallback; nonempty paths and explicit environment-file precedence preserved."
+      ]
+    },
+    "regressions": {
+      "red_failed": 13,
+      "green_passed": 15,
+      "green_seconds": 2.59,
+      "scope": "Real tiny authored WAV/prior UUID manifest, targeted move/replace/unlink faults, first/second move and metadata failure restoration, failed rollback backup retention, obsolete/segment/stage postcommit cleanup, and both platform empty/nonempty environment cases."
+    },
+    "verification": {
+      "runtime": "CPython 3.13.15 AMD64; PySide6 and Qt 6.11.2",
+      "command": "QT_QPA_PLATFORM=offscreen python -m pytest -q",
+      "passed": 600,
+      "skipped": 6,
+      "seconds": 57.67,
+      "skip_reason": "Existing local Windows symbolic-link cases require unavailable privileges (WinError 1314).",
+      "focused": {
+        "passed": 222,
+        "skipped": 6,
+        "seconds": 21.15
+      },
+      "changed_files_lint_format": 5,
+      "diff_check": "passed"
+    },
+    "scoped_independent_review": "accepted",
+    "limits": [
+      "Handled-I/O rollback does not claim atomic multi-file publication against process death or concurrent writers.",
+      "A failed postcommit cleanup may retain a logged owned backup; a failed rollback retains its backup with an exception note and attempts other restorations.",
+      "New-head Copilot and hosted checks remain mandatory; prior native Qt proof retains source630 provenance."
+    ]
+  },
+  "hosted_desktop_checkpoint_bd90996": {
+    "head": "bd90996b80787cc642e76a2606968724366221f0",
+    "run": 37118112644,
+    "status": "success",
+    "windows": {
+      "passed": 591,
+      "skipped": 0,
+      "seconds": 50.64
+    },
+    "ubuntu": {
+      "passed": 588,
+      "skipped": 3,
+      "seconds": 33.28,
+      "skip_reason": "Windows process ownership and two Windows-only junction tests."
+    },
+    "wheel_and_source_builds": "passed on both platforms; version 0.1.0",
+    "limit": "No native exception occurred in this hosted run; exact previous access-violation causal mechanism remains unconfirmed. This does not establish checks for later heads."
   }
 }

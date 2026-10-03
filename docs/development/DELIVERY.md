@@ -133,6 +133,20 @@ or hardware, and 41.8 ms maximum heartbeat gap. These contract corrections do no
 prove the original access-violation cause; new-head hosted checks and Copilot review
 remain merge gates. M1 installer and long-duration acceptance are still open.
 
+
+Hosted CI at `bd90996` passed 591 Windows tests (50.64 s, no skips), 588 Ubuntu
+tests (33.28 s, three Windows-only skips), and wheel/source builds on both. Copilot
+review `5400431791` then identified a high-severity postcommit cleanup defect and a
+medium empty-directory-variable defect; both were accepted. Commits `f141189` and
+`e3b8917` stage obsolete files before metadata-last publication, restore on handled
+precommit failure, retain failed-rollback evidence, and keep owned cleanup failures
+from falsifying committed success; empty LOCALAPPDATA/XDG uses the home fallback.
+Thirteen RED cases became fifteen GREEN cases. Final committed-source suite:
+600 passed, six existing local privilege skips (57.67 s), with scoped independent
+acceptance. New-head hosted checks and Copilot review remain merge gates. Retained
+owned backups and handled-I/O rollback are explicit limits; no atomic process-kill
+transaction or full-M1 completion is claimed.
+
 ## Review and merge gates
 
 - Each implementation task follows meaningful red/green tests and self-review.
