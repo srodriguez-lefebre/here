@@ -766,13 +766,14 @@ class SessionProcessor:
             from here.recording.journal import CaptureJournal
 
             try:
-                journal = CaptureJournal.load(session_dir.parent, metadata.meeting_id)
+                candidate_journal = CaptureJournal.load(session_dir.parent, metadata.meeting_id)
             except FileNotFoundError:
                 pass
-            if journal is not None:
-                if journal.destination != session_dir.absolute():
-                    raise UnsafeSessionPath("Recovery journal points to another session")
-                journal.recording_session()
+            else:
+                # Copied metadata may share an ID with another capture's reservation.
+                if candidate_journal.destination == session_dir.absolute():
+                    candidate_journal.recording_session()
+                    journal = candidate_journal
         raw_sources = []
         if metadata is not None:
             extra_files = list(metadata.output_files)

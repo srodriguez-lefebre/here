@@ -163,6 +163,129 @@ def test_failed_manifest_copies_with_same_uuid_are_both_discoverable(tmp_path):
     assert {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()} == before
 
 
+@pytest.mark.parametrize("original_status", ["interrupted", "failed"])
+def test_retry_copied_session_preserves_independent_capture(tmp_path, original_status):
+    from here.application.processing import SessionProcessor
+    from here.application.recovery import RecoveryService
+    from here.transcription.client import TranscriptionResult
+
+    root = tmp_path / "sessions"
+    capture = make_capture(root)
+    seed = tmp_path / "authored-session"
+    write_recovery_manifest(seed, capture.document.capture_id, "failed")
+    copied = root / "copied-session"
+    shutil.copytree(seed, copied)
+    sf.write(copied / "audio.wav", np.full(80, 4321, dtype=np.int16), 8000, subtype="PCM_16")
+    if original_status == "failed":
+        shutil.copytree(seed, capture.destination)
+    original_bytes = {
+        path: path.read_bytes()
+        for path in root.rglob("*")
+        if path.is_file() and not path.is_relative_to(copied)
+    }
+    copied_audio = (copied / "audio.wav").read_bytes()
+    service = RecoveryService(root)
+    candidate = next(item for item in service.discover() if item.session_dir == copied)
+    assert candidate.can_retry
+    selected = service.materialize(candidate)
+    assert selected == copied
+    seen = []
+
+    def transcribe(session, **kwargs):
+        seen.append(session.sources[0].path)
+        assert session.sources[0].path == copied / "audio.wav"
+        np.testing.assert_array_equal(
+            sf.read(session.sources[0].path, dtype="int16")[0], [4321] * 80
+        )
+        assert session.meeting_id == capture.document.capture_id
+        assert json.loads((copied / "session.json").read_text())["status"] == "pending"
+        return TranscriptionResult("copied words", "Recovered copy")
+
+    result = SessionProcessor(transcribe=transcribe, retry_delays=()).retry(selected)
+
+    assert seen == [copied / "audio.wav"]
+    assert result.session_dir == copied
+    assert result.metadata.status == "completed"
+    assert result.metadata.meeting_id == capture.document.capture_id
+    assert result.metadata.session_id == "copied-human-id"
+    assert result.transcript_path.read_text(encoding="utf-8-sig") == "Recovered copy"
+    assert (copied / "audio.wav").read_bytes() == copied_audio
+    assert {
+        path: path.read_bytes()
+        for path in root.rglob("*")
+        if path.is_file() and not path.is_relative_to(copied)
+    } == original_bytes
+    (remaining,) = service.discover()
+    assert remaining.session_dir == capture.destination
+    assert remaining.capture_id == capture.document.capture_id
+    assert remaining.status == original_status
+    assert remaining.can_retry
+    original_source = capture.recording_session().sources[0]
+    np.testing.assert_array_equal(sf.read(original_source.path, dtype="int16")[0], [1234] * 80)
+
+
+@pytest.mark.parametrize("fault", [None, "geometry", "media", "path"])
+def test_retry_own_reservation_keeps_journal_validation_and_cleanup(tmp_path, fault):
+    from here.application.processing import SessionProcessor
+    from here.transcription.client import TranscriptionResult
+
+    capture = make_capture(tmp_path)
+    write_recovery_manifest(capture.destination, capture.document.capture_id, "failed")
+    journal_path = capture.directory / "journal.json"
+    if fault == "media":
+        (capture.directory / "source_01.wav").write_bytes(b"invalid original WAV")
+    elif fault is not None:
+        document = json.loads(journal_path.read_text())
+        if fault == "geometry":
+            document["sources"][0]["channels"] = 2
+        else:
+            document["sources"][0]["audio_file"] = "../outside.wav"
+        journal_path.write_text(json.dumps(document))
+    before = {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()}
+    calls = []
+
+    def transcribe(session, **kwargs):
+        calls.append(session.sources[0].path)
+        return TranscriptionResult("own words", "Recovered original")
+
+    processor = SessionProcessor(transcribe=transcribe, retry_delays=())
+    if fault is not None:
+        with pytest.raises(RuntimeError if fault == "media" else ValueError):
+            processor.retry(capture.destination)
+        assert calls == []
+        assert {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()} == before
+    else:
+        result = processor.retry(capture.destination)
+        assert calls == [capture.destination / "audio.wav"]
+        assert result.metadata.status == "completed"
+        assert result.metadata.meeting_id == capture.document.capture_id
+        assert not capture.directory.exists()
+        assert result.audio_path.read_bytes() == before[capture.destination / "audio.wav"]
+
+
+@pytest.mark.parametrize("fault", ["identity", "destination", "source_path"])
+def test_retry_copy_rejects_invalid_journal_before_association(tmp_path, fault):
+    from here.application.processing import SessionProcessor
+    from here.output.paths import UnsafeSessionPath
+
+    capture = make_capture(tmp_path)
+    copied = tmp_path / "copied-session"
+    write_recovery_manifest(copied, capture.document.capture_id, "failed")
+    journal_path = capture.directory / "journal.json"
+    document = json.loads(journal_path.read_text())
+    if fault == "identity":
+        document["capture_id"] = "12345678-1234-1234-1234-123456789abc"
+    elif fault == "destination":
+        document["destination"] = "../outside"
+    else:
+        document["sources"][0]["audio_file"] = "../outside.wav"
+    journal_path.write_text(json.dumps(document))
+    before = {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()}
+    with pytest.raises(UnsafeSessionPath):
+        SessionProcessor(transcribe=lambda *a, **kw: pytest.fail("provider called")).retry(copied)
+    assert {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()} == before
+
+
 @pytest.mark.parametrize("status", ["failed", "completed"])
 def test_manifest_supersedes_journal_only_at_same_identity_and_reserved_directory(tmp_path, status):
     from here.application.recovery import RecoveryService
