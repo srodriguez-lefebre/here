@@ -157,6 +157,7 @@ def test_retry_metadata_uses_current_operation_model(tmp_path, monkeypatch):
     assert second.metadata.transcription_model == "new-operation-model"
 
 
+@pytest.mark.usefixtures("owned_desktops")
 def test_production_gui_opens_without_key_or_provider(tmp_path, monkeypatch, qtbot):
     import here.transcription.client as client
     import here.ui.gui as gui
@@ -172,8 +173,6 @@ def test_production_gui_opens_without_key_or_provider(tmp_path, monkeypatch, qtb
         lambda app, controller, **kw: create_desktop(app, controller, settings=preferences, **kw),
     )
     desktop = gui.create_production_desktop()
-    qtbot.addWidget(desktop.main_window)
-    qtbot.addWidget(desktop.overlay)
     desktop.show()
     assert desktop.main_window.isVisible()
     desktop.bridge.close()

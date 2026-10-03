@@ -10,6 +10,8 @@ from PySide6.QtTest import QSignalSpy
 from PySide6.QtWidgets import QApplication, QMessageBox
 from pytestqt.qtbot import QtBot
 
+pytestmark = pytest.mark.usefixtures("owned_desktops")
+
 
 def _desktop(tmp_path: Path, qtbot: QtBot) -> tuple[FakeApplicationController, HereDesktop]:
     core = FakeApplicationController()
@@ -18,8 +20,6 @@ def _desktop(tmp_path: Path, qtbot: QtBot) -> tuple[FakeApplicationController, H
     application = QApplication.instance()
     assert application is not None
     desktop = HereDesktop(application, adapter, settings=settings)
-    qtbot.addWidget(desktop.main_window)
-    qtbot.addWidget(desktop.overlay)
     return core, desktop
 
 
@@ -77,14 +77,10 @@ def test_main_window_exposes_only_compatible_actions(tmp_path: Path, qtbot: QtBo
     window.set_snapshot(ApplicationSnapshot(state=ApplicationState.PAUSED))
     pause_button = window.findChild(object, "pauseButton")
     assert pause_button.text() == "Reanudar"
-    assert "Micrófono + audio del sistema" in window.findChild(
-        object, "sourceLabel"
-    ).text()
+    assert "Micrófono + audio del sistema" in window.findChild(object, "sourceLabel").text()
     assert str(tmp_path) in window.findChild(object, "destinationLabel").text()
 
-    window.set_snapshot(
-        ApplicationSnapshot(state=ApplicationState.FAILED, recoverable=True)
-    )
+    window.set_snapshot(ApplicationSnapshot(state=ApplicationState.FAILED, recoverable=True))
     assert window.findChild(object, "retryButton").isVisibleTo(window)
     assert window.findChild(object, "startButton").text() == "Nueva grabación"
 

@@ -11,13 +11,13 @@ from here.ui.contract import ApplicationUiAdapter
 from here.ui.fake_controller import FakeApplicationController
 from PySide6.QtWidgets import QApplication
 
+pytestmark = pytest.mark.usefixtures("owned_desktops")
+
 
 def desktop(qtbot, tmp_path, **kwargs):
     core = FakeApplicationController()
     adapter = ApplicationUiAdapter(core, tmp_path, **kwargs)
     result = HereDesktop(QApplication.instance(), adapter)
-    qtbot.addWidget(result.main_window)
-    qtbot.addWidget(result.overlay)
     return core, result
 
 

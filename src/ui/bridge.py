@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import threading
 
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import QObject, QTimer, Signal, Slot
 
 from .contract import (
     ApplicationEvent,
@@ -50,18 +50,19 @@ class ApplicationEventBridge(QObject):
 
 
 class BackgroundJobs(QObject):
-    """Own Python jobs until joined; only queued Qt delivery touches widgets."""
+    """Retain jobs until actual thread exit; all Qt delivery stays on the Qt thread."""
 
     finished = Signal(int, str, object, object)
     idleChanged = Signal()
-    _incoming = Signal(int, str, object, object)
 
     def __init__(self):
         super().__init__()
         self._serial = 0
         self._pending = {}
         self._closed = False
-        self._incoming.connect(self._deliver)
+        self._poll = QTimer(self)
+        self._poll.setInterval(10)
+        self._poll.timeout.connect(self._collect_finished)
 
     @property
     def busy(self):
@@ -82,24 +83,24 @@ class BackgroundJobs(QObject):
 
         worker = threading.Thread(target=work, name=f"here-ui-{kind}", daemon=True)
 
-        def observe():
-            worker.join()
-            self._incoming.emit(request_id, kind, *outcome)
-
-        observer = threading.Thread(target=observe, name="here-ui-completion", daemon=True)
-        self._pending[request_id] = (worker, observer)
+        self._pending[request_id] = (worker, kind, outcome)
         worker.start()
-        observer.start()
+        self._poll.start()
         return request_id
 
-    @Slot(int, str, object, object)
-    def _deliver(self, request_id, kind, value, error):
-        if request_id not in self._pending:
-            return
-        del self._pending[request_id]
-        if not self._closed:
-            self.finished.emit(request_id, kind, value, error)
-        self.idleChanged.emit()
+    @Slot()
+    def _collect_finished(self):
+        for request_id, (worker, kind, outcome) in tuple(self._pending.items()):
+            # An emitted signal can arrive before its sending thread returns. Poll
+            # actual termination instead: no worker touches a QObject or calls Qt.
+            if worker.is_alive():
+                continue
+            del self._pending[request_id]
+            if not self._closed:
+                self.finished.emit(request_id, kind, *outcome)
+            self.idleChanged.emit()
+        if not self._pending:
+            self._poll.stop()
 
     def close(self):
         self._closed = True

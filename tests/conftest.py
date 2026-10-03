@@ -55,3 +55,26 @@ def _reset_settings_cache(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> No
     settings_module._settings_instance = None
     yield
     settings_module._settings_instance = None
+
+
+@pytest.fixture
+def owned_desktops(qtbot, monkeypatch):
+    """Retain each composition root and drain it before Qtbot deletes its widgets."""
+    from here.ui.app import HereDesktop
+
+    original = HereDesktop.__init__
+
+    def initialize(desktop, *args, **kwargs):
+        original(desktop, *args, **kwargs)
+
+        def before_close(widget):
+            desktop.jobs.close()
+            desktop.bridge.close()
+            qtbot.waitUntil(lambda: not desktop.jobs.busy)
+
+        # Pytest-qt closes widgets before fixture teardown. Its before-close hook
+        # owns the whole desktop, not just weak references to the two widgets.
+        qtbot.addWidget(desktop.main_window, before_close_func=before_close)
+        qtbot.addWidget(desktop.overlay)
+
+    monkeypatch.setattr(HereDesktop, "__init__", initialize)
