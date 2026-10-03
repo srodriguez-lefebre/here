@@ -406,7 +406,13 @@ class HereApplicationController:
         return True
 
     def _finish_capture_failure(self, artifacts: SessionArtifactPaths, exc: CaptureFailed) -> None:
-        metadata = error_metadata("capture", exc)
+        persisted = getattr(artifacts, "errors", None)
+        metadata = next(
+            (error for error in getattr(persisted, "errors", []) if error.stage == "capture"),
+            None,
+        )
+        if metadata is None:
+            metadata = error_metadata("capture", exc)
         error = ApplicationError(
             stage=metadata.stage,
             error_type=metadata.type,

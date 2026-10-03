@@ -357,9 +357,29 @@ class SessionProcessor:
         completed_at = self._clock()
         session = failure.session
         session_id, session_dir = self._destination(session, target_dir, completed_at)
-        events = self._capture_events(session, events)
+        capture_events = self._capture_events(session, None) or []
+        events = [*(events or []), *capture_events]
         provenance = self._preserve_sources(session, session_dir)
-        errors = original_errors or [error_metadata("capture", failure)]
+        errors = list(original_errors or [])
+        if not errors:
+            # Only the current validated journal owns original capture failures;
+            # caller lifecycle events and IPC wrappers are not additional causes.
+            errors = [
+                ErrorMetadata(
+                    stage="capture",
+                    type=error_type,
+                    message=message,
+                    retryable=True,
+                    occurred_at=event.occurred_at,
+                )
+                for event in capture_events
+                if event.kind == "capture_error"
+                and isinstance(error_type := event.details.get("error_type"), str)
+                and error_type
+                and isinstance(message := event.details.get("error_message"), str)
+            ]
+        if not errors:
+            errors.append(error_metadata("capture", failure))
         recoverable_audio = None
         try:
             material = RecordingSession(

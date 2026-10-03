@@ -1,6 +1,7 @@
 import sys
 import threading
 import time
+from datetime import datetime
 from types import SimpleNamespace
 
 import pytest
@@ -19,7 +20,10 @@ class Stream:
         self.reads += 1
         if behavior == "read": time.sleep(60)
         if behavior == "error": raise RuntimeError("Synthetic device disconnected")
-        if behavior == "error_after_audio" and self.reads > 2:
+        if behavior in ("error_after_audio", "gated_error_after_audio") and self.reads > 2:
+            if behavior == "gated_error_after_audio":
+                from pathlib import Path
+                while not Path(__file__).with_suffix(".fail").exists(): time.sleep(0.01)
             raise OSError("Synthetic original device failure")
         return b"\\x01\\x00" * frames
     def stop_stream(self):
@@ -100,6 +104,8 @@ def test_stalled_open_has_owner_until_reaped_and_keeps_journal(tmp_path, behavio
 
 @pytest.mark.parametrize("behavior", ["read", "close"])
 def test_stalled_read_or_close_reaps_and_preserves_capture(tmp_path, behavior):
+    from here.application.processing import SessionProcessor
+
     launch, helpers = factory(tmp_path, behavior)
     audio = threading.Event()
     handle = WindowsRecordingHandle(
@@ -112,7 +118,7 @@ def test_stalled_read_or_close_reaps_and_preserves_capture(tmp_path, behavior):
     if behavior == "close":
         assert audio.wait(3)
         handle.stop()
-    with pytest.raises(CaptureFailed):
+    with pytest.raises(CaptureFailed) as caught:
         handle.wait(4)
     assert helpers[0].process.poll() is not None
     assert handle._journal.directory.exists()
@@ -127,6 +133,18 @@ def test_stalled_read_or_close_reaps_and_preserves_capture(tmp_path, behavior):
             else "Timed out closing Windows audio devices"
         ),
     }
+    artifacts = SessionProcessor().persist_capture_failure(caught.value, journal.root)
+    assert [
+        (error.type, error.message, error.occurred_at)
+        for error in artifacts.errors.errors
+        if error.stage == "capture"
+    ] == [
+        (
+            "TimeoutError",
+            errors[0]["details"]["error_message"],
+            datetime.fromisoformat(errors[0]["occurred_at"]),
+        )
+    ]
 
 
 def test_stop_uses_close_deadline_after_real_child_enters_cleanup(tmp_path, monkeypatch):
@@ -180,6 +198,8 @@ def test_stop_uses_close_deadline_after_real_child_enters_cleanup(tmp_path, monk
 
 
 def test_unexpected_child_death_keeps_parent_cause(tmp_path):
+    from here.application.processing import SessionProcessor
+
     launch, helpers = factory(tmp_path)
     audio = threading.Event()
     handle = WindowsRecordingHandle(
@@ -192,7 +212,7 @@ def test_unexpected_child_death_keeps_parent_cause(tmp_path):
     try:
         assert audio.wait(3)
         helpers[0].process.kill()
-        with pytest.raises(CaptureFailed, match="ended unexpectedly"):
+        with pytest.raises(CaptureFailed, match="ended unexpectedly") as caught:
             handle.wait(4)
     finally:
         if helpers[0].process.poll() is None:
@@ -207,6 +227,13 @@ def test_unexpected_child_death_keeps_parent_cause(tmp_path):
         "error_type": "RuntimeError",
         "error_message": "Windows audio helper ended unexpectedly",
     }
+    artifacts = SessionProcessor().persist_capture_failure(caught.value, journal.root)
+    (error,) = artifacts.errors.errors
+    assert (error.type, error.message, error.occurred_at) == (
+        "RuntimeError",
+        "Windows audio helper ended unexpectedly",
+        datetime.fromisoformat(errors[0]["occurred_at"]),
+    )
 
 
 def test_blocked_live_consumer_does_not_block_primary_and_is_owned(tmp_path):
@@ -308,6 +335,90 @@ def test_original_child_error_survives_parent_and_local_recovery(tmp_path):
     ]
     (recovered,) = recovery.discover()
     assert recovered.error_summary == "Synthetic original device failure"
+
+
+def test_running_controller_preserves_original_child_error_and_owns_closure(tmp_path):
+    import soundfile as sf
+    from here.application import (
+        ApplicationState,
+        EventKind,
+        HereApplicationController,
+        StartRequest,
+    )
+    from here.application.processing import SessionProcessor
+    from here.application.recovery import RecoveryService
+    from here.output.metadata import ErrorMetadataDocument, SessionEventMetadataDocument
+
+    launch, helpers = factory(tmp_path, "gated_error_after_audio")
+    root = tmp_path / "sessions"
+    handles, events = [], []
+    recording = threading.Event()
+
+    def capture(request, sink):
+        handle = WindowsRecordingHandle(
+            "microphone", sessions_root=root, helper_factory=launch, block_sink=sink, timeout=3
+        )
+        handles.append(handle)
+        return handle
+
+    def observe(event):
+        events.append(event)
+        if event.state is ApplicationState.RECORDING:
+            recording.set()
+
+    controller = HereApplicationController(
+        capture_factory=capture,
+        live_factory=lambda *args: SimpleNamespace(
+            submit_block=lambda *args: None, abort=lambda: None, cleanup=lambda: None
+        ),
+        processor=SessionProcessor(),
+    )
+    controller.subscribe(observe)
+    try:
+        controller.start(StartRequest(output_dir=root))
+        assert recording.wait(5)
+        (tmp_path / "fake_hardware.fail").touch()
+        snapshot = controller.wait_until_terminal(6)
+        assert snapshot.state is ApplicationState.FAILED
+        assert snapshot.worker_complete and snapshot.recoverable
+        assert helpers[0].process.returncode == 1
+        assert not helpers[0].reader.is_alive()
+        assert not handles[0]._thread.is_alive()
+    finally:
+        (tmp_path / "fake_hardware.fail").touch()
+        controller.wait_until_terminal(6)
+        for helper in helpers:
+            helper.close()
+
+    assert not handles[0]._journal.directory.exists()
+    directory = snapshot.session_dir
+    (error,) = ErrorMetadataDocument.model_validate_json(
+        (directory / "errors.json").read_text()
+    ).errors
+    capture_events = SessionEventMetadataDocument.model_validate_json(
+        (directory / "events.json").read_text()
+    ).events
+    (original,) = [event for event in capture_events if event.kind == "capture_error"]
+    assert (error.type, error.message, error.occurred_at) == (
+        "OSError",
+        "Synthetic original device failure",
+        original.occurred_at,
+    )
+    assert error.cause_type is None and error.cause_message is None
+    assert (
+        snapshot.last_error.error_type,
+        snapshot.last_error.message,
+        snapshot.last_error.occurred_at,
+    ) == ("OSError", "Synthetic original device failure", original.occurred_at)
+    (event,) = [event for event in events if event.kind is EventKind.ERROR_RECORDED]
+    assert event.error == snapshot.last_error
+    assert events[-1].kind is EventKind.WORKER_COMPLETED
+    assert sf.info(directory / "source_01.wav").frames > 0
+    assert sf.info(directory / "audio.wav").frames > 0
+    (candidate,) = RecoveryService(root).discover()
+    assert candidate.can_retry
+    assert candidate.error_summary == "Synthetic original device failure"
+    assert candidate.capture_id == handles[0]._journal.document.capture_id
 
 
 def test_slow_pipe_never_blocks_primary_writer_and_rejects_partial_live(tmp_path, monkeypatch):

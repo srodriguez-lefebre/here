@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from here.application.processing import SessionProcessor, _validated_recovery_source
-from here.output.metadata import ErrorMetadata, ErrorMetadataDocument, SessionMetadata
+from here.output.metadata import ErrorMetadataDocument, SessionMetadata
 from here.output.paths import UnsafeSessionPath, session_artifact_path, validate_session_directory
 from here.output.session_writer import ERRORS_FILE, read_session_metadata
 from here.recording.journal import CaptureJournal
@@ -134,26 +134,12 @@ class RecoveryService:
         failure = CaptureFailed(
             session, RuntimeError("Capture interrupted before final persistence")
         )
-        original_errors = [
-            ErrorMetadata(
-                stage="capture",
-                type=event["details"]["error_type"],
-                message=event["details"]["error_message"],
-                retryable=True,
-                occurred_at=event["occurred_at"],
-            )
-            for event in journal.document.events
-            if event["kind"] == "capture_error"
-            and event.get("details", {}).get("error_type")
-            and event.get("details", {}).get("error_message")
-        ]
         return (
             SessionProcessor()
             .persist_capture_failure(
                 failure,
                 self.root,
                 started_at=journal.document.started_at,
-                original_errors=original_errors,
             )
             .session_dir
         )
