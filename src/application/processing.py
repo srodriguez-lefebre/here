@@ -21,6 +21,7 @@ from here.output.metadata import (
     SessionEventMetadata,
     SessionEventMetadataDocument,
     SessionMetadata,
+    SourceMetadata,
     capture_metadata,
     source_metadata,
 )
@@ -116,6 +117,30 @@ def session_from_audio_file(audio_path: Path) -> RecordingSession:
 def session_audio_path(session_dir: Path, audio_file: str) -> Path:
     """Only persisted local filenames may select audio during recovery."""
     return session_artifact_path(session_dir, audio_file)
+
+
+def _validated_recovery_source(
+    audio_path: Path, expected: SourceMetadata | None = None
+) -> RecordedAudioSource:
+    info = sf.info(audio_path)
+    if info.samplerate <= 0 or info.channels <= 0 or info.frames < 0:
+        raise ValueError(f"Invalid recovery audio geometry: {audio_path.name}")
+    if expected is not None and (info.samplerate, info.channels, info.frames) != (
+        expected.sample_rate,
+        expected.channels,
+        expected.frames,
+    ):
+        raise ValueError(
+            f"Recovery audio geometry disagrees with session metadata: {audio_path.name}"
+        )
+    return RecordedAudioSource(
+        path=audio_path,
+        sample_rate=info.samplerate,
+        channels=info.channels,
+        frames=info.frames,
+        label=expected.label if expected is not None else audio_path.stem,
+        device_name=expected.device_name if expected is not None else audio_path.name,
+    )
 
 
 def _read_model(path: Path, model: type[SessionMetadata]) -> SessionMetadata | None:
@@ -544,6 +569,7 @@ class SessionProcessor:
         audio_path = session_audio_path(session_dir, AUDIO_FILE)
         metadata_path = session_dir / METADATA_FILE
         metadata = _read_model(metadata_path, SessionMetadata)
+        raw_sources = []
         if metadata is not None:
             extra_files = list(metadata.output_files)
             extra_files.extend(
@@ -552,23 +578,27 @@ class SessionProcessor:
             if metadata.recoverable_audio:
                 extra_files.append(metadata.recoverable_audio)
             validate_session_artifacts(session_dir, extra_files)
-        if not audio_path.exists():
-            raw_sources = (
-                [
-                    RecordedAudioSource(
-                        path=session_audio_path(session_dir, item.audio_file),
-                        sample_rate=item.sample_rate,
-                        channels=item.channels,
-                        frames=item.frames,
-                        label=item.label,
-                        device_name=item.device_name,
+            for item in metadata.capture_sources:
+                if item.audio_file:
+                    actual = _validated_recovery_source(
+                        session_audio_path(session_dir, item.audio_file), item
                     )
-                    for item in metadata.capture_sources
-                    if item.audio_file and item.frames > 0
-                ]
-                if metadata
-                else []
+                    raw_sources.append(actual)
+                    item.duration_seconds = actual.duration_seconds
+
+        if audio_path.exists():
+            # Only this shape identifies a single persisted source as audio.wav;
+            # legacy multi-source manifests may instead describe the original inputs.
+            expected = (
+                metadata.sources[0]
+                if metadata is not None
+                and metadata.recoverable_audio == AUDIO_FILE
+                and len(metadata.sources) == 1
+                else None
             )
+            recovered_source = _validated_recovery_source(audio_path, expected)
+        else:
+            raw_sources = [source for source in raw_sources if source.frames > 0]
             if not raw_sources:
                 raise RuntimeError(f"Recoverable audio does not exist: {audio_path}")
             try:
@@ -578,6 +608,7 @@ class SessionProcessor:
             except Exception:
                 audio_path.unlink(missing_ok=True)
                 raise
+            recovered_source = _validated_recovery_source(audio_path)
         chunks_path = session_dir / CHUNKS_FILE
         errors_path = session_dir / ERRORS_FILE
         events_path = session_dir / EVENTS_FILE
@@ -602,7 +633,7 @@ class SessionProcessor:
             if events_path.exists()
             else []
         )
-        source = session_from_audio_file(audio_path)
+        source = RecordingSession([recovered_source])
         cancellation = cancel_event or threading.Event()
         settings = get_settings()
         try:
