@@ -22,6 +22,15 @@ La dirección prevista para la primera interfaz es PySide6 con Qt Widgets, dentr
 
 ## Lectura del estado actual
 
+El inventario siguiente registra el diagnóstico inicial que motivó este plan. La
+ejecución autónoma iniciada el 2026-10-03 mantiene el estado actualizado en
+[`development/DELIVERY.md`](development/DELIVERY.md) y su evidencia en
+[`development/ACCEPTANCE.md`](development/ACCEPTANCE.md). En esa fecha ya existen
+la capa de aplicación compartida, captura controlable, UI PySide6 y overlay, y la
+línea base completa pasa 163 pruebas. El hito sigue abierto por robustez, recuperación
+tras reinicio, distribución y aceptación real; las brechas iniciales resueltas no
+deben reinterpretarse como trabajo pendiente ni como certificación del producto.
+
 El repositorio ya contiene buena parte del motor del hito. Sin embargo, “existe código y tiene pruebas unitarias” no equivale todavía a “está validado como producto Windows”. El inventario distingue esas dos condiciones.
 
 ### Ya construido y comprobado en aislamiento

@@ -22,10 +22,13 @@ recoverable session directory and permit retry. A true user cancellation still d
 all raw data and leaves no session. Opening failure before any audio exists remains a
 clear nonrecoverable error.
 
-TranscriptionResult must carry the final structured segments, separate from cleaned
+TranscriptionResult must carry structured source evidence, separate from cleaned
 display text. Persist a versioned `segments.json` containing original text, nullable
-start/end and nullable speaker. Do not infer global human identities from provider
-chunk-local speaker labels. Preserve capture source/device provenance through mixing.
+start/end and nullable speaker, plus optional chunk index and speaker scope. Preserve
+provider evidence in request order, shifted exactly once into the recorded-audio
+timeline. Display overlap merge does not rewrite this source evidence. Do not infer
+global human identities from provider chunk-local speaker labels. Preserve capture
+source/device provenance through mixing.
 Old callers without segments remain supported and old session metadata stays readable.
 
 ## Acceptance

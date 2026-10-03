@@ -68,3 +68,11 @@ El hito está terminado cuando `here` puede ejecutarse en segundo plano, ofrece 
 ## Desarrollo posterior
 
 Estos hitos marcan la dirección, no sustituyen los planes de trabajo. Antes de implementar cada uno se elaborará un plan específico que precise su alcance, decisiones pendientes, riesgos, validación y secuencia interna, manteniendo la definición de terminado de este documento como referencia de producto.
+
+La ejecución autónoma de los cinco hitos comenzó el 2026-10-03 por delegación
+explícita del usuario. Los planes específicos, decisiones y PRs se registran en
+[`development/DELIVERY.md`](development/DELIVERY.md); el diseño de los hitos 2–5
+está en [`development/PRODUCT_DESIGN.md`](development/PRODUCT_DESIGN.md). La matriz
+de [`development/ACCEPTANCE.md`](development/ACCEPTANCE.md) distingue código,
+verificación automatizada y aceptación con hardware/instalador/proveedor. Cada hito
+permanece abierto hasta demostrar conjuntamente su definición de terminado.

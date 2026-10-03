@@ -77,3 +77,18 @@ open wherever it has not actually been observed.
   inclusion later; no private local scratch is accidentally published.
 - Ruling: preserve supplied audio and facts; do not certify unobserved hardware tests.
   Cost if wrong: release acceptance takes longer, while code can continue advancing.
+- M1 capture implementation: commits `c20ac3b` and `081ef94`; synthetic full suite
+  reached 194 passing tests. Real synthetic TTS/provider smoke preserved four timed,
+  scoped utterances. Wheel built and installed non-editably into isolated Python 3.13;
+  GUI imports, Qt offscreen initialization and actual CLI help passed off-repository.
+- Independent capture review reproduced two P1 defects: catch-up silence was omitted
+  from the live timeline, and destructive cancellation during failure cleanup could
+  still persist discarded audio. Both accepted for correction before PR creation.
+- Ruling: serialize capture cancellation against the recovery-persistence cutover.
+  Accepted capture cancellation deletes its partial sources; cancellation after the
+  atomic processing cutover preserves audio and reports recoverable cancellation.
+  Cost if wrong: recovery-state implementation rework; discarded private material
+  must never survive an accepted destructive cancellation.
+- Independent desktop-plan review adopted seven amendments covering actual WAV header
+  checkpoints, atomic publication, preparation exit, diagnostic ownership, path
+  validation, ready-time device provenance and credential precedence.
