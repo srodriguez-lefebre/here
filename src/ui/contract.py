@@ -10,6 +10,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Protocol
 
+from here.application.diagnostics import AudioDiagnosticsService
+from here.application.recovery import RecoveryService
+from here.config.settings import require_provider_key, settings_operation
+
 from ..application import (
     ApplicationController,
     ApplicationEvent,
@@ -52,13 +56,28 @@ class VisualController(Protocol):
 
     def retry_processing(self) -> None: ...
 
+    def discover_recovery(self): ...
+
+    def retry_candidate(self, candidate): ...
+
+    def diagnose(self, source): ...
+
 
 class ApplicationUiAdapter:
     """Translate visual intent into the stable application-core contract."""
 
-    def __init__(self, controller: ApplicationController, output_dir: Path) -> None:
+    def __init__(
+        self,
+        controller: ApplicationController,
+        output_dir: Path,
+        *,
+        diagnostics_service=None,
+        recovery_service=None,
+    ) -> None:
         self._controller = controller
         self._output_dir = output_dir
+        self._diagnostics = diagnostics_service or AudioDiagnosticsService()
+        self._recovery = recovery_service or RecoveryService(output_dir)
 
     @property
     def snapshot(self) -> ApplicationSnapshot:
@@ -97,6 +116,25 @@ class ApplicationUiAdapter:
 
     def retry_processing(self) -> None:
         self._controller.retry(self.snapshot.session_dir)
+
+    def discover_recovery(self):
+        return self._recovery.discover()
+
+    @settings_operation
+    def retry_candidate(self, candidate):
+        if self.snapshot.has_active_work or not self.snapshot.worker_complete:
+            raise RuntimeError("Espere a que termine la sesión actual.")
+        if not candidate.can_retry:
+            raise RuntimeError("Esta sesión no contiene audio recuperable.")
+        require_provider_key()
+        self._controller.retry(self._recovery.materialize(candidate))
+
+    def diagnose(self, source):
+        if self.snapshot.has_active_work or not self.snapshot.worker_complete:
+            raise RuntimeError("Espere a que termine la sesión actual.")
+        if source == "devices":
+            return self._diagnostics.devices()
+        return self._diagnostics.test_signal(source)
 
 
 __all__ = [

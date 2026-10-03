@@ -53,6 +53,7 @@ class FakeApplicationController(ApplicationController):
         recoverable: bool = False,
         error: ApplicationError | None = None,
         session_dir: Path | None = None,
+        worker_complete: bool | None = None,
     ) -> None:
         previous = self._snapshot.state
         self._snapshot = replace(
@@ -61,6 +62,15 @@ class FakeApplicationController(ApplicationController):
             recoverable=recoverable,
             last_error=error,
             session_dir=session_dir,
+            worker_complete=worker_complete
+            if worker_complete is not None
+            else state
+            in {
+                ApplicationState.IDLE,
+                ApplicationState.COMPLETED,
+                ApplicationState.FAILED,
+                ApplicationState.CANCELLED,
+            },
         )
         self.publish(
             ApplicationEvent(
@@ -87,6 +97,7 @@ class FakeApplicationController(ApplicationController):
         self._snapshot = ApplicationSnapshot(
             state=ApplicationState.RECORDING,
             started_at=datetime.now(timezone.utc),
+            worker_complete=False,
         )
         self.publish(
             ApplicationEvent(
