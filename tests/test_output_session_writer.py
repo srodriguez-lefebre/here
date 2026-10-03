@@ -20,7 +20,7 @@ from here.output.session_writer import (
     write_session_artifacts,
 )
 from here.recording.models import RecordedAudioSource, RecordingSession
-from here.transcription.segments import TranscriptSegment
+from here.transcription.segments import TranscriptSegment, scoped_segments, shift_segments
 
 
 def _session(tmp_path: Path) -> RecordingSession:
@@ -493,3 +493,86 @@ def test_direct_typed_reversed_evidence_is_persisted_without_contradictory_times
             "speaker_scope": "chunk:3",
         }
     ]
+
+
+@pytest.mark.parametrize(
+    "invalid",
+    [
+        pytest.param(-1, id="negative"),
+        pytest.param(float("nan"), id="nan"),
+        pytest.param(float("inf"), id="infinity"),
+        pytest.param(float("-inf"), id="negative-infinity"),
+        pytest.param(True, id="true"),
+        pytest.param(False, id="false"),
+        pytest.param(10**400, id="huge-positive"),
+        pytest.param(-(10**400), id="huge-negative"),
+        pytest.param("invalid", id="invalid-string"),
+        pytest.param("-1", id="negative-string"),
+        pytest.param("NaN", id="nan-string"),
+        pytest.param("inf", id="infinity-string"),
+        pytest.param("1e400", id="overflow-string"),
+        pytest.param("", id="empty-string"),
+        pytest.param("  ", id="whitespace-string"),
+    ],
+)
+@pytest.mark.parametrize("bounds", ["start", "end", "both"])
+def test_direct_invalid_bounds_persist_as_missing_and_survive_shift_and_scope(
+    tmp_path, invalid, bounds
+):
+    segment = TranscriptSegment(
+        "original evidence",
+        invalid if bounds in {"start", "both"} else 0.0,
+        invalid if bounds in {"end", "both"} else 0.0,
+        "A",
+        4,
+        "chunk:4",
+    )
+    artifacts = _write_segment_artifacts(tmp_path, segments=[segment])
+    document = json.loads(artifacts.segments_path.read_text(encoding="utf-8"))
+    expected_start = None if bounds in {"start", "both"} else 0.0
+    expected_end = None if bounds in {"end", "both"} else 0.0
+    assert document["segments"] == [
+        {
+            "text": "original evidence",
+            "start": expected_start,
+            "end": expected_end,
+            "speaker": "A",
+            "chunk_index": 4,
+            "speaker_scope": "chunk:4",
+        }
+    ]
+    expected_shifted = (
+        None if bounds in {"start", "both"} else 10.0,
+        None if bounds in {"end", "both"} else 10.0,
+    )
+    shifted = shift_segments([segment], 10)[0]
+    scoped = scoped_segments([segment], chunk_index=7, offset_seconds=10)[0]
+    for updated in (shifted, scoped):
+        assert (updated.start, updated.end) == expected_shifted
+        assert updated.text == "original evidence"
+        assert updated.speaker == "A"
+    assert shifted.speaker_scope == "chunk:4"
+    assert scoped.chunk_index == 7
+    assert scoped.speaker_scope == "chunk:7"
+
+
+@pytest.mark.parametrize(
+    "start,end,expected",
+    [
+        (" 0 ", "0", (0.0, 0.0)),
+        ("2", "10", (2.0, 10.0)),
+        ("10", "2", (None, None)),
+        ("invalid", "1.5", (None, 1.5)),
+        ("1.5", "invalid", (1.5, None)),
+    ],
+)
+def test_direct_numeric_strings_use_numeric_validation_before_persistence(
+    tmp_path, start, end, expected
+):
+    artifacts = _write_segment_artifacts(
+        tmp_path, segments=[TranscriptSegment("evidence", start, end, "A")]
+    )
+    segment = json.loads(artifacts.segments_path.read_text(encoding="utf-8"))["segments"][0]
+    assert (segment["start"], segment["end"]) == expected
+    assert segment["text"] == "evidence"
+    assert segment["speaker"] == "A"

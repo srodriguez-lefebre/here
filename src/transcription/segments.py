@@ -23,9 +23,12 @@ class TranscriptSegment:
     speaker_scope: str | None = None
 
     def __post_init__(self) -> None:
-        if self.start is not None and self.end is not None and self.end < self.start:
-            object.__setattr__(self, "start", None)
-            object.__setattr__(self, "end", None)
+        start = _coerce_float(self.start)
+        end = _coerce_float(self.end)
+        if start is not None and end is not None and end < start:
+            start = end = None
+        object.__setattr__(self, "start", start)
+        object.__setattr__(self, "end", end)
 
     @property
     def has_timestamps(self) -> bool:
