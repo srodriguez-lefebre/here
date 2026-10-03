@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 import soundfile as sf
 from here.recording.models import RecordedAudioSource, RecordingSession
-from here.transcription.segments import parse_transcript_segments
+from here.transcription.segments import TranscriptSegment, parse_transcript_segments
 
 
 @pytest.mark.parametrize("after_done", [False, True])
@@ -109,3 +109,57 @@ def test_nested_timing_valid_zero_takes_precedence_over_later_aliases():
     )
     assert segments[0].start == 0.0
     assert segments[0].end == 0.0
+
+
+@pytest.mark.parametrize("oversized", [10**400, -(10**400)], ids=["positive", "negative"])
+@pytest.mark.parametrize("nested", [False, True], ids=["primary", "nested"])
+def test_oversized_timing_preserves_text_speaker_and_other_timing_evidence(oversized, nested):
+    timings = [
+        {"start": oversized, "end": oversized},
+        {"start": oversized, "end": 2},
+        {"start": 1, "end": oversized},
+        {"start": 1, "end": 2},
+    ]
+    candidates = [
+        {
+            "text": text,
+            "speaker": "A",
+            **({"timestamp": timing} if nested else timing),
+        }
+        for text, timing in zip(["both invalid", "start invalid", "end invalid", "valid"], timings)
+    ]
+
+    assert parse_transcript_segments({"segments": candidates}) == [
+        TranscriptSegment("both invalid", speaker="A"),
+        TranscriptSegment("start invalid", end=2.0, speaker="A"),
+        TranscriptSegment("end invalid", start=1.0, speaker="A"),
+        TranscriptSegment("valid", start=1.0, end=2.0, speaker="A"),
+    ]
+
+
+@pytest.mark.parametrize("oversized", [10**400, -(10**400)], ids=["positive", "negative"])
+@pytest.mark.parametrize("nested", [False, True], ids=["primary", "nested"])
+def test_oversized_timing_aliases_allow_later_valid_values(oversized, nested):
+    timing = {"start": oversized, "end": oversized}
+    timing.update({"begin": 1, "finish": 2} if nested else {"start_time": 1, "end_time": 2})
+    candidate = {"text": "original", **({"timestamp": timing} if nested else timing)}
+
+    assert parse_transcript_segments({"segments": [candidate]}) == [
+        TranscriptSegment("original", start=1.0, end=2.0)
+    ]
+
+
+@pytest.mark.parametrize("oversized", [10**400, -(10**400)], ids=["positive", "negative"])
+@pytest.mark.parametrize("nested", [False, True], ids=["primary", "nested"])
+def test_valid_zero_timing_precedes_later_oversized_aliases(oversized, nested):
+    timing = {"start": 0, "end": 0}
+    timing.update(
+        {"begin": oversized, "finish": oversized}
+        if nested
+        else {"start_time": oversized, "end_time": oversized}
+    )
+    candidate = {"text": "original", **({"timestamp": timing} if nested else timing)}
+
+    assert parse_transcript_segments({"segments": [candidate]}) == [
+        TranscriptSegment("original", start=0.0, end=0.0)
+    ]

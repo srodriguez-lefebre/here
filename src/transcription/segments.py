@@ -69,7 +69,10 @@ def _coerce_float(value: object | None) -> float | None:
     if isinstance(value, bool):
         return None
     if isinstance(value, (int, float)):
-        number = float(value)
+        try:
+            number = float(value)
+        except OverflowError:
+            return None
         return number if math.isfinite(number) and number >= 0 else None
     if isinstance(value, str):
         stripped = value.strip()
