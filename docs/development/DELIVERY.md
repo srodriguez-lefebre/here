@@ -284,6 +284,25 @@ Los rulings nuevos se escriben en español por el ruling 6.
     nueva migración/versión de recibo y adaptación del lector/rebuild y de M2 B,
     conservando evidencia inmutable y asociaciones ya comprobadas.
 
+32. **Ruling:** la protección de una captura empieza antes de publicar su journal,
+    mientras el factory todavía puede estar esperando apertura/`ready`. El handle
+    nativo mantiene una lease real en
+    `<sessions_root>/.captures/.owners/<capture_id>.lock`, con componentes validados,
+    además de la lease de catálogo del ruling 23. El lock se adquiere antes de crear
+    o publicar el journal; discovery y materialize prueban ambos locks antes de
+    inspeccionar media cambiante o intentar persistencia/cleanup. Ausencia de la
+    fila de catálogo, PID o edad del journal no prueban abandono. El handoff entre
+    handle, sesión y controlador no deja una ventana sin dueño; la lease se libera
+    después del cierre real del helper y del desenlace de persistencia/publicación,
+    incluso si el catálogo falló. Apertura fallida y cleanup cierran idempotentemente
+    cuando ya no hay trabajo propietario. Se permite extraer el lock genérico a
+    `output/ownership.py` y ampliar solo la propiedad en `recording/journal.py`,
+    `isolated.py` y, si hace falta handoff, `models.py`; sin proceso residente nuevo,
+    cambios de protocolo ni deadlines. Es una corrección de F5, con RED independiente
+    y re-review pendientes, no evidencia de una carrera observada. **Cost if wrong:**
+    ajustar el handoff/cierre y los lectores de recovery, preservando journals y
+    audio; nunca sustituir propiedad real por heurísticas.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
