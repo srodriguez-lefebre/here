@@ -200,6 +200,16 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Cost if wrong:** ajustar el canal de advertencias y el sondeo del volumen;
     ninguna revisión ni audio necesita reescribirse.
 
+25. **Ruling:** el manifiesto de una sesión importada solo puede referenciar
+    artefactos conocidos de sesión y audio WAV explícito validado. Una ruta
+    contenida no basta para autorizar leerla: nombres como `.env`, logs ajenos o
+    archivos desconocidos se rechazan antes de abrir, sondear o calcular hashes.
+    Una referencia de audio tampoco convierte credenciales en audio. La regla
+    conserva los artefactos v1 conocidos y nunca copia la carpeta completa.
+    Concreta el principio de privacidad y la validación de entradas del SPEC.
+    **Cost if wrong:** extender explícitamente los tipos de artefacto permitidos
+    cuando un formato legítimo lo requiera; las fuentes externas no se modifican.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
