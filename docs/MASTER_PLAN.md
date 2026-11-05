@@ -87,10 +87,13 @@ objetivo de producto ni condiciona ningún hito.
 
 El hito 1 quedó cerrado bajo el alcance reducido de abajo (PR #14, v0.2.0). El
 2026-11-04 el usuario resolvió doce decisiones abiertas, registradas como rulings en
-[`development/DELIVERY.md`](development/DELIVERY.md). El objetivo vigente es preparar
-el plan del hito 2 para ejecución autónoma, sin implementar; el plan específico es
-[`MILESTONE_2_PLAN.md`](MILESTONE_2_PLAN.md). La hoja de arranque para agentes es
-`CLAUDE.md` en la raíz y el estado corto es `STATUS.md`.
+[`development/DELIVERY.md`](development/DELIVERY.md). El 2026-11-05 quedó escrito el
+plan completo de los hitos 2 a 5, cada uno con criterios verificables y con el SPEC y
+PLAN de cada grupo de PR: [`MILESTONE_2_PLAN.md`](MILESTONE_2_PLAN.md),
+[`MILESTONE_3_PLAN.md`](MILESTONE_3_PLAN.md), [`MILESTONE_4_PLAN.md`](MILESTONE_4_PLAN.md)
+y [`MILESTONE_5_PLAN.md`](MILESTONE_5_PLAN.md). Ninguno está en ejecución (ruling 15).
+La hoja de arranque para agentes es `CLAUDE.md` en la raíz y el estado corto es
+`STATUS.md`.
 
 ### Alcance final autorizado del hito 1 — 2026-10-03
 

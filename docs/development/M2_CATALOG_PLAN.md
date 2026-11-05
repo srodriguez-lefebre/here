@@ -1,7 +1,7 @@
 # M2 immutable catalog implementation plan
 
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
-> review, then independent agent review. The user merges (ruling 4). Steps use checkbox
+> review, then independent agent review. The author merges after Copilot review, CI and independent subagent review (rulings 16 and 17). Steps use checkbox
 > syntax. **Status: not in execution.** Start only on an explicit user instruction
 > (ruling 1).
 
@@ -138,4 +138,4 @@ CLI: `here memory ingest PATH`, `here memory reconcile`, `here memory show ID --
   publication sequence), `docs/MILESTONE_2_PLAN.md` (criteria 1–10, 13–15 status),
   `ACCEPTANCE.md` (M2 rows with the run that closes them) and `WHATS_NEW.md`.
 - Open one PR with the three task commits, self-review and independent agent review in
-  the description, CI green. The user merges. Then write group B's SPEC and PLAN.
+  the description, CI green. The author merges per rulings 16 and 17. Then write group B's SPEC and PLAN.
