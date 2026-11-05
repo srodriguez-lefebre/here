@@ -5,14 +5,14 @@ Actualizado: 2026-11-05. Este archivo se reescribe; el historial y los rulings v
 
 ## Objetivo vigente
 
-**Implementar el hito 2, memoria estructurada**, según `docs/MILESTONE_2_PLAN.md`
-(ruling 13). Empieza por el grupo A, `docs/development/M2_CATALOG_PLAN.md`, tarea 1.
-Versión objetivo al cerrar M2: 0.3.0.
+**El plan de M2 a M5 está completo. No hay implementación en curso ni autorizada**
+(ruling 15). Cualquier implementación arranca solo con una instrucción explícita del
+usuario; cuando llegue, el punto de partida es `docs/MILESTONE_2_PLAN.md` y
+`docs/development/M2_CATALOG_PLAN.md`, tarea 1, en una rama nueva desde `main`.
 
 ## Dónde está el código
 
-- `origin/main` = `16d7beb`, v0.2.0, con PR #16 (hoja de arranque, rulings, plan de
-  M2) y PR #17 (workflow de Ubuntu eliminado) mergeados el 2026-11-05.
+- `origin/main` = `cd3dfc9`, v0.2.0, con los PRs #16, #17 y #18 mergeados.
 - Suite en `main`: 741 pasan, 8 skips esperados, 1 falla local por falta de `pwsh`.
 - Omitido de M1 y que sigue omitido: la reunión de dos horas con medición de
   recursos (ruling 5). Máquina limpia y credencial real están disponibles a pedido.
@@ -20,39 +20,59 @@ Versión objetivo al cerrar M2: 0.3.0.
   `.codex/worktrees/five-milestones`, `here-worktrees/live-logo-overlay`,
   `here-worktrees/windows-app-core`. Candidatos a limpieza; no es urgente.
 
+## El plan completo
+
+| Hito | Plan (español, criterios) | Grupos de PR (SPEC + PLAN en inglés) | Versión al cerrar |
+|---|---|---|---|
+| M2 Memoria estructurada | `docs/MILESTONE_2_PLAN.md`, 16 criterios | A `M2_CATALOG_*` (tareas 1–3) · B `M2_LIFECYCLE_*` (4–5) | 0.3.0 |
+| M3 Memoria navegable | `docs/MILESTONE_3_PLAN.md`, 18 criterios | A `M3_SEARCH_*` (1–2) · B `M3_LIBRARY_*` (3–4) | 0.4.0 |
+| M4 Inteligencia | `docs/MILESTONE_4_PLAN.md`, 18 criterios | A `M4_GROUNDED_*` (1–3) · B `M4_PRODUCT_*` (4–5) | 0.5.0 |
+| M5 Producto cotidiano | `docs/MILESTONE_5_PLAN.md`, 20 criterios | A `M5_SETTINGS_*` (1–2) · B `M5_PORTABILITY_*` (3) · C `M5_RELEASE_*` (4–5) | 1.0.0 |
+
+Nueve grupos de PR en total, cada uno con su SPEC y su PLAN en `docs/development/`.
+Todos marcados "not in execution (ruling 15)". Orden: M2 A, M2 B, M3 A, M3 B, M4 A,
+M4 B, M5 A, M5 B, M5 C. Cada grupo es un PR que el usuario mergea (ruling 4). Si al
+mergear un grupo cambian contratos que el siguiente asume, el agente ajusta el PLAN
+siguiente en un PR de documentación antes de empezarlo (ruling 14).
+
+Cada plan de hito tiene una sección "Lo que queda pendiente de decidir" con un default
+por ítem. Los defaults se adoptan sin consulta y se registran como ruling al usarse.
+
+## Hallazgos de la planificación que un implementador debe conocer
+
+Salieron al escribir los planes, están anotados en el plan del hito correspondiente:
+
+- `packaging/windows.spec` excluye `PySide6.QtMultimedia` y filtra sus plugins. M3
+  los necesita para reproducir audio; M3 grupo B los agrega y M5 grupo C lo verifica.
+- La versión `0.2.0` está hardcodeada en `packaging/installer.iss`,
+  `scripts/build_windows.ps1` y `scripts/smoke_windows.ps1`. M5 grupo C la lee de
+  `pyproject.toml`; hasta entonces cada cierre de hito la cambia a mano en los tres.
+- No hay ningún sink de `loguru` configurado hoy; M5 grupo A agrega
+  `src/logging_setup.py` llamado desde `src/entrypoints.py`.
+- El instalador de M1 rechaza reemplazar una app en ejecución a propósito; el "cierre
+  seguro" del diseño se cumple con `Salir`, no con el instalador.
+- El lock de captura entre CLI y GUI va como lock de archivo del sistema operativo en
+  la capa de aplicación, no `QLockFile`, porque los servicios no importan Qt.
+- La reproducción nunca arranca sola desde ninguna fuente; M3 no expone un punto de
+  entrada de autoplay y M4 no lo necesita.
+
 ## Tarea en curso
 
-Ninguna empezada. La siguiente es M2 grupo A, tarea 1: modelos, migraciones y
-repositorio (`M2_CATALOG_PLAN.md`). Rama sugerida: `claude/m2-catalog`.
-
-Secuencia prevista, cada grupo en su PR, el usuario mergea cada uno (ruling 4):
-
-1. M2 grupo A: catálogo inmutable (tareas 1–3). Plan escrito.
-2. M2 grupo B: ciclo de vida y borrado (tareas 4–5). El agente escribe
-   `M2_LIFECYCLE_SPEC.md` y `_PLAN.md` al cerrar A (ruling 14).
-3. Cierre de M2: criterios de `MILESTONE_2_PLAN.md` verificados, `ACCEPTANCE.md` con
-   las corridas, versión 0.3.0, `WHATS_NEW.md`. Después el agente escribe
-   `MILESTONE_3_PLAN.md` y el primer SPEC/PLAN de M3 (ruling 14).
-4. M3, M4, M5 con la misma mecánica. Diseño en `PRODUCT_DESIGN.md` (ruling 3).
-
-Pendiente aparte, sin bloquear nada: sanear lint en un PR propio (`ruff check --fix`
-y `ruff format` sobre toda la base, mover `select` a `[tool.ruff.lint]`, decidir si
-mypy se integra al layout plano). Hoy ninguno es gate.
+Ninguna. Pendiente aparte, sin bloquear nada: sanear lint en un PR propio
+(`ruff check --fix` y `ruff format` sobre toda la base, mover `select` a
+`[tool.ruff.lint]`, decidir si mypy se integra al layout plano).
 
 ## Decisiones abiertas
 
-Ninguna. Las catorce decididas están en `DELIVERY.md`, "Rulings vigentes". Los tres
-defaults de `MILESTONE_2_PLAN.md` ("Lo que queda pendiente de decidir") se adoptan
-sin consulta y se registran como ruling si se usan.
+Ninguna. Las quince decididas están en `DELIVERY.md`, "Rulings vigentes".
 
 ## Bloqueos que dependen de un humano
 
+- Instrucción explícita para empezar a implementar (ruling 15).
 - Merge de cada PR a `main` (ruling 4).
-- Revisión y merge de cada plan nuevo antes de implementarlo (ruling 14).
 - Reunión de dos horas con medición de recursos: sin disponibilidad (ruling 5).
 
 ## Próxima acción
 
-Un agente con este archivo delante arranca `M2_CATALOG_PLAN.md`, tarea 1, en una
-rama nueva desde `main`, y abre el PR del grupo A cuando las tres tareas tengan
-evidencia. No necesita preguntar nada antes de eso.
+El usuario revisa y mergea el PR del plan completo. Después no hay nada que hacer
+hasta que decida empezar la implementación.

@@ -81,6 +81,13 @@ Los rulings nuevos se escriben en español por el ruling 6.
     hitos. Las preguntas de la sección 3 de `CLAUDE.md` siguen vigentes dentro de cada
     plan. **Cost if wrong:** un plan mal encaminado se corrige en su PR antes de que
     exista código.
+15. **Ruling:** anula el ruling 13. El usuario aclaró el 2026-11-05 que no quiere
+    implementación: el objetivo vigente es **determinar el plan completo de M2 a M5**
+    (plan por hito con criterios verificables y SPEC/PLAN de cada grupo de PR) y
+    dejarlo publicado. Ninguna implementación arranca sin una instrucción explícita
+    posterior. El ruling 14 sigue vigente para mantener los planes al día durante la
+    ejecución futura. **Cost if wrong:** ninguno; los planes se escriben una vez y se
+    corrigen en PR.
 
 ## Ledger histórico (append-only)
 

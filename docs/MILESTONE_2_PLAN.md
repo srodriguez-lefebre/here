@@ -1,7 +1,7 @@
 # Hito 2 — Memoria estructurada
 
-Estado: plan preparado el 2026-11-04. **No está en ejecución.** Arranca solo con una
-instrucción explícita del usuario (ruling 1). El diseño detallado está en
+Estado: plan preparado el 2026-11-04, completado el 2026-11-05. **No está en
+ejecución.** Arranca solo con una instrucción explícita del usuario (ruling 15). El diseño detallado está en
 [`development/PRODUCT_DESIGN.md`](development/PRODUCT_DESIGN.md), secciones 2, 3 y 4,
 que es decisión tomada (ruling 3). Este plan no lo repite: fija alcance, orden, criterios
 verificables y lo que queda fuera.
@@ -79,11 +79,11 @@ siete. Valen las cinco del diseño.
 | Grupo | Tareas del diseño | Documentos | Estado |
 |---|---|---|---|
 | A. Catálogo inmutable | 1 modelos, migraciones y repositorio · 2 segmentos y raw text en todos los recorridos · 3 ingestión, identidad y revisiones | `M2_CATALOG_SPEC.md`, `M2_CATALOG_PLAN.md` | plan escrito, sin ejecutar |
-| B. Ciclo de vida y borrado | 4 participantes, edición con `row_version`, reconciliación · 5 borrado transaccional y FTS | `M2_LIFECYCLE_SPEC.md`, `M2_LIFECYCLE_PLAN.md` | pendientes de escribir al cerrar A |
+| B. Ciclo de vida y borrado | 4 participantes, edición con `row_version`, reconciliación · 5 borrado transaccional y FTS | `M2_LIFECYCLE_SPEC.md`, `M2_LIFECYCLE_PLAN.md` | plan escrito, sin ejecutar |
 
-Orden obligatorio: A antes que B. B no se planifica en detalle hasta que A tenga sus
-contratos mergeados, porque la reconciliación y el borrado dependen de la forma final
-de `pending_operations`.
+Orden obligatorio: A antes que B. Si al mergear A cambió la forma de
+`pending_operations` o de los contratos del catálogo, el PLAN de B se ajusta en su
+propio PR de documentación antes de empezar (ruling 14).
 
 ## Decisiones acordadas
 

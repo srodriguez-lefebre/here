@@ -30,6 +30,9 @@ docs/*
 !docs/MASTER_PLAN.md
 !docs/MILESTONE_1_PLAN.md
 !docs/MILESTONE_2_PLAN.md
+!docs/MILESTONE_3_PLAN.md
+!docs/MILESTONE_4_PLAN.md
+!docs/MILESTONE_5_PLAN.md
 !docs/LIVE_LOGO_PLAN.md
 !docs/development/
 .superpowers/
