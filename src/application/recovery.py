@@ -201,6 +201,8 @@ class RecoveryService:
             if read_session_metadata(candidate.session_dir) is None:
                 if candidate.capture_id is None:
                     raise ValueError("Recovery metadata no longer exists")
+                if str(UUID(candidate.capture_id)) != candidate.capture_id:
+                    raise UnsafeSessionPath("Invalid capture identity")
                 # Recognize an actual owned journal before creating its writer
                 # leases; pure manifest inspection leaves no protocol artifacts.
                 journal_path = session_artifact_path(
