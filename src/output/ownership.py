@@ -17,10 +17,10 @@ class LeaseBusy(RuntimeError):
 
 
 class FileLease:
-    def __init__(self, path: Path, *, timeout: float = 0.25) -> None:
+    def __init__(self, path: Path, *, timeout: float = 0.25, create: bool = True) -> None:
         self.path = session_artifact_path(path.parent, path.name)
-        self.stream = self.path.open("a+b")
-        if self.path.stat().st_size == 0:
+        self.stream = self.path.open("a+b" if create else "r+b")
+        if create and self.path.stat().st_size == 0:
             self.stream.write(b"0")
             self.stream.flush()
         deadline = time.monotonic() + timeout

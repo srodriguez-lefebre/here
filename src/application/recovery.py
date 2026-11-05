@@ -1,6 +1,6 @@
 """Local, explicit and idempotent recovery. Discovery never invokes a provider."""
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
@@ -72,8 +72,8 @@ class RecoveryService:
 
     @contextmanager
     def _ownership(
-        self, identity: str | None, *, directory: Path | None = None, claim: bool = False
-    ) -> Iterator[None]:
+        self, identity: str | None, *, directory: Path | None = None
+    ) -> Iterator[Callable[[], None]]:
         """Guard inspection/replay and recheck a stale selection before mutation."""
         if directory is not None:
             identity = self._owner_identity(directory, identity)
@@ -82,21 +82,31 @@ class RecoveryService:
         except ValueError:
             canonical = False
         if not canonical:
-            yield
+            yield lambda: None
             return
         assert identity is not None
         with ExitStack() as owners:
             try:
-                for path in (
-                    CaptureJournal.owner_path(self.root, identity),
-                    managed_path(get_data_dir(), f".owners/{identity}.lock"),
-                ):
-                    if claim:
-                        path.parent.mkdir(parents=True, exist_ok=True)
-                    if claim or path.exists():
-                        lease = FileLease(path, timeout=0)
+                held: set[Path] = set()
+
+                def acquire(*, create: bool) -> None:
+                    for path in (
+                        CaptureJournal.owner_path(self.root, identity),
+                        managed_path(get_data_dir(), f".owners/{identity}.lock"),
+                    ):
+                        if path in held:
+                            continue
+                        if create:
+                            path.parent.mkdir(parents=True, exist_ok=True)
+                        try:
+                            lease = FileLease(path, timeout=0, create=create)
+                        except FileNotFoundError:
+                            continue
                         owners.callback(lease.close)
-                yield
+                        held.add(path)
+
+                acquire(create=False)
+                yield lambda: acquire(create=True)
             except LeaseBusy as exc:
                 raise OwnershipBusy(str(exc)) from exc
 
@@ -119,14 +129,15 @@ class RecoveryService:
                 metadata = read_session_metadata(directory)
                 if metadata is None:
                     continue
-                with self._ownership(metadata.meeting_id, directory=directory):
+                with self._ownership(metadata.meeting_id, directory=directory) as claim:
                     marker = session_artifact_path(directory, "memory_pending.json")
                     if marker.exists() and metadata.status != "pending":
-                        expected, intent = read_pending_intent(directory, metadata.meeting_id)
+                        pending = read_pending_intent(directory, metadata.meeting_id)
+                        claim()
                         SessionProcessor().publish_memory(
                             directory,
-                            revision_of=expected,
-                            status_only=intent == "status",
+                            revision_of=pending.revision_of,
+                            status_only=pending.intent == "status",
                         )
                 # A copied manifest does not own other directories with the same ID.
                 key = (metadata.meeting_id or directory.name, directory)
@@ -186,7 +197,18 @@ class RecoveryService:
     def materialize(self, candidate: RecoveryCandidate) -> Path:
         if candidate.session_dir.absolute().parent != self.root:
             raise UnsafeSessionPath("Recovery destination is outside sessions root")
-        with self._ownership(candidate.capture_id, directory=candidate.session_dir, claim=True):
+        with self._ownership(candidate.capture_id, directory=candidate.session_dir) as claim:
+            if read_session_metadata(candidate.session_dir) is None:
+                if candidate.capture_id is None:
+                    raise ValueError("Recovery metadata no longer exists")
+                # Recognize an actual owned journal before creating its writer
+                # leases; pure manifest inspection leaves no protocol artifacts.
+                journal_path = session_artifact_path(
+                    self.root / ".captures" / candidate.capture_id, "journal.json"
+                )
+                if not journal_path.is_file():
+                    raise FileNotFoundError(journal_path)
+                claim()
             return self._materialize_owned(candidate)
 
     def _materialize_owned(self, candidate: RecoveryCandidate) -> Path:

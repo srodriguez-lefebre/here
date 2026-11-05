@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import shutil
 import sqlite3
 from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
@@ -14,11 +16,13 @@ from typing import Iterator
 from uuid import UUID, uuid4
 
 from here.memory.artifacts import (
+    SessionArtifacts,
     file_hash,
     managed_path,
     normalized_origin,
     read_artifacts,
     read_meeting_state,
+    read_pending_intent,
     read_retry_artifacts,
     validate_artifact_roles,
     write_durable_json,
@@ -62,6 +66,44 @@ class OwnershipBusy(Busy):
     """A live job owns the session; no provider or compatibility mutation may start."""
 
 
+def _is_uuid(value: object) -> bool:
+    try:
+        return isinstance(value, str) and str(UUID(value)) == value
+    except ValueError:
+        return False
+
+
+@dataclass(frozen=True)
+class _Publication:
+    publication_id: str
+    revision_id: str
+    revision_of: str | None
+    origin_path: str
+    origin_fingerprint: str
+    source_kind: str = "session"
+
+    def __post_init__(self) -> None:
+        if (
+            not _is_uuid(self.publication_id)
+            or not _is_uuid(self.revision_id)
+            or self.revision_of is not None
+            and not _is_uuid(self.revision_of)
+            or not isinstance(self.origin_path, str)
+            or not self.origin_path
+            or not isinstance(self.origin_fingerprint, str)
+            or len(self.origin_fingerprint) != 64
+            or any(c not in "0123456789abcdef" for c in self.origin_fingerprint)
+            or self.source_kind not in {"session", "legacy_audio_only"}
+        ):
+            raise ValueError("Invalid publication provenance")
+
+    @classmethod
+    def read(cls, value: object) -> _Publication:
+        if not isinstance(value, dict):
+            raise ValueError("Invalid publication provenance envelope")
+        return cls(**value)
+
+
 def _utc_timestamp(value: str | datetime | None) -> str | None:
     if value is None:
         return None
@@ -82,9 +124,9 @@ def fts_available(connection: sqlite3.Connection) -> bool:
 
 
 class _FileLock(FileLease):
-    def __init__(self, path: Path, *, timeout: float = 0.25) -> None:
+    def __init__(self, path: Path, *, timeout: float = 0.25, create: bool = True) -> None:
         try:
-            super().__init__(path, timeout=timeout)
+            super().__init__(path, timeout=timeout, create=create)
         except LeaseBusy as exc:
             raise Busy(str(exc)) from exc
 
@@ -142,6 +184,9 @@ class MemoryService:
     def __init__(self, data_dir: Path) -> None:
         self.data_dir = Path(data_dir).absolute()
         self._owners: dict[str, _FileLock] = {}
+        self._publication_context: ContextVar[tuple[str, str] | None] = ContextVar(
+            "here_memory_publication", default=None
+        )
         if not (self.data_dir / "library.sqlite3").exists():
             try:
                 with self._operation():
@@ -217,12 +262,168 @@ class MemoryService:
     def ingest_session(self, session_dir: Path, *, revision_of: str | None = None) -> IngestResult:
         return self._ingest_session(session_dir, revision_of=revision_of)
 
+    @contextmanager
+    def _publication(self, publication_id: str, source_kind: str) -> Iterator[None]:
+        """Bind the private application intent without changing ordinary import API."""
+        if not _is_uuid(publication_id):
+            raise ValueError("Invalid publication UUID")
+        token = self._publication_context.set((publication_id, source_kind))
+        try:
+            yield
+        finally:
+            self._publication_context.reset(token)
+
+    def _replay_publication(
+        self,
+        repo: MemoryRepository,
+        source: SessionArtifacts,
+        publication_id: str,
+        revision_of: str | None,
+        source_kind: str,
+    ) -> IngestResult | None:
+        for row in repo.library.execute(
+            "SELECT * FROM pending_operations WHERE kind='publish_revision' AND phase!='reverted'"
+        ):
+            operation = PendingOperation(**dict(row))
+            try:
+                payload = json.loads(operation.payload_json)
+            except ValueError:
+                continue
+            if not isinstance(payload, dict):
+                continue
+            value = payload.get("publication")
+            if not isinstance(value, dict) or value.get("publication_id") != publication_id:
+                continue
+            proof = _Publication.read(value)
+            revision = repo.get_revision(proof.revision_id)
+            if (
+                revision is not None
+                and revision.meeting_id == operation.meeting_id
+                and payload.get("revision_id") == revision.id
+                and proof.revision_of == revision_of
+                and proof.origin_path == source.origin_path == revision.origin
+                and proof.origin_fingerprint == source.fingerprint
+                and proof.source_kind == source_kind
+                and revision.content_hash == source.content_hash
+            ):
+                return IngestResult("unchanged", revision.meeting_id)
+            return IngestResult(
+                "rejected",
+                operation.meeting_id,
+                ("Publication conflict: committed provenance not proven",),
+                "conflict",
+            )
+        return None
+
+    @staticmethod
+    def _known_source_kind(repo: MemoryRepository, identity: str) -> str:
+        for row in repo.library.execute(
+            "SELECT kind,payload_json FROM pending_operations WHERE meeting_id=?", (identity,)
+        ):
+            try:
+                payload = json.loads(row["payload_json"])
+                if not isinstance(payload, dict):
+                    continue
+                if row["kind"] == "reserve_audio_only":
+                    if payload.get("source_kind") == "legacy_audio_only":
+                        return "legacy_audio_only"
+                elif row["kind"] == "publish_revision" and "publication" in payload:
+                    proof = _Publication.read(payload["publication"])
+                    if proof.source_kind == "legacy_audio_only" and repo.get_revision(
+                        proof.revision_id
+                    ):
+                        return proof.source_kind
+            except (ValueError, TypeError):
+                continue
+        return "session"
+
+    def _source_kind(self, identity: str) -> str:
+        library = open_library(self.data_dir)
+        try:
+            return self._known_source_kind(MemoryRepository(library), identity)
+        finally:
+            library.close()
+
+    def _reserve_audio_only(self, directory: Path, duration_ms: int) -> tuple[str, str | None]:
+        """Reserve actual WAV evidence and a lease, without inventing a transcript."""
+        audio = session_artifact_path(directory, "audio.wav")
+        origin = normalized_origin(directory)
+        fingerprint = hashlib.sha256(
+            json.dumps(((audio.name, file_hash(audio)),)).encode()
+        ).hexdigest()
+        identity: str | None = None
+        acquired = False
+        try:
+            with self._operation() as repo:
+                rows = repo.library.execute(
+                    "SELECT DISTINCT meeting_id FROM ingest_sources WHERE origin_path=?", (origin,)
+                ).fetchall()
+                if len(rows) > 1:
+                    raise ValueError("Legacy origin conflict: more than one catalog identity")
+                identity = rows[0][0] if rows else str(uuid4())
+                if not isinstance(identity, str) or not _is_uuid(identity):
+                    raise ValueError("Invalid reserved audio-only identity")
+                if identity in self._owners:
+                    raise OwnershipBusy("A job already owns this audio-only origin")
+                self._acquire_owner(identity)
+                acquired = True
+                with repo.transaction():
+                    meeting = repo.get_meeting(identity)
+                    if meeting is None:
+                        repo.insert_meeting(
+                            Meeting(
+                                id=identity,
+                                title=directory.name,
+                                status=MeetingStatus.PROCESSING,
+                                duration_ms=duration_ms,
+                            )
+                        )
+                    else:
+                        repo.library.execute(
+                            "UPDATE meetings SET status='processing', "
+                            "row_version=row_version+1 WHERE id=?",
+                            (identity,),
+                        )
+                    if repo.get_ingest_source(origin, fingerprint) is None:
+                        repo.insert_ingest_source(
+                            IngestSource(str(uuid4()), origin, fingerprint, identity, None)
+                        )
+                    repo.insert_pending_operation(
+                        PendingOperation(
+                            str(uuid4()),
+                            "reserve_audio_only",
+                            "complete",
+                            identity,
+                            payload_json=json.dumps(
+                                {
+                                    "source_kind": "legacy_audio_only",
+                                    "origin_path": origin,
+                                    "origin_fingerprint": fingerprint,
+                                }
+                            ),
+                        )
+                    )
+                self._write_state(repo, identity)
+                return identity, meeting.active_revision_id if meeting else None
+        except BaseException:
+            if acquired and identity is not None:
+                self.finish_capture(identity)
+            raise
+
     def prepare_retry(self, session_dir: Path, source_id: str | None) -> tuple[str, str]:
         """Resolve a canonical parent before an explicit producer mutates the v1."""
         parent = self.retry_parent(session_dir, source_id)
         if parent and parent[1] is not None:
             return parent[0], parent[1]
-        result = self._ingest_session(session_dir, trusted_legacy=True)
+        if parent and self._source_kind(parent[0]) == "legacy_audio_only":
+            marker = session_artifact_path(session_dir, "memory_pending.json")
+            pending = read_pending_intent(session_dir, source_id) if marker.exists() else None
+            with self._publication(
+                (pending.publication_id if pending else None) or str(uuid4()), "legacy_audio_only"
+            ):
+                result = self._ingest_session(session_dir, trusted_legacy=True)
+        else:
+            result = self._ingest_session(session_dir, trusted_legacy=True)
         if result.status == "rejected" or result.meeting_id is None:
             raise ValueError(f"Legacy identity could not be resolved: {result.warnings}")
         active = self.active_revision(result.meeting_id)
@@ -254,6 +455,13 @@ class MemoryService:
                     else read_artifacts(session_dir)
                 )
                 source_read = True
+                publication_context = self._publication_context.get()
+                if publication_context is not None:
+                    replay = self._replay_publication(
+                        repo, source, publication_context[0], revision_of, publication_context[1]
+                    )
+                    if replay is not None:
+                        return replay
                 previous_origin = repo.get_ingest_source(source.origin_path, source.fingerprint)
                 source_identity = source.metadata.meeting_id
                 try:
@@ -266,6 +474,18 @@ class MemoryService:
                 identity = (source_identity if canonical else None) or (
                     previous_origin.meeting_id if previous_origin else str(uuid4())
                 )
+                if (
+                    not canonical
+                    and publication_context is not None
+                    and publication_context[1] == "legacy_audio_only"
+                ):
+                    rows = repo.library.execute(
+                        "SELECT DISTINCT meeting_id FROM ingest_sources WHERE origin_path=?",
+                        (source.origin_path,),
+                    ).fetchall()
+                    if len(rows) != 1:
+                        raise ValueError("Audio-only publication requires its reserved identity")
+                    identity = rows[0][0]
                 if not canonical and revision_of is not None:
                     parent = repo.get_revision(revision_of)
                     if parent is None:
@@ -367,12 +587,13 @@ class MemoryService:
                     hashes[name] = digest
                 metadata = source.metadata
                 status = "processing" if metadata.status == "pending" else metadata.status
+                audio_only = self._known_source_kind(repo, identity) == "legacy_audio_only"
                 meeting = Meeting(
                     id=identity,
                     legacy_session_id=metadata.session_id,
                     title=source.directory.name,
-                    started_at=_utc_timestamp(metadata.started_at),
-                    completed_at=_utc_timestamp(metadata.completed_at),
+                    started_at=None if audio_only else _utc_timestamp(metadata.started_at),
+                    completed_at=None if audio_only else _utc_timestamp(metadata.completed_at),
                     duration_ms=round(metadata.duration_seconds * 1000),
                     paused_ms=round(metadata.total_paused_seconds * 1000),
                     status=MeetingStatus(status),
@@ -394,6 +615,17 @@ class MemoryService:
                     for item in source.segments
                 ]
                 payload = {"revision_id": revision_id, "hashes": hashes}
+                if publication_context is not None:
+                    payload["publication"] = asdict(
+                        _Publication(
+                            publication_context[0],
+                            revision_id,
+                            revision_of,
+                            source.origin_path,
+                            source.fingerprint,
+                            publication_context[1],
+                        )
+                    )
                 operation = PendingOperation(
                     operation_id,
                     "publish_revision",
@@ -408,7 +640,9 @@ class MemoryService:
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 staging.rename(destination)
                 warnings = (repo.library.storage_warning,) if repo.library.storage_warning else ()
-                if meeting.started_at is None or meeting.completed_at is None:
+                if audio_only:
+                    warnings += ("Capture dates are unknown for this legacy audio-only source",)
+                elif meeting.started_at is None or meeting.completed_at is None:
                     warnings += ("Legacy date has no timezone; catalog UTC date left unspecified",)
                 with repo.transaction():
                     if previous is None:
@@ -565,7 +799,7 @@ class MemoryService:
         if revision is None or meeting is None or revision.meeting_id != meeting.id:
             raise ValueError("A publication receipt requires committed catalog entities")
         snapshot = {
-            "schema_version": 2,
+            "schema_version": 3 if "publication" in payload else 2,
             "meeting": asdict(meeting),
             "revision": asdict(revision),
             "segments": [asdict(segment) for segment in repo.get_segments(revision.id)],
@@ -584,11 +818,19 @@ class MemoryService:
             "ingest_sources": [
                 dict(row)
                 for row in repo.library.execute(
-                    "SELECT * FROM ingest_sources WHERE revision_id=?", (revision.id,)
+                    "SELECT * FROM ingest_sources WHERE revision_id=? OR "
+                    "(meeting_id=? AND revision_id IS NULL AND ?=1)",
+                    (revision.id, meeting.id, revision.revision_number),
                 )
             ],
             "hashes": payload["hashes"],
         }
+        if "publication" in payload:
+            proof = _Publication.read(payload["publication"])
+            if proof.revision_id != revision.id or proof.origin_path != revision.origin:
+                raise ValueError("Publication receipt provenance mismatch")
+            snapshot["publication"] = asdict(proof)
+            snapshot["operation_id"] = operation.id
         write_durable_json(receipt, snapshot)
 
     def _rebuild(self, repo: MemoryRepository, warnings: list[object]) -> None:
@@ -620,12 +862,20 @@ class MemoryService:
                         continue
                     snapshot = json.loads(receipt.read_text(encoding="utf-8"))
                     if (
-                        snapshot.get("schema_version") != 2
+                        snapshot.get("schema_version") not in {2, 3}
                         or snapshot["meeting"]["id"] != identity
                         or snapshot["revision"]["meeting_id"] != identity
                         or snapshot["revision"]["id"] != revision_id
                     ):
                         raise ValueError("Invalid managed publication receipt")
+                    if snapshot["schema_version"] == 3:
+                        proof = _Publication.read(snapshot.get("publication"))
+                        if (
+                            not _is_uuid(snapshot.get("operation_id"))
+                            or proof.revision_id != revision_id
+                            or proof.origin_path != snapshot["revision"]["origin"]
+                        ):
+                            raise ValueError("Managed publication provenance mismatch")
                     validate_artifact_roles(revision_dir, snapshot["hashes"])
                     for name, digest in snapshot["hashes"].items():
                         if file_hash(session_artifact_path(revision_dir, name)) != digest:
@@ -656,7 +906,10 @@ class MemoryService:
                             raise ValueError("Managed revision audio relationship mismatch")
                         validate_artifact_roles(revision_dir, (link["source_file"],))
                     for origin in snapshot["ingest_sources"]:
-                        if origin["meeting_id"] != identity or origin["revision_id"] != revision_id:
+                        if origin["meeting_id"] != identity or origin["revision_id"] not in {
+                            None,
+                            revision_id,
+                        }:
                             raise ValueError("Managed source identity mismatch")
                     snapshots.append(snapshot)
                 if not snapshots:
@@ -689,6 +942,30 @@ class MemoryService:
                             repo.insert_revision_audio_asset(RevisionAudioAsset(**values))
                         for values in snapshot["ingest_sources"]:
                             repo.insert_ingest_source(IngestSource(**values))
+                        if snapshot["schema_version"] == 3:
+                            proof = _Publication.read(snapshot["publication"])
+                            if proof.revision_of is not None:
+                                parent = repo.get_revision(proof.revision_of)
+                                if parent is None or parent.meeting_id != identity:
+                                    raise ValueError("Managed publication parent mismatch")
+                            operation_id = snapshot["operation_id"]
+                            repo.insert_pending_operation(
+                                PendingOperation(
+                                    operation_id,
+                                    "publish_revision",
+                                    "complete",
+                                    identity,
+                                    f".staging/{operation_id}",
+                                    f"meetings/{identity}/revisions/{revision.id}",
+                                    json.dumps(
+                                        {
+                                            "revision_id": revision.id,
+                                            "hashes": snapshot["hashes"],
+                                            "publication": asdict(proof),
+                                        }
+                                    ),
+                                )
+                            )
                     if meeting.active_revision_id:
                         repo.activate_revision(identity, meeting.active_revision_id)
                         repo.library.execute(
@@ -729,7 +1006,7 @@ class MemoryService:
                     owner_path = managed_path(self.data_dir, f".owners/{identity}.lock")
                     if not owner_path.exists():
                         continue
-                    probe = _FileLock(owner_path, timeout=0)
+                    probe = _FileLock(owner_path, timeout=0, create=False)
                     probe.close()
                 except Busy:
                     live.add(identity)
@@ -837,7 +1114,7 @@ class MemoryService:
         path = managed_path(data_dir, f".owners/{meeting_id}.lock")
         if path.exists():
             try:
-                probe = _FileLock(path, timeout=0)
+                probe = _FileLock(path, timeout=0, create=False)
             except Busy as exc:
                 raise OwnershipBusy(str(exc)) from exc
             probe.close()

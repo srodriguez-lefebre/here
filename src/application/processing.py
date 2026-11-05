@@ -17,7 +17,7 @@ from here.audio.mix import materialize_normalized_session
 from here.config.paths import get_data_dir
 from here.config.settings import get_settings, require_provider_key, settings_operation
 from here.live_processing import LiveTranscriptionController
-from here.memory.artifacts import read_pending_intent, write_durable_json
+from here.memory.artifacts import file_hash, read_pending_intent, write_durable_json
 from here.memory.database import LibraryError
 from here.memory.service import IngestResult, MemoryService, OwnershipBusy
 from here.output.metadata import (
@@ -148,7 +148,7 @@ def _check_capture_owner(root: Path, identity: str | None) -> None:
     path = CaptureJournal.owner_path(root, identity)
     if path.exists():
         try:
-            lease = FileLease(path, timeout=0)
+            lease = FileLease(path, timeout=0, create=False)
         except LeaseBusy as exc:
             raise OwnershipBusy(str(exc)) from exc
         lease.close()
@@ -265,6 +265,8 @@ def _catalog_producer(
 
     @wraps(method)
     def publish(self: SessionProcessor, *args: P.args, **kwargs: P.kwargs) -> SessionArtifactPaths:
+        self._catalog_result = None
+        self._publication_id = str(uuid4())
         expected = None
         meeting_id = None
         if method.__name__ in {"retry", "transcribe_audio_path"}:
@@ -293,19 +295,23 @@ def _catalog_producer(
         try:
             artifacts = method(self, *args, **kwargs)
         except (SessionProcessingFailed, ProcessingCancelled) as exc:
-            self.publish_memory(
+            result = self.publish_memory(
                 exc.session_dir,
                 revision_of=self._retry_revision,
                 status_only=bool(self._retry_revision and self._retry_meeting_id),
             )
+            self._remember_catalog_result(exc.session_dir, result)
             raise
         else:
-            self.publish_memory(artifacts.session_dir, revision_of=self._retry_revision)
+            result = self.publish_memory(artifacts.session_dir, revision_of=self._retry_revision)
+            self._remember_catalog_result(artifacts.session_dir, result)
             return artifacts
         finally:
             self._release_processing()
             self._retry_meeting_id = None
             self._retry_revision = None
+            self._publication_id = None
+            self._source_kind = "session"
 
     return publish
 
@@ -332,6 +338,25 @@ class SessionProcessor:
         self._owned_processing_id: str | None = None
         self._retry_meeting_id: str | None = None
         self._retry_revision: str | None = None
+        self._publication_id: str | None = None
+        self._source_kind = "session"
+        self._catalog_result: tuple[Path, str, IngestResult] | None = None
+
+    def _remember_catalog_result(self, directory: Path, result: IngestResult) -> None:
+        try:
+            digest = file_hash(session_artifact_path(directory, METADATA_FILE))
+        except (OSError, ValueError):
+            self._catalog_result = None
+        else:
+            self._catalog_result = (directory.absolute(), digest, result)
+
+    def _take_catalog_result(self, directory: Path) -> IngestResult | None:
+        publication, self._catalog_result = self._catalog_result, None
+        if publication is None or publication[0] != directory.absolute():
+            return None
+        if file_hash(session_artifact_path(directory, METADATA_FILE)) != publication[1]:
+            return None  # an explicit later metadata change needs its own publication
+        return publication[2]
 
     def _memory_service(self) -> MemoryService:
         if self._memory is None:
@@ -358,6 +383,40 @@ class SessionProcessor:
             self._retry_meeting_id, self._retry_revision = self._memory_service().prepare_retry(
                 directory, source_id
             )
+        if self._retry_meeting_id is not None:
+            self._source_kind = self._memory_service()._source_kind(self._retry_meeting_id)
+
+    def _replay_pending(self, directory: Path) -> None:
+        """Finish the prior local intent before a fresh explicit attempt changes evidence."""
+        if not session_artifact_path(directory, "memory_pending.json").exists():
+            return
+        result = self.publish_memory(directory)
+        if result.status == "rejected":
+            raise LibraryError("Prior catalog intent remains uncertain; local recovery is pending")
+        if self._retry_meeting_id is not None:
+            self._retry_revision = self._memory_service().active_revision(self._retry_meeting_id)
+
+    def _write_publication_intent(
+        self,
+        directory: Path,
+        meeting_id: str | None,
+        revision_of: str | None,
+        publication_id: str,
+        source_kind: str,
+        *,
+        status_only: bool = False,
+    ) -> None:
+        write_durable_json(
+            session_artifact_path(directory, "memory_pending.json"),
+            {
+                "schema_version": 2,
+                "meeting_id": meeting_id,
+                "revision_of": revision_of,
+                "intent": "status" if status_only else "ingest",
+                "publication_id": publication_id,
+                "source_kind": source_kind,
+            },
+        )
 
     def _release_processing(self) -> None:
         identity, self._owned_processing_id = self._owned_processing_id, None
@@ -372,22 +431,25 @@ class SessionProcessor:
             if metadata is None:
                 raise ValueError("Session metadata is missing")
             marker = session_artifact_path(session_dir, "memory_pending.json")
+            publication_id = self._publication_id or str(uuid4())
+            source_kind = self._source_kind
             if marker.exists():
-                expected, intent = read_pending_intent(session_dir, metadata.meeting_id)
+                pending = read_pending_intent(session_dir, metadata.meeting_id)
                 if revision_of is None:
-                    revision_of, status_only = expected, intent == "status"
+                    revision_of, status_only = pending.revision_of, pending.intent == "status"
+                publication_id = pending.publication_id or publication_id
+                source_kind = pending.source_kind
             if revision_of is not None and (
                 not isinstance(revision_of, str) or str(UUID(revision_of)) != revision_of
             ):
                 raise ValueError("Invalid pending revision UUID")
-            write_durable_json(
-                marker,
-                {
-                    "schema_version": 1,
-                    "meeting_id": metadata.meeting_id,
-                    "revision_of": revision_of,
-                    "intent": "status" if status_only else "ingest",
-                },
+            self._write_publication_intent(
+                session_dir,
+                metadata.meeting_id,
+                revision_of,
+                publication_id,
+                source_kind,
+                status_only=status_only,
             )
             if status_only:
                 if revision_of is None:
@@ -396,11 +458,13 @@ class SessionProcessor:
                     metadata.meeting_id, metadata.status, revision_of=revision_of
                 )
             else:
-                result = (
-                    self._memory_service().ingest_retry(session_dir, revision_of=revision_of)
-                    if revision_of is not None
-                    else self._memory_service().ingest_session(session_dir)
-                )
+                memory = self._memory_service()
+                with memory._publication(publication_id, source_kind):
+                    result = (
+                        memory.ingest_retry(session_dir, revision_of=revision_of)
+                        if revision_of is not None
+                        else memory.ingest_session(session_dir)
+                    )
             if result.status != "rejected":
                 session_artifact_path(session_dir, marker.name).unlink(missing_ok=True)
         except Exception as exc:
@@ -452,6 +516,8 @@ class SessionProcessor:
         if existing_metadata is not None:
             self._resolve_retry(audio_path.parent, existing_metadata.meeting_id)
         self._claim_processing(source_session.meeting_id)
+        if existing_metadata is not None:
+            self._replay_pending(audio_path.parent)
 
         if existing_metadata is not None:
             session_dir = audio_path.parent
@@ -1288,6 +1354,7 @@ class SessionProcessor:
                 raise RuntimeError(f"Recoverable audio does not exist: {audio_path}")
             self._resolve_retry(session_dir, metadata.meeting_id if metadata else None)
             self._claim_processing(metadata.meeting_id if metadata else None)
+            self._replay_pending(session_dir)
             self._materialize(RecordingSession(raw_sources), session_dir, output_name=audio_file)
             recovered_source = _validated_recovery_source(audio_path)
         source = RecordingSession(
@@ -1296,8 +1363,18 @@ class SessionProcessor:
         cancellation = cancel_event or threading.Event()
         settings = get_settings()
         if self._owned_processing_id is None:
-            self._resolve_retry(session_dir, source.meeting_id)
-            self._claim_processing(source.meeting_id)
+            if metadata is None:
+                self._retry_meeting_id, self._retry_revision = (
+                    self._memory_service()._reserve_audio_only(
+                        session_dir, round(recovered_source.duration_seconds * 1000)
+                    )
+                )
+                self._owned_processing_id = self._retry_meeting_id
+                self._source_kind = "legacy_audio_only"
+            else:
+                self._resolve_retry(session_dir, source.meeting_id)
+                self._claim_processing(source.meeting_id)
+            self._replay_pending(session_dir)
         self.publish_pending(
             source,
             session_dir,
@@ -1307,6 +1384,14 @@ class SessionProcessor:
             use_alt_transcription_model=metadata.alt_model_used if metadata else False,
             capture_sources=metadata.capture_sources if metadata else None,
         )
+        if metadata is None:
+            self._write_publication_intent(
+                session_dir,
+                None,
+                self._retry_revision,
+                self._publication_id or str(uuid4()),
+                self._source_kind,
+            )
         try:
             result = self._offline_with_retries(
                 source,

@@ -159,7 +159,15 @@ def normalized_origin(directory: Path) -> str:
     return os.path.normcase(str(directory.resolve()))
 
 
-def read_pending_intent(directory: Path, meeting_id: str | None) -> tuple[str | None, str]:
+@dataclass(frozen=True)
+class PendingIntent:
+    revision_of: str | None
+    intent: str
+    publication_id: str | None = None
+    source_kind: str = "session"
+
+
+def read_pending_intent(directory: Path, meeting_id: str | None) -> PendingIntent:
     """Read only the typed application-owned replay envelope, never provider work."""
     pending = json.loads(
         session_artifact_path(directory, "memory_pending.json").read_text(encoding="utf-8")
@@ -168,9 +176,12 @@ def read_pending_intent(directory: Path, meeting_id: str | None) -> tuple[str | 
         raise ValueError("Invalid pending catalog envelope")
     expected = pending.get("revision_of")
     intent = pending.get("intent", "ingest")
+    version = pending.get("schema_version")
+    publication_id = pending.get("publication_id")
+    source_kind = pending.get("source_kind", "session")
     if (
-        type(pending.get("schema_version")) is not int
-        or pending["schema_version"] != 1
+        type(version) is not int
+        or version not in {1, 2}
         or pending.get("meeting_id") != meeting_id
         or not isinstance(intent, str)
         or intent not in {"ingest", "status"}
@@ -178,9 +189,13 @@ def read_pending_intent(directory: Path, meeting_id: str | None) -> tuple[str | 
         and (not isinstance(expected, str) or str(UUID(expected)) != expected)
         or intent == "status"
         and expected is None
+        or version == 2
+        and (not isinstance(publication_id, str) or str(UUID(publication_id)) != publication_id)
+        or not isinstance(source_kind, str)
+        or source_kind not in {"session", "legacy_audio_only"}
     ):
         raise ValueError("Invalid pending catalog intent")
-    return expected, intent
+    return PendingIntent(expected, intent, publication_id if version == 2 else None, source_kind)
 
 
 def _milliseconds(value: Any) -> int | None:

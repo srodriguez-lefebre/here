@@ -523,13 +523,21 @@ class HereApplicationController:
         details: dict[str, str | int | float | bool | None]
         try:
             metadata = read_session_metadata(session_dir)
-            result = SessionProcessor(memory_service=self._memory).publish_memory(
-                session_dir,
-                revision_of=self._retry_revision,
-                status_only=bool(
-                    self._retry_revision and metadata and metadata.status in {"failed", "cancelled"}
-                ),
+            result = (
+                self._processor._take_catalog_result(session_dir)
+                if isinstance(self._processor, SessionProcessor)
+                else None
             )
+            if result is None:
+                result = SessionProcessor(memory_service=self._memory).publish_memory(
+                    session_dir,
+                    revision_of=self._retry_revision,
+                    status_only=bool(
+                        self._retry_revision
+                        and metadata
+                        and metadata.status in {"failed", "cancelled"}
+                    ),
+                )
             details = {"status": result.status, "meeting_id": result.meeting_id}
             if result.warnings:
                 details["message"] = "; ".join(
