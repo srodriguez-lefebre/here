@@ -5,6 +5,9 @@
   "status": "in_progress",
   "base_commit": "f276fd0",
   "task_1_commit": "9a80060c804c6ea68e24cc4ba8b7eabdc92e9204",
+  "task_2_commit": "037fc036ef43467136bcf7b8e95c6f8395d1aa5e",
+  "task_2_base_commit": "878e7d4b531d0b07599b373261279fbb6b440030",
+  "task_2_integration_commit": "1cdaadb72f2ebee53ce3a7be2680a01d18de6ad2",
   "evidence_level": "verified_automatically_local",
   "certified": false,
   "data_policy": "Temporary SQLite roots, authored synthetic PCM and transcripts, synthetic key; no private sessions or real .env.",
@@ -60,6 +63,67 @@
       "failed": 0,
       "duration_seconds": 173.68,
       "python": "3.13.15"
+    },
+    {
+      "name": "M2A-T2-RED-20261105",
+      "command": "uv run --no-sync pytest -q tests/test_transcription_service.py tests/test_application_processing.py tests/test_output_session_writer.py tests/test_segments.py --tb=short --show-capture=no",
+      "passed": 153,
+      "skipped": 1,
+      "failed": 82,
+      "duration_seconds": 21.18,
+      "author": "segments_red",
+      "reason": "Missing text-only evidence, timing provenance and separate raw artifact; no collection errors"
+    },
+    {
+      "name": "M2A-T2-RAW-RED-20261105",
+      "failed": 2,
+      "deselected": 112,
+      "duration_seconds": 2.12,
+      "reason": "Metadata replacement failure left new raw orphan or overwrote prior raw bytes",
+      "green_evidence": "Both cases pass in M2A-T2-FOCUS-20261105"
+    },
+    {
+      "name": "M2A-T2-FOCUS-20261105",
+      "command": "uv run --no-sync pytest -q tests/test_transcription_service.py tests/test_application_processing.py tests/test_output_session_writer.py tests/test_segments.py tests/test_cli.py tests/test_desktop_cli_recovery.py --tb=short --show-capture=no",
+      "passed": 310,
+      "skipped": 1,
+      "failed": 0,
+      "duration_seconds": 24.6,
+      "skip_reason": "Existing symlink privilege unavailable"
+    },
+    {
+      "name": "M2A-T2-FIRST-FULL-20261105",
+      "passed": 775,
+      "skipped": 8,
+      "failed": 8,
+      "duration_seconds": 171.12,
+      "reason": "Existing capture publication-fault wrappers rejected additive raw_text keyword",
+      "disposition": "Forwarded keyword without changing behavioral assertions or exact kill phases"
+    },
+    {
+      "name": "M2A-T2-CAPTURE-RECOVERY-20261105",
+      "passed": 68,
+      "skipped": 0,
+      "failed": 0,
+      "duration_seconds": 25.64,
+      "scope": "Capture/recovery including original real-kill and synthetic-crash boundaries"
+    },
+    {
+      "name": "M2A-T2-FINAL-20261105",
+      "command": "QT_QPA_PLATFORM=offscreen OPENAI_API_KEY=synthetic-test-key uv run --no-sync pytest -q --tb=short --show-capture=no",
+      "source_commit": "037fc036ef43467136bcf7b8e95c6f8395d1aa5e",
+      "passed": 783,
+      "skipped": 8,
+      "failed": 0,
+      "duration_seconds": 160.71,
+      "python": "3.13.15",
+      "platform": "Windows",
+      "skip_reasons": {
+        "existing_symlink_privilege": 6,
+        "noneditable_wheel_environment_unset": 2
+      },
+      "pwsh_present": true,
+      "scope_limit": "Task 2 branch on its own base; not the future combined M2 group suite"
     }
   ],
   "reviews": [
@@ -70,12 +134,75 @@
       "initial_finding": "P2: migration/read queries leaked raw lock error",
       "disposition": "Fixed after 8 RED regressions; scoped re-review accepted",
       "final_verdict": "spec_and_quality_pass"
+    },
+    {
+      "task": 2,
+      "reviewer": "catalog_review",
+      "implementer": "preparation",
+      "red_author": "segments_red",
+      "independent_of_implementer": true,
+      "reviewed_commit": "037fc036ef43467136bcf7b8e95c6f8395d1aa5e",
+      "findings": [],
+      "final_verdict": "spec_and_quality_pass",
+      "suite_rerun_by_reviewer": false,
+      "report": "task-2-review-report.md"
     }
   ],
+  "task_1_typing": {
+    "scope": "Four unchanged memory source copies plus existing output path validator in an owned temporary canonical here package",
+    "command": "MYPYPATH=<owned temporary root> mypy --follow-imports=silent --no-incremental -p here.memory",
+    "result": "Success: no issues found in 4 source files",
+    "checked_source_files": 4,
+    "ignore_missing_imports": false,
+    "log": "task-1-mypy-layout-checked.log",
+    "owned_temporary_directory_removed": true,
+    "production_or_dependency_changes": false,
+    "global_mypy_clean_claimed": false
+  },
+  "task_2_quality": {
+    "ruff_check": "pass",
+    "ruff_format_check": "pass",
+    "touched_files": 13,
+    "diff_check": "pass",
+    "mypy_compared_production_files": 7,
+    "mypy_baseline_diagnostics": 60,
+    "mypy_current_diagnostics": 58,
+    "mypy_new_diagnostic_messages": {},
+    "mypy_clean_base_claimed": false
+  },
+  "task_2_behavior": {
+    "completion_paths": ["live", "offline", "fallback", "file", "retry"],
+    "raw_artifact": "raw_transcript.txt",
+    "raw_separate_from_cleaned_display": true,
+    "application_owner": "SessionProcessor",
+    "file_transcription_method": "transcribe_audio_path",
+    "direct_cli_artifact_writes_remaining": 0,
+    "text_only_evidence": "Untimed speakerless segment, no fabricated timing or speaker",
+    "timing_source": ["provider", "imported_explicit", "absent"],
+    "historical_timing_source_nullable": true,
+    "virtual_wall_pause_seconds": 300,
+    "pause_evidence": "Real synthetic-WAV marker seek on recorded-audio timeline",
+    "handled_raw_io_rollback": "Restore previous bytes or remove fresh unpublished raw after metadata replace failure"
+  },
+  "task_3_progress": {
+    "state": "combined_red_observed_green_in_progress",
+    "green_claimed": false,
+    "prior_red_passed": 18,
+    "prior_red_failed": 31,
+    "author_duration_seconds": 2.5,
+    "root_confirmation_duration_seconds": 4.25,
+    "combined_red_passed": 18,
+    "combined_red_failed": 39,
+    "combined_root_duration_seconds": 7.33,
+    "combined_root_log": "task-3-complete-root-red.log"
+  },
   "limits": [
     "Final task1 full source suite and two noneditable-wheel smokes passed; seven local symlink-privilege omissions remain.",
     "Windows hosted CI not yet requested for M2 A.",
     "Symlink case requires local privilege; wheel cases require noneditable env.",
+    "Task 2 final suite has six symlink skips and two noneditable-wheel opt-in skips; it does not replace task 1's observed wheel run.",
+    "Task 2 handled-I/O rollback is not atomic against process death or concurrent writers; immutable catalog publication/reconciliation remains task 3.",
+    "Task 2 suite was run on source 037fc03 before integration, not on a future combined M2 group head.",
     "No M2 milestone closure, hardware, provider or installer certification.",
     "Two-hour resource acceptance omitted by ruling 5."
   ],

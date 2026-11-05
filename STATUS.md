@@ -28,10 +28,11 @@ niveles de evidencia. M5 exige distribución Windows 1.0.0 y aceptación real.
 
 ## Tarea en curso
 
-`docs/development/M2_CATALOG_PLAN.md`, tarea 2 en review independiente; tarea 3
-con RED completo, a la espera de integrar el contrato de tarea 2.
+`docs/development/M2_CATALOG_PLAN.md`, tarea 3: GREEN de ingestión, identidad y
+revisiones en curso tras completar RED de CLI. Las tareas 1 y 2 tienen implementación
+y review independiente aceptadas; los contratos de tarea 2 ya están integrados.
 SPEC: `docs/development/M2_CATALOG_SPEC.md`. Hito: `docs/MILESTONE_2_PLAN.md`.
-Implementación local y review independiente aceptadas, incluida la corrección de
+Tarea 1: implementación local y review independiente aceptadas, incluida la corrección de
 `Busy` en lecturas bloqueadas. Foco: 34 pasan/1 skip en 4,70 s. Corrida final
 `M2A-T1-FINAL-20261105`: 778 pasan/7 skips en 173,68 s (CPython 3.13.15, Qt
 6.11.2, offscreen, key sintética y wheel no editable aislado). Ambos smokes de
@@ -39,11 +40,16 @@ wheel pasaron; los siete skips requieren privilegio de symlink. Código de tarea
 en `9a80060`; integración del grupo y CI de Windows sobre el head del PR siguen
 pendientes.
 
-Tarea 2: commit `037fc03`, foco GREEN (310 pasan/1 skip en 24,60 s), suite
-completa 783 pasan/8 skips en 160,71 s; review independiente en curso.
-Tarea 3: RED 31 fallos/18 pasan en 2,50 s, worktree
-`C:/Users/savar/.codex/worktrees/m2-ingestion/here`; espera integración/review
-de tarea 2 antes de implementar archivos compartidos. Preparación de M2 B y fixtures
+Tarea 2: fuente `037fc03`, integrada como `1cdaadb`; review independiente de SPEC
+y calidad PASS sin hallazgos. Foco: 310 pasan/1 skip en 24,60 s; captura/recuperación
+con kills reales: 68 pasan en 25,64 s. Corrida `M2A-T2-FINAL-20261105`: 783 pasan/
+8 skips en 160,71 s. Sus ocho skips son seis de symlink y dos smokes de wheel sin
+entorno no editable configurado; no sustituye la corrida de wheel de tarea 1 ni CI.
+Tarea 3: RED de servicio/artefactos/controlador 31 fallos/18 pasan en 2,50 s,
+confirmado por root en 4,25 s. RED conjunto con CLI: 39 fallos/18 pasan en 7,33 s;
+implementación GREEN en curso por agente distinto, sin resultado aprobado todavía.
+Worktree `C:/Users/savar/.codex/worktrees/m2-ingestion/here`, con ownership separado
+de los archivos compartidos. Preparación de M2 B y fixtures
 sintéticos disponibles. No hay cierre de M2 A ni de M2, ni certificación nueva de
 hardware, proveedor o instalación limpia.
 
@@ -62,7 +68,7 @@ hardware, proveedor o instalación limpia.
 
 ## Próxima acción
 
-Completar review e integración de tarea 2 y GREEN/review/docs de tarea 3;
+Completar GREEN/review/docs de tarea 3;
 después abrir PR del grupo con suite y evidencia. El PR del grupo A aún no está
 abierto; ningún gate de merge del grupo se considera cumplido.
 En una reanudación consultar el ledger local

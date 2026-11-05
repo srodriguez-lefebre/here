@@ -139,6 +139,24 @@ display timeline merges them. Invalid timestamps become missing; valid zero
 timestamps remain zero. `session.json.capture_sources` separately retains original
 device names and raw audio properties when `sources` describes a normalized mix.
 
+`coerce_audio_transcription` retains nonempty text-only responses as untimed,
+speakerless evidence without mutating the provider-owned DTO. Live and offline
+merging still use the plain-text overlap path for unstructured evidence. The
+additive nullable `timing_source` field accepts `provider`, `imported_explicit` and
+`absent`; historical documents may omit it. Newly written provider segments use
+`provider` when at least one valid bound remains, otherwise `absent`. Reversed
+bounds become null before recording offsets are applied; one-sided finite
+measurements retain their measured bound.
+
+All five transcript completion paths carry `TranscriptionResult.raw_text` to
+`raw_transcript.txt` independently of cleaned `final_text`. The optional
+`SessionArtifactPaths.raw_transcript_path` and `session.json.output_files` expose
+that artifact. The writer preflights its managed entry and stages raw and segment
+evidence before publishing metadata. A handled metadata-replace failure restores
+previous raw bytes or removes a fresh unpublished raw file. This I/O rollback is
+not an atomic filesystem transaction against process termination or concurrent
+writers; task 3 still owns immutable catalog publication and reconciliation.
+
 `events.json` is written when lifecycle events exist. Pause and resume events
 contain both wall-clock time and the duration of material actually recorded.
 `session.json.total_paused_seconds` records the accumulated wall-clock pause;
@@ -180,6 +198,14 @@ complete the staged file/database publication sequence before M2 A can close.
 `here trans {file}` builds the same recoverable session shape from an existing
 audio file. When `{file}` is already `audio.wav` inside a failed session folder,
 the command updates that session in place.
+
+`SessionProcessor.transcribe_audio_path(...)` now owns file normalization, pending
+publication, completion/failure artifacts and conservative postcommit cleanup.
+CLI helpers inject their existing transcriber, normalizer and clock and delegate
+to that application owner; no direct CLI artifact writer remains. Recording,
+offline fallback, file transcription and retry therefore share application-owned
+raw/segment persistence while retaining external input ownership and the existing
+recoverable-audio filename and exception-cause guards.
 
 ## Diagnostics
 

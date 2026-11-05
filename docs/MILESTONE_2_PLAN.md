@@ -35,8 +35,9 @@ Lo que falta y M2 construye:
 - Revisiones inmutables de transcripción. Hoy `retry` reescribe la misma carpeta.
 - Un estado durable propio de la reunión, separado de los nueve estados del
   controlador y de los cuatro literales de `session.json`.
-- Una única vía de persistencia de producto. Hoy `src/cli.py` llama a
-  `write_session_artifacts` directamente en tres lugares.
+- Integración del catálogo con la vía de persistencia de aplicación. La tarea 2
+  ya movió las tres escrituras directas de `src/cli.py` a `SessionProcessor`;
+  la publicación de revisiones de catálogo corresponde a la tarea 3.
 - Borrado íntegro: FTS, revisiones, archivos propios, backups administrados y, más
   adelante, respuestas de M4 que citen la reunión.
 
@@ -79,7 +80,7 @@ siete. Valen las cinco del diseño.
 
 | Grupo | Tareas del diseño | Documentos | Estado |
 |---|---|---|---|
-| A. Catálogo inmutable | 1 modelos, migraciones y repositorio · 2 segmentos y raw text en todos los recorridos · 3 ingestión, identidad y revisiones | `M2_CATALOG_SPEC.md`, `M2_CATALOG_PLAN.md` | en ejecución; tarea 1 con review independiente aceptada; tareas 2/3 pendientes de cierre |
+| A. Catálogo inmutable | 1 modelos, migraciones y repositorio · 2 segmentos y raw text en todos los recorridos · 3 ingestión, identidad y revisiones | `M2_CATALOG_SPEC.md`, `M2_CATALOG_PLAN.md` | tareas 1/2 implementadas con review independiente aceptada y evidencia local; tarea 3 en RED/GREEN pendiente |
 | B. Ciclo de vida y borrado | 4 participantes, edición con `row_version`, reconciliación · 5 borrado transaccional y FTS | `M2_LIFECYCLE_SPEC.md`, `M2_LIFECYCLE_PLAN.md` | plan escrito, sin ejecutar |
 
 Orden obligatorio: A antes que B. Si al mergear A cambió la forma de
@@ -170,13 +171,23 @@ no editable pasaron. Límites y comandos en `development/ACCEPTANCE.md`.
 
 | Criterio | Estado de evidencia |
 |---|---|
+| 2. Vía de persistencia de aplicación | Consolidación CLI/archivo/retry verificada localmente en tarea 2; integración del catálogo y CI de grupo pendientes |
+| 6–7. Segmentos y pausa | Texto/ordinal/hablante nullable, procedencia y seek sobre WAV sintético verificados localmente; su persistencia en catálogo depende de tarea 3 |
 | 8. Migración, backup y esquema futuro | Verificación automática local de la base de catálogo; falta CI de Windows en el head del grupo |
 | 14. DB ocupada y transacciones cortas | Verificación automática local de escrituras y lecturas bloqueadas; la publicación con archivos/proveedor aún depende de tarea 3 |
 | 15. Suite en CI de Windows | Pendiente; una suite local no cierra este criterio |
-| 1–7, 9–13, 16 | Pendientes de integración, tareas restantes y evidencia de grupo; no se cierran con el repositorio aislado |
+| 1, 3–5, 9–13, 16 | Pendientes de integración, tareas restantes y evidencia de grupo; no se cierran con el repositorio aislado |
 
-La tarea 2 tiene foco GREEN local y su suite completa está en evaluación; la tarea
-3 prepara RED en otro worktree, sin escritores simultáneos en archivos compartidos.
+La tarea 2 (`037fc03`, integrada como `1cdaadb`) preserva `raw_transcript.txt`
+separado del texto limpio y `segments.json` en vivo, offline, fallback, archivo y
+retry, por la vía de aplicación. Tiempos inválidos siguen nulos; `timing_source`
+es aditivo y nullable para documentos históricos. Review independiente de SPEC y
+calidad PASS, sin hallazgos. Foco 310 pasan/1 skip en 24,60 s; captura/recuperación
+con fases de kill conservadas 68 pasan en 25,64 s. Corrida
+`M2A-T2-FINAL-20261105`: 783 pasan/8 skips en 160,71 s (seis symlinks y dos smokes
+de wheel sin entorno opt-in). Tarea 3 completó RED conjunto de 39 fallos/18 pasan
+en 7,33 s y está implementando GREEN, sin resultado aprobado todavía ni escritores
+simultáneos compartidos.
 No hay certificación nueva de hardware, proveedor o instalación limpia, ni cierre
 del grupo A o de M2. La versión sigue en 0.2.0 hasta el cierre de hito previsto.
 

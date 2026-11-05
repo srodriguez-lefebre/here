@@ -3,8 +3,9 @@
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
 > review, then independent agent review. The author merges after Copilot review, CI and independent subagent review (rulings 16 and 17). Steps use checkbox
 > syntax. **Status: in execution since 2026-11-05 (ruling 20).** Task 1 independent
-> review accepted after its Busy correction; final local suite evidence is recorded
-> below. Tasks 2/3 and current-head Windows CI remain separate gates.
+> review accepted after its Busy correction. Task 2 SPEC/quality review passed;
+> local suite evidence is recorded below. Task 3 and current-head Windows CI remain
+> separate gates.
 
 **Goal:** Durable meeting identity, immutable transcript revisions and one
 application-owned persistence path, rebuildable from files and usable without a key.
@@ -98,7 +99,10 @@ the application-owned publication path must preserve compatibility under faults.
 The capture-publication fault wrapper forwards additive `raw_text` while retaining
 its exact process-kill phases.
 
-**Interfaces:** no new public API. Guarantee that `TranscriptionResult.segments` is
+**Interfaces:** existing CLI commands remain compatible.
+`SessionProcessor.transcribe_audio_path(...) -> SessionArtifactPaths` owns the
+former direct file-transcription writes; `SessionArtifactPaths.raw_transcript_path`
+is additive and optional. Guarantee that `TranscriptionResult.segments` is
 populated on live, offline, fallback, file-transcription and retry paths, and that
 `SessionProcessor` writes `segments.json` and raw text on all of them. Add
 `timing_source` to `TranscriptSegmentMetadata` as an additive optional field.
@@ -108,12 +112,27 @@ Raw evidence is persisted separately as `raw_transcript.txt` (ruling 21).
   the five paths with a fake provider returning timed, untimed, contradictory and
   non-finite segments; assert `timing_source` values; assert the five-minute-pause
   offset case against a synthetic WAV.
-- [ ] Fix every path that drops segments; validate bounds once at the artifact boundary.
-- [ ] Consolidate the three direct `write_session_artifacts` calls in `src/cli.py`
+- [x] Fix every path that drops segments; validate bounds once at the artifact boundary.
+- [x] Consolidate the three direct `write_session_artifacts` calls in `src/cli.py`
   behind `SessionProcessor` so file transcription and retry produce the same artifacts
   as recording; keep the existing compatibility regressions passing.
-- [ ] Run focused tests and the full suite; self-review; commit as "transcription:
+- [x] Run focused tests and the full suite; self-review; commit as "transcription:
   carry segments and raw text on every path".
+
+Source `037fc036ef43467136bcf7b8e95c6f8395d1aa5e`, integrated as `1cdaadb`.
+Independent SPEC/quality review: PASS, no findings. RED: 82 failures/153 passes/
+1 skip in 21.18s, plus two raw rollback regressions failing before the writer fix.
+Focused GREEN: 310 passed/1 skip in 24.60s. The first full run exposed eight
+publication-hook wrappers rejecting the additive `raw_text` keyword (775 other
+passes/8 skips); narrow forwarding fixes preserved all original assertions and kill
+phases. Capture/recovery then passed all 68 cases in 25.64s. Final named run
+`M2A-T2-FINAL-20261105`: 783 passed/8 skipped in 160.71s on the reviewed task source.
+The skips are six existing symlink-privilege cases and two noneditable-wheel smokes
+without their opt-in environment. All 13 touched files pass Ruff/format checks;
+mypy comparison reports 60 baseline/58 current diagnostics with no new messages,
+not a clean mypy base. Full evidence/limits: `ACCEPTANCE.md` and
+`M2_CATALOG_EVIDENCE.json`. This task does not close catalog ingestion, immutable
+revision publication, group hosted CI or M2.
 
 ### Task 3: Ingestion, identity and revisions
 

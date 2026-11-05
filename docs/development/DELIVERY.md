@@ -665,3 +665,62 @@ it is not represented as APPROVED. Exact-head Windows CI `42102225168` passed
 (2m36s) and Windows package workflow `42102224714` passed (3m34s). Root confirmed
 all four review/CI gates before merge. Integrating this documentation merge into
 the M2 branch does not constitute a provider run or M2 feature acceptance.
+
+## 2026-11-05 — M2 A task 2 local checkpoint
+
+Task source `037fc036ef43467136bcf7b8e95c6f8395d1aa5e` was integrated as
+`1cdaadb`. Independent reviewer `catalog_review` accepted SPEC compliance and code
+quality with no findings on that exact task head. The reviewer inspected source
+and submitted evidence rather than rerunning the suites. This checkpoint is
+implemented and automatically verified locally; group A and M2 remain open.
+
+All five completion paths preserve source segments and `raw_transcript.txt`
+independently of optional display cleanup. Text-only responses gain an untimed,
+speakerless evidence segment; source order and request/chunk speaker scope remain.
+Nullable additive timing provenance retains historical compatibility, valid
+one-sided measurements and absent bounds without fabricated time. CLI publication
+now delegates to `SessionProcessor.transcribe_audio_path`; input ownership,
+pending manifests, failure causes and conservative replaced-audio cleanup remain.
+Managed raw entry preflight and metadata-last I/O rollback preserve prior raw
+bytes or remove a fresh unpublished raw file after a handled metadata failure.
+
+Named runs in `ACCEPTANCE.md` and `M2_CATALOG_EVIDENCE.json`:
+
+- `M2A-T2-RED-20261105`: 82 failed/153 passed/1 skipped in 21.18s.
+- `M2A-T2-RAW-RED-20261105`: 2 failed/112 deselected in 2.12s before the raw
+  rollback correction; both regressions pass in the final focus.
+- `M2A-T2-FOCUS-20261105`: 310 passed/1 symlink skip in 24.60s, including real
+  synthetic-WAV seek across a virtual five-minute wall pause.
+- `M2A-T2-FIRST-FULL-20261105`: 8 failed/775 passed/8 skipped in 171.12s. Existing
+  fault wrappers rejected additive `raw_text`; narrow forwarding changes preserved
+  all original assertions and process-kill phases.
+- `M2A-T2-CAPTURE-RECOVERY-20261105`: all 68 passed in 25.64s, including the real
+  killed-subprocess and synthetic crash boundaries exposed by that first full run.
+- `M2A-T2-FINAL-20261105`: **783 passed, 8 skipped in 160.71s**, Windows CPython
+  3.13.15, offscreen Qt and synthetic provider key. Six skips require symlink
+  privilege; two noneditable-wheel smokes lack `HERE_WHEEL_PYTHON` in this run.
+
+All 13 touched files pass Ruff and formatting; diff checks pass. Mypy comparison
+on seven production files is baseline 60/current 58 diagnostics, no new messages;
+existing import/stub/Any/SDK issues remain. No private data, `.env`, hardware or real
+provider was accessed. This task's handled-I/O rollback is not a filesystem
+transaction against process termination/concurrent writers; catalog immutable
+publication and reconciliation still belong to task 3. No current-head hosted CI,
+provider/hardware/installer certification or M2 closure is claimed.
+
+Task 3 service/artifact/controller RED remains 31 failed/18 passed in 2.50s,
+confirmed by root in 4.25s. CLI RED is being completed after task 2 released its
+shared files; no task 3 GREEN is claimed at this checkpoint.
+
+Follow-up task 1 typing evidence: a temporary canonical `here/` package containing
+unchanged copies of the four memory source files and the existing output path
+validator passed `mypy --follow-imports=silent --no-incremental -p here.memory`
+with `MYPYPATH` selecting that temporary root: **Success: no issues found in
+4 source files**, without `--ignore-missing-imports`. Log:
+`task-1-mypy-layout-checked.log`. Root removed only the verified owned temporary
+directory afterward; no dependency or production layout changed. The ordinary
+global flat-layout mypy baseline remains unclean.
+
+Task 3 subsequently completed combined CLI/service/artifact/controller RED:
+39 failed/18 passed in 7.33s (`task-3-complete-root-red.log`). A distinct agent is
+implementing GREEN; no passing result or task 3 completion is claimed yet.

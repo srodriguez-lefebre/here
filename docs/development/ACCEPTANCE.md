@@ -13,6 +13,8 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M1 | Failure/crash/network/disconnection/disk-pressure recovery | Fault-injection plus bounded hardware run | PR12 faults, writer/publication process kills and helper-owner death passed; native recoverable saved failure passed; no repeated installed fault matrix claim; long run omitted by user |
 | M1 | Installed application opens, records and uninstalls | Fresh Windows installation and bundled-runtime smoke | Incorporated-source `1740b2d` local Windows 11 frozen GUI/CLI, Start launch, active-update refusal, reinstall/uninstall and data preservation passed; recording retains earlier source evidence; distribution peer review/clean hosted package CI/merge pending |
 | M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | Parcial: base de catálogo verificada localmente en M2A-T1-FINAL-20261105; ingestión, publicación de archivos y ciclo de vida pendientes |
+| M2 · criterio 2 | Grabación, archivo y retry comparten persistencia de aplicación | CLI delega a SessionProcessor, artefactos y fallos compatibles | Consolidación de artefactos verificada localmente en M2A-T2-FOCUS-20261105 y M2A-T2-CAPTURE-RECOVERY-20261105; integración con catálogo y CI pendientes |
+| M2 · criterios 6–7 | Segmentos nullable y pausa sin desplazar el WAV | Cinco recorridos con proveedor fake, procedencia y seek de marcas en WAV sintético | Verificados automáticamente en local: M2A-T2-FOCUS-20261105; ordinal en catálogo depende de tarea 3; no certificación de captura o proveedor |
 | M2 · criterio 8 | Migración transaccional, backup administrado y rechazo de esquema futuro | FK/integrity, rollback de DDL y snapshot SQLite API con WAL comprometido | Verificado automáticamente en local: M2A-T1-LOCK-GREEN-20261105 y M2A-T1-FINAL-20261105; CI del grupo pendiente |
 | M2 · criterio 14 | Busy tipado y acotado, sin trabajo de proveedor/archivos en transacción | Segunda conexión real con bloqueo de escritura y EXCLUSIVE sobre lecturas | Base de repositorio verificada automáticamente en local: M2A-T1-LOCK-GREEN-20261105; falta publicación de tarea 3 y CI del grupo |
 | M2 · criterio 15 | Suite completa en CI de Windows sin credencial real ni display | Corrida hospedada sobre el head exacto del PR M2 A | Pendiente; M2A-T1-FINAL-20261105 es local y no cierra esta fila |
@@ -35,10 +37,11 @@ proveedor o instalación limpia. La prueba de dos horas permanece omitida por
 ruling 5, nunca aprobada. Las exclusiones históricas de M1 conservan su procedencia;
 ninguna observación corta certifica una ejecución larga.
 
-El checkpoint local de tarea 1 no cierra M2: publicación de revisiones inmutables,
-ingestión, FTS, integración de productores y ciclo de vida siguen pendientes, además
-de CI del grupo. Los smokes reales de proveedor autorizados por ruling 19/20 usan
-solo audio y texto sintéticos; no se ejecutaron en este checkpoint. No se leyó el
+Los checkpoints locales de tareas 1/2 no cierran M2: publicación de revisiones
+inmutables, ingestión, FTS, integración de productores con el catálogo y ciclo de
+vida siguen pendientes, además de CI del grupo. Los smokes reales de proveedor
+autorizados por ruling 19/20 usan solo audio y texto sintéticos; no se ejecutaron
+en estos checkpoints. No se leyó el
 `.env` real, la biblioteca del usuario ni grabaciones privadas. La matriz y las
 corridas históricas de M1 mantienen sus resultados y límites originales.
 
@@ -75,13 +78,61 @@ grupo: `.superpowers/sdd/M2_CATALOG_PLAN/task-1-red-report.md`,
 `task-1-review-report.md` pidió corregir Busy; `task-1-fix-review-report.md` acepta
 el arreglo y no deja hallazgos accionables de tarea 1. Lint y formato de los
 archivos de tarea 1 pasan. El chequeo mypy normal encuentra el problema de layout
-plano conocido; el chequeo aislado con imports faltantes ignorados pasó según el
-reporte del implementador, sin presentarlo como un mypy global limpio.
+plano conocido. Un chequeo posterior con copias intactas de los cuatro módulos de
+`memory` y el validador de rutas en un paquete temporal canónico devolvió
+`Success: no issues found in 4 source files`, sin ignorar imports faltantes:
+`mypy --follow-imports=silent --no-incremental -p here.memory`, con `MYPYPATH`
+limitado a ese temporal. Log `task-1-mypy-layout-checked.log`; root retiró después
+solo ese temporal propio verificado. Es un chequeo de tipos acotado a memory,
+sin cambios de dependencias/producción y sin presentar el mypy global como limpio.
 
 Esta evidencia demuestra contratos locales de DB, backups, esquema, DTOs y
 repositorio. No demuestra todavía publicación de archivos tras process-kill,
 ingestión completa, borrado de backups ni funcionamiento sin dependencia del
 catálogo durante una captura. No hay certificación nueva ni cierre de M2.
+
+## Corridas locales de M2 A — tarea 2, 2026-11-05
+
+Fuente exacta revisada: `037fc036ef43467136bcf7b8e95c6f8395d1aa5e`, integrada
+sin cambios a sus archivos como `1cdaadb`. La review independiente de SPEC y
+calidad pasó sin hallazgos (`task-2-review-report.md`); el reviewer no repitió la
+suite. La evidencia corresponde a la rama de tarea 2 sobre su base `878e7d4`, no
+a una futura suite conjunta de las tres tareas del grupo.
+
+| Corrida nombrada | Resultado observado | Alcance y límites |
+|---|---|---|
+| M2A-T2-RED-20261105 | 82 fallos/153 pasan/1 skip en 21,18 s | Faltaban segmentos de texto solo, procedencia temporal y raw separado; fallos de feature, sin errores de colección |
+| M2A-T2-RAW-RED-20261105 | 2 fallos/112 deseleccionados en 2,12 s | Fallo de replace de metadata dejaba raw nuevo huérfano o reemplazaba bytes anteriores; ambos casos pasan en el foco final |
+| M2A-T2-FOCUS-20261105 | 310 pasan/1 skip en 24,60 s | Cinco recorridos reales con proveedor fake, texto fuente/limpio, tiempos inválidos/unilaterales, rollback raw y seek de segundo fragmento sobre WAV tras pausa virtual de 300 s; skip de symlink |
+| M2A-T2-FIRST-FULL-20261105 | 8 fallos/775 pasan/8 skips en 171,12 s | Ocho wrappers de faults rechazaron el nuevo keyword `raw_text`; se corrigió su forwarding sin cambiar fases de kill ni assertions |
+| M2A-T2-CAPTURE-RECOVERY-20261105 | 68 pasan en 25,64 s | Incluye los cuatro kills reales y cuatro fronteras de crash sintético antes falladas; ningún skip |
+| M2A-T2-FINAL-20261105 | 783 pasan/8 skips en 160,71 s | Windows, CPython 3.13.15, Qt offscreen, key sintética; seis skips de symlink y dos smokes no editables sin `HERE_WHEEL_PYTHON`; `pwsh` presente |
+
+Comandos del implementador, con `QT_QPA_PLATFORM=offscreen` y clave sintética:
+
+```powershell
+uv run --no-sync pytest -q tests/test_transcription_service.py tests/test_application_processing.py tests/test_output_session_writer.py tests/test_segments.py tests/test_cli.py tests/test_desktop_cli_recovery.py --tb=short --show-capture=no
+uv run --no-sync pytest -q --tb=short --show-capture=no
+```
+
+La evidencia inspeccionable del ledger local incluye `task-2-red-output.txt`,
+`task-2-green-output.txt`, `task-2-full-first-output.txt`, `task-2-crash-output.txt`,
+`task-2-full-output.txt`, `task-2-implementation-report.md` y
+`task-2-review-report.md`. Ruff y formato pasan en los 13 archivos tocados.
+Comparación mypy sobre los siete archivos de producción: 60 diagnósticos de base,
+58 actuales, sin mensajes nuevos; no se presenta como una base mypy limpia.
+`M2_CATALOG_EVIDENCE.json` conserva resultados y límites de ambas tareas.
+
+`raw_transcript.txt` conserva el texto anterior al cleanup; el transcript de
+presentación puede diferir. Los cinco recorridos lo publican junto a segmentos por
+`SessionProcessor`, y la CLI ya no escribe artefactos directamente. Texto solo
+retiene segmento sin tiempo/hablante inferidos; `timing_source` es opcional y
+nullable en documentos históricos. La procedencia nueva es `provider` si queda
+algún límite válido y `absent` si no queda ninguno; `imported_explicit` se conserva
+en el contrato de metadata. El rollback por errores I/O restaura bytes raw, pero
+no es una transacción de filesystem frente a muerte de proceso o escritores
+concurrentes. Publicación de revisiones de catálogo y reconciliación son tarea 3.
+No hay CI hospedado de M2 A, certificación nueva, cierre de grupo ni cierre de M2.
 
 ## Runs
 

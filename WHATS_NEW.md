@@ -1,5 +1,16 @@
 # What's new
 
+## M2 in progress — preserved transcript evidence
+
+Successful recordings, file transcriptions and retries now keep the uncleaned
+text in `raw_transcript.txt` alongside the display transcript and segment evidence.
+This makes cleanup changes inspectable across live processing and offline fallback.
+Text-only responses keep their words without inventing timestamps or speakers;
+nullable timing provenance and recorded-audio offsets remain explicit.
+
+These changes are verified automatically with local synthetic tests. Catalog
+ingestion and immutable revisions are still in progress; M2 is not complete.
+
 ## 0.2.0 — Windows M1 delivery
 
 - Production Qt desktop and recording overlay share the application controller.

@@ -100,6 +100,7 @@ Each recording creates a timestamped folder inside `transcriptions/`:
 ```text
 transcriptions/YYYYMMDD_HHMMSS/
   audio.wav
+  raw_transcript.txt
   transcript.txt
   transcript.md
   session.json
@@ -111,6 +112,11 @@ If transcription fails, the audio and diagnostic metadata remain available so
 the session can be retried without recording it again. Failed sessions also
 include an `errors.json` file.
 
+Successful live, offline, fallback, file transcription and retry paths preserve
+`raw_transcript.txt` with the transcription text before optional cleanup.
+`transcript.txt` and `transcript.md` contain the display text, which may be cleaned.
+Keeping both lets you inspect the source text when cleanup changes the wording.
+
 An unexpected Windows capture failure also preserves finalized audio and a failed
 session for retry. If mixing fails, source WAV copies remain in that session.
 Explicit recording cancellation deletes captured audio and creates no session.
@@ -119,7 +125,12 @@ exceeding either budget triggers offline transcription of the saved audio.
 
 `segments.json` stores versioned provider evidence: original segment text,
 nullable timing/speaker values, and request scope for chunk-local speaker labels.
-It retains overlapping chunk evidence separately from the merged or cleaned
+Text-only responses retain an untimed segment with no inferred speaker.
+The optional `timing_source` field distinguishes `provider`, `imported_explicit`
+and `absent`; new provider evidence uses `absent` when no valid bound remains.
+Contradictory bounds become missing, and a wall-clock pause never shifts a recorded
+audio position. Historical segment documents without this field remain readable.
+`segments.json` retains overlapping chunk evidence separately from the merged or cleaned
 display transcript. `session.json.capture_sources` preserves original device names,
 sample rates, channels, and frame counts after mixing.
 
