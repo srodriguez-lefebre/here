@@ -115,6 +115,33 @@ Los rulings nuevos se escriben en español por el ruling 6.
     wrong:** conflictos de merge o contratos desalineados entre grupos; se detectan
     en CI y en la review independiente.
 
+20. **Ruling:** por instrucción explícita del usuario el 2026-11-05, se reemplaza
+    el ruling 15 y se autoriza implementar completos M2–M5 en los nueve grupos
+    de PR de STATUS, empezando por M2_CATALOG_PLAN, tarea 1. Codex orquesta RED
+    por subagente, implementación GREEN, review por otro subagente independiente
+    y documentación/evidencia por otro, con worktrees separados, un escritor por
+    archivo y los solapamientos exclusivos de CLAUDE §11. Migraciones, pyproject y
+    versión siempre en serie. Cada grupo: PR abierto contra main con evidencia y
+    review independiente; Copilot solicitado sobre el head actual y recibido;
+    cada observación respondida en su hilo, corregida con commit o rechazada con
+    razón y review repetida tras correcciones sustantivas; CI Windows verde en ese
+    head; merge commit con --admin --match-head-commit; anotación en DELIVERY.
+    Ninguna condición se omite, incluso si Copilot demora. Contratos que cambien
+    requieren PR de documentación del PLAN siguiente antes de implementarlo. Cada
+    hito verifica todos sus criterios con corridas reales y actualiza ACCEPTANCE,
+    versión (0.3.0, 0.4.0, 0.5.0, 1.0.0), README, ARCHITECTURE, WHATS_NEW y STATUS.
+    Se registran defaults menores como rulings; solo se pregunta lo previsto por
+    CLAUDE §3. Smokes del ruling 19 usan HERE_PROVIDER_SMOKE_KEY del .env original,
+    sin imprimirla ni persistirla, con texto/audio sintéticos. Máquina limpia se
+    pide con protocolo cuando corresponda. Prueba de dos horas: **omitida por
+    ruling 5**, nunca aprobada. Se mantienen los tres niveles de evidencia y las
+    definiciones de terminado. M5 exige instalador 1.0.0 y portable como artefactos
+    Windows con SHA256SUMS, inventario, provenance y avisos; matriz completa,
+    instalación limpia y upgrade desde 0.2.0 real conservando biblioteca. Bloqueos
+    humanos quedan en STATUS con PR abierto y evidencia; se retoma desde STATUS.
+    **Cost if wrong:** implementación y gasto de CI/proveedor de cuatro hitos;
+    los gates y la evidencia impiden confundir código con certificación.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
