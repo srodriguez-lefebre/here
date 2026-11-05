@@ -259,6 +259,16 @@ Los rulings nuevos se escriben en español por el ruling 6.
     instrumentación del fixture y su evidencia, manteniendo intactos los límites
     operativos y criterios de captura.
 
+30. **Ruling:** cada staging de publicación registra antes de copiar un plan
+    propio `.publication.json` con versión, ID de operación y hashes de nombres
+    reconocidos. Un UUID de carpeta por sí solo no prueba propiedad de sus hijos.
+    La limpieza usa únicamente ese plan validado o los nombres registrados por la
+    operación persistida; archivos o subdirectorios desconocidos se conservan y
+    producen advertencia/limpieza diferida antes de borrar. Los snapshots de estado
+    también validan nombre generado, versión e identidad antes de una purga propia.
+    **Cost if wrong:** versionar el lector del plan de staging y reintentar limpieza
+    local; material desconocido y fuentes originales permanecen preservados.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
