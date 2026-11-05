@@ -1,7 +1,8 @@
 # Hito 2 — Memoria estructurada
 
-Estado: plan preparado el 2026-11-04, completado el 2026-11-05. **No está en
-ejecución.** Arranca solo con una instrucción explícita del usuario (ruling 15). El diseño detallado está en
+Estado: **en ejecución desde el 2026-11-05**, por instrucción explícita del usuario
+(ruling 20, reemplaza ruling 15). Grupo actual A; el hito no está cerrado.
+El diseño detallado está en
 [`development/PRODUCT_DESIGN.md`](development/PRODUCT_DESIGN.md), secciones 2, 3 y 4,
 que es decisión tomada (ruling 3). Este plan no lo repite: fija alcance, orden, criterios
 verificables y lo que queda fuera.
@@ -78,7 +79,7 @@ siete. Valen las cinco del diseño.
 
 | Grupo | Tareas del diseño | Documentos | Estado |
 |---|---|---|---|
-| A. Catálogo inmutable | 1 modelos, migraciones y repositorio · 2 segmentos y raw text en todos los recorridos · 3 ingestión, identidad y revisiones | `M2_CATALOG_SPEC.md`, `M2_CATALOG_PLAN.md` | plan escrito, sin ejecutar |
+| A. Catálogo inmutable | 1 modelos, migraciones y repositorio · 2 segmentos y raw text en todos los recorridos · 3 ingestión, identidad y revisiones | `M2_CATALOG_SPEC.md`, `M2_CATALOG_PLAN.md` | en ejecución; tarea 1 con review independiente aceptada; tareas 2/3 pendientes de cierre |
 | B. Ciclo de vida y borrado | 4 participantes, edición con `row_version`, reconciliación · 5 borrado transaccional y FTS | `M2_LIFECYCLE_SPEC.md`, `M2_LIFECYCLE_PLAN.md` | plan escrito, sin ejecutar |
 
 Orden obligatorio: A antes que B. Si al mergear A cambió la forma de
@@ -155,6 +156,29 @@ El hito se considera terminado cuando se cumplen conjuntamente:
 16. `README.md`, `ARCHITECTURE.md`, este plan, `ACCEPTANCE.md` y `WHATS_NEW.md`
     reflejan lo implementado; las filas M2 de `ACCEPTANCE.md` nombran la corrida que
     las cierra.
+
+### Evidencia parcial de ejecución — 2026-11-05
+
+La tarea 1 de A aporta modelos inmutables, las doce tablas, migraciones numeradas,
+backups por API de SQLite y repositorio transaccional. RED inicial de 27 fallos;
+primera suite completa local: 768 pasan/9 skips en 174,94 s. Una review independiente
+detectó lecturas bloqueadas sin error tipado; ocho regresiones con EXCLUSIVE real
+fallaron antes de la corrección. Foco corregido: 34 pasan/1 skip de privilegio de
+symlink en 4,70 s, con re-review independiente aceptada. Corrida final
+`M2A-T1-FINAL-20261105`: 778 pasan/7 skips en 173,68 s; ambos smokes del wheel
+no editable pasaron. Límites y comandos en `development/ACCEPTANCE.md`.
+
+| Criterio | Estado de evidencia |
+|---|---|
+| 8. Migración, backup y esquema futuro | Verificación automática local de la base de catálogo; falta CI de Windows en el head del grupo |
+| 14. DB ocupada y transacciones cortas | Verificación automática local de escrituras y lecturas bloqueadas; la publicación con archivos/proveedor aún depende de tarea 3 |
+| 15. Suite en CI de Windows | Pendiente; una suite local no cierra este criterio |
+| 1–7, 9–13, 16 | Pendientes de integración, tareas restantes y evidencia de grupo; no se cierran con el repositorio aislado |
+
+La tarea 2 tiene foco GREEN local y su suite completa está en evaluación; la tarea
+3 prepara RED en otro worktree, sin escritores simultáneos en archivos compartidos.
+No hay certificación nueva de hardware, proveedor o instalación limpia, ni cierre
+del grupo A o de M2. La versión sigue en 0.2.0 hasta el cierre de hito previsto.
 
 ## Lo que queda pendiente de decidir
 

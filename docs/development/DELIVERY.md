@@ -142,6 +142,23 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Cost if wrong:** implementación y gasto de CI/proveedor de cuatro hitos;
     los gates y la evidencia impiden confundir código con certificación.
 
+21. **Ruling:** el archivo separado de texto fuente de cada transcripción se llama
+    `raw_transcript.txt`. Conserva `raw_text` independientemente del texto de
+    presentación en `transcript.txt`; el nombre concreta el requisito ya aprobado
+    de preservar raw text, sin agregar tiempos ni hablantes. **Cost if wrong:**
+    renombrar el artefacto y ajustar sus lectores, manifiestos y tests antes de
+    publicar un formato estable.
+22. **Ruling:** `MemoryService.ingest_session` admite el argumento opcional y
+    aditivo `revision_of`, cuyo valor es el ID de revisión activa esperada. Solo la
+    vía confiable de retry explícito lo aporta para publicar una revisión nueva;
+    se valida la identidad y la revisión esperada antes de activar. Una importación
+    ordinaria con el mismo UUID y contenido distinto sigue rechazada como conflicto;
+    el contenido de una carpeta no otorga autoridad de retry. Precisa el contrato
+    de tarea 3, cuyos tests RED e implementación siguen pendientes. **Cost if wrong:**
+    ajustar los adaptadores de retry, tests de conflicto/concurrencia y contrato de
+    ingestión antes de que ciclo de vida dependa de él; no se reescriben revisiones
+    previas para resolver el conflicto.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
@@ -579,3 +596,60 @@ local symlink-privilege skips at `e5520c6`. Independent distribution review,
 current-head Windows source/package CI and its guarded merge complete the revised
 M1 delivery. The two long acceptance runs are omitted by explicit user instruction;
 M2–M5 are future plans outside this run. No further Copilot request is authorized.
+
+## 2026-11-05 — M2 A task 1 local checkpoint
+
+Ruling 20 authorizes the current nine-group M2–M5 execution and supersedes the
+historical stop statements above. Task 1 source `9a80060` implements frozen catalog
+DTOs, all twelve initial tables, numbered/checksummed transactional migrations,
+managed SQLite API backups, operation-owned connections and an explicit transaction
+repository. This checkpoint is implemented and automatically verified locally;
+the M2 group is not merged or complete.
+
+Evidence runs recorded in `ACCEPTANCE.md`: `M2A-T1-RED-20261105` (27 feature
+failures; root confirmation 27 failures in 3.32s), initial focus 26 passed/1 skip
+in 2.30s, and initial full suite 768 passed/9 skipped in 174.94s. Independent review
+requested one P2 correction: migration/repository reads leaked OperationalError
+under a real second-connection EXCLUSIVE lock in supported rollback journaling.
+`M2A-T1-LOCK-RED-20261105` reproduced all eight boundaries (8 failed/9 deselected
+in 2.51s; full focus 8 failed/26 passed/1 skipped in 18.45s).
+`M2A-T1-LOCK-GREEN-20261105` passed 34 tests with one local symlink-privilege skip
+in 4.70s after translation through the existing typed Busy boundary. Scoped
+independent re-review accepted the correction and reported no remaining actionable
+task 1 findings. The reviewer did not rerun the author's suites.
+
+Final named run `M2A-T1-FINAL-20261105`: **778 passed, 7 skipped in 173.68s** on
+Windows, CPython 3.13.15 and PySide6/Qt 6.11.2, with offscreen Qt, a synthetic
+provider key and temporary roots/DBs. `HERE_WHEEL_PYTHON` selected an isolated
+noneditable-wheel environment; both wheel smokes passed. Seven remaining skips
+are six existing symlink-privilege cases and the new memory database symlink case.
+Changed-file Ruff and format checks passed; isolated mypy passed with missing
+imports ignored, while normal mypy retains the known flat-layout import limitation.
+Local logs/review reports are under `.superpowers/sdd/M2_CATALOG_PLAN/` in the group
+worktree; no private audio, user library, `.env` or real provider was accessed.
+
+Task 2 has a local focused GREEN run (310 passed/1 skip in 24.60s), with its complete
+suite still running; task 3 writes RED in a separate worktree. No process-kill file
+publication, producer/catalog integration, FTS or lifecycle acceptance is claimed
+by task 1. M2 criteria 8/14 have partial local evidence; criterion 15 requires
+current-head hosted Windows CI. Hardware/provider/clean-install certification and
+M2 closure are not claimed; the two-hour row remains omitted, not passed.
+
+## 2026-11-05 — PR #20 ruling 19 documentation merge
+
+PR [#20](https://github.com/srodriguez-lefebre/here/pull/20) merged at
+2026-11-05T20:24:29Z with merge commit
+`763a891fa7c0bed54a3158040094b6f083b88f32`, guarded by exact reviewed head
+`2f25a0d9738e22d315b79b23a16ea3c8f3c324d3` using the admin merge-commit path.
+The initial independent preparation review accepted the documentation; a distinct
+reviewer accepted the follow-up M5 release-plan correction.
+
+Copilot inline `4485511464` identified stale credential requests in
+`M5_RELEASE_PLAN.md`; correction `2f25a0d` requests only the clean machine and uses
+the already authorized `HERE_PROVIDER_SMOKE_KEY` for opt-in synthetic provider
+smokes. Reply `4485574698` records the disposition and the thread is resolved.
+Current-head Copilot review `5791519593` is **COMMENTED**, with no active issues;
+it is not represented as APPROVED. Exact-head Windows CI `42102225168` passed
+(2m36s) and Windows package workflow `42102224714` passed (3m34s). Root confirmed
+all four review/CI gates before merge. Integrating this documentation merge into
+the M2 branch does not constitute a provider run or M2 feature acceptance.

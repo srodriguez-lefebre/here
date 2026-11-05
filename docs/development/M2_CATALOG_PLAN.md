@@ -2,8 +2,9 @@
 
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
 > review, then independent agent review. The author merges after Copilot review, CI and independent subagent review (rulings 16 and 17). Steps use checkbox
-> syntax. **Status: not in execution.** Start only on an explicit user instruction
-> (ruling 1).
+> syntax. **Status: in execution since 2026-11-05 (ruling 20).** Task 1 independent
+> review accepted after its Busy correction; final local suite evidence is recorded
+> below. Tasks 2/3 and current-head Windows CI remain separate gates.
 
 **Goal:** Durable meeting identity, immutable transcript revisions and one
 application-owned persistence path, rebuildable from files and usable without a key.
@@ -58,33 +59,52 @@ pragmas; `migrate(connection) -> MigrationReport` with managed backup and checks
 activation, and pending-operation state transitions. Enum `MeetingStatus` with the
 seven durable states.
 
-- [ ] Write failing tests: fresh database schema matches the spec's tables and
+- [x] Write failing tests: fresh database schema matches the spec's tables and
   constraints; FK violation rejected; `foreign_key_check`/`integrity_check` pass
   after migration; a future-version database raises `UnsupportedSchema`; a managed
   backup exists before migration and is listed as managed data.
-- [ ] Implement connection factory, pragmas, migration runner and backup via the
+- [x] Implement connection factory, pragmas, migration runner and backup via the
   SQLite backup API.
-- [ ] Write failing repository tests: insert meeting/asset/revision/segments in one
+- [x] Write failing repository tests: insert meeting/asset/revision/segments in one
   transaction; activate revision only inside the transaction; `BEGIN IMMEDIATE`
   conflict from a second connection returns `Busy` within `busy_timeout`.
-- [ ] Implement repository and typed errors; register the package in `pyproject.toml`.
-- [ ] Run focused tests and the full offscreen suite; self-review; commit as
+- [x] Implement repository and typed errors; register the package in `pyproject.toml`.
+- [x] Run focused tests and the full offscreen suite; self-review; commit as
   "memory: schema, migrations and repository".
+
+Local evidence, 2026-11-05: dedicated RED 27 failures; root RED confirmation 27
+failures in 3.32s; initial focused GREEN 26 passed/1 symlink skip in 2.30s; initial
+full suite 768 passed/9 skipped in 174.94s. Independent review found untranslated
+locked reads under supported rollback journaling. Eight real second-connection
+EXCLUSIVE-lock regressions failed, then the corrected focus passed 34 tests with
+one symlink-privilege skip in 4.70s. Scoped independent re-review accepted the fix;
+no actionable task 1 findings remain. Final run `M2A-T1-FINAL-20261105`: 778 passed,
+7 symlink-privilege skips in 173.68s, including both noneditable-wheel smokes.
+Limits are recorded in `ACCEPTANCE.md`; task source commit `9a80060` records the
+implementation. Current-head Windows CI for M2 A remains pending.
+No file publication, producer integration, FTS or M2 completion is claimed here.
 
 ### Task 2: Segments and raw text on every transcript path
 
-**Files:** `src/transcription/service.py`, `src/live_processing.py`,
+**Files:** `src/transcription/service.py`, `src/transcription/client.py`, `src/live_processing.py`,
 `src/application/processing.py`, `src/output/session_writer.py`,
 `src/output/metadata.py`, `src/cli.py`; tests in `tests/test_transcription_service.py`,
 `tests/test_application_processing.py`, `tests/test_output_session_writer.py`,
-`tests/test_segments.py`.
+`tests/test_segments.py`, `tests/test_cli.py`, `tests/test_desktop_cli_recovery.py`,
+`tests/test_capture_recovery.py`.
+The client coercion seam and existing CLI/recovery fault-injection targets are
+authorized additions: text-only provider output must retain untimed evidence and
+the application-owned publication path must preserve compatibility under faults.
+The capture-publication fault wrapper forwards additive `raw_text` while retaining
+its exact process-kill phases.
 
 **Interfaces:** no new public API. Guarantee that `TranscriptionResult.segments` is
 populated on live, offline, fallback, file-transcription and retry paths, and that
 `SessionProcessor` writes `segments.json` and raw text on all of them. Add
 `timing_source` to `TranscriptSegmentMetadata` as an additive optional field.
+Raw evidence is persisted separately as `raw_transcript.txt` (ruling 21).
 
-- [ ] Write failing tests that assert `segments.json` and raw text exist after each of
+- [x] Write failing tests that assert `segments.json` and raw text exist after each of
   the five paths with a fake provider returning timed, untimed, contradictory and
   non-finite segments; assert `timing_source` values; assert the five-minute-pause
   offset case against a synthetic WAV.
@@ -103,13 +123,19 @@ populated on live, offline, fallback, file-transcription and retry paths, and th
 `tests/test_memory_service.py`, `tests/test_memory_artifacts.py`,
 `tests/test_application_controller.py`, `tests/test_cli.py`.
 
-**Interfaces:** `MemoryService.ingest_session(session_dir: Path) -> IngestResult`;
+**Interfaces:** `MemoryService.ingest_session(session_dir: Path, *,
+revision_of: str | None = None) -> IngestResult`;
 `MemoryService.reconcile() -> RecoveryReport`; `IngestResult` with
 `inserted|unchanged|revised|rejected`, `meeting_id`, warnings. Controller publishes a
 `MEMORY_INGESTED` event (additive `EventKind`) after persistence with the result; a
 catalog failure is reported as a recoverable warning, never as a recording failure.
 CLI: `here memory ingest PATH`, `here memory reconcile`, `here memory show ID --json`
 (exit codes 0/2/3/4 as in `PRODUCT_DESIGN.md` §5).
+The additive optional `revision_of` is the expected active revision ID supplied
+only by a trusted explicit retry path (ruling 22). Ordinary ingestion omits it;
+same-UUID imports with changed content remain conflicts. Task 3 RED tests must
+cover both distinctions, stale expected IDs and failed-publication preservation
+before this planned contract is claimed implemented.
 
 - [ ] Write failing tests: ingest a v1 session folder (no `meeting_id`) → UUID
   assigned, `legacy_session_id` kept, `ingest_sources` fingerprint stored; second

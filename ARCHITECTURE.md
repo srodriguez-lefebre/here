@@ -32,6 +32,9 @@ The main flow is:
   timeline merge.
 - `output/`: Pydantic metadata models, Markdown rendering, and session artifact
   writing.
+- `memory/`: immutable catalog DTOs, operation-owned SQLite connections, numbered
+  migrations with managed backups, and an explicit transaction repository. M2 A
+  task 1 supplies this foundation; ingestion and producer wiring remain task 3.
 - `ui/`: Qt Widgets presentation, the live-logo overlay, and the single adapter
   from visual actions to the application contract.
 
@@ -143,6 +146,34 @@ no silence is inserted into `audio.wav`.
 
 This split keeps artifacts useful for debugging now and ready for a later local
 search/RAG layer.
+
+## Catalog foundation (M2 A task 1)
+
+`open_library(data_dir)` owns one connection per worker or operation to
+`<data_dir>/library.sqlite3`; the connection is never shared with the Qt thread.
+Connections enable foreign keys, FULL synchronous writes and a 250 ms busy timeout.
+Local roots use WAL; UNC roots use rollback journaling. Future schema versions are
+refused before persistent pragmas are changed. Managed database, sidecar and backup
+paths reuse the output path validators.
+
+Numbered Python migrations create all twelve catalog tables, record names and
+checksums, and validate foreign keys and integrity within a `BEGIN IMMEDIATE`
+transaction. Before upgrading an existing populated database, a separate read
+connection takes a SQLite backup API snapshot under the migrator's write
+reservation. Backups live under `<data_dir>/backups/` and are enumerated as managed
+data for later lifecycle purge. Failed migrations roll back DDL and their ledger.
+
+`MemoryRepository` requires an explicit owned transaction for mutations and revision
+activation. Database constraints enforce same-meeting active revisions, unique
+revision numbers and segment ordinals, and valid durable states and timing bounds.
+Frozen DTOs carry stored values without introducing global speaker identities.
+SQLite busy/locked errors from migration reads, repository reads and writes become
+the recoverable `Busy` error, including the rollback-journal exclusive-lock case.
+
+This database foundation does not yet publish immutable revision files, ingest
+sessions, index FTS or wire recording/file/retry producers into the catalog. Those
+task 3 responsibilities must preserve audio independently of catalog success and
+complete the staged file/database publication sequence before M2 A can close.
 
 ## Existing Audio Transcription
 

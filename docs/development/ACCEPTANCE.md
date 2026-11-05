@@ -12,7 +12,10 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M1 | Provider/timestamps and diarization | Synthetic real-provider run and segment output inspected | Single/multiple-source TTS smokes passed; long transcription/diarization omitted by explicit user instruction |
 | M1 | Failure/crash/network/disconnection/disk-pressure recovery | Fault-injection plus bounded hardware run | PR12 faults, writer/publication process kills and helper-owner death passed; native recoverable saved failure passed; no repeated installed fault matrix claim; long run omitted by user |
 | M1 | Installed application opens, records and uninstalls | Fresh Windows installation and bundled-runtime smoke | Incorporated-source `1740b2d` local Windows 11 frozen GUI/CLI, Start launch, active-update refusal, reinstall/uninstall and data preservation passed; recording retains earlier source evidence; distribution peer review/clean hosted package CI/merge pending |
-| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | Open |
+| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | Parcial: base de catálogo verificada localmente en M2A-T1-FINAL-20261105; ingestión, publicación de archivos y ciclo de vida pendientes |
+| M2 · criterio 8 | Migración transaccional, backup administrado y rechazo de esquema futuro | FK/integrity, rollback de DDL y snapshot SQLite API con WAL comprometido | Verificado automáticamente en local: M2A-T1-LOCK-GREEN-20261105 y M2A-T1-FINAL-20261105; CI del grupo pendiente |
+| M2 · criterio 14 | Busy tipado y acotado, sin trabajo de proveedor/archivos en transacción | Segunda conexión real con bloqueo de escritura y EXCLUSIVE sobre lecturas | Base de repositorio verificada automáticamente en local: M2A-T1-LOCK-GREEN-20261105; falta publicación de tarea 3 y CI del grupo |
+| M2 · criterio 15 | Suite completa en CI de Windows sin credencial real ni display | Corrida hospedada sobre el head exacto del PR M2 A | Pendiente; M2A-T1-FINAL-20261105 es local y no cierra esta fila |
 | M2 | Deletion clears managed memory without resurrection | DB/FTS/files/answers/backup inspection after restart | Open |
 | M3 | Listing/filter/search and original moment navigation | End-to-end Qt selection and seek plus real WAV marker playback | Open |
 | M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | Open |
@@ -21,21 +24,64 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M5 | Offline first run, settings, tray/startup and safe exit | Qt, process concurrency and Windows settings tests | Open |
 | M5 | Portable data including optional audio and citations | Export/import on a fresh root, hashes and hostile ZIP tests | Open |
 | M5 | Install/update/uninstall preserve user memory | N to N+1 installation and separate uninstall test | Open |
-| All | PR groups reviewed and merged | PR URLs, reviewed heads, comment dispositions, CI and merge SHAs | PR12 and desktop/recovery PR13 merged; remaining Windows distribution peer review and CI open. User stopped new Copilot requests after desktop review 5402608228; distribution uses peer review and CI. M2–M5 outside this run |
+| All | PR groups reviewed and merged | PR URLs, reviewed heads, comment dispositions, CI and merge SHAs | M2–M5 en ejecución por ruling 20; cada uno de los nueve grupos requiere review independiente, Copilot recibido/respondido y CI Windows verde sobre el head exacto antes del merge; M2 A pendiente |
 
 ## Current execution scope
 
-The user's latest explicit instruction on 2026-10-03 omits both the two-hour
-capture/pause/recovery/resource run and long generated-audio transcription with
-timestamps/diarization. These cases are excluded from this delivery, not passed.
-Complete the remaining Windows distribution, actual runtime/installation checks,
-notices/checksums, reviewed PRs and evidence audit; then close M1 under this revised
-scope and stop. Existing short hardware/fault/provider observations retain their
-actual provenance. M2-M5 remain outside this run.
+La instrucción explícita del 2026-11-05 (ruling 20) autoriza implementar y entregar
+M2–M5 completos en nueve grupos, empezando por M2 A. No altera las definiciones de
+terminado ni convierte verificación automática local en certificación de hardware,
+proveedor o instalación limpia. La prueba de dos horas permanece omitida por
+ruling 5, nunca aprobada. Las exclusiones históricas de M1 conservan su procedencia;
+ninguna observación corta certifica una ejecución larga.
 
-The historical matrix and runs below retain the original requirements and observations.
-The long-run exclusions above override their earlier open status for this delivery.
-No omitted requirement is represented as tested or passing.
+El checkpoint local de tarea 1 no cierra M2: publicación de revisiones inmutables,
+ingestión, FTS, integración de productores y ciclo de vida siguen pendientes, además
+de CI del grupo. Los smokes reales de proveedor autorizados por ruling 19/20 usan
+solo audio y texto sintéticos; no se ejecutaron en este checkpoint. No se leyó el
+`.env` real, la biblioteca del usuario ni grabaciones privadas. La matriz y las
+corridas históricas de M1 mantienen sus resultados y límites originales.
+
+## Corridas locales de M2 A — tarea 1, 2026-11-05
+
+Entorno observado en los logs: Windows, CPython 3.13.15, pytest 9.1.1,
+PySide6/Qt 6.11.2, `QT_QPA_PLATFORM=offscreen`, `OPENAI_API_KEY` sintética,
+DBs y raíces temporales. Implementador y reviewer independiente son distintos;
+esta documentación registra su evidencia, no una nueva ejecución del autor.
+Fuente corregida de tarea 1: `9a80060` (`codex/m2-catalog`). El grupo aún no tiene
+CI ni merge propios; el resultado local no se atribuye a un head futuro integrado.
+
+| Corrida nombrada | Resultado observado | Alcance y límites |
+|---|---|---|
+| M2A-T1-RED-20261105 | Autor RED: 27 fallos en 0,64 s; confirmación del implementador: 27 fallos en 3,32 s | `here.memory` ausente; fallos de feature, sin errores de colección |
+| M2A-T1-INITIAL-GREEN-20261105 | Foco: 26 pasan/1 skip en 2,30 s; suite completa: 768 pasan/9 skips en 174,94 s | Antes de la corrección de lecturas Busy; dos smokes de wheel omitidos y siete skips por symlinks |
+| M2A-T1-LOCK-RED-20261105 | 8 fallos/9 deseleccionados en 2,51 s; foco completo: 8 fallos/26 pasan/1 skip en 18,45 s | EXCLUSIVE real en segunda conexión con journal DELETE; se filtraba `OperationalError` en migración y siete lectores |
+| M2A-T1-LOCK-GREEN-20261105 | 34 pasan/1 skip en 4,70 s | Busy tipado, retorno acotado, recuperación al liberar lock e integridad; symlink omitido por privilegio |
+| M2A-T1-FINAL-20261105 | 778 pasan/7 skips en 173,68 s | Suite completa corregida; `HERE_WHEEL_PYTHON` apunta a entorno aislado no editable y ambos smokes de wheel pasan; seis skips de symlink preexistentes más uno nuevo de memory |
+
+Comandos de prueba usados por los autores, con las variables anteriores:
+
+```powershell
+.venv/Scripts/python.exe -m pytest tests/test_memory_database.py tests/test_memory_repository.py -q --tb=line
+.venv/Scripts/python.exe -m pytest tests/test_memory_repository.py -k exclusive_lock -q --tb=short
+.venv/Scripts/python.exe -m pytest tests/test_memory_database.py tests/test_memory_repository.py -q -rs
+.venv/Scripts/python.exe -m pytest -vv
+```
+
+Los reportes y logs inspeccionables viven en el ledger local del worktree del
+grupo: `.superpowers/sdd/M2_CATALOG_PLAN/task-1-red-report.md`,
+`task-1-root-red.log`, `task-1-full.log`, `task-1-fix-red-report.md`,
+`task-1-fix-green.log` y `task-1-final-full.log`. La review inicial
+`task-1-review-report.md` pidió corregir Busy; `task-1-fix-review-report.md` acepta
+el arreglo y no deja hallazgos accionables de tarea 1. Lint y formato de los
+archivos de tarea 1 pasan. El chequeo mypy normal encuentra el problema de layout
+plano conocido; el chequeo aislado con imports faltantes ignorados pasó según el
+reporte del implementador, sin presentarlo como un mypy global limpio.
+
+Esta evidencia demuestra contratos locales de DB, backups, esquema, DTOs y
+repositorio. No demuestra todavía publicación de archivos tras process-kill,
+ingestión completa, borrado de backups ni funcionamiento sin dependencia del
+catálogo durante una captura. No hay certificación nueva ni cierre de M2.
 
 ## Runs
 

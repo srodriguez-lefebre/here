@@ -104,3 +104,20 @@ ejecutan ni se presentan como aprobadas. El cierre de M1 se evalúa con
 el alcance restante en Windows: correcciones, distribución instalable,
 verificaciones de runtime/instalación, avisos, checksums y PR revisadas
 y mergeadas. Al cerrar M1 termina esta ejecución; M2-M5 quedan pendientes.
+
+### Ejecución vigente al 2026-11-05
+
+La instrucción explícita del usuario registrada como ruling 20 reemplaza la pausa
+de implementación del ruling 15 y el límite histórico de terminar en M1. Se
+implementan M2–M5 en los nueve grupos de PR que enumera `STATUS.md`, conservando
+los principios y las definiciones de terminado de este plan. El grupo actual es
+M2 A: la base de catálogo de su tarea 1 (`9a80060`) tiene review independiente
+aceptada y verificación local; `M2A-T1-FINAL-20261105` registra 778 pasan/7 skips
+en `ACCEPTANCE.md`, sin sustituir CI del grupo.
+Ingestión, revisiones de archivos, ciclo de vida y cierre de M2 siguen pendientes.
+
+Cada merge exige review independiente, Copilot recibido y respondido sobre el head
+actual y CI de Windows verde en ese head; el ruling 20 no permite omitir una
+condición por demora. La evidencia automática local no certifica hardware,
+proveedor ni instalación limpia. La prueba de dos horas permanece omitida por
+ruling 5, sin presentarla como aprobada.

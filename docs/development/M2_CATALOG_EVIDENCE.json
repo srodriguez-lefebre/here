@@ -1,0 +1,96 @@
+{
+  "milestone": "M2",
+  "group": "A",
+  "recorded_on": "2026-11-05",
+  "status": "in_progress",
+  "base_commit": "f276fd0",
+  "task_1_commit": "9a80060c804c6ea68e24cc4ba8b7eabdc92e9204",
+  "evidence_level": "verified_automatically_local",
+  "certified": false,
+  "data_policy": "Temporary SQLite roots, authored synthetic PCM and transcripts, synthetic key; no private sessions or real .env.",
+  "runs": [
+    {
+      "name": "M2A-T1-BASELINE-20261105",
+      "command": "QT_QPA_PLATFORM=offscreen OPENAI_API_KEY=synthetic-test-key python -m pytest -vv (prior catalog tests excluded)",
+      "python": "3.13.15",
+      "passed": 742,
+      "skipped": 8,
+      "failed": 0,
+      "duration_seconds": 194.41
+    },
+    {
+      "name": "M2A-T1-RED-20261105",
+      "command": "python -m pytest tests/test_memory_database.py tests/test_memory_repository.py -q",
+      "failed": 27,
+      "reason": "here.memory absent, test failures rather than collection errors",
+      "author": "catalog_red"
+    },
+    {
+      "name": "M2A-T1-INITIAL-GREEN-20261105",
+      "passed": 26,
+      "skipped": 1,
+      "failed": 0,
+      "duration_seconds": 2.3
+    },
+    {
+      "name": "M2A-T1-INITIAL-FULL-20261105",
+      "passed": 768,
+      "skipped": 9,
+      "failed": 0,
+      "duration_seconds": 174.94
+    },
+    {
+      "name": "M2A-T1-LOCK-RED-20261105",
+      "failed": 8,
+      "reason": "Raw OperationalError instead of Busy under real rollback-journal EXCLUSIVE lock",
+      "author": "catalog_red"
+    },
+    {
+      "name": "M2A-T1-LOCK-GREEN-20261105",
+      "passed": 34,
+      "skipped": 1,
+      "failed": 0,
+      "duration_seconds": 4.7
+    },
+    {
+      "name": "M2A-T1-FINAL-20261105",
+      "command": "QT_QPA_PLATFORM=offscreen OPENAI_API_KEY=synthetic-test-key HERE_WHEEL_PYTHON=<isolated noneditable wheel Python> python -m pytest -vv",
+      "passed": 778,
+      "skipped": 7,
+      "failed": 0,
+      "duration_seconds": 173.68,
+      "python": "3.13.15"
+    }
+  ],
+  "reviews": [
+    {
+      "task": 1,
+      "reviewer": "catalog_review",
+      "independent_of_implementer": true,
+      "initial_finding": "P2: migration/read queries leaked raw lock error",
+      "disposition": "Fixed after 8 RED regressions; scoped re-review accepted",
+      "final_verdict": "spec_and_quality_pass"
+    }
+  ],
+  "limits": [
+    "Final task1 full source suite and two noneditable-wheel smokes passed; seven local symlink-privilege omissions remain.",
+    "Windows hosted CI not yet requested for M2 A.",
+    "Symlink case requires local privilege; wheel cases require noneditable env.",
+    "No M2 milestone closure, hardware, provider or installer certification.",
+    "Two-hour resource acceptance omitted by ruling 5."
+  ],
+  "pr20": {
+    "url": "https://github.com/srodriguez-lefebre/here/pull/20",
+    "head": "2f25a0d9738e22d315b79b23a16ea3c8f3c324d3",
+    "independent_review": "accepted",
+    "copilot_review_id": 5791519593,
+    "copilot_state": "COMMENTED",
+    "inline_comment_id": 4485511464,
+    "reply_id": 4485574698,
+    "resolved": true,
+    "windows_ci": 42102225168,
+    "windows_package": 42102224714,
+    "merge_commit": "763a891fa7c0bed54a3158040094b6f083b88f32",
+    "merged_at": "2026-11-05T20:24:29Z"
+  }
+}
