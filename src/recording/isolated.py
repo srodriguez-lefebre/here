@@ -14,6 +14,10 @@ from here.recording.models import CaptureFailed
 
 
 class WindowsRecordingHandle:
+    @property
+    def meeting_id(self) -> str:
+        return str(self._journal.document.capture_id)
+
     def __init__(
         self,
         mode="both",

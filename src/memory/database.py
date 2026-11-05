@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import sqlite3
 from contextlib import closing
 from dataclasses import dataclass
@@ -143,6 +144,7 @@ class MigrationReport:
 class LibraryConnection:
     connection: sqlite3.Connection
     data_dir: Path
+    storage_warning: str | None = None
 
     def execute(self, sql: str, parameters: tuple[object, ...] = ()) -> sqlite3.Cursor:
         """Translate bounded read locks as well as transaction write locks."""
@@ -190,11 +192,26 @@ def open_library(data_dir: Path) -> LibraryConnection:
         connection.execute("PRAGMA foreign_keys=ON")
         connection.execute(f"PRAGMA busy_timeout={BUSY_TIMEOUT_MS}")
         # WAL's shared memory is local-host only; UNC roots use rollback journaling.
-        mode = "DELETE" if str(directory).startswith(("\\\\", "//")) else "WAL"
+        remote = str(directory).startswith(("\\\\", "//"))
+        if os.name == "nt":
+            import ctypes
+
+            drive_type = ctypes.windll.kernel32.GetDriveTypeW(str(directory.anchor))
+            # Only proven fixed/removable/RAM volumes can use local WAL semantics.
+            remote = remote or drive_type not in (2, 3, 6)
+        mode = "DELETE" if remote else "WAL"
         connection.execute(f"PRAGMA journal_mode={mode}")
         connection.execute("PRAGMA synchronous=FULL")
         connection.row_factory = sqlite3.Row
-        return LibraryConnection(connection, directory)
+        warning = (
+            (
+                "Biblioteca en volumen remoto; se usa journal local de reversión, "
+                "con menor concurrencia"
+            )
+            if remote
+            else None
+        )
+        return LibraryConnection(connection, directory, warning)
     except sqlite3.Error as error:
         connection.close()
         raise storage_error(error) from error

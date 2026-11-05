@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import shutil
 import threading
@@ -7,13 +8,19 @@ import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
+from functools import wraps
 from pathlib import Path
+from typing import Concatenate, ParamSpec, cast
 from uuid import UUID, uuid4
 
 import soundfile as sf
 from here.audio.mix import materialize_normalized_session
+from here.config.paths import get_data_dir
 from here.config.settings import get_settings, require_provider_key, settings_operation
 from here.live_processing import LiveTranscriptionController
+from here.memory.artifacts import write_durable_json
+from here.memory.database import LibraryError
+from here.memory.service import IngestResult, MemoryService
 from here.output.metadata import (
     CaptureSourceMetadata,
     ChunkMetadata,
@@ -234,6 +241,57 @@ def _cleanup_replaced_audio(
         )
 
 
+P = ParamSpec("P")
+
+
+def _catalog_producer(
+    method: Callable[Concatenate[SessionProcessor, P], SessionArtifactPaths],
+) -> Callable[Concatenate[SessionProcessor, P], SessionArtifactPaths]:
+    """All application producers publish locally after compatibility artifacts commit."""
+
+    @wraps(method)
+    def publish(self: SessionProcessor, *args: P.args, **kwargs: P.kwargs) -> SessionArtifactPaths:
+        expected = None
+        meeting_id = None
+        if method.__name__ in {"retry", "transcribe_audio_path"}:
+            path = cast(
+                Path,
+                args[0]
+                if args
+                else kwargs["session_dir" if method.__name__ == "retry" else "audio_path"],
+            )
+            directory = path if method.__name__ == "retry" else path.parent
+            metadata = read_session_metadata(directory)
+            meeting_id = metadata.meeting_id if metadata else None
+            # A rejected recovery preflight must not create or mutate a catalog.
+            # WAL readers can inspect an existing active revision while another
+            # operation holds BEGIN IMMEDIATE; they do not need a write reservation.
+            catalog_root = self._memory.data_dir if self._memory else get_data_dir()
+            if (catalog_root / "library.sqlite3").exists():
+                try:
+                    parent = self._memory_service().retry_parent(directory, meeting_id)
+                    if parent:
+                        meeting_id, expected = parent
+                except (LibraryError, OSError):
+                    pass
+            self._retry_meeting_id = meeting_id
+        try:
+            artifacts = method(self, *args, **kwargs)
+        except (SessionProcessingFailed, ProcessingCancelled) as exc:
+            self.publish_memory(
+                exc.session_dir, revision_of=expected, status_only=bool(expected and meeting_id)
+            )
+            raise
+        else:
+            self.publish_memory(artifacts.session_dir, revision_of=expected)
+            return artifacts
+        finally:
+            self._release_processing()
+            self._retry_meeting_id = None
+
+    return publish
+
+
 class SessionProcessor:
     """Owns recoverable persistence, live fallback, retries and session reprocessing."""
 
@@ -245,13 +303,87 @@ class SessionProcessor:
         sleeper: Callable[[float], None] = time.sleep,
         normalize: Callable[..., RecordingSession] | None = None,
         clock: Callable[[], datetime] | None = None,
+        memory_service: MemoryService | None = None,
     ) -> None:
         self._normalize = normalize
         self._clock = clock or (lambda: datetime.now().astimezone())
         self._transcribe = transcribe
         self._retry_delays = tuple(retry_delays)
         self._sleeper = sleeper
+        self._memory = memory_service
+        self._owned_processing_id: str | None = None
+        self._retry_meeting_id: str | None = None
 
+    def _memory_service(self) -> MemoryService:
+        if self._memory is None:
+            self._memory = MemoryService(get_data_dir())
+        return self._memory
+
+    def _claim_processing(self, meeting_id: str | None) -> None:
+        meeting_id = meeting_id or self._retry_meeting_id
+        if not meeting_id or not _is_canonical_capture_id(meeting_id):
+            return
+        self._owned_processing_id = meeting_id
+        try:
+            self._memory_service().begin_processing(meeting_id)
+        except Exception:
+            # Compatibility artifacts remain the recovery authority when the
+            # independent catalog cannot write its processing state.
+            pass
+
+    def _release_processing(self) -> None:
+        identity, self._owned_processing_id = self._owned_processing_id, None
+        if identity and self._memory is not None:
+            self._memory.finish_capture(identity)
+
+    def publish_memory(
+        self, session_dir: Path, *, revision_of: str | None = None, status_only: bool = False
+    ) -> IngestResult:
+        try:
+            metadata = read_session_metadata(session_dir)
+            if metadata is None:
+                raise ValueError("Session metadata is missing")
+            marker = session_artifact_path(session_dir, "memory_pending.json")
+            if marker.exists() and revision_of is None:
+                previous = json.loads(marker.read_text(encoding="utf-8"))
+                if (
+                    previous.get("schema_version") != 1
+                    or previous.get("meeting_id") != metadata.meeting_id
+                    or previous.get("intent", "ingest") not in {"ingest", "status"}
+                ):
+                    raise ValueError("Pending catalog identity changed")
+                revision_of = previous.get("revision_of")
+                status_only = previous.get("intent", "ingest") == "status"
+            if revision_of is not None and str(UUID(revision_of)) != revision_of:
+                raise ValueError("Invalid pending revision UUID")
+            write_durable_json(
+                marker,
+                {
+                    "schema_version": 1,
+                    "meeting_id": metadata.meeting_id,
+                    "revision_of": revision_of,
+                    "intent": "status" if status_only else "ingest",
+                },
+            )
+            if status_only:
+                if revision_of is None:
+                    raise ValueError("A state-only retry requires an expected active revision")
+                result = self._memory_service().finish_attempt(
+                    metadata.meeting_id, metadata.status, revision_of=revision_of
+                )
+            else:
+                result = self._memory_service().ingest_session(session_dir, revision_of=revision_of)
+            if result.status != "rejected":
+                session_artifact_path(session_dir, marker.name).unlink(missing_ok=True)
+        except Exception as exc:
+            result = IngestResult("rejected", warnings=(str(exc),))
+        if result.status == "rejected":
+            logger.warning(
+                "Audio guardado; biblioteca pendiente de recuperación local: {}", session_dir
+            )
+        return result
+
+    @_catalog_producer
     def transcribe_audio_path(
         self,
         audio_path: Path,
@@ -278,7 +410,9 @@ class SessionProcessor:
             session_artifact_path(audio_path.parent, audio_path.name)
             validate_recovery_audio(audio_path.parent, existing_metadata)
         source_session = session_from_audio_file(audio_path)
-        source_session.meeting_id = existing_metadata.meeting_id if existing_metadata else None
+        source_session.meeting_id = (
+            existing_metadata.meeting_id if existing_metadata else None
+        ) or str(uuid4())
         previous_chunks = _load_chunk_metadata(audio_path.parent) if existing_metadata else []
         previous_errors = _load_error_metadata(audio_path.parent) if existing_metadata else []
 
@@ -315,7 +449,7 @@ class SessionProcessor:
                 *previous_errors,
                 error_metadata("recoverable_audio", exc),
             ]
-            write_session_artifacts(
+            artifacts = write_session_artifacts(
                 session=source_session,
                 capture_sources=existing_metadata.capture_sources
                 if existing_metadata
@@ -340,7 +474,9 @@ class SessionProcessor:
                 session_dir=session_dir,
                 session_id=session_id,
             )
-            raise RuntimeError("Recoverable audio preparation failed") from exc
+            raise SessionProcessingFailed(
+                "Recoverable audio preparation failed", artifacts.session_dir, recoverable=False
+            ) from exc
 
         self.publish_pending(
             recoverable_session,
@@ -354,6 +490,7 @@ class SessionProcessor:
             else capture_metadata(source_session),
             newly_owned_audio=newly_owned_audio,
         )
+        self._claim_processing(source_session.meeting_id)
         try:
             result = self._transcribe(
                 recoverable_session,
@@ -365,7 +502,7 @@ class SessionProcessor:
                 *previous_errors,
                 error_metadata("offline_transcription", exc),
             ]
-            write_session_artifacts(
+            artifacts = write_session_artifacts(
                 session=recoverable_session,
                 capture_sources=existing_metadata.capture_sources
                 if existing_metadata
@@ -397,7 +534,9 @@ class SessionProcessor:
                 input_path=audio_path,
                 current_audio=recoverable_audio,
             )
-            raise RuntimeError("Transcription failed") from exc
+            raise SessionProcessingFailed(
+                "Transcription failed", artifacts.session_dir, recoverable=True
+            ) from exc
 
         artifacts = write_session_artifacts(
             session=recoverable_session,
@@ -489,7 +628,7 @@ class SessionProcessor:
             capture_sources=provenance,
         )
         if previous is not None:
-            metadata.meeting_id = previous.meeting_id
+            metadata.meeting_id = previous.meeting_id or session.meeting_id
         try:
             write_artifact_text(session_dir / METADATA_FILE, metadata.model_dump_json(indent=2))
         except Exception as publication_error:
@@ -590,6 +729,7 @@ class SessionProcessor:
             provenance.append(metadata)
         return provenance
 
+    @_catalog_producer
     def persist_capture_failure(
         self,
         failure: CaptureFailed,
@@ -770,6 +910,7 @@ class SessionProcessor:
         )
 
     @settings_operation
+    @_catalog_producer
     def process(
         self,
         session: RecordingSession,
@@ -1016,6 +1157,7 @@ class SessionProcessor:
         raise ProcessingCancelled(artifacts.session_dir)
 
     @settings_operation
+    @_catalog_producer
     def retry(
         self,
         session_dir: Path,
@@ -1119,6 +1261,7 @@ class SessionProcessor:
             use_alt_transcription_model=metadata.alt_model_used if metadata else False,
             capture_sources=metadata.capture_sources if metadata else None,
         )
+        self._claim_processing(source.meeting_id)
         try:
             result = self._offline_with_retries(
                 source,

@@ -1,9 +1,11 @@
+import json
 import time
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, is_dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated
+from uuid import UUID
 
 import typer
 from here.application import (
@@ -14,8 +16,11 @@ from here.application import (
 )
 from here.application.processing import SessionProcessor
 from here.audio.mix import materialize_normalized_session
+from here.config.paths import get_data_dir
 from here.config.settings import get_settings, settings_operation
 from here.live_processing import LiveTranscriptionController
+from here.memory.database import LibraryError
+from here.memory.service import MemoryService
 from here.output.metadata import (
     ChunkMetadata,
     ErrorMetadata,
@@ -46,6 +51,8 @@ os_app = typer.Typer(invoke_without_command=True)
 test_app = typer.Typer()
 app.add_typer(record_app, name="record")
 app.add_typer(test_app, name="test")
+memory_app = typer.Typer(help="Maintain the local meeting catalog without a provider.")
+app.add_typer(memory_app, name="memory")
 record_app.add_typer(mic_app, name="mic")
 record_app.add_typer(os_app, name="os")
 OutputDirOption = Annotated[
@@ -60,6 +67,63 @@ AudioFileArgument = Annotated[
     Path,
     typer.Argument(help="Audio file to transcribe."),
 ]
+
+
+def _memory_output(value: object, json_output: bool) -> None:
+    def encode(item):
+        return asdict(item) if is_dataclass(item) and not isinstance(item, type) else str(item)
+
+    serialized = json.dumps(value, default=encode, ensure_ascii=False)
+    if json_output:
+        typer.echo(serialized)
+    else:
+        logger.info(serialized)
+
+
+def _memory_error(error: Exception, json_output: bool, code: int) -> None:
+    _memory_output({"error": str(error)}, json_output)
+    raise typer.Exit(code)
+
+
+@memory_app.command("ingest")
+def memory_ingest(path: Path, json_output: bool = typer.Option(False, "--json")) -> None:
+    if not path.is_dir():
+        _memory_error(ValueError("Session directory does not exist"), json_output, 2)
+    try:
+        result = MemoryService(get_data_dir()).ingest_session(path)
+    except (LibraryError, OSError) as exc:
+        _memory_error(exc, json_output, 4)
+        return
+    _memory_output(asdict(result), json_output)
+    if result.status == "rejected":
+        raise typer.Exit(3)
+
+
+@memory_app.command("reconcile")
+def memory_reconcile(json_output: bool = typer.Option(False, "--json")) -> None:
+    try:
+        report = MemoryService(get_data_dir()).reconcile()
+    except (LibraryError, OSError) as exc:
+        _memory_error(exc, json_output, 4)
+        return
+    _memory_output(asdict(report), json_output)
+
+
+@memory_app.command("show")
+def memory_show(meeting_id: str, json_output: bool = typer.Option(False, "--json")) -> None:
+    try:
+        if str(UUID(meeting_id)) != meeting_id:
+            raise ValueError("Use a canonical meeting UUID")
+    except ValueError as exc:
+        _memory_error(exc, json_output, 2)
+    try:
+        result = MemoryService(get_data_dir()).show(meeting_id)
+    except (LibraryError, OSError) as exc:
+        _memory_error(exc, json_output, 4)
+        return
+    if result is None:
+        _memory_error(ValueError("Meeting does not exist"), json_output, 3)
+    _memory_output(result, json_output)
 
 
 @dataclass(slots=True)

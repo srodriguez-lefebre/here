@@ -144,11 +144,13 @@ def test_postcommit_audio_cleanup_fault_preserves_committed_outcome(
     old = directory / "audio.wav"
     old_bytes = old.read_bytes()
     committed = False
+    cleanup_active = False
     attempted = []
     warnings = []
     provider_error = OSError("original provider failure")
     original_write = processing_module.write_session_artifacts
     original_read = processing_module.read_session_metadata
+    original_cleanup = processing_module._cleanup_replaced_audio
     original_unlink = Path.unlink
     original_path = processing_module.session_artifact_path
 
@@ -160,10 +162,18 @@ def test_postcommit_audio_cleanup_fault_preserves_committed_outcome(
             (directory / "session.json").write_text("invalid metadata")
         return result
 
+    def cleanup(*args, **kwargs):
+        nonlocal cleanup_active
+        cleanup_active = True
+        try:
+            return original_cleanup(*args, **kwargs)
+        finally:
+            cleanup_active = False
+
     def read(path):
-        if committed and failure == "invalid_json":
+        if cleanup_active and committed and failure == "invalid_json":
             attempted.append(failure)
-        if committed and failure in {"read", "missing_metadata"}:
+        if cleanup_active and committed and failure in {"read", "missing_metadata"}:
             attempted.append(failure)
             if failure == "missing_metadata":
                 return None
@@ -188,6 +198,7 @@ def test_postcommit_audio_cleanup_fault_preserves_committed_outcome(
         return TranscriptionResult("new", "new")
 
     monkeypatch.setattr(processing_module, "write_session_artifacts", write)
+    monkeypatch.setattr(processing_module, "_cleanup_replaced_audio", cleanup)
     monkeypatch.setattr(processing_module, "read_session_metadata", read)
     monkeypatch.setattr(processing_module, "session_artifact_path", artifact_path)
     monkeypatch.setattr(Path, "unlink", unlink)
@@ -512,7 +523,13 @@ def test_cli_provider_interruption_leaves_discoverable_pending(tmp_path, monkeyp
         resumed
     )
     assert result.metadata.status == "completed"
-    assert result.metadata.meeting_id == (previous["meeting_id"] if previous else None)
+    if previous:
+        assert result.metadata.meeting_id == previous["meeting_id"]
+    else:
+        from uuid import UUID
+
+        assert str(UUID(metadata["meeting_id"])) == metadata["meeting_id"]
+        assert result.metadata.meeting_id == metadata["meeting_id"]
 
 
 @pytest.mark.parametrize("kind", ["external", "managed_audio", "managed_raw"])

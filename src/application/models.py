@@ -31,6 +31,7 @@ class EventKind(StrEnum):
     AUDIO_LEVEL = "audio_level"
     ERROR_RECORDED = "error_recorded"
     SESSION_PERSISTED = "session_persisted"
+    MEMORY_INGESTED = "memory_ingested"
     WORKER_COMPLETED = "worker_completed"
 
 
@@ -85,6 +86,7 @@ class ApplicationSnapshot:
     last_error: ApplicationError | None = None
     opened_sources: tuple[OpenedSource, ...] = ()
     worker_complete: bool = True
+    memory_warning: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "opened_sources", tuple(self.opened_sources))

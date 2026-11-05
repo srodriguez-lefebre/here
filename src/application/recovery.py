@@ -1,9 +1,13 @@
 """Local, explicit and idempotent recovery. Discovery never invokes a provider."""
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
+from uuid import UUID
 
 from here.application.processing import SessionProcessor, _validated_recovery_source
+from here.config.paths import get_data_dir
+from here.memory.service import MemoryService
 from here.output.metadata import ErrorMetadataDocument, SessionMetadata
 from here.output.paths import UnsafeSessionPath, session_artifact_path, validate_session_directory
 from here.output.session_writer import ERRORS_FILE, read_session_metadata
@@ -51,6 +55,12 @@ class RecoveryService:
 
     def discover(self) -> list[RecoveryCandidate]:
         validate_session_directory(self.root)
+        try:
+            data_dir = get_data_dir()
+            if (data_dir / "library.sqlite3").exists() or (data_dir / "meetings").exists():
+                MemoryService(data_dir).reconcile()
+        except (OSError, ValueError, RuntimeError):
+            pass
         if not self.root.exists():
             return []
         candidates: dict[tuple[str, Path], RecoveryCandidate] = {}
@@ -62,6 +72,23 @@ class RecoveryService:
                 metadata = read_session_metadata(directory)
                 if metadata is None:
                     continue
+                marker = session_artifact_path(directory, "memory_pending.json")
+                if marker.exists() and metadata.status != "pending":
+                    pending = json.loads(marker.read_text(encoding="utf-8"))
+                    expected = pending.get("revision_of")
+                    if (
+                        pending.get("schema_version") != 1
+                        or pending.get("meeting_id") != metadata.meeting_id
+                        or pending.get("intent", "ingest") not in {"ingest", "status"}
+                        or expected is not None
+                        and str(UUID(expected)) != expected
+                    ):
+                        raise ValueError("Invalid pending catalog intent")
+                    SessionProcessor().publish_memory(
+                        directory,
+                        revision_of=expected,
+                        status_only=pending.get("intent") == "status",
+                    )
                 # A copied manifest does not own other directories with the same ID.
                 key = (metadata.meeting_id or directory.name, directory)
                 if metadata.status == "completed":
