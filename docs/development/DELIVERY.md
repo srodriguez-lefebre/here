@@ -188,6 +188,18 @@ Los rulings nuevos se escriben en español por el ruling 6.
     interno de locks y el lector de marcadores antes de que M2 B/M5 dependan de
     ellos; los archivos originales y revisiones previas siguen preservados.
 
+24. **Ruling:** se adopta el default de M2 que permite una raíz de datos de red
+    con advertencia visible, sin recomendarla; incluye unidades de red mapeadas,
+    y SQLite usa rollback journal en vez de WAL cuando el volumen es remoto.
+    Las advertencias del catálogo se presentan separadas del error de captura en
+    el campo aditivo `ApplicationSnapshot.memory_warning`: una captura completada
+    sigue completada y no adquiere un `last_error` falso. La ventana muestra esa
+    advertencia cuando no hay un error real con prioridad, y la limpia al iniciar
+    otro trabajo o completar una persistencia sin advertencias. Precisa la forma
+    de mostrar el aviso que ya exige el criterio 10; no agrega pantalla ni flujo.
+    **Cost if wrong:** ajustar el canal de advertencias y el sondeo del volumen;
+    ninguna revisión ni audio necesita reescribirse.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
