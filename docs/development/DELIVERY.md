@@ -318,6 +318,19 @@ Los rulings nuevos se escriben en español por el ruling 6.
     del origen v1. **Cost if wrong:** ajustar resolución y handoff de ownership,
     conservando el ID legado original, la evidencia previa y los mappings válidos.
 
+34. **Ruling:** precisión de implementación del ruling 32: la lease nativa vive en
+    `<sessions_root>/.capture_owners/<capture_id>.lock`. Así `.captures/` conserva
+    su colección de directorios UUID de journals, utilizada por sus lectores
+    existentes. Un scope interno por trabajo del controlador, propagado mediante
+    `ContextVar`, registra la lease antes de publicar y la retiene hasta su salida,
+    después de reaping y persistencia/publicación, incluso si el constructor falla
+    antes de devolver el handle. El scope no agrega un proceso ni una autoridad
+    persistente: mantiene el handle del lock OS. Fuera del controlador, `wait` y
+    fallo de apertura conservan su contrato de liberar tras cierre real para permitir
+    recovery directo. La extracción de lock no cambia límites operativos.
+    **Cost if wrong:** ajustar el scope/handoff y sus lectores, manteniendo la
+    protección de todo el trabajo y la recuperación de la API directa.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
