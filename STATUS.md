@@ -123,7 +123,7 @@ El resto conserva sus dependencias; no se inicia ningún frente en este checkpoi
 - Rulings 31–34 registran asociación revision/audio/schema2, legacy confiable y
   lease nativa `.capture_owners/` retenida por scope del trabajo hasta cierre real
   y persistencia. La review de ronda 1 está en `task-3-fix-1-review-report.md`.
-- Rulings 36/37 fijan el contrato pendiente de marker v2/recibo v3 con token y
+- Rulings 36/37 fijan el contrato de marker v2/recibo v3 con token y
   prueba durable del replay, handoff privado de una sola publicación y reserva
   audio-only sin padre ficticio ni fechas de captura inventadas. No se agrega
   migración. Implementación de ronda 2 en `m2-ingestion`, aún sin aceptar.
@@ -142,4 +142,5 @@ El resto conserva sus dependencias; no se inicia ningún frente en este checkpoi
   No hay cierre M2 A/M2, hosted CI de grupo ni certificación nueva real.
 - Para retomar: leer este STATUS, el ledger local
   `.superpowers/sdd/M2_CATALOG_PLAN/progress.md`, los reportes y git log; continuar
-  NB1 + los cinco fallos antes de crear los dos chats.
+  NB2 y las verificaciones agregadas antes de crear los dos chats; no repetir
+  el trabajo ya resuelto de NB1 y de los cinco fallos históricos.
