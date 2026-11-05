@@ -6,147 +6,126 @@ Actualizado: 2026-11-05. Leé CLAUDE.md primero. Historial y rulings:
 ## Objetivo vigente
 
 Implementar y entregar M2–M5 completos por instrucción explícita del usuario
-(ruling 20, reemplaza ruling 15). Conservar definiciones de terminado y los tres
-niveles de evidencia. M5 exige distribución Windows 1.0.0 y aceptación real.
+(ruling 20). Primero cerrar M2 A con todos sus gates. El ruling 35 ordena después
+los dos frentes de proyecto M2 B y M3 A; todavía no se creó ninguno. Se mantienen
+las definiciones de terminado y los tres niveles de evidencia. Versión vigente
+0.2.0; 0.3.0 solo al cerrar B/M2. M5 exige distribución Windows 1.0.0 y aceptación real.
 
 ## Código y secuencia
 
-- Base de trabajo: `878e7d4`, v0.2.0, PR #19 mergeado. `main` incorporó PR #20
-  en `763a891`, integrado en esta rama con los contratos del ruling 19.
-- Grupo actual: `codex/m2-catalog`, worktree
+- Base histórica: `878e7d4`, v0.2.0; PR #20/ruling 19 mergeado en `763a891` e
+  integrado. Grupo actual: `codex/m2-catalog`, worktree
   `C:/Users/savar/.codex/worktrees/m2-catalog/here`.
-- Orden: M2 A (`M2_CATALOG`, 1–3), M2 B (`M2_LIFECYCLE`, 4–5),
-  M3 A (`M3_SEARCH`, 1–2), M3 B (`M3_LIBRARY`, 3–4),
-  M4 A (`M4_GROUNDED`, 1–3), M4 B (`M4_PRODUCT`, 4–5),
-  M5 A (`M5_SETTINGS`, 1–2), M5 B (`M5_PORTABILITY`, 3),
-  M5 C (`M5_RELEASE`, 4–5). Versiones: 0.3.0, 0.4.0, 0.5.0, 1.0.0.
-- Solo solapamientos de CLAUDE §11; migraciones, pyproject y versión en serie.
-- Cada tarea: RED por subagente → GREEN → review independiente → docs/evidencia
-  por otro subagente. Cada grupo: PR con evidencia/review → Copilot recibido y
-  respondido sobre head actual → CI Windows verde → merge commit con
-  `--admin --match-head-commit` → ledger. Ningún gate se omite.
+- Código integrado actual: `1f1bc88513840b84c388a61d9c077907cf2fba2e`, con fixture
+  `1277e19`, candidato `3370483`, fix 1 `3a83482` y guard de legacy `1f1bc88`.
+  Equivale a Green `c28472b` (fixes `16263c4` + `c28472b`): src tree
+  `780529d42936c979740443c51f1022fd2bb99a5e`, tests tree
+  `d226358ec038837dba6e40790c77eac74e74b538`. Source/config/scripts/workflows sin
+  diferencias con Green. Integración no equivale a aceptación ni merge del grupo.
+- Los nueve grupos se conservan: M2 A (`M2_CATALOG`, 1–3), M2 B
+  (`M2_LIFECYCLE`, 4–5), M3 A (`M3_SEARCH`, 1–2), M3 B (`M3_LIBRARY`, 3–4),
+  M4 A (`M4_GROUNDED`, 1–3), M4 B (`M4_PRODUCT`, 4–5), M5 A
+  (`M5_SETTINGS`, 1–2), M5 B (`M5_PORTABILITY`, 3), M5 C (`M5_RELEASE`, 4–5).
+  Versiones al cerrar hitos: 0.3.0, 0.4.0, 0.5.0, 1.0.0.
+- Root es el único orquestador de contratos, leases por archivo, integración y
+  merges. Un escritor por archivo; migraciones, pyproject/uv.lock y versión en
+  serie. Suites de deadlines, benchmarks y builds pesados se ejecutan en ventanas
+  exclusivas, sin otros tests/builds/mypy pesados.
+- Cada tarea: subagente RED → GREEN → review independiente → docs/evidencia por
+  otro rol. Cada grupo: PR con evidencia/review → Copilot recibido y respondido
+  sobre head actual, nueva review tras fixes sustantivos → CI Windows verde en ese
+  head → merge commit con `--admin --match-head-commit` → ledger. Ningún gate se omite.
 
-## Tarea en curso
+## Tarea en curso y resultados reales
 
-`docs/development/M2_CATALOG_PLAN.md`, tarea 3: ingestión, identidad y revisiones
-con candidato en el worktree de Green y siete hallazgos de review independiente
-abiertos. La suite estable del candidato pasó 883 tests/9 skips en 598,56 s,
-pero no aprueba los contratos cuestionados. Las tareas 1 y 2 tienen implementación
-y review independiente aceptadas; los contratos de tarea 2 ya están integrados.
-SPEC: `docs/development/M2_CATALOG_SPEC.md`. Hito: `docs/MILESTONE_2_PLAN.md`.
-Tarea 1: implementación local y review independiente aceptadas, incluida la corrección de
-`Busy` en lecturas bloqueadas. Foco: 34 pasan/1 skip en 4,70 s. Corrida final
-`M2A-T1-FINAL-20261105`: 778 pasan/7 skips en 173,68 s (CPython 3.13.15, Qt
-6.11.2, offscreen, key sintética y wheel no editable aislado). Ambos smokes de
-wheel pasaron; los siete skips requieren privilegio de symlink. Código de tarea
-en `9a80060`; integración del grupo y CI de Windows sobre el head del PR siguen
-pendientes.
+`docs/development/M2_CATALOG_PLAN.md`, tarea 3. SPEC `M2_CATALOG_SPEC.md`; hito
+`docs/MILESTONE_2_PLAN.md`. Tarea 3 y grupo A siguen sin aprobar.
 
-Tarea 2: fuente `037fc03`, integrada como `1cdaadb`; review independiente de SPEC
-y calidad PASS sin hallazgos. Foco: 310 pasan/1 skip en 24,60 s; captura/recuperación
-con kills reales: 68 pasan en 25,64 s. Corrida `M2A-T2-FINAL-20261105`: 783 pasan/
-8 skips en 160,71 s. Sus ocho skips son seis de symlink y dos smokes de wheel sin
-entorno no editable configurado; no sustituye la corrida de wheel de tarea 1 ni CI.
-Tarea 3: RED de servicio/artefactos/controlador 31 fallos/18 pasan en 2,50 s,
-confirmado por root en 4,25 s. RED conjunto con CLI: 39 fallos/18 pasan en 7,33 s.
-Focos GREEN incluyen 85 casos de propiedad/procesamiento/recovery/CLI/controlador
-en 79,17 s, cinco de retry legado/procesamiento en 14,10 s y dos de UTC en 1,83 s.
-Son corridas de alcances y fuentes intermedias, no una suite final ni review aceptada.
-El snapshot de 27 archivos coincide exactamente con el candidato local fijado por
-los commits `efb73a9` (fixture) y `6c422f0` (Task3), todavía sin integrar en root.
-Es FIX_BASE para corregir, no aceptación. Sus guards de roles/estados y limpieza
-desconocida están en el snapshot verificado; la observación anterior de guards
-ausentes pertenece a fuente supersedida. La review pide siete correcciones, incluida
-la asociación explícita revisión/audio autorizada por ruling 31.
-Worktree `C:/Users/savar/.codex/worktrees/m2-ingestion/here`, con ownership separado
-de los archivos compartidos. Preparación de M2 B y fixtures
-sintéticos disponibles. No hay cierre de M2 A ni de M2, ni certificación nueva de
-hardware, proveedor o instalación limpia.
+- Tarea 1: review independiente aceptada después del fix Busy. Foco 34 pasan/
+  1 skip/4,70 s; full `M2A-T1-FINAL-20261105` 778 pasan/7 skips/173,68 s,
+  ambos smokes de wheel pasan. Historial de fuente `9a80060`.
+- Tarea 2: review SPEC/calidad PASS. Fuente `037fc03`, integración `1cdaadb`;
+  foco 310/1/24,60 s, capture recovery 68/25,64 s, full 783/8/160,71 s.
+  Sus dos skips de wheel no sustituyen la evidencia de wheel de otras corridas.
+- Candidato inicial Task3 `6c422f0`: full estable 883 pasan/9 skips/598,56 s.
+  La review abrió F1–F7. Ronda 1 los marca **ADDRESSED** tras 40 nuevos casos RED
+  pasando juntos en 69,70 s, Ruff/format de 20 archivos limpios y mypy 79/79 sin
+  nuevos mensajes. Esa re-review sigue solicitando cambios por **NB1 Important/P2**:
+  doble publicación del controller y replay de marcador postcommit se confunden
+  con un retry nuevo y dejan parent obsoleto. No hay aceptación de tarea/grupo.
+- **Full integrado root cerrado: 5 fallos, 920 pasan, 7 skips en 553,39 s**.
+  Logs/XML `.superpowers/m2a-integrated-final-1.*`; 932 casos, cinco failures y
+  cero errors. Ambos smokes del wheel pasan; los siete skips son de symlink.
+  Pendientes de diagnóstico/fix: tres snapshots de `test_capture_recovery.py`
+  incluyen locks nuevos, `test_trans_command_completes_failed_session_audio`
+  tiene stub sf.info sin subtype y `test_legacy_audio_only_session_still_retries`
+  queda bloqueado por session.json ausente. No se omiten ni relajan assertions.
+- Wheel y sdist frescos CPython 3.13.15 construidos. Probe no editable, off-repo
+  con `-I`: 65 módulos Python byte-idénticos, schema 2, FTS5, FK/integrity correctos;
+  `.superpowers/m2a-wheel-catalog-probe.json` guarda hashes. Es evidencia automática
+  local, sin hardware/proveedor ni certificación de instalador o hito.
 
-## Decisiones abiertas y bloqueos
+## Próxima acción obligatoria
 
-- Sin decisiones de producto abiertas; defaults de los PLAN se registran al usarse.
-- PR #20 (`docs/ruling-19-smoke-key`) mergeado con `763a891` el 2026-11-05,
-  20:24:29 UTC. La autorización de credencial fue reiterada en la instrucción
-  actual; M2 no la necesita. Head `2f25a0d`: corrección
-  de M5 revisada independientemente; observación `4485511464` respondida con
-  `4485574698` y resuelta; Copilot `5791519593` COMMENTED sin problemas activos.
-  CI Windows `42102225168` y package `42102224714` pasaron sobre ese head.
-- Máquina limpia disponible a pedido: solicitar con protocolo cuando corresponda.
-- Prueba de dos horas: **omitida por ruling 5**, nunca aprobada.
-- No tocar ruleset, permisos ni grabaciones privadas.
+1. RED independiente de NB1 en `tests/test_memory_publication_replay.py` (en
+   preparación/ejecución, sin resultado entregado aún) y diagnóstico de los cinco
+   fallos del full integrado. Corregir sin debilitar la evidencia.
+2. Focos, re-review de NB1/correcciones, nueva suite estable y review de todo el
+   grupo. No convertir los siete ADDRESSED en aceptación mientras quede NB1.
+3. PR de A, Copilot sobre head exacto recibido/respondido y CI Windows verde;
+   merge guardado y ledger. Todavía no hay PR ni CI de A aprobados.
+4. Después del merge A y de los PRs de docs de contratos necesarios, root crea
+   dos chats de proyecto separados para M2 B y M3 A, con briefs completos y leases.
+   No usar `1f1bc88` como base de merge futura: la SHA real aún es desconocida.
 
-## Próxima acción
+## Dos frentes futuros — ruling 35, todavía pendientes
 
-Completar ronda 1 de correcciones de tarea 3: RED independiente, fixes y re-review
-de siete hallazgos (asociación revisión/audio, identidad CLI legada, retry idéntico,
-resultado postcommit, ownership de productores/recuperación, marcador malformado y
-categorías de error CLI). Después, suite estable y review del grupo;
-después abrir PR del grupo con suite y evidencia. El PR del grupo A aún no está
-abierto; ningún gate de merge del grupo se considera cumplido.
-Antes de implementar M2 B, ajustar sus contratos al A final y entregar el PR de
-documentación de SPEC/PLAN exigido por ruling 14. La versión 0.3.0 llega solo al
-cierre de B y del hito, no al completar A.
-En una reanudación consultar el ledger local
-`.superpowers/sdd/M2_CATALOG_PLAN/progress.md` del worktree y git log antes de
-redistribuir tareas.
+Proyecto descubierto: `local-e307e59e09194b354122137b16ef6d77`, host `local`, Git
+habilitado, raíz original `C:/Users/savar/Documents/proyects/here`.
 
-## Recuperación de la orquestación actual
+| Frente | Chat ID | Rama | Worktree | Base merge A | Responsable ejecutor |
+|---|---|---|---|---|---|
+| M2 B · ciclo de vida/borrado | Pendiente | Pendiente | Pendiente | Pendiente | Pendiente de asignar por root |
+| M3 A · búsqueda/acciones | Pendiente | Pendiente | Pendiente | Pendiente | Pendiente de asignar por root |
 
-- Implementador de tarea 3: subagente `ingestion_green`, worktree `m2-ingestion`,
-  base `1cdaadb`; no tocar sus fuentes mientras escribe.
-- RED adicional: `catalog_red`, contratos de propiedad, privacidad, reconstrucción,
-  retry fallido/legado, UTC y limpieza desconocida. Tests solo sintéticos.
-- Rulings 23–30 fijan locks, marcadores locales, warning separado, roles permitidos,
-  recibos, snapshots y staging registrado. Ruling 31 agrega el contrato pendiente
-  de migración 2 `revision_audio_assets`/recibo v2/show/rebuild; no modifica migración 1.
-  Rulings 32/34 protegen la captura desde antes del journal mediante lease nativa
-  en `.capture_owners/` y scope del trabajo; ruling 33 resuelve el v1 sin mapping
-  antes de mutar/proveedor, preservando su ID fuente. No hay dependencia, proceso
-  ni red nuevos; los deadlines siguen intactos.
-- Reviewer independiente de tarea 3: `ingestion_review`; informe y snapshot exacto
-  en `task-3-review-report.md` y `task-3-candidate-files.json`. Docs: `segments_red`.
-- RED de ronda 1: cuatro archivos nuevos `tests/test_memory_review1_*.py` en
-  `m2-preparation`, 20 fallos/3 controles que pasan contra `6c422f0`; copiados a
-  Green. Foco inicial de fixes: 40 pasan/1 skip, aún sin re-review. RED adicional
-  `test_memory_capture_ownership.py`: tres fallos concretos en 15,83 s, copiado
-  después de revisión. `test_memory_unmapped_legacy.py`: ocho casos escritos,
-  aún pendientes de ejecución. Implementación en `m2-ingestion`.
-  Preparación de SPEC/PLAN
-  de M2 B: `preparation`, worktree `m2-segments`, sin implementación todavía.
-- Fixture de memoria: `tests/memory_fixtures.py` en `m2-preparation` y `m2-ingestion`.
-  ZIPs hostiles sintéticos de M5: `tests/portability_fixtures.py` en `m2-segments`.
-  Memoria está incluida en el candidato Green; los ZIPs siguen como preparación,
-  sin implementación de importador. Conservar las copias hasta integrar sus tareas.
-- Fixtures M3 listos, sin implementar búsqueda/reproducción: `search_fixtures.py`
-  en `m2-preparation` y `playback_fixtures.py` en `m2-segments`, sin commit.
-  No son benchmark de búsqueda ni certificación de seek.
-- Baseline RED inmutable: worktree propio `ruling19-review`, reutilizado limpio
-  en detached `6c422f0`; su rama anterior de PR #20 sigue conservada. No modificar
-  ese baseline mientras corren las regresiones.
-- Reportes y logs de los roles: `.superpowers/sdd/M2_CATALOG_PLAN/` del worktree
-  principal `m2-catalog`; el ledger `progress.md` registra los commits y handoffs.
+Ningún chat fue creado. Antes de iniciar, cada brief fija objetivo, SPEC/PLAN
+aceptados, SHA base real, archivos exclusivos/compartidos, dependencias, límites y
+DoD verificable. Cada chat ejecuta su grupo completo con subagentes RED/GREEN/
+review/docs; root conserva la orquestación, contratos, integración y merges.
+No reiniciar ni duplicar trabajo ya realizado. Registrar IDs, ramas, worktrees y
+responsables reales aquí cuando existan, sin inventar identificadores.
 
-## Verificación que queda abierta
+Los cuatro SPEC/PLAN de B y M3 A están preparados en `m2-segments`, todavía sin PR;
+ver `lifecycle-plan-preparation-report.md` y `m3-plan-preparation-report.md` en el
+ledger local. Reconciliarlos con el A finalmente mergeado y entregar los PRs docs
+necesarios antes de despachar. M3 A puede avanzar búsqueda desde A aceptado, pero
+sus acciones de título/reindex esperan los contratos aceptados de B que requieren;
+no duplicar mutaciones ni contar fakes como esa integración. El texto de agenda del
+plan de hito M3 debe alinearse en ese PR, sin cambiar sus criterios de aceptación.
+Tras M2 B puede adelantarse M5 B con el gancho de claims pendiente hasta M4 B.
+El resto conserva sus dependencias; no se inicia ningún frente en este checkpoint.
 
-La fuente de tarea 3 tiene suite local verde, pero no tiene review aceptada.
-El full diagnóstico con fuente cambiante/otros checks dio 34 fallos/822 pasan/
-9 skips en 363,35 s; no se presenta como corrida final ni se omiten sus fallos.
-Captura aislada falló también en la base pre-tarea 3
-(15 fallos/18 pasan/87,08 s) y en el candidato (17/16/87,56 s). El diagnóstico
-`capture-diagnostic-report.md` midió un timeout durante bootstrap y reprodujo la
-interferencia de un lector con replace; no se atribuyen todas las fallas a carga.
-El arnés corregido de `tests/test_isolated_capture.py` pasó cuatro casos en
-19,71 s y los 33 aislados en 126,10 s, sin cambiar deadlines del producto
-(ruling 29). `capture_diagnostics` aceptó SPEC/calidad de ese fixture; no es
-review de tarea 3. La primera suite estable posterior dio 6 fallos/877 pasan/9 skips
-en 486,12 s: la instrumentación de limpieza contaba lecturas ajenas al fallo
-inyectado. El autor RED la acotó al delegado de limpieza, conservando todas las
-aserciones; sus diez casos pasaron en 16,76 s (Green: 17,10 s). La segunda suite
-estable dio 883 pasan/9 skips en 598,56 s; logs/XML separados en el worktree Green.
-Sus skips son siete de symlink y dos de wheel sin entorno no editable configurado.
-La revisión estática del snapshot exacto requiere siete correcciones aunque esa
-suite pase. Antes de dar el grupo por listo faltan regresiones/fixes y re-review,
-suite del código corregido, review del grupo y gates exactos de GitHub.
-No ejecutar tests/builds/mypy
-en paralelo mientras se corre la suite de deadlines.
+## Recuperación, decisiones y límites
+
+- Implementador Green: `ingestion_green`, `m2-ingestion`; reviewer independiente
+  `ingestion_review`; autor RED mantiene archivos propios de ronda 2; docs
+  `segments_red` en root. Nadie toca source de otro writer.
+- Rulings 31–34 registran asociación revision/audio/schema2, legacy confiable y
+  lease nativa `.capture_owners/` retenida por scope del trabajo hasta cierre real
+  y persistencia. La review de ronda 1 está en `task-3-fix-1-review-report.md`.
+- Todas las corridas anteriores, incluidos fulls fallidos y diagnóstico de captura,
+  conservan alcance y límites en ACCEPTANCE/DELIVERY/evidence JSON. El arnés revisado
+  no cambió deadlines del producto; H1 bootstrap se observó en un caso y H2 sharing
+  se reprodujo sin probar el solapamiento del fallo original.
+- Fixtures sintéticos de memoria/búsqueda/playback/ZIPs permanecen en sus worktrees
+  bajo ownership; no son benchmark, importador ni certificación de seek.
+- PR #20/ruling19 está mergeado en `763a891`: head revisado `2f25a0d`, Copilot
+  `5791519593` COMMENTED, inline `4485511464` respondido `4485574698`/resuelto,
+  CI Windows `42102225168` y package `42102224714` pasaron. M2 no usa proveedor real.
+- Máquina limpia: pedir con protocolo cuando una fila la necesite. Dos horas:
+  **omitida por ruling 5**, nunca aprobada. No cambiar ruleset/permisos ni usar datos privados.
+- Versiones y calidad/privacidad/aceptación/merges conservan sus requisitos.
+  No hay cierre M2 A/M2, hosted CI de grupo ni certificación nueva real.
+- Para retomar: leer este STATUS, el ledger local
+  `.superpowers/sdd/M2_CATALOG_PLAN/progress.md`, los reportes y git log; continuar
+  NB1 + los cinco fallos antes de crear los dos chats.

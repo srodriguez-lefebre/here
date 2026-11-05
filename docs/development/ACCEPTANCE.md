@@ -12,7 +12,7 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M1 | Provider/timestamps and diarization | Synthetic real-provider run and segment output inspected | Single/multiple-source TTS smokes passed; long transcription/diarization omitted by explicit user instruction |
 | M1 | Failure/crash/network/disconnection/disk-pressure recovery | Fault-injection plus bounded hardware run | PR12 faults, writer/publication process kills and helper-owner death passed; native recoverable saved failure passed; no repeated installed fault matrix claim; long run omitted by user |
 | M1 | Installed application opens, records and uninstalls | Fresh Windows installation and bundled-runtime smoke | Incorporated-source `1740b2d` local Windows 11 frozen GUI/CLI, Start launch, active-update refusal, reinstall/uninstall and data preservation passed; recording retains earlier source evidence; distribution peer review/clean hosted package CI/merge pending |
-| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | Tareas 1/2 aceptadas localmente; candidato task 3 con 883 pasan/9 skips pero siete hallazgos abiertos de review. No aceptación de tarea/grupo/hito; B abierto |
+| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | Tareas 1/2 aceptadas localmente; ronda 1 de task 3 con F1–F7 addressed pero NB1 abierto y full root 5 fallos/920 pasan/7 skips. Sin aceptación de tarea/grupo/hito; B abierto |
 | M2 · criterio 2 | Grabación, archivo y retry comparten persistencia de aplicación | CLI delega a SessionProcessor, artefactos y fallos compatibles | Consolidación de artefactos verificada localmente en M2A-T2-FOCUS-20261105 y M2A-T2-CAPTURE-RECOVERY-20261105; integración con catálogo y CI pendientes |
 | M2 · criterios 6–7 | Segmentos nullable y pausa sin desplazar el WAV | Cinco recorridos con proveedor fake, procedencia y seek de marcas en WAV sintético | Verificados automáticamente en local: M2A-T2-FOCUS-20261105; ordinal en catálogo depende de tarea 3; no certificación de captura o proveedor |
 | M2 · criterio 8 | Migración transaccional, backup administrado y rechazo de esquema futuro | FK/integrity, rollback de DDL y snapshot SQLite API con WAL comprometido | Verificado automáticamente en local: M2A-T1-LOCK-GREEN-20261105 y M2A-T1-FINAL-20261105; CI del grupo pendiente |
@@ -39,8 +39,9 @@ ninguna observación corta certifica una ejecución larga.
 
 Los checkpoints locales de tareas 1/2 no cierran M2. La implementación de tarea 3
 aporta ingestión, FTS, revisiones inmutables e integración de productores. Su
-candidato pasó la suite estable, pero review pidió siete correcciones: ronda 1,
-verificación corregida y re-review siguen pendientes; ciclo de vida B y CI del grupo
+primer candidato pasó la suite estable y recibió siete correcciones. Ronda 1 las
+marca addressed, pero NB1 y cinco fallos de la suite integrada siguen pendientes;
+ciclo de vida B y CI del grupo
 siguen abiertos. Los smokes reales de proveedor
 autorizados por ruling 19/20 usan solo audio y texto sintéticos; no se ejecutaron
 en estos checkpoints. No se leyó el
@@ -222,7 +223,7 @@ de staging/roles, Ruff/format/diff pasaron sobre 27 archivos y mypy canónico qu
 hash/read y de nombre de estado antes de lectura están en el candidato revisado;
 la observación anterior de ausencia de esos guards quedó superada.
 
-### Suite estable y checkpoint de review — ronda 1 abierta
+### Suite estable y review inicial — checkpoint histórico, superado por ronda 1
 
 | Corrida nombrada | Resultado y alcance |
 |---|---|
@@ -245,10 +246,11 @@ legítimamente después del cleanup; la inyección global antigua contaba tambi�
 consumidor independiente. No se cambió código productivo, deadline ni assertion
 para arreglar el contador. El primer full fallido y sus límites se conservan.
 
-La review estática independiente `task-3-review-report.md` contra los 27 hashes
-exactos solicita cambios de SPEC y calidad; el reviewer no ejecutó tests:
+La review estática inicial `task-3-review-report.md` contra los 27 hashes
+exactos solicitó cambios de SPEC y calidad; el reviewer no ejecutó tests. La tabla
+conserva el estado de ese checkpoint; la re-review vigente está abajo:
 
-| ID | Prioridad | Contrato abierto, sin fix aprobado todavía |
+| ID | Prioridad | Contrato abierto en la review inicial |
 |---|---|---|
 | F1 | P1 | Relación explícita e inmutable revisión/audio, incluyendo A→B→A con assets reutilizados; ruling 31 autoriza migración 2/recibo v2/show/rebuild, todavía pendientes |
 | F2 | P2 | `here trans` sobre sesión v1 importada con ID None no debe inventar otra identidad ni reescribir la opcional; el test GUI de legacy no cubría esa ruta CLI |
@@ -263,9 +265,10 @@ persistencia/cleanup. La discovery por sí sola no cambia la fila de catálogo; 
 se observó ni se afirma borrado real de audio. Ese alcance pertenece a propiedad
 de M2 A, no se difiere al borrado/edición de B. Correcciones: RED independiente,
 GREEN, re-review y suite de fuente corregida; luego review del grupo y gates de
-GitHub. Los commits del candidato no son aceptación ni están integrados en root.
+GitHub. En ese checkpoint los commits del candidato no estaban integrados en root;
+el resultado de la integración posterior se registra abajo.
 
-| Nivel | Estado de este checkpoint |
+| Nivel | Estado del checkpoint histórico inicial |
 |---|---|
 | 1 · Implementado | Existe candidato local `6c422f0` con suite pasando; la tarea está sin aprobar por siete contratos abiertos |
 | 2 · Verificado automáticamente | Suite local 883/9 y focos con datos sintéticos; siete omisiones de symlink explícitas y wheel opt-in ausente; hosted CI del grupo pendiente |
@@ -274,6 +277,75 @@ GitHub. Los commits del candidato no son aceptación ni están integrados en roo
 M2 A y M2 siguen abiertos. Versión vigente 0.2.0; 0.3.0 solo al cerrar B/M2.
 El PLAN de B se ajusta en su PR de documentación antes de implementar, conservando
 contratos y los gates estrictos del grupo A.
+
+### Ronda 1 integrada — NB1 y cinco fallos pendientes
+
+Fuente Green revisada `c28472b5bd651f4d7f7fe2f40449f5a23e325f67`, fixes
+`16263c4` + `c28472b`, integrada en root
+`1f1bc88513840b84c388a61d9c077907cf2fba2e`. Los árboles Git src
+`780529d42936c979740443c51f1022fd2bb99a5e` y tests
+`d226358ec038837dba6e40790c77eac74e74b538` son idénticos entre ambos, confirmado
+por lectura Git de este autor. Source/config/scripts/workflows no tienen diff.
+Los 40 nuevos casos RED pasan juntos en 69,70 s; Ruff/format de 20 archivos
+limpios y mypy 79/79/sin mensajes nuevos son evidencia del implementador.
+
+`task-3-fix-1-review-report.md` es re-review estática independiente: originales
+F1–F7 **ADDRESSED**, pero **Important NB1/P2 sigue abierto** y bloquea aceptación.
+Controller + SessionProcessor pueden publicar el mismo retry comprometido otra
+vez; el marcador retenido tras commit tampoco distingue replay de un intento
+nuevo, queda con parent obsoleto y warning/conflicto. RED de ronda 2 en
+`tests/test_memory_publication_replay.py` está en preparación/ejecución, sin
+resultado entregado en este checkpoint. No se acepta parent arbitrario obsoleto,
+ni se omite la revisión nueva de un retry idéntico ni se borra intención incierta sin
+prueba durable para resolverlo.
+
+`M2A-INTEGRATED-FULL1-20261105`: **5 fallos, 920 pasan, 7 skips en 553,39 s**.
+Log/XML `.superpowers/m2a-integrated-final-1.*`; XML 932 casos, cinco failures,
+cero errors, siete skipped (tiempo interno JUnit 552,876 s). Ambos smokes de wheel
+pasaron. Los siete skips requieren privilegio de symlink; no se promete cero skips
+en CI ni se presenta esta suite fallida como verde.
+
+| Fallo observado | Estado |
+|---|---|
+| `test_failed_manifest_copies_with_same_uuid_are_both_discoverable` | Snapshot incluye nuevos `.capture_owners`/`.owners`; diagnóstico/fix pendiente |
+| `test_retry_copied_session_preserves_independent_capture[canonical-interrupted]` | Snapshot incluye lease nuevo; diagnóstico/fix pendiente |
+| `test_retry_copied_session_preserves_independent_capture[canonical-failed]` | Snapshot incluye lease nuevo; diagnóstico/fix pendiente |
+| `test_trans_command_completes_failed_session_audio` | Stub sf.info sin subtype; exit 1 observado, diagnóstico/fix pendiente |
+| `test_legacy_audio_only_session_still_retries` | Retry legacy solo-audio exige session.json ausente; compatibilidad pendiente de diagnóstico/fix |
+
+No se omiten casos, relajan assertions ni declaran como simple ruido. La review de
+NB1, estos cinco fallos, la suite corregida y la review del grupo son gates antes
+del PR/Copilot/CI/merge. La re-review de originales addressed no aprueba tarea/grupo.
+
+### Wheel y source del mismo código integrado
+
+Wheel y sdist frescos construidos con CPython 3.13.15. Probe
+`M2A-INTEGRATED-WHEEL-20261105`, off-repo con `-I`, entorno no editable:
+65 archivos Python byte-idénticos al source, versión 0.2.0, schema 2,
+FTS5 disponible y `foreign_key_check`/`integrity_check` correctos.
+Evidencia `.superpowers/m2a-wheel-catalog-probe.json` y script correspondiente;
+este autor los inspeccionó sin ejecutar imports, tests o builds.
+
+| Artefacto | SHA-256 |
+|---|---|
+| `here-0.2.0-py3-none-any.whl` | `bb7a49a9f5b5c6a6b25f48f39b036badc489bee3870c69b0024af8f0d61dd7bd` |
+| `here-0.2.0.tar.gz` | `8ebd3a3a44d48df68d94dcb8748adf8af52dfde334465bc2bcecfa0d95513358` |
+
+Es verificación automática local de distribución/importación/catálogo, sin audio
+hardware ni proveedor y sin certificar instalación limpia o M2. No convierte en
+éxito la suite integrada fallida.
+
+| Nivel vigente | Resultado |
+|---|---|
+| 1 · Implementación | Código de ronda 1 integrado y originales addressed; tarea completa no aprobada por NB1 y cinco fallos |
+| 2 · Verificación automática | Foco 40 pasan, wheel/source verificables y full con 920 pasan/5 fallos/7 skips; hosted CI pendiente |
+| 3 · Certificación | Sin nueva certificación real de hardware, proveedor o instalador/upgrade limpio |
+
+Ruling 35 requiere cerrar A con todos los gates antes de crear dos chats de
+proyecto M2 B/M3 A. Bases de merge, IDs, ramas/worktrees y responsables futuros
+siguen pendientes en STATUS; no se creó ni inició ningún frente. Los PRs docs de
+contratos necesarios preceden al despacho, y los criterios/privacidad/calidad de
+cada hito no cambian.
 
 ## Runs
 

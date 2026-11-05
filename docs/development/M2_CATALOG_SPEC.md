@@ -1,11 +1,12 @@
 # M2 immutable catalog specification
 
 Status: in execution under the explicit 2026-11-05 mandate (ruling 20).
-Tasks 1/2 have local verification and independent reviews. Task 3 candidate
-`6c422f0` passed a stable local suite (883 passed/9 skipped), but independent review
-requests seven contract fixes; task/group approval and hosted gates remain open.
-Requirements below include the pending ruling 31 fix, not a claim that this
-candidate already satisfies it. Governing design:
+Tasks 1/2 have local verification and independent reviews. Task 3 round-1 source
+`c28472b` is integrated at root `1f1bc88`. Re-review marks F1–F7 ADDRESSED but
+requires Important NB1 (repeat publication/postcommit marker replay). The root full
+run has five failures/920 passes/seven skips; no task/group approval or hosted gates
+are complete. Requirements below distinguish implemented fixes from pending NB1
+and the integrated failures. Governing design:
 `PRODUCT_DESIGN.md` §2–§4, which is a taken decision (ruling 3). Spanish plan and
 acceptance criteria: `../MILESTONE_2_PLAN.md`.
 
@@ -52,8 +53,8 @@ add columns.
 Ruling 31 authorizes a separate migration 2 for `revision_audio_assets`, preserving
 migration 1 and its checksum. The relation records meeting/revision/asset identity,
 source name and ordinal, with composite FKs preventing cross-meeting references and
-unique per-revision name/ordinal. This is a pending round-1 fix, not part of the
-reviewed candidate's implemented schema.
+unique per-revision name/ordinal. Schema 2 and receipt/show/rebuild references are
+implemented in the round-1 source; independent re-review marks original F1 addressed.
 
 Migrations are numbered, applied in a transaction, validated with
 `foreign_key_check` and `integrity_check`, and preceded by a managed backup taken
@@ -87,7 +88,8 @@ must resolve as A/B/A independently of file recency or cumulative meeting assets
 The ruling 31 version-2 receipt carries those links and only the referenced assets;
 rebuild and `show` JSON expose the same `revision_audio_assets`. An older receipt
 without unambiguous proof stays uncertain with a warning; no relationship is
-invented. This invariant remains open as review finding F1 at the candidate head.
+invented. Round-1 source implements this invariant; acceptance still waits for NB1,
+the five integrated full failures and the remaining group gates.
 
 ### Segments and evidence
 
@@ -113,7 +115,11 @@ A trusted completed retry also completes its durable outcome and revision contra
 when its evidence matches the previous result; ordinary idempotent import is a
 separate branch. After a committed activation, receipt/state/operation-housekeeping
 failure reports committed inserted/revised success with a recoverable warning,
-not a precommit rejection. The candidate's F3/F4 fixes remain pending.
+not a precommit rejection. Re-review marks original F3/F4 addressed. Important NB1
+requires distinguishing a fresh explicit retry from replay of a publication already
+committed under its parent. Replay must not add another revision or leave a stale
+marker; a fresh identical retry still creates its new revision. Neither arbitrary
+stale-parent acceptance nor deletion of uncertain markers is an acceptable shortcut.
 
 Publication sequence: stage under `.staging/` → validate files and hashes → insert a
 `pending_operations` row in state `prepared` → rename into the immutable destination →
@@ -161,6 +167,9 @@ and `intent` (`ingest` or `status`). Startup validates that local intent and
 replays catalog work only, never provider transcription. A failed/cancelled retry
 with no new result retains the previous complete active revision and replays only
 its durable outcome under the same expected-revision precondition (ruling 27).
+The controller must not publish an already committed processor result again as a
+fresh stale-parent retry. Committed origin-marker replay requires durable proof and
+idempotent completion; this NB1 path is not yet accepted after round 1.
 
 `MEMORY_INGESTED` follows `SESSION_PERSISTED` and precedes terminal completion.
 The additive `ApplicationSnapshot.memory_warning` renders library warnings in the
@@ -187,7 +196,13 @@ or calling the provider. Recovery discovery/materialization must exclude a live
 owner before reading changing material or attempting persistence/cleanup, and
 materialization rechecks stale candidates. Merely preserving the catalog row is
 insufficient. Malformed marker envelope/field types reject that entry without
-aborting valid siblings. These F5/F6 contracts are pending round-1 correction.
+aborting valid siblings. Re-review marks original F5/F6 addressed, including the
+native lease before journal publication. The authoritative native path is
+`<sessions_root>/.capture_owners/<capture_id>.lock` (rulings 32/34), retained by a
+controller job scope through real helper closure and final persistence even on
+catalog failure. Direct wait/open-failure releases only after closure. No product
+protocol or deadline changes. The full run's legacy audio-only compatibility and
+snapshot failures remain unresolved rather than excluded from this requirement.
 
 ### FTS
 
@@ -213,7 +228,8 @@ existing successful exit and reports local recovery pending.
 
 Typed service/result categories distinguish invalid input (2), identity conflict
 (3) and source/publication I/O or integrity failure (4), without parsing warning
-prose. The candidate collapses some cases to rejected/3; F7 remains open.
+prose. Round-1 source adds typed categories and original F7 is addressed. The full
+run's CLI stub failure remains a separate unresolved integration result.
 
 ## Acceptance
 

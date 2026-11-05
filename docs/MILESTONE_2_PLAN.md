@@ -172,12 +172,12 @@ no editable pasaron. Límites y comandos en `development/ACCEPTANCE.md`.
 
 | Criterio | Estado de evidencia |
 |---|---|
-| 1–5. Productores, identidad y revisiones | Candidato task 3 con suite 883/9, pero siete hallazgos abiertos; ronda 1/fixes/re-review, fuente corregida y CI pendientes |
+| 1–5. Productores, identidad y revisiones | Ronda 1 integrada, F1–F7 addressed por review; NB1 y cinco fallos de suite integrada bloquean aprobación, nueva suite/re-review/CI pendientes |
 | 6–7. Segmentos y pausa | Tarea 2 verifica evidencia/seek sintético; focos de tarea 3 preservan segmentos en catálogo, con verificación final/review pendientes |
 | 8. Migración, backup y esquema futuro | Verificación automática local de la base de catálogo; falta CI de Windows en el head del grupo |
 | 14. DB ocupada y transacciones cortas | Verificación automática local de escrituras y lecturas bloqueadas; la publicación con archivos/proveedor aún depende de tarea 3 |
 | 15. Suite en CI de Windows | Pendiente; una suite local no cierra este criterio |
-| 9–10, 13. Crash, catálogo pendiente y rutas | Focos y suite local del candidato; guards de roles/estado corregidos, pero F4–F6 de resultado/ownership/recovery abiertos, sin aceptación global |
+| 9–10, 13. Crash, catálogo pendiente y rutas | Guards y F4–F6 addressed; replay postcommit NB1 y regresiones de recovery/legacy siguen pendientes, sin aceptación global |
 | 11–12. Borrado sin resurrección | Grupo B pendiente; no lo cierra la limpieza de staging de tarea 3 |
 | 16. Docs y evidencia de cierre | Checkpoints locales documentados; cierre de grupo/hito pendiente |
 
@@ -201,15 +201,31 @@ fallos de instrumentación de limpieza; se conservó y el autor acotó solo la i
 sin cambiar assertions (diez pasan/16,76 s; Green 17,10 s). Detalles y XML en
 `ACCEPTANCE.md`. La preservación desconocida y los guards de recibos/estado fueron
 verificados en el candidato; el hallazgo previo de guards ausentes quedó superado.
-La review pide siete correcciones, una P1 de asociación revisión/audio y seis P2
-de identidad/retry/resultado/ownership/marcadores/errores. Ruling 31 define la
-migración 2 y recibo v2 pendientes, sin alterar migración 1; no están implementados.
-Se requiere RED, GREEN, re-review y suite corregida antes de aceptar tarea/grupo.
+La review inicial pidió siete correcciones. Ronda 1 Green `c28472b`, integrada
+root `1f1bc88`, las marca ADDRESSED en re-review con 40 casos nuevos pasando
+en 69,70 s. Schema 2 y recibo v2 de R31 están implementados sin alterar migración 1.
+Sigue abierto NB1 Important/P2: controller publica de nuevo el retry ya comprometido
+y el replay del marcador postcommit usa un parent obsoleto. La suite integrada root
+dio cinco fallos/920 pasan/7 skips en 553,39 s; tres snapshots de recovery con nuevos
+locks, stub sf.info incompleto y retry legacy solo-audio aún requieren diagnóstico.
+Ambos smokes del wheel pasaron; siete skips de symlink. Wheel/sdist y probe aislado
+no editable verifican 65 archivos Python iguales, schema2/FTS5/FK/integrity, sin
+certificar hardware/proveedor ni cerrar el hito. Se requiere fix/re-review y suite
+corregida antes de aceptar tarea/grupo.
 La corrección del arnés sintético de captura
 pasó 33 casos y review independiente, sin cambiar deadlines del producto; no
 certifica hardware ni aprueba los contratos cuestionados.
 No hay certificación nueva de hardware, proveedor o instalación limpia, ni cierre
 del grupo A o de M2. La versión sigue en 0.2.0 hasta el cierre de hito previsto.
+
+La instrucción R35 exige primero cierre completo y merge de A y sus PRs docs de
+contratos necesarios. Solo entonces root crea chats separados M2 B y M3 A, con
+ramas/worktrees propios y briefs que fijan base mergeada real, objetivo, SPEC/PLAN,
+archivos, dependencias, límites y DoD. Chats/IDs/asignaciones todavía pendientes;
+root conserva leases, contratos, integración y merges. M2 B puede avanzar junto
+con búsqueda independiente de M3 A; las acciones que dependan de B esperan su
+contrato aceptado. Tras B se permite adelantar M5 B, con claims pendientes hasta
+M4 B. No se reinicia trabajo, cambian criterios ni se anuncia versión 0.3.0 ahora.
 
 ## Lo que queda pendiente de decidir
 

@@ -8,7 +8,7 @@
   "task_2_commit": "037fc036ef43467136bcf7b8e95c6f8395d1aa5e",
   "task_2_base_commit": "878e7d4b531d0b07599b373261279fbb6b440030",
   "task_2_integration_commit": "1cdaadb72f2ebee53ce3a7be2680a01d18de6ad2",
-  "evidence_level": "verified_automatically_local",
+  "evidence_level": "automatic_local_partial_verification_integrated_suite_failed",
   "certified": false,
   "data_policy": "Temporary SQLite roots, authored synthetic PCM and transcripts, synthetic key; no private sessions or real .env.",
   "runs": [
@@ -171,25 +171,35 @@
     "mypy_clean_base_claimed": false
   },
   "task_2_behavior": {
-    "completion_paths": ["live", "offline", "fallback", "file", "retry"],
+    "completion_paths": [
+      "live",
+      "offline",
+      "fallback",
+      "file",
+      "retry"
+    ],
     "raw_artifact": "raw_transcript.txt",
     "raw_separate_from_cleaned_display": true,
     "application_owner": "SessionProcessor",
     "file_transcription_method": "transcribe_audio_path",
     "direct_cli_artifact_writes_remaining": 0,
     "text_only_evidence": "Untimed speakerless segment, no fabricated timing or speaker",
-    "timing_source": ["provider", "imported_explicit", "absent"],
+    "timing_source": [
+      "provider",
+      "imported_explicit",
+      "absent"
+    ],
     "historical_timing_source_nullable": true,
     "virtual_wall_pause_seconds": 300,
     "pause_evidence": "Real synthetic-WAV marker seek on recorded-audio timeline",
     "handled_raw_io_rollback": "Restore previous bytes or remove fresh unpublished raw after metadata replace failure"
   },
   "task_3_progress": {
-    "state": "candidate_suite_green_seven_review_findings_open_round_1_pending",
-    "candidate_suite_green": true,
+    "state": "round_1_integrated_original_findings_addressed_NB1_and_five_full_failures_open",
+    "candidate_suite_green": false,
     "task_accepted": false,
-    "fix_round": 1,
-    "open_findings_count": 7,
+    "fix_round": 2,
+    "open_findings_count": 1,
     "prior_red_passed": 18,
     "prior_red_failed": 31,
     "author_duration_seconds": 2.5,
@@ -200,13 +210,8 @@
     "combined_root_log": "task-3-complete-root-red.log",
     "candidate_base": "1cdaadb",
     "fixture_commit": "efb73a92ea89bc53318ce1a811eaf61129a76fbf",
-    "candidate_source_commit": "6c422f0b8671d2f736645abb6835d351783cbcc7",
-    "committed_only_in": "m2-ingestion",
-    "root_integrated": false,
-    "commit_purpose": "Immutable FIX_BASE, not review acceptance",
-    "candidate_manifest": "task-3-candidate-files.json",
-    "candidate_manifest_files": 27,
-    "matching_committed_file_hashes": 27,
+    "candidate_source_commit": "c28472b5bd651f4d7f7fe2f40449f5a23e325f67",
+    "root_integrated": true,
     "hash_comparison_by_docs_author": "Read-only PowerShell Get-FileHash, no source execution",
     "stable_candidate_full_result": {
       "name": "M2A-T3-CANDIDATE-FULL-20261105",
@@ -221,91 +226,321 @@
       "junit": ".superpowers/task3-full-final-2.xml",
       "worktree": "m2-ingestion",
       "run_alone": true,
-      "skip_reasons": {"symlink_privilege": 7, "noneditable_wheel_environment_unset": 2},
-      "approval_implied": false
+      "skip_reasons": {
+        "symlink_privilege": 7,
+        "noneditable_wheel_environment_unset": 2
+      },
+      "approval_implied": false,
+      "historical": true,
+      "source_commit": "6c422f0b8671d2f736645abb6835d351783cbcc7"
     },
-    "independent_task_review": "changes_requested_spec_and_quality",
+    "independent_task_review": "changes_requested_NB1_Important_P2_open",
     "independent_whole_branch_review": "pending",
     "hosted_ci": "pending",
-    "copilot": "pending"
+    "copilot": "pending",
+    "historical_candidate_checkpoint": {
+      "source_commit": "6c422f0b8671d2f736645abb6835d351783cbcc7",
+      "fixture_commit": "efb73a92ea89bc53318ce1a811eaf61129a76fbf",
+      "committed_only_in": "m2-ingestion",
+      "root_integrated": false,
+      "manifest": "task-3-candidate-files.json",
+      "manifest_files": 27,
+      "matching_committed_file_hashes": 27,
+      "commit_purpose": "Immutable FIX_BASE, not review acceptance",
+      "superseded_by": "round_1_integrated_checkpoint"
+    },
+    "initial_candidate_suite_green": true,
+    "integrated_full_failures_count": 5,
+    "root_integration_commit": "1f1bc88513840b84c388a61d9c077907cf2fba2e",
+    "root_integration_commits": [
+      "1277e19",
+      "3370483",
+      "3a83482",
+      "1f1bc88"
+    ],
+    "green_fix_commits": [
+      "16263c4180aa13036a812110a6e98554f1a7c56f",
+      "c28472b5bd651f4d7f7fe2f40449f5a23e325f67"
+    ],
+    "src_tree": "780529d42936c979740443c51f1022fd2bb99a5e",
+    "tests_tree": "d226358ec038837dba6e40790c77eac74e74b538",
+    "root_green_src_tests_identical": true,
+    "root_green_source_config_scripts_workflows_diff_empty": true,
+    "round_2_red": {
+      "file": "tests/test_memory_publication_replay.py",
+      "state": "author_preparing_or_executing_no_delivered_result",
+      "passed": null,
+      "failed": null
+    }
   },
   "task_3_protocol": {
-    "source_state": "candidate_under_verification",
-    "rulings": [22, 23, 24, 25, 26, 27, 28, 30],
+    "source_state": "round_1_integrated_unaccepted_NB1_and_full_failures",
+    "rulings": [
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      30,
+      31,
+      32,
+      33,
+      34
+    ],
     "publication_lock": ".memory.lock",
     "actual_owner_locks": ".owners/<meeting-uuid>.lock",
     "lock_timeout_ms": 250,
     "staging_plan": ".staging/<operation-uuid>/.publication.json",
-    "staging_registration": ["schema_version", "operation_id", "hashes"],
+    "staging_registration": [
+      "schema_version",
+      "operation_id",
+      "hashes"
+    ],
     "revision_directory": "meetings/<meeting-uuid>/revisions/<revision-uuid>",
     "completion_receipt": "catalog.json written only after DB entity commit",
     "state_snapshots": "meetings/<meeting-uuid>/states/<row_version>-<uuid>.json",
     "unknown_material": "Retain and defer cleanup; UUID parent alone is not ownership",
-    "unknown_cleanup_candidate_verification": "122-case stable focus and 883-pass candidate suite; task review still changes requested",
+    "unknown_cleanup_candidate_verification": "Historical 122-case focus and 883-pass candidate suite; current root full has five failures",
     "source_privacy": "Known session artifact roles and explicit validated WAV references before reads/hashes/native probes",
     "receipt_role_guards_review": "Present in frozen candidate; earlier missing-guard observation superseded",
-    "audio_revision_association_review": "Open P1 F1; ruling 31 fix not implemented",
+    "audio_revision_association_review": "Migration 2 revision_audio_assets and receipt v2 implemented; original F1 ADDRESSED, migration 1 unchanged",
     "rebuild_scope": "Validated managed committed receipts/state snapshots, no external-origin scan",
     "uncertain_unreceipted_tree": "Retained/reported, not inferred committed after loss of DB knowledge",
-    "trusted_retry_precondition": "revision_of equals expected active revision; ordinary changed same-UUID import remains conflict",
-    "legacy_retry": "Resolve normalized-origin lineage without rewriting external optional v1 meeting_id",
+    "trusted_retry_precondition": "Explicit fresh retry expects current active revision; ordinary changed same-UUID import remains conflict. NB1 committed-publication recognition/replay still open",
+    "legacy_retry": "Mapped/unmapped None/opaque identities resolved before mutation/provider without rewriting external identity; root audio-only missing-session.json regression remains open",
     "local_marker": "memory_pending.json in application-owned output",
-    "marker_fields": ["schema_version", "meeting_id", "revision_of", "intent"],
-    "marker_intents": ["ingest", "status"],
+    "marker_fields": [
+      "schema_version",
+      "meeting_id",
+      "revision_of",
+      "intent"
+    ],
+    "marker_intents": [
+      "ingest",
+      "status"
+    ],
     "failed_retry": "State-only outcome preserves prior complete active revision; replay does not invoke provider",
-    "event_order": ["SESSION_PERSISTED", "MEMORY_INGESTED", "terminal completion"],
+    "event_order": [
+      "SESSION_PERSISTED",
+      "MEMORY_INGESTED",
+      "terminal completion"
+    ],
     "nonfatal_warning_field": "ApplicationSnapshot.memory_warning",
     "warning_priority": "Real last_error first; new work/clean publication clears memory warning",
     "fts": "Active complete revisions; unicode61 remove_diacritics 2; typed fts_unavailable warning",
     "utc": "Aware instants normalized to UTC; naive source dates unspecified with warning",
     "storage": "Mapped/UNC/unproven-local Windows volume uses rollback journal and warning",
-    "cli": ["memory ingest PATH --json", "memory reconcile --json", "memory show UUID --json"],
-    "cli_exit_codes": {"success": 0, "invalid_input": 2, "conflict_or_missing_meeting": 3, "catalog_unavailable": 4}
+    "cli": [
+      "memory ingest PATH --json",
+      "memory reconcile --json",
+      "memory show UUID --json"
+    ],
+    "cli_exit_codes": {
+      "success": 0,
+      "invalid_input": 2,
+      "conflict_or_missing_meeting": 3,
+      "catalog_unavailable": 4
+    },
+    "native_capture_owner_locks": ".capture_owners/<capture-uuid>.lock",
+    "native_owner_lifetime": "Acquired before journal publication; retained by actual job scope through helper closure and final persistence",
+    "postcommit_housekeeping": "Original F4 ADDRESSED with committed success plus recoverable warning; separate origin-marker NB1 replay remains open",
+    "typed_errors": "Original F7 ADDRESSED preserving CLI 2/3/4; full CLI sf.info subtype-stub failure remains pending"
   },
   "task_3_intermediate_evidence": {
     "scope_limit": "Distinct evolving-source focused runs, not summed and not stable final verification",
     "draft_report": "task-3-implementation-report.md",
     "red_runs": [
-      {"scope": "initial CLI", "failed": 8, "duration_seconds": 5.94},
-      {"scope": "recovery ownership absent in preparation", "failed": 7, "duration_seconds": 1.44},
-      {"scope": "mapped remote volume incorrectly WAL", "failed": 1, "duration_seconds": 2.0},
-      {"scope": "combined recovery/storage preparation", "failed": 8, "duration_seconds": 1.21},
-      {"scope": "rebuild and failed file preparation", "failed": 2, "duration_seconds": 5.99},
-      {"scope": "rebuild and failed file Green reproduction", "failed": 2, "duration_seconds": 6.41},
-      {"scope": "contained credential read traps, author Green reproduction", "failed": 2, "duration_seconds": 2.58},
-      {"scope": "contained credential read traps, implementer reproduction", "failed": 2, "duration_seconds": 3.37},
-      {"scope": "warning UI missing approved field", "failed": 3, "duration_seconds": 5.65},
-      {"scope": "processing ownership/state-only replay author reproduction", "failed": 4, "duration_seconds": 9.78},
-      {"scope": "processing ownership/state-only replay implementer reproduction", "failed": 4, "duration_seconds": 9.26},
-      {"scope": "legacy retry duplicate UUID", "failed": 1, "duration_seconds": 7.58},
-      {"scope": "aware dates retain wrong storage offset", "failed": 2, "duration_seconds": 2.46},
-      {"scope": "unknown stage file deletion", "failed": 1, "duration_seconds": 2.43},
-      {"scope": "pending/receipt hash and forged undeclared WAV inventory", "failed": 3, "duration_seconds": 5.0},
-      {"scope": "unknown state filename read before validation", "failed": 1, "duration_seconds": 3.08}
+      {
+        "scope": "initial CLI",
+        "failed": 8,
+        "duration_seconds": 5.94
+      },
+      {
+        "scope": "recovery ownership absent in preparation",
+        "failed": 7,
+        "duration_seconds": 1.44
+      },
+      {
+        "scope": "mapped remote volume incorrectly WAL",
+        "failed": 1,
+        "duration_seconds": 2.0
+      },
+      {
+        "scope": "combined recovery/storage preparation",
+        "failed": 8,
+        "duration_seconds": 1.21
+      },
+      {
+        "scope": "rebuild and failed file preparation",
+        "failed": 2,
+        "duration_seconds": 5.99
+      },
+      {
+        "scope": "rebuild and failed file Green reproduction",
+        "failed": 2,
+        "duration_seconds": 6.41
+      },
+      {
+        "scope": "contained credential read traps, author Green reproduction",
+        "failed": 2,
+        "duration_seconds": 2.58
+      },
+      {
+        "scope": "contained credential read traps, implementer reproduction",
+        "failed": 2,
+        "duration_seconds": 3.37
+      },
+      {
+        "scope": "warning UI missing approved field",
+        "failed": 3,
+        "duration_seconds": 5.65
+      },
+      {
+        "scope": "processing ownership/state-only replay author reproduction",
+        "failed": 4,
+        "duration_seconds": 9.78
+      },
+      {
+        "scope": "processing ownership/state-only replay implementer reproduction",
+        "failed": 4,
+        "duration_seconds": 9.26
+      },
+      {
+        "scope": "legacy retry duplicate UUID",
+        "failed": 1,
+        "duration_seconds": 7.58
+      },
+      {
+        "scope": "aware dates retain wrong storage offset",
+        "failed": 2,
+        "duration_seconds": 2.46
+      },
+      {
+        "scope": "unknown stage file deletion",
+        "failed": 1,
+        "duration_seconds": 2.43
+      },
+      {
+        "scope": "pending/receipt hash and forged undeclared WAV inventory",
+        "failed": 3,
+        "duration_seconds": 5.0
+      },
+      {
+        "scope": "unknown state filename read before validation",
+        "failed": 1,
+        "duration_seconds": 3.08
+      }
     ],
     "scoped_green_runs": [
-      {"scope": "initial service/artifacts/controller", "passed": 49, "duration_seconds": 28.07},
-      {"scope": "CLI/processing", "passed": 50, "duration_seconds": 36.99},
-      {"scope": "recovery ownership/storage", "passed": 8, "duration_seconds": 22.78},
-      {"scope": "rebuild/service/artifacts/ownership", "passed": 34, "duration_seconds": 53.42},
-      {"scope": "warning UI/controller", "passed": 27, "duration_seconds": 9.61},
-      {"scope": "privacy/preflight/capture recovery", "passed": 70, "duration_seconds": 86.61},
-      {"scope": "eight combined memory files", "passed": 48, "duration_seconds": 51.99},
-      {"scope": "processing/recovery/CLI/controller", "passed": 85, "duration_seconds": 79.17},
-      {"scope": "legacy retry/processing", "passed": 5, "duration_seconds": 14.1},
-      {"scope": "UTC dates", "passed": 2, "duration_seconds": 1.83},
-      {"scope": "authorized new UUID assertion compatibility", "passed": 3, "duration_seconds": 10.99},
-      {"scope": "stable post-staging amendment focus", "passed": 122, "duration_seconds": 108.36},
-      {"scope": "receipt/pending/state role guards earlier focus", "passed": 31, "duration_seconds": 34.78},
-      {"scope": "receipt/pending/state role guards immediate recovery focus", "passed": 46, "duration_seconds": 66.62},
-      {"scope": "cleanup instrumentation author focus", "passed": 10, "duration_seconds": 16.76},
-      {"scope": "transferred cleanup instrumentation Green focus", "passed": 10, "duration_seconds": 17.1}
+      {
+        "scope": "initial service/artifacts/controller",
+        "passed": 49,
+        "duration_seconds": 28.07
+      },
+      {
+        "scope": "CLI/processing",
+        "passed": 50,
+        "duration_seconds": 36.99
+      },
+      {
+        "scope": "recovery ownership/storage",
+        "passed": 8,
+        "duration_seconds": 22.78
+      },
+      {
+        "scope": "rebuild/service/artifacts/ownership",
+        "passed": 34,
+        "duration_seconds": 53.42
+      },
+      {
+        "scope": "warning UI/controller",
+        "passed": 27,
+        "duration_seconds": 9.61
+      },
+      {
+        "scope": "privacy/preflight/capture recovery",
+        "passed": 70,
+        "duration_seconds": 86.61
+      },
+      {
+        "scope": "eight combined memory files",
+        "passed": 48,
+        "duration_seconds": 51.99
+      },
+      {
+        "scope": "processing/recovery/CLI/controller",
+        "passed": 85,
+        "duration_seconds": 79.17
+      },
+      {
+        "scope": "legacy retry/processing",
+        "passed": 5,
+        "duration_seconds": 14.1
+      },
+      {
+        "scope": "UTC dates",
+        "passed": 2,
+        "duration_seconds": 1.83
+      },
+      {
+        "scope": "authorized new UUID assertion compatibility",
+        "passed": 3,
+        "duration_seconds": 10.99
+      },
+      {
+        "scope": "stable post-staging amendment focus",
+        "passed": 122,
+        "duration_seconds": 108.36
+      },
+      {
+        "scope": "receipt/pending/state role guards earlier focus",
+        "passed": 31,
+        "duration_seconds": 34.78
+      },
+      {
+        "scope": "receipt/pending/state role guards immediate recovery focus",
+        "passed": 46,
+        "duration_seconds": 66.62
+      },
+      {
+        "scope": "cleanup instrumentation author focus",
+        "passed": 10,
+        "duration_seconds": 16.76
+      },
+      {
+        "scope": "transferred cleanup instrumentation Green focus",
+        "passed": 10,
+        "duration_seconds": 17.1
+      }
     ],
     "diagnostic_failures": [
-      {"scope": "first full, source changed and checks overlapped", "failed": 34, "passed": 822, "skipped": 9, "duration_seconds": 363.35},
-      {"scope": "later isolated diagnostic", "failed": 21, "passed": 12, "duration_seconds": 75.37},
-      {"scope": "quiet Green isolated, 21:06:32 UTC source freeze", "failed": 17, "passed": 16, "duration_seconds": 87.56},
-      {"scope": "fully source-isolated baseline's own interpreter/package", "failed": 15, "passed": 18, "duration_seconds": 87.08},
+      {
+        "scope": "first full, source changed and checks overlapped",
+        "failed": 34,
+        "passed": 822,
+        "skipped": 9,
+        "duration_seconds": 363.35
+      },
+      {
+        "scope": "later isolated diagnostic",
+        "failed": 21,
+        "passed": 12,
+        "duration_seconds": 75.37
+      },
+      {
+        "scope": "quiet Green isolated, 21:06:32 UTC source freeze",
+        "failed": 17,
+        "passed": 16,
+        "duration_seconds": 87.56
+      },
+      {
+        "scope": "fully source-isolated baseline's own interpreter/package",
+        "failed": 15,
+        "passed": 18,
+        "duration_seconds": 87.08
+      },
       {
         "scope": "first stable full with frozen runtime, prior cleanup instrumentation",
         "name": "M2A-T3-STABLE-FULL1-20261105",
@@ -361,20 +596,61 @@
     "review_type": "static",
     "tests_run_by_reviewer": false,
     "findings": [
-      {"id": "F1", "priority": "P1", "status": "open", "contract": "Explicit immutable revision-to-audio references survive reuse A-B-A and rebuild"},
-      {"id": "F2", "priority": "P2", "status": "open", "contract": "Existing-session CLI trans preserves imported legacy None identity and canonical lineage"},
-      {"id": "F3", "priority": "P2", "status": "open", "contract": "Identical explicit retry completes revision/state rather than remaining processing"},
-      {"id": "F4", "priority": "P2", "status": "open", "contract": "Postcommit housekeeping failure reports committed outcome with recovery warning"},
-      {"id": "F5", "priority": "P2", "status": "open", "contract": "Acquire owner before producer mutation/provider and exclude/recheck live recovery materialization"},
-      {"id": "F6", "priority": "P2", "status": "open", "contract": "Malformed marker envelope/types cannot abort valid sibling discovery"},
-      {"id": "F7", "priority": "P2", "status": "open", "contract": "Typed invalid-input/conflict/I-O categories preserve CLI 2/3/4"}
+      {
+        "id": "F1",
+        "priority": "P1",
+        "status": "open",
+        "contract": "Explicit immutable revision-to-audio references survive reuse A-B-A and rebuild"
+      },
+      {
+        "id": "F2",
+        "priority": "P2",
+        "status": "open",
+        "contract": "Existing-session CLI trans preserves imported legacy None identity and canonical lineage"
+      },
+      {
+        "id": "F3",
+        "priority": "P2",
+        "status": "open",
+        "contract": "Identical explicit retry completes revision/state rather than remaining processing"
+      },
+      {
+        "id": "F4",
+        "priority": "P2",
+        "status": "open",
+        "contract": "Postcommit housekeeping failure reports committed outcome with recovery warning"
+      },
+      {
+        "id": "F5",
+        "priority": "P2",
+        "status": "open",
+        "contract": "Acquire owner before producer mutation/provider and exclude/recheck live recovery materialization"
+      },
+      {
+        "id": "F6",
+        "priority": "P2",
+        "status": "open",
+        "contract": "Malformed marker envelope/types cannot abort valid sibling discovery"
+      },
+      {
+        "id": "F7",
+        "priority": "P2",
+        "status": "open",
+        "contract": "Typed invalid-input/conflict/I-O categories preserve CLI 2/3/4"
+      }
     ],
     "F5_limit": "Discovery alone does not change catalog status; no actual private/audio loss observed or claimed",
-    "round_1_red_fix_rereview_complete": false,
+    "round_1_red_fix_rereview_complete": true,
     "ruling_31_pending_contract": {
       "migration": 2,
       "table": "revision_audio_assets",
-      "relationship_components": ["meeting identity", "revision identity", "audio asset identity", "ordinal", "source name"],
+      "relationship_components": [
+        "meeting identity",
+        "revision identity",
+        "audio asset identity",
+        "ordinal",
+        "source name"
+      ],
       "composite_foreign_keys_same_meeting": true,
       "per_revision_ordinal_and_name_unique": true,
       "migration_1_changed": false,
@@ -383,13 +659,18 @@
       "rebuild_association": "Explicit A-B-A, no file-order or combined-hash inference",
       "ambiguous_legacy_receipt": "Retained with warning, relationship not invented",
       "implemented": false,
-      "verified": false
-    }
+      "verified": false,
+      "historical_pending_at_initial_review": true,
+      "current_implemented": true,
+      "current_review_disposition": "F1 ADDRESSED in task_3_fix_round_1_review; no task acceptance"
+    },
+    "historical": true,
+    "superseded_by": "task_3_fix_round_1_review"
   },
   "evidence_levels": {
-    "implemented": "Local candidate exists with passing suite; task remains unaccepted due to seven contracts",
-    "verified_automatically": "Candidate suite 883 passed/9 skips plus scoped synthetic evidence; hosted group CI pending",
-    "certified": "No new hardware/provider/clean-install or candidate-wheel certification"
+    "implemented": "Round-1 source integrated and original F1-F7 addressed; complete task is not accepted because NB1 and five integrated full failures remain",
+    "verified_automatically": "40-case fix focus and fresh noneditable wheel/source probe passed; integrated full 5 failed/920 passed/7 skipped; hosted group CI pending",
+    "certified": "No new real hardware/provider/clean-install certification; wheel probe is local automatic evidence"
   },
   "capture_harness_correction": {
     "ruling": 29,
@@ -403,8 +684,17 @@
     "product_deadlines_changed": false,
     "primary_progress": "Independent marks after real completed checkpoint, no active journal read",
     "final_journal_read_after_actual_reap": true,
-    "focus": {"passed": 4, "deselected": 29, "duration_seconds": 19.71},
-    "isolated": {"passed": 33, "failed": 0, "skipped": 0, "duration_seconds": 126.1},
+    "focus": {
+      "passed": 4,
+      "deselected": 29,
+      "duration_seconds": 19.71
+    },
+    "isolated": {
+      "passed": 33,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 126.1
+    },
     "heavy_workloads_paused": true,
     "independent_reviewer": "capture_diagnostics",
     "spec_verdict": "pass",
@@ -415,16 +705,17 @@
     "review_report": "task-3-capture-fixture-review-report.md"
   },
   "limits": [
-    "Final task1 full source suite and two noneditable-wheel smokes passed; seven local symlink-privilege omissions remain.",
-    "Windows hosted CI not yet requested for M2 A.",
-    "Symlink case requires local privilege; wheel cases require noneditable env.",
-    "Task 2 final suite has six symlink skips and two noneditable-wheel opt-in skips; it does not replace task 1's observed wheel run.",
-    "Task 2 handled-I/O rollback is not atomic against process death or concurrent writers; task 3 candidate passed its suite but requires seven review fixes and re-review.",
-    "Task 2 suite was run on source 037fc03 before integration, not on a future combined M2 group head.",
-    "Task 3 scoped GREEN results are distinct from its stable 883-pass candidate suite; candidate commits exist only in m2-ingestion and are FIX_BASE, not acceptance.",
-    "Receipt/state role guards and unknown preservation are in the verified candidate; seven other review findings remain open, including revision/audio association.",
-    "Ruling 31 migration 2 and receipt v2 are pending RED/GREEN/re-review; migration 1 must retain its checksum.",
-    "No M2 milestone closure, hardware, provider or installer certification.",
+    "Task 1 final suite and both noneditable wheel smokes passed; seven local symlink omissions remain.",
+    "Task 2 final 037fc03 source suite had six symlink and two wheel opt-in skips; later root wheel evidence is separate.",
+    "Task 2 handled-I/O rollback alone is not atomic against process death or concurrent writers; task 3 supplies publication/recovery protocol, still unaccepted.",
+    "Task 3 initial 6c422f0 candidate 883/9 suite and initial seven-open review are historical checkpoints, preserved below and superseded by round-1 integration.",
+    "Round-1 migration 2, receipt v2, explicit revision/audio links and F1-F7 fixes are implemented/re-reviewed as addressed; NB1 Important/P2 remains open.",
+    "Current integrated source 1f1bc88 full failed five cases: 920 passed, seven symlink skips; both wheel smokes passed. No task/group acceptance.",
+    "Round-2 replay RED is being prepared/executed by its author; no result delivered at this checkpoint.",
+    "Fresh wheel/sdist and 65-file off-repo noneditable -I probe are local automatic verification, not installer/hardware/provider certification.",
+    "Whole-group independent review, current-head Copilot received/responded and Windows hosted CI remain pending.",
+    "No future project chats created; IDs/branches/worktrees/executors/real merged-A bases pending under ruling 35.",
+    "No M2 milestone closure or version bump; 0.3.0 only after B/M2 closure.",
     "Two-hour resource acceptance omitted by ruling 5."
   ],
   "pr20": {
@@ -440,5 +731,192 @@
     "windows_package": 42102224714,
     "merge_commit": "763a891fa7c0bed54a3158040094b6f083b88f32",
     "merged_at": "2026-11-05T20:24:29Z"
+  },
+  "task_3_fix_round_1_review": {
+    "report": "task-3-fix-1-review-report.md",
+    "reviewer": "ingestion_review",
+    "independent_of_implementer": true,
+    "reviewed_commit": "c28472b5bd651f4d7f7fe2f40449f5a23e325f67",
+    "review_type": "static",
+    "tests_run_by_reviewer": false,
+    "original_findings": [
+      "F1",
+      "F2",
+      "F3",
+      "F4",
+      "F5",
+      "F6",
+      "F7"
+    ],
+    "original_findings_status": "ADDRESSED",
+    "verdict": "findings_remain_open_changes_requested",
+    "task_accepted": false,
+    "new_finding": {
+      "id": "NB1",
+      "priority": "Important/P2",
+      "status": "open",
+      "contract": "Recognize replay of an already committed publication durably while preserving one new revision per fresh explicit retry",
+      "controller_path": "Real controller publishes again after real SessionProcessor.retry commits; stale parent recreates pending marker and warning/conflict",
+      "recovery_path": "Actual commit before source-marker removal leaves old parent; reconcile repairs managed receipt but marker replay remains stuck",
+      "prohibited_shortcuts": [
+        "accept arbitrary stale parent",
+        "turn fresh identical explicit retry into unchanged",
+        "delete uncertain marker without durable proof"
+      ]
+    },
+    "supplied_verification": {
+      "new_red_cases_green": 40,
+      "duration_seconds": 69.7,
+      "ruff_and_format_files": 20,
+      "ruff_and_format": "pass",
+      "canonical_mypy_baseline": 79,
+      "canonical_mypy_current": 79,
+      "new_diagnostic_messages": {},
+      "global_mypy_clean_claimed": false
+    }
+  },
+  "task_3_integrated_full": {
+    "name": "M2A-INTEGRATED-FULL1-20261105",
+    "source_head": "1f1bc88513840b84c388a61d9c077907cf2fba2e",
+    "passed": 920,
+    "failed": 5,
+    "errors": 0,
+    "skipped": 7,
+    "duration_seconds": 553.39,
+    "junit_tests": 932,
+    "junit_internal_time_seconds": 552.876,
+    "log": ".superpowers/m2a-integrated-final-1.txt",
+    "junit": ".superpowers/m2a-integrated-final-1.xml",
+    "noneditable_wheel_smokes_passed": 2,
+    "skip_reasons": {
+      "symlink_privilege": 7
+    },
+    "disposition": "All five require diagnosis/fix without omission or weakened assertions",
+    "failures": [
+      {
+        "case": "tests.test_capture_recovery::test_failed_manifest_copies_with_same_uuid_are_both_discoverable",
+        "observation": "Directory snapshot includes new capture-owner and catalog-owner lock files",
+        "status": "pending_diagnosis_fix"
+      },
+      {
+        "case": "tests.test_capture_recovery::test_retry_copied_session_preserves_independent_capture[canonical-interrupted]",
+        "observation": "Directory snapshot includes new capture-owner lock",
+        "status": "pending_diagnosis_fix"
+      },
+      {
+        "case": "tests.test_capture_recovery::test_retry_copied_session_preserves_independent_capture[canonical-failed]",
+        "observation": "Directory snapshot includes new capture-owner lock",
+        "status": "pending_diagnosis_fix"
+      },
+      {
+        "case": "tests.test_cli::test_trans_command_completes_failed_session_audio",
+        "observation": "sf.info stub lacks subtype; command exits 1 instead of 0",
+        "status": "pending_diagnosis_fix"
+      },
+      {
+        "case": "tests.test_session_artifact_safety::test_legacy_audio_only_session_still_retries",
+        "observation": "Missing session.json blocks legacy identity resolution",
+        "status": "pending_diagnosis_fix"
+      }
+    ],
+    "approval_implied": false
+  },
+  "task_3_integrated_distribution_probe": {
+    "run": "M2A-INTEGRATED-WHEEL-20261105",
+    "source_head": "1f1bc88513840b84c388a61d9c077907cf2fba2e",
+    "python": "3.13.15",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "package_version": "0.2.0",
+    "source_files_equal": true,
+    "python_file_count": 65,
+    "editable": false,
+    "schema_version": 2,
+    "fts5": true,
+    "artifact_sha256": {
+      "here-0.2.0-py3-none-any.whl": "bb7a49a9f5b5c6a6b25f48f39b036badc489bee3870c69b0024af8f0d61dd7bd",
+      "here-0.2.0.tar.gz": "8ebd3a3a44d48df68d94dcb8748adf8af52dfde334465bc2bcecfa0d95513358"
+    },
+    "provider_used": false,
+    "hardware_used": false,
+    "log": ".superpowers/m2a-wheel-catalog-probe.json",
+    "script": ".superpowers/m2a-wheel-catalog-probe.py",
+    "fresh_wheel_and_sdist_build": "success",
+    "off_repo_isolated_flag": "-I",
+    "foreign_key_check": "empty",
+    "integrity_check": "ok",
+    "revision_audio_assets_columns": [
+      "meeting_id",
+      "revision_id",
+      "asset_id",
+      "ordinal",
+      "source_file"
+    ],
+    "certification_claimed": false
+  },
+  "post_M2A_dispatch_ruling_35": {
+    "instruction": "Finish and merge M2 A with every gate, then merge required contract documentation PRs before root creates two separate project chats",
+    "project": {
+      "id": "local-e307e59e09194b354122137b16ef6d77",
+      "host": "local",
+      "git": true,
+      "root": "C:/Users/savar/Documents/proyects/here"
+    },
+    "root_responsibilities": [
+      "sole orchestrator",
+      "file leases",
+      "contracts",
+      "integration",
+      "merges"
+    ],
+    "fronts": [
+      {
+        "group": "M2B",
+        "purpose": "lifecycle/delete",
+        "chat_id": null,
+        "branch": null,
+        "worktree": null,
+        "real_merged_A_base_sha": null,
+        "executor": null,
+        "state": "pending_not_created"
+      },
+      {
+        "group": "M3A",
+        "purpose": "search/actions",
+        "chat_id": null,
+        "branch": null,
+        "worktree": null,
+        "real_merged_A_base_sha": null,
+        "executor": null,
+        "state": "pending_not_created"
+      }
+    ],
+    "required_brief": [
+      "objective",
+      "accepted SPEC and PLAN",
+      "actual merged base SHA",
+      "exclusive/shared file ownership",
+      "dependencies",
+      "limits",
+      "verifiable DoD"
+    ],
+    "group_roles": [
+      "RED",
+      "GREEN",
+      "independent review",
+      "docs/evidence"
+    ],
+    "prepared_contract_docs": "Four B/M3A SPEC/PLAN files in m2-segments; reports lifecycle-plan-preparation-report.md and m3-plan-preparation-report.md; no PR yet",
+    "later_M5B": "May advance after M2B, claims hook pending until M4B",
+    "unchanged_other_dependencies": true,
+    "one_writer_per_file": true,
+    "serialized_files": [
+      "migrations",
+      "pyproject.toml",
+      "uv.lock",
+      "version"
+    ],
+    "sensitive_suites_exclusive": true,
+    "quality_privacy_acceptance_merge_gates_unchanged": true,
+    "restart_or_duplicate_work": false
   }
 }

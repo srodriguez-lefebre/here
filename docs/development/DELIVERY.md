@@ -331,6 +331,56 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Cost if wrong:** ajustar el scope/handoff y sus lectores, manteniendo la
     protección de todo el trabajo y la recuperación de la API directa.
 
+35. **Ruling:** por nueva instrucción explícita del usuario, primero se cierra M2 A
+    completo con review, suite estable y todos los gates de Copilot/CI/merge. Solo
+    después de ese merge y de completar los PRs de documentación de contratos
+    necesarios, root crea dos chats separados del proyecto: M2 B (ciclo de vida y
+    borrado) y M3 A (búsqueda/acciones), cada uno con rama y worktree propios. Antes
+    de iniciar, cada brief incluye objetivo, SPEC/PLAN aceptados, SHA base real,
+    archivos propios y compartidos, dependencias, límites y DoD verificable. Los
+    chats ejecutan sus grupos completos con subagentes RED/GREEN/review/docs; root
+    sigue como único orquestador de contratos, leases por archivo, integración y
+    merges. IDs de chats, ramas, worktrees y responsables se registran en STATUS
+    cuando existan; ahora están pendientes y la SHA del merge A no se inventa.
+    Después de M2 B puede adelantarse M5 B con claims pendientes hasta M4 B; el
+    resto conserva sus dependencias. Un writer por archivo; migraciones,
+    pyproject/uv.lock y versión en serie; suites sensitivas sin otros tests/builds
+    pesados. Calidad, privacidad, aceptación y gates de merge siguen intactos. No
+    se reinicia ni duplica trabajo realizado; no se crea ningún chat en este
+    checkpoint. **Cost if wrong:** conflictos o duplicación entre frentes y
+    contratos desalineados; root los evita con briefs sobre la base mergeada,
+    leases exclusivos, PRs docs previos y verificación de integración.
+
+36. **Ruling:** cada publicación explícita usa un `publication_id` UUID nuevo,
+    incluso si su evidencia coincide con la anterior. El marcador versión 2
+    conserva ese token; el payload de operación y el recibo versión 3 registran
+    token, padre esperado, origen normalizado, huella y revisión comprometida.
+    Solo esa prueba durable exacta autoriza replay idempotente de una publicación
+    ya aplicada y la retirada de su marcador, también después de reconstruir la
+    DB desde recibos. Rebuild restaura las operaciones completas probadas por los
+    recibos v3; acepta recibos v2 sin inventarles provenance. No se agrega una
+    migración: se reutiliza `pending_operations`. Token ausente, diferente o sin
+    commit probado no autoriza aceptar un padre stale ni borrar intención incierta.
+    El controlador consume una vez el resultado privado ya publicado por su
+    `SessionProcessor`; procesadores ajenos mantienen el fallback. Ese handoff
+    evita un segundo callback de publicación, pero no sustituye la prueba durable
+    del replay. **Cost if wrong:** versionar los lectores de marker/recibo y el
+    handoff, conservando evidencia, padres y marcadores inciertos.
+
+37. **Ruling:** el retry legado de una carpeta con WAV válido y sin `session.json`
+    conserva el uso de M1. Antes de mutar o llamar al proveedor reserva una UUID
+    canónica y su lease mediante origen normalizado y huella medida del WAV;
+    `ingest_sources.revision_id` puede ser NULL, con cero revisiones anteriores.
+    No fabrica un manifiesto v1 para importarlo ni una transcripción histórica.
+    `source_kind=legacy_audio_only` queda en la provenance durable y en los recibos
+    para conservar `started_at`/`completed_at` de captura NULL durante retries y
+    rebuild, aunque el v1 de compatibilidad posterior contenga fechas inferidas.
+    Los timestamps reales del procesamiento/publicación siguen siendo evidencia
+    de esos eventos, sin convertirse en fecha de la grabación desconocida. No
+    cambia la validación de rutas/roles ni se reescribe un ID legado opcional.
+    **Cost if wrong:** ajustar reserva, provenance y lectores, manteniendo audio,
+    identidad y fechas desconocidas sin conjeturas.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
@@ -1025,3 +1075,78 @@ hardware/provider/clean-install certification. Task 3, group A and M2 are not
 accepted or closed. Version remains 0.2.0; 0.3.0 belongs to B/M2 closure. Preparation
 of B's adjusted SPEC/PLAN stays a separate documentation PR gate, not authorization
 to implement B or bypass the seven findings.
+
+## 2026-11-05 — Task 3 round-1 integration, NB1 and five integrated failures
+
+Root integrated the fixture/candidate/fixes as `1277e19`, `3370483`, `3a83482`
+and `1f1bc88513840b84c388a61d9c077907cf2fba2e`. This matches Green's reviewed
+`c28472b5bd651f4d7f7fe2f40449f5a23e325f67` after fixes `16263c4` + `c28472b`:
+src tree `780529d42936c979740443c51f1022fd2bb99a5e` and tests tree
+`d226358ec038837dba6e40790c77eac74e74b538` are identical. Read-only Git comparison
+also finds no source/config/scripts/workflow differences. Integration is not
+acceptance or merge of group A. Earlier candidate-only statements above retain
+their original checkpoint scope.
+
+Forty new independent RED cases passed together in 69.70s after fixes. Ruff and
+format checks on 20 touched files passed; resolved mypy remains baseline/current
+79/79 with no new diagnostic messages. Independent scoped static re-review
+`task-3-fix-1-review-report.md` marks the original F1–F7 **ADDRESSED**, including
+migration 2/explicit revision-audio links/receipt v2, trusted legacy identity,
+identical explicit retry, postcommit outcomes, actual ownership, marker validation
+and typed CLI errors. Migration 1 remains unchanged.
+
+The re-review still requests changes for **Important NB1/P2**. A real controller
+retry invokes publication again after the real SessionProcessor has committed:
+its stale parent recreates the origin marker and returns warning/conflict. Actual
+postcommit-before-origin-marker-removal replay is also not recognized as the
+already committed publication. The fix must preserve one new immutable revision
+per fresh explicit retry while making that publication's replay idempotent using
+durable proof. Arbitrary stale-parent acceptance, unchanged for a fresh identical
+retry, and deleting uncertain intent are not acceptable shortcuts. Round-2 RED in
+`tests/test_memory_publication_replay.py` is being prepared/executed by its author;
+no result has been delivered at this checkpoint. The review accepts neither task
+3 nor the group.
+
+`M2A-INTEGRATED-FULL1-20261105` closed at **5 failed, 920 passed, 7 skipped in
+553.39s**. Root log/XML are `.superpowers/m2a-integrated-final-1.txt`/`.xml`:
+932 cases, five failures, zero errors, seven symlink-privilege skips; internal XML
+time is 552.876s. Both noneditable-wheel smokes passed. Pending diagnosis/fix,
+without omitting or relaxing assertions:
+
+- Three capture-recovery snapshots include newly introduced owner-lock files:
+  `test_failed_manifest_copies_with_same_uuid_are_both_discoverable` and both
+  canonical-interrupted/canonical-failed variants of
+  `test_retry_copied_session_preserves_independent_capture`.
+- `test_trans_command_completes_failed_session_audio` fails with an sf.info stub
+  lacking subtype (command exit 1 instead of 0).
+- `test_legacy_audio_only_session_still_retries` is blocked by missing session.json
+  during legacy identity resolution.
+
+Fresh CPython 3.13.15 wheel and sdist builds succeeded. The off-repo `-I` probe of
+the isolated noneditable wheel verified all 65 installed Python files byte-identical
+to source, schema 2 including revision_audio_assets, FTS5, empty foreign_key_check
+and integrity_check=ok. `.superpowers/m2a-wheel-catalog-probe.json` records hashes:
+wheel `bb7a49a9f5b5c6a6b25f48f39b036badc489bee3870c69b0024af8f0d61dd7bd`,
+sdist `8ebd3a3a44d48df68d94dcb8748adf8af52dfde334465bc2bcecfa0d95513358`.
+No hardware/provider was used. This is automatic local distribution/catalog proof,
+not installer or real-device certification and not a passing integrated suite.
+
+Evidence levels: round-1 code is integrated but task completion remains unaccepted;
+automatic checks provide scoped passes plus the explicit five-failure full result;
+no new real certification exists. Next: NB1 and all five failures, focused checks,
+re-review, stable full and whole-group review, then current-head PR/Copilot/Windows
+CI/guarded merge. No M2 A/M2 closure or 0.3.0 bump.
+
+Ruling 35 records the user's revised orchestration order: only after A is merged
+and required contract-doc PRs are completed does root create separate project
+chats for complete M2 B and M3 A groups. Discovered project:
+`local-e307e59e09194b354122137b16ef6d77`, host `local`, Git enabled, original root
+`C:/Users/savar/Documents/proyects/here`. Actual chat IDs, branches, worktrees,
+executors and merged-A base SHA are all pending; none was created. Four B/M3 A
+SPEC/PLAN files have been prepared in `m2-segments` with no PR yet (reports
+`lifecycle-plan-preparation-report.md`, `m3-plan-preparation-report.md`). Root owns
+contracts, file leases, integration and merges; each future brief states actual
+base/ownership/dependencies/limits/DoD before RED/GREEN/review/docs execution.
+M5 B may advance after M2 B with claims pending until M4 B; all other dependencies,
+privacy/quality/acceptance/merge gates remain intact. Sensitive suites keep exclusive
+windows. No previous work is restarted or duplicated.

@@ -4,9 +4,9 @@
 > review, then independent agent review. The author merges after Copilot review, CI and independent subagent review (rulings 16 and 17). Steps use checkbox
 > syntax. **Status: in execution since 2026-11-05 (ruling 20).** Task 1 independent
 > review accepted after its Busy correction. Task 2 SPEC/quality review passed;
-> local suite evidence is recorded below. Task 3 candidate passed its local suite,
-> but independent review requests seven round-1 corrections; task/group acceptance
-> and current-head Windows CI remain separate gates.
+> local suite evidence is recorded below. Task 3 round-1 corrections address the
+> original seven findings, but Important NB1 and five integrated-suite failures
+> block acceptance. Re-review, whole-group review and current-head Windows CI remain gates.
 
 **Goal:** Durable meeting identity, immutable transcript revisions and one
 application-owned persistence path, rebuildable from files and usable without a key.
@@ -171,14 +171,21 @@ owner locks, local ingest/status markers, visible nonfatal warnings, allowed sou
 roles, post-commit receipts/state snapshots, trusted legacy lineage and registered
 cleanup. Aware dates normalize to UTC; naive dates remain unspecified with warning.
 
-Ruling 31 adds the pending migration-2 `revision_audio_assets` relation and receipt
+Ruling 31 authorized migration-2 `revision_audio_assets` and the receipt
 v2/show/rebuild contract for exact ordered revision-to-audio links, preserving
-migration 1 and warning on ambiguous old evidence. It is not implemented in the
-reviewed `6c422f0` candidate; RED, GREEN and re-review remain required.
-The round-1 schema writer may extend `src/memory/database.py`, `models.py` and
+migration 1 and warning on ambiguous old evidence. The initial reviewed `6c422f0`
+candidate lacked it; the round-1 fix and scoped re-review are recorded below.
+The round-1 schema writer was authorized to extend `src/memory/database.py`, `models.py` and
 `repository.py` for that approved relation; four separate
 `tests/test_memory_review1_*.py` files provide independent RED for the seven
 findings. This authorization does not alter migration 1 or allow parallel schema writers.
+
+Current source implements that relation/schema 2, receipt v2 and typed error
+categories. Native capture ownership now uses shared `src/output/ownership.py`,
+`recording/journal.py`, `isolated.py` and `models.py`, with a controller job scope
+under rulings 32/34; original protocol/deadlines remain unchanged. Trusted unmapped
+legacy preimport before mutation/provider follows ruling 33. These fixes have a
+scoped re-review, but NB1 prevents accepting the task as complete.
 
 - [x] Write failing tests: ingest a v1 session folder (no `meeting_id`) → UUID
   assigned, `legacy_session_id` kept, `ingest_sources` fingerprint stored; second
@@ -201,7 +208,8 @@ findings. This authorization does not alter migration 1 or allow parallel schema
 - [ ] Run focused tests and the full offscreen suite; self-review; independent agent
   review; commit as "memory: ingestion, identity and revisions".
 
-Task 3 checkpoint remains **changes requested / round 1 pending**. Candidate-only
+**Original frozen-candidate checkpoint (superseded by the integration note below):**
+Task 3 was **changes requested / round 1 pending**. Candidate-only
 commits in `m2-ingestion`: test fixture `efb73a92ea89bc53318ce1a811eaf61129a76fbf`,
 task source `6c422f0b8671d2f736645abb6835d351783cbcc7`. All 27 file hashes match
 the independent review manifest; these commits freeze FIX_BASE and are not review
@@ -233,10 +241,35 @@ candidate's covered software paths, not the seven static-review contracts.
 Review `task-3-review-report.md` requests F1 revision/audio association (P1), F2
 legacy CLI identity, F3 identical-retry outcome, F4 postcommit result, F5 producer/
 recovery owner exclusion, F6 malformed-marker sibling isolation and F7 typed CLI
-input/conflict/I/O categories (P2). All seven are open. The old missing-role guards
+input/conflict/I/O categories (P2). All seven were open at that checkpoint.
+The old missing-role guards
 were corrected before this reviewed snapshot and are not a current finding.
-Round-1 RED/fixes/re-review and the corrected stable suite remain required; no
-task/group completion, root integration, hosted CI or M2 close is claimed.
+At that checkpoint round-1 RED/fixes/re-review and a corrected stable suite were
+required; no task/group completion, root integration, hosted CI or M2 close was claimed.
+
+### Current checkpoint after round-1 integration
+
+The paragraph above is the original candidate checkpoint. Green fixes `16263c4`
+and `c28472b` are now integrated at root `1f1bc88513840b84c388a61d9c077907cf2fba2e`.
+Root/Green src and tests trees match exactly; source/config/scripts/workflow diff
+is empty. The 40 independent RED cases pass together in 69.70s; Ruff/format on
+20 files and canonical mypy 79/79/no new diagnostics are supplied author evidence.
+`task-3-fix-1-review-report.md` marks original F1–F7 ADDRESSED, not task acceptance.
+
+Important NB1: distinguish a fresh retry from repetition of an already committed
+publication. Actual controller+processor currently double-publish, and restart
+replay of a retained postcommit origin marker becomes a stale-parent conflict.
+Round-2 RED in `tests/test_memory_publication_replay.py` is pending delivery; no
+result or fix is claimed. Preserve fresh identical retries and reject arbitrary
+stale parents; do not clear uncertain markers without durable proof.
+
+Root full `M2A-INTEGRATED-FULL1-20261105`: **5 failed/920 passed/7 skipped in
+553.39s**, 932 XML cases, zero errors. Three capture-recovery snapshot differences
+include new lock files; CLI sf.info stub lacks subtype; audio-only legacy retry
+requires missing session.json. Each awaits diagnosis/fix, with assertions intact.
+Both noneditable-wheel smokes pass. Fresh wheel/sdist and off-repo `-I` probe verify
+65 byte-identical Python files, schema2/FTS5/FK/integrity; local automatic evidence
+only. New suite, re-review and whole-group approval remain required before PR gates.
 
 ## Closing the group
 
@@ -247,3 +280,9 @@ task/group completion, root integration, hosted CI or M2 close is claimed.
   the description, CI green. The author merges per rulings 16/17/20. Before group B
   implementation, deliver its contract-adjusted SPEC/PLAN in the documentation PR
   required by ruling 14; that next-plan work does not close M2 A or bypass its gates.
+- Ruling 35: finish/merge A and required contract documentation PRs first. Then root
+  creates separate project chats for M2 B and M3 A, each with its own branch/worktree
+  and complete brief pinned to the actual merged SHA. IDs/paths/bases remain pending
+  in STATUS; this PLAN creates no chat and starts no future group. Root owns all
+  leases/integration/merges; later M5 B overlap waits for M2 B and keeps claims gated
+  on M4 B, with other dependencies and quality/privacy/acceptance gates unchanged.

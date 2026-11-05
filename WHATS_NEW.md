@@ -14,9 +14,11 @@ Local ingest, inspect and reconcile commands work without the provider. A separa
 library-pending warning keeps saved audio/text available when catalog work needs
 recovery; opening the app replays local persistence rather than transcription.
 
-The candidate's stable local suite passed, but independent review found seven
-contract issues requiring fixes and fresh verification. Catalog work remains under
-review; M2 is not complete or released, and version 0.2.0 remains current.
+Round-1 fixes now preserve revision-specific audio links, legacy identity and
+actual ownership through capture/recovery. Review addressed the seven original
+findings but identified repeat-publication recovery breakage, and the integrated
+suite still has five unresolved failures. M2 remains under review and unreleased;
+version 0.2.0 stays current.
 
 ## 0.2.0 — Windows M1 delivery
 

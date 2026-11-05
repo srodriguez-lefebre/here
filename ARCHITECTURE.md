@@ -34,8 +34,8 @@ The main flow is:
   writing.
 - `memory/`: immutable catalog DTOs, operation-owned SQLite connections, numbered
   migrations with managed backups, an explicit transaction repository, validated
-  artifact ingestion and local revision publication/reconciliation. Task 3 has a
-  passing local suite but seven open independent-review findings.
+  artifact ingestion and local revision publication/reconciliation. Round-1 fixes
+  are integrated, with NB1 and five full-suite failures still blocking acceptance.
 - `ui/`: Qt Widgets presentation, the live-logo overlay, and the single adapter
   from visual actions to the application contract.
 
@@ -191,9 +191,9 @@ SQLite busy/locked errors from migration reads, repository reads and writes beco
 the recoverable `Busy` error, including the rollback-journal exclusive-lock case.
 
 Task 3 builds publication and producer integration on this foundation as described
-below. Candidate `6c422f0` passed its stable local suite, but task/group acceptance
-requires round-1 fixes, fresh verification and independent re-review, followed by
-exact-head hosted checks before M2 A can close.
+below. Round-1 source `c28472b` is integrated at `1f1bc88`; original F1–F7 are
+addressed in scoped review, but NB1 and five integrated-suite failures require
+further correction, verification and review before the exact-head hosted gates.
 
 ## Catalog publication and local recovery (M2 A task 3)
 
@@ -229,9 +229,10 @@ observations describe superseded source, not a current review finding.
 
 Origin plus fingerprint makes ordinary import idempotent. Trusted explicit retry
 supplies the expected active revision under `revision_of`. Covered GUI legacy
-retry resolves an existing origin without rewriting its optional manifest UUID;
-the existing-session CLI route still has the F2 identity defect described below.
-Aware
+retry and existing-session CLI preserve the source optional identity independently
+of canonical catalog ownership. Trusted legacy preparation resolves/preimports its
+lineage before mutation/provider, including None/opaque M1 IDs; ordinary imports
+retain strict UUID validation. Aware
 dates preserve their instants in UTC; naive source dates remain unspecified with
 a warning. FTS5 indexes active complete revisions using accent-folding unicode61;
 missing capability returns typed `FtsUnavailable` while preserving publication.
@@ -239,8 +240,11 @@ missing capability returns typed `FtsUnavailable` while preserving publication.
 The service exposes `.owners/<meeting-uuid>.lock` handles for capture/provider-work
 lifetimes. Catalog reconciliation probes OS ownership and preserves live rows;
 residual lock filenames or PIDs do not prove liveness. Competing application
-producer and recovery/materialization enforcement still require the F5 fix below.
-Abandoned
+producer and recovery paths now acquire/recheck owners before mutation. Native
+capture ownership starts before publishing the journal at
+`<sessions_root>/.capture_owners/<capture_id>.lock`. The controller job scope retains
+that OS lease through real helper closure and final persistence, even if the
+constructor or catalog fails; no deadline/protocol changes. Abandoned
 recording/processing rows become interrupted. Remote/mapped/unproven-local Windows
 volumes use rollback journaling with a visible warning; proven local storage uses WAL.
 
@@ -256,24 +260,24 @@ state and retain the prior complete active revision, including during busy repla
 catalog issues populate `ApplicationSnapshot.memory_warning`; the existing window
 detail displays it only when no real `last_error` has priority. New work or clean
 publication clears the warning, without changing a completed recording into failure.
-Maintenance CLI ingest/reconcile/show use the same service and expose JSON results;
-postcommit result and typed error classification still require F4/F7 fixes.
+Maintenance CLI ingest/reconcile/show use the same service and expose JSON results
+with typed error categories. Postcommit housekeeping now reports committed success
+with a recoverable warning instead of precommit rejection.
 
-The exact reviewed 27-file candidate was committed separately in the ingestion
-worktree as `6c422f0`, after test-only fixture commit `efb73a9`; it is not integrated
-or accepted as task 3. Its stable suite passed 883 tests with nine explicit skips.
-Independent review still requests seven corrections: explicit revision-to-audio
-links, legacy CLI identity preservation, identical-retry state/revision completion,
-postcommit result classification, ownership before producer/recovery mutation,
-malformed marker isolation and typed CLI error categories. These are current
-limitations of the candidate rather than proved guarantees of the paragraphs above.
+Schema 2 adds `revision_audio_assets` (meeting/revision/asset, source file and
+ordinal) without changing migration 1. Version-2 receipts, rebuild and `show` JSON
+retain ordered links, including reused assets in A→B→A retries; cumulative assets
+cannot substitute for those references. Ambiguous older evidence is retained with
+a warning rather than assigned by guess. Scoped review marks original F1–F7 addressed.
 
-Ruling 31 defines the pending F1 fix: migration 2 adds `revision_audio_assets`
-(meeting/revision/asset, source name and ordinal) without changing migration 1.
-Version-2 receipts, rebuild and `show` JSON retain the exact ordered references,
-including reused assets in A→B→A retries; cumulative meeting assets cannot substitute
-for those links. Ambiguous old evidence is retained/warned, not assigned by guess.
-The migration/receipt changes have not yet been implemented or verified here.
+NB1 remains Important: the controller can publish a successful retry twice, and
+origin-marker replay after commit still looks like a new stale-parent retry. The
+fix must recognize already committed publication durably while preserving one new
+revision for each fresh explicit retry, including identical evidence. It cannot
+accept arbitrary stale parents or erase uncertain markers. No NB1 fix/result is
+claimed yet. The integrated full also reports three capture-recovery snapshots
+with new lock entries, one incomplete sf.info test stub and audio-only legacy
+retry requiring session.json; all five remain pending diagnosis/correction.
 
 ## Existing Audio Transcription
 

@@ -175,11 +175,11 @@ work without repeating transcription. A failed provider retry keeps the previous
 complete revision active. Ordinary application retry still requires an explicit
 action and the provider credential.
 
-M2 is not released or complete. Candidate `6c422f0` passed 883 local tests with
-nine explicit skips, but independent review requests seven corrections in audio
-association, retry identity/state, ownership/recovery and result/error reporting.
-Those contracts are not approved yet. Fix verification, re-review and current-head
-hosted CI/Copilot gates are tracked in [STATUS.md](STATUS.md).
+M2 is not released or complete. Round-1 fixes are integrated at `1f1bc88`; review
+marks the seven original findings addressed but still blocks acceptance on repeat
+publication and committed-marker replay (NB1). The integrated suite has five
+unresolved failures, 920 passes and seven skips. Fix verification, re-review and
+current-head hosted CI/Copilot gates are tracked in [STATUS.md](STATUS.md).
 The packaged 0.2.0 delivery above retains its recorded M1 scope.
 
 ## Audio Diagnostics
