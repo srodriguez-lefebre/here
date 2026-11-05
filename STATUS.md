@@ -31,9 +31,12 @@ usuario; cuando llegue, el punto de partida es `docs/MILESTONE_2_PLAN.md` y
 
 Nueve grupos de PR en total, cada uno con su SPEC y su PLAN en `docs/development/`.
 Todos marcados "not in execution (ruling 15)". Orden: M2 A, M2 B, M3 A, M3 B, M4 A,
-M4 B, M5 A, M5 B, M5 C. Cada grupo es un PR que el usuario mergea (ruling 4). Si al
-mergear un grupo cambian contratos que el siguiente asume, el agente ajusta el PLAN
-siguiente en un PR de documentación antes de empezarlo (ruling 14).
+M4 B, M5 A, M5 B, M5 C, con los solapamientos que permite `CLAUDE.md` §11. Cada grupo
+es un PR que el agente mergea solo cuando CI está verde, Copilot revisó y fue
+respondido, y un subagente independiente revisó (rulings 16 y 17). Si al mergear un
+grupo cambian contratos que el siguiente asume, el agente ajusta el PLAN siguiente en
+un PR de documentación antes de empezarlo (ruling 14). El ejecutor previsto es Codex,
+que entra por `AGENTS.md` (ruling 18).
 
 Cada plan de hito tiene una sección "Lo que queda pendiente de decidir" con un default
 por ítem. Los defaults se adoptan sin consulta y se registran como ruling al usarse.
@@ -69,10 +72,13 @@ Ninguna. Las quince decididas están en `DELIVERY.md`, "Rulings vigentes".
 ## Bloqueos que dependen de un humano
 
 - Instrucción explícita para empezar a implementar (ruling 15).
-- Merge de cada PR a `main` (ruling 4).
+- Máquina Windows limpia y credencial real, a pedido, cuando una fila de aceptación
+  las necesite (ruling 5).
 - Reunión de dos horas con medición de recursos: sin disponibilidad (ruling 5).
+- Cambios al ruleset o a los permisos del repositorio.
 
 ## Próxima acción
 
-El usuario revisa y mergea el PR del plan completo. Después no hay nada que hacer
-hasta que decida empezar la implementación.
+Esperar la instrucción del usuario para empezar. Cuando llegue, el agente la registra
+como ruling, arranca `M2_CATALOG_PLAN.md` tarea 1 en una rama nueva desde `main`, y
+trabaja como orquestador según `CLAUDE.md` §11 hasta entregar 1.0.0.

@@ -1,7 +1,7 @@
 # M3 search and library actions implementation plan
 
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
-> review, then independent agent review. The user merges (ruling 4). Steps use checkbox
+> review, then independent agent review. The author merges after Copilot review, CI and independent subagent review (rulings 16 and 17). Steps use checkbox
 > syntax. **Status: not in execution (ruling 15).** Start only on an explicit user
 > instruction, after M2 is merged into `main`.
 
@@ -106,5 +106,5 @@ so the preview runs without a database.
   flow), `docs/MILESTONE_3_PLAN.md` (criteria 1–10, 17–18 status), `ACCEPTANCE.md`
   (M3 responsiveness row with the benchmark run) and `WHATS_NEW.md`.
 - Open one PR with the two task commits, self-review and independent agent review in
-  the description, CI green. The user merges. Group B starts from the merged target
+  the description, CI green; the author merges per rulings 16 and 17. Group B starts from the merged target
   and DTOs.

@@ -1,7 +1,7 @@
 # M5 release and acceptance implementation plan
 
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
-> review, then independent agent review. The user merges (ruling 4). Steps use checkbox
+> review, then independent agent review. The author merges after Copilot review, CI and independent subagent review (rulings 16 and 17). Steps use checkbox
 > syntax. **Status: not in execution (ruling 15).** Start only on an explicit user
 > instruction after M5 group B merges. Hardware rows need the clean machine and the
 > credential the user provides on request (ruling 5); ask for them when a row needs
@@ -103,5 +103,5 @@ data, backup and startup, then uninstalls and checks preservation; a separate
   status and the milestone close), `ACCEPTANCE.md`, `WHATS_NEW.md` with the 1.0.0
   note, and `STATUS.md`.
 - Open one PR with the two task commits, self-review and independent agent review in
-  the description, CI green. The user merges and decides whether to publish a release;
+  the description, CI green. The author merges per rulings 16 and 17; the user decides whether to publish a release;
   the agent never uploads a public release on its own.

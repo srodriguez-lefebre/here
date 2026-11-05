@@ -1,7 +1,7 @@
 # M3 playback, evidence navigation and CLI implementation plan
 
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
-> review, then independent agent review. The user merges (ruling 4). Steps use checkbox
+> review, then independent agent review. The author merges after Copilot review, CI and independent subagent review (rulings 16 and 17). Steps use checkbox
 > syntax. **Status: not in execution (ruling 15).** Start only on an explicit user
 > instruction, after M3 group A is merged into `main`.
 
@@ -107,5 +107,5 @@ typed service errors (`InvalidInput`→2, `NotFound`/`Conflict`→3,
 - Bump version to 0.4.0 in `pyproject.toml` and the build/installer paths that embed
   it (`scripts/build_windows.ps1`, `packaging/installer.iss`, `windows-package.yml`).
 - Open one PR with the two task commits, self-review and independent agent review in
-  the description, CI green. The user merges. Then, per ruling 14, write
+  the description, CI green. The author merges per rulings 16 and 17. Then, per ruling 14, write
   `docs/MILESTONE_4_PLAN.md` and the first M4 SPEC/PLAN if they do not exist yet.

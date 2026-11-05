@@ -1,7 +1,7 @@
 # M5 settings and runtime implementation plan
 
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
-> review, then independent agent review. The user merges (ruling 4). Steps use checkbox
+> review, then independent agent review. The author merges after Copilot review, CI and independent subagent review (rulings 16 and 17). Steps use checkbox
 > syntax. **Status: not in execution (ruling 15).** Start only on an explicit user
 > instruction after M4 closes.
 
@@ -112,5 +112,5 @@ and releases on terminal state; tray actions call the existing application comma
   (settings service, lock, single instance), `docs/MILESTONE_5_PLAN.md` (criteria 1–9
   and 13 status), `ACCEPTANCE.md` (M5 settings rows with runs) and `WHATS_NEW.md`.
 - Open one PR with the two task commits, self-review and independent agent review in
-  the description, CI green. The user merges. Then group B starts from
+  the description, CI green. The author merges per rulings 16 and 17. Then group B starts from
   `M5_PORTABILITY_PLAN.md`.

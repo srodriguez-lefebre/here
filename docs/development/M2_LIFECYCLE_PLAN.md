@@ -1,7 +1,7 @@
 # M2 lifecycle and deletion implementation plan
 
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
-> review, then independent agent review. The user merges (ruling 4). Steps use checkbox
+> review, then independent agent review. The author merges after Copilot review, CI and independent subagent review (rulings 16 and 17). Steps use checkbox
 > syntax. **Status: not in execution (ruling 15).** Starts only after
 > `M2_CATALOG_PLAN.md` (group A) is merged and only on an explicit user instruction.
 
@@ -110,5 +110,5 @@ CLI: `here memory delete ID --yes [--json]`, `here memory reindex`.
   `scripts/build_windows.ps1`, `scripts/smoke_windows.ps1` and
   `.github/workflows/windows-package.yml`.
 - Open one PR with the two task commits, self-review and independent agent review in
-  the description, CI green. The user merges. Then M3 starts from
+  the description, CI green. The author merges per rulings 16 and 17. Then M3 starts from
   `docs/MILESTONE_3_PLAN.md` and `M3_SEARCH_PLAN.md`, task 1.

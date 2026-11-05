@@ -3,7 +3,8 @@
 `here` graba micrófono y audio del sistema en Windows, transcribe con OpenAI y deja
 sesiones recuperables. App Qt como interfaz principal, CLI secundaria, mismo núcleo.
 Este archivo existe para que un agente pueda tomar el proyecto y avanzar con las
-mínimas preguntas posibles. Léelo entero antes de tocar nada.
+mínimas preguntas posibles. Léelo entero antes de tocar nada. Si llegaste desde
+`AGENTS.md` (Codex), este es el documento que manda; `AGENTS.md` solo remite acá.
 
 ## 1. Leé en este orden
 
@@ -60,7 +61,7 @@ Preguntá antes de hacerlo, y mientras tanto hacé todo lo que no depende de la 
 - toca retención, borrado, privacidad o dónde se guardan los datos;
 - contradice un principio del plan maestro o la definición de terminado de un hito;
 - necesita hardware, credencial real, máquina limpia o tiempo de reunión que no tenés;
-- mergear a `main` (ver sección 7).
+- cambia el ruleset, los permisos o la configuración del repositorio en GitHub.
 
 Cada decisión no trivial que tomes solo se registra en `DELIVERY.md` con el formato
 que ya se usa: `Ruling: <decisión>. Cost if wrong: <qué habría que rehacer>.`
@@ -158,9 +159,19 @@ eventos sintéticos, sin audio ni proveedor).
 - Commits cohesivos por tema, no un squash de todo el PR.
 - Nunca push directo a `main`. Siempre PR con descripción y evidencia.
 - CI de GitHub corre solo en Windows. No hay gate de Linux.
-- Mergear a `main` lo hace el usuario, siempre. El agente abre el PR con self-review
-  y review de un agente independiente, deja la evidencia y sigue en otra rama. No se
-  piden reviews a Copilot. El permiso de administrador no se usa para merges.
+- El agente mergea sus propios PRs (ruling 16), con este procedimiento y en este orden:
+  1. PR abierto contra `main`, no borrador, con descripción, evidencia y el resultado
+     de la review de un subagente independiente del autor.
+  2. Review de Copilot pedida sobre el head actual (ruling 17). Esperar a que llegue.
+     Responder cada observación en su hilo: corregida con el commit que la arregla, o
+     rechazada con la razón. Después de una corrección sustantiva, pedirla de nuevo.
+  3. CI de Windows verde en el head exacto que se va a mergear.
+  4. `gh pr merge <n> --merge --admin --match-head-commit <sha>`. Merge commit, nunca
+     squash, para conservar los commits del grupo. El bypass de administrador del
+     ruleset existe para esto; no se usa para nada más.
+  5. Anotar en `DELIVERY.md` el PR, el head revisado, la review de Copilot y el merge.
+  Si Copilot no responde en un plazo razonable, se registra en el PR y se mergea con
+  las otras tres condiciones cumplidas.
 - Versiones: una minor por hito. M2 → 0.3.0, M3 → 0.4.0, M4 → 0.5.0, M5 → 1.0.0.
 - Idioma: planes, `STATUS.md`, criterios y rulings nuevos en español; código,
   commits, PRs, specs técnicos y el resto de `docs/development/` en inglés.
@@ -189,8 +200,8 @@ eventos sintéticos, sin audio ni proveedor).
 | Máquina Windows limpia para aceptar el instalador | Está disponible a pedido. Pedila cuando una fila de aceptación la necesite, con el protocolo escrito; no antes |
 | Credencial real del proveedor | Está disponible a pedido. Test con transporte simulado por defecto; el smoke real es opt-in, con audio sintético, y se pide cuando toca |
 | Reunión de dos horas con medición de recursos | No hay disponibilidad. Tests de duración virtual; la fila sigue "omitida", nunca "aprobada" |
-| Merge a `main` | PR abierto con evidencia; seguí con la siguiente tarea en otra rama |
 | Cualquier cambio de alcance de un hito | Proponelo en `STATUS.md` como decisión abierta con tu recomendación |
+| Cambios al ruleset o a los permisos del repositorio | Nunca los hagas; pedilos |
 
 ## 10. Documentación con cada cambio
 
@@ -205,3 +216,30 @@ Se actualiza junto con el cambio, no al final:
 
 Las notas de What's New explican qué cambió, por qué importa y cómo afecta al
 proyecto. No son un changelog ni se escriben durante la planificación.
+
+## 11. Orquestación y paralelismo
+
+Trabajás como orquestador, no como un solo par de manos. El plan tiene nueve grupos de
+PR y cada grupo tiene de dos a tres tareas con tests, implementación, review y docs. Un
+agente que hace todo en serie tarda semanas; uno que reparte bien, días. Repartí así:
+
+- **Dentro de una tarea**, en secuencia: un subagente escribe los tests en rojo contra
+  el SPEC; vos o un subagente implementan hasta verde; un subagente distinto del que
+  implementó hace la review independiente contra el SPEC y el foco de revisión del
+  PLAN; un subagente actualiza docs y evidencia. La review nunca la hace quien escribió.
+- **Entre tareas del mismo grupo**, en paralelo solo cuando no comparten archivos. El
+  PLAN lista los archivos de cada tarea; si dos listas se cruzan, van en serie.
+- **Entre grupos**, estos solapamientos y ninguno más: dentro de un hito, el grupo B
+  arranca sobre la rama del grupo A con el PR de A abierto, y se rebasea cuando A se
+  mergea; M3·A (búsqueda) puede arrancar con M2·A mergeado, porque solo necesita el
+  catálogo; M5·B (portabilidad) puede arrancar con M2·B mergeado, dejando el gancho de
+  claims para completar después de M4·B. Todo lo demás, en el orden de `STATUS.md`.
+- **Siempre en paralelo con lo que sea:** la preparación del PLAN del grupo siguiente,
+  los fixtures sintéticos (corpus de reuniones, ZIPs hostiles, WAV con marcas), la
+  limpieza de lint en su PR aparte, y las respuestas a Copilot del PR anterior.
+- **Nunca en paralelo:** migraciones de esquema (una sola fuente de verdad por grupo),
+  cambios a `pyproject.toml`, el bump de versión, y dos escritores sobre el mismo
+  archivo. Ramas simultáneas van en worktrees separados.
+- Cada subagente recibe el SPEC, el PLAN, los archivos exactos y qué significa
+  terminado; devuelve evidencia (tests en rojo y en verde, salida de la suite), no un
+  resumen. Vos integrás, verificás la suite completa y abrís el PR.

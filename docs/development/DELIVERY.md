@@ -88,6 +88,32 @@ Los rulings nuevos se escriben en español por el ruling 6.
     posterior. El ruling 14 sigue vigente para mantener los planes al día durante la
     ejecución futura. **Cost if wrong:** ninguno; los planes se escriben una vez y se
     corrigen en PR.
+16. **Ruling:** anula el ruling 4. El agente mergea sus propios PRs a `main` usando el
+    bypass de administrador del ruleset `Main` (id 14750729, rol de repositorio 5),
+    con `gh pr merge <n> --merge --admin --match-head-commit <sha>`, y solo cuando se
+    cumplen las cuatro condiciones a la vez: CI de Windows verde en ese head exacto;
+    review de Copilot solicitada sobre ese head y recibida; toda observación de
+    Copilot, inline o de cuerpo, respondida con su disposición (corregida con commit,
+    o rechazada con razón escrita); review de un subagente independiente del autor
+    registrada en la descripción del PR. Un merge sin alguna de las cuatro es una
+    violación del plan, no un atajo. **Cost if wrong:** un defecto entra a `main` sin
+    ojos humanos; se mitiga con Copilot, CI y el ledger de evidencia por PR.
+17. **Ruling:** anula el ruling 12. Cada PR pide review de Copilot sobre su head
+    actual (`gh pr edit <n> --add-reviewer copilot`, o el mecanismo equivalente que
+    GitHub exponga en ese momento), espera a que llegue, responde cada observación en
+    el hilo, y vuelve a pedirla después de cualquier corrección sustantiva. El
+    silencio de Copilot no es aprobación; si no responde en un plazo razonable se
+    registra en el PR y se aplica el ruling 16 solo con las otras tres condiciones.
+    Las reviews de Copilot son COMMENTED, no APPROVED; el ledger lo anota así, como
+    en M1. **Cost if wrong:** observaciones sin atender; se detectan en el ledger.
+18. **Ruling:** el ejecutor de M2–M5 es Codex (OpenAI). `AGENTS.md` en la raíz es su
+    punto de entrada y remite a `CLAUDE.md`, que sigue siendo la hoja de arranque
+    única; cualquier agente que lea uno de los dos tiene las mismas reglas. Codex
+    trabaja como orquestador con subagentes según `CLAUDE.md` §11: un escritor por
+    conjunto de archivos, review siempre por un subagente distinto del autor, y los
+    solapamientos entre grupos que esa sección permite, ninguno más. **Cost if
+    wrong:** conflictos de merge o contratos desalineados entre grupos; se detectan
+    en CI y en la review independiente.
 
 ## Ledger histórico (append-only)
 

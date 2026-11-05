@@ -1,7 +1,7 @@
 # M4 answers persistence, UI and CLI implementation plan
 
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
-> review, then independent agent review. The user merges (ruling 4). Steps use checkbox
+> review, then independent agent review. The author merges after Copilot review, CI and independent subagent review (rulings 16 and 17). Steps use checkbox
 > syntax. **Status: not in execution (ruling 15).** Start only on an explicit user
 > instruction after M4 group A is merged.
 
@@ -105,6 +105,6 @@ and `extract` with `--meeting`, `--all`, `--mode`, `--json` and exit codes
   and `WHATS_NEW.md` with a short note on asking the memory with citations.
 - Bump version to 0.5.0 (ruling 9) when all M4 criteria are verified.
 - Open one PR with the two task commits, self-review and independent agent review in
-  the description, CI green. The user merges. Then the agent writes
+  the description, CI green. The author merges per rulings 16 and 17. Then the agent writes
   `docs/MILESTONE_5_PLAN.md` and the first M5 SPEC/PLAN (ruling 14) if they do not
   exist yet.

@@ -1,7 +1,7 @@
 # M4 grounded core implementation plan
 
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
-> review, then independent agent review. The user merges (ruling 4). Steps use checkbox
+> review, then independent agent review. The author merges after Copilot review, CI and independent subagent review (rulings 16 and 17). Steps use checkbox
 > syntax. **Status: not in execution (ruling 15).** Start only on an explicit user
 > instruction after M3 closes.
 
@@ -131,5 +131,5 @@ Verified | Rejected(reasons)`; one bounded repair attempt then `VerificationFail
   with the runs that close them, smoke model and date) and `WHATS_NEW.md` only if a
   user-facing capability ships (it does not until group B).
 - Open one PR with the three task commits, self-review and independent agent review in
-  the description, CI green. The user merges. Then group B starts from
+  the description, CI green. The author merges per rulings 16 and 17. Then group B starts from
   `M4_PRODUCT_PLAN.md`.
