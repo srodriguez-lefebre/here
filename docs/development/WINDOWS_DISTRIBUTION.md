@@ -53,7 +53,8 @@ to make an acceptance run pass.
 The Windows packaging workflow uploads inspectable artifacts and evidence. Its
 runner reports its actual OS; a Windows Server runner is not called Windows 11.
 Local Windows 11 and clean hosted installation observations remain separate.
-Ubuntu is optional manual-only and is not run as an M1 release gate.
+The former manual Ubuntu workflow was removed on 2026-11-04 (ruling 11); Linux is
+not a product target and no Linux check gates anything.
 
 The user excluded the two-hour capture/resource run and long generated-audio
 transcription/timestamp/diarization run. These are omitted, not passing tests.
