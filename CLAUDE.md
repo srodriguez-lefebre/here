@@ -20,9 +20,9 @@ M2–M5), `docs/MILESTONE_1_PLAN.md`, `docs/LIVE_LOGO_PLAN.md`,
 `docs/development/DELIVERY.md` (rulings y ledger de evidencia),
 `docs/development/ACCEPTANCE.md` (matriz de aceptación), los `*_EVIDENCE.json`.
 
-No uses como contexto los archivos de `docs/` que git ignora (`CONTEXT.md`,
-`CHUNKING_*.md`, `PYTHON_VERSION_ARCHITECTURE.md`, `future_plans.md`, drafts).
-Describen una etapa anterior del proyecto (MVP en WSL2) y contradicen el estado actual.
+No uses como contexto nada de `docs/archive/` ni ningún archivo de `docs/` que git
+ignore. Describen una etapa anterior del proyecto (MVP en WSL2) y contradicen el
+estado actual.
 
 ## 2. Precedencia cuando dos documentos se contradicen
 
@@ -151,9 +151,13 @@ eventos sintéticos, sin audio ni proveedor).
 - Una rama por grupo de PR, nombrada `<agente>/<hito>-<tema>` (ej. `codex/m2-catalog`).
 - Commits cohesivos por tema, no un squash de todo el PR.
 - Nunca push directo a `main`. Siempre PR con descripción y evidencia.
-- CI de GitHub corre solo en Windows; el workflow de Ubuntu es manual y no es gate.
-- Mergear a `main` es una decisión abierta en `STATUS.md`. Hasta que se cierre:
-  abrí el PR, dejá la evidencia, y no mergees.
+- CI de GitHub corre solo en Windows. No hay gate de Linux.
+- Mergear a `main` lo hace el usuario, siempre. El agente abre el PR con self-review
+  y review de un agente independiente, deja la evidencia y sigue en otra rama. No se
+  piden reviews a Copilot. El permiso de administrador no se usa para merges.
+- Versiones: una minor por hito. M2 → 0.3.0, M3 → 0.4.0, M4 → 0.5.0, M5 → 1.0.0.
+- Idioma: planes, `STATUS.md`, criterios y rulings nuevos en español; código,
+  commits, PRs, specs técnicos y el resto de `docs/development/` en inglés.
 
 ## 8. Convenciones de código
 
@@ -176,9 +180,9 @@ eventos sintéticos, sin audio ni proveedor).
 
 | Gate | Qué hacés mientras tanto |
 |---|---|
-| Máquina Windows limpia para aceptar el instalador | Entregá el protocolo reproducible y marcá la fila "pendiente de máquina limpia" |
-| Credencial real del proveedor | Test con transporte simulado; el smoke real queda opt-in y documentado |
-| Reunión de dos horas con medición de recursos | Tests de duración virtual; la fila sigue "omitida", nunca "aprobada" |
+| Máquina Windows limpia para aceptar el instalador | Está disponible a pedido. Pedila cuando una fila de aceptación la necesite, con el protocolo escrito; no antes |
+| Credencial real del proveedor | Está disponible a pedido. Test con transporte simulado por defecto; el smoke real es opt-in, con audio sintético, y se pide cuando toca |
+| Reunión de dos horas con medición de recursos | No hay disponibilidad. Tests de duración virtual; la fila sigue "omitida", nunca "aprobada" |
 | Merge a `main` | PR abierto con evidencia; seguí con la siguiente tarea en otra rama |
 | Cualquier cambio de alcance de un hito | Proponelo en `STATUS.md` como decisión abierta con tu recomendación |
 
