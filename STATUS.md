@@ -100,16 +100,30 @@ redistribuir tareas.
 - Rulings 23–30 fijan locks, marcadores locales, warning separado, roles permitidos,
   recibos, snapshots y staging registrado. Ruling 31 agrega el contrato pendiente
   de migración 2 `revision_audio_assets`/recibo v2/show/rebuild; no modifica migración 1.
-  No hay nueva dependencia ni red.
+  Rulings 32/34 protegen la captura desde antes del journal mediante lease nativa
+  en `.capture_owners/` y scope del trabajo; ruling 33 resuelve el v1 sin mapping
+  antes de mutar/proveedor, preservando su ID fuente. No hay dependencia, proceso
+  ni red nuevos; los deadlines siguen intactos.
 - Reviewer independiente de tarea 3: `ingestion_review`; informe y snapshot exacto
   en `task-3-review-report.md` y `task-3-candidate-files.json`. Docs: `segments_red`.
 - RED de ronda 1: cuatro archivos nuevos `tests/test_memory_review1_*.py` en
-  `m2-preparation`; implementación en `m2-ingestion`. Preparación de SPEC/PLAN
+  `m2-preparation`, 20 fallos/3 controles que pasan contra `6c422f0`; copiados a
+  Green. Foco inicial de fixes: 40 pasan/1 skip, aún sin re-review. RED adicional
+  `test_memory_capture_ownership.py`: tres fallos concretos en 15,83 s, copiado
+  después de revisión. `test_memory_unmapped_legacy.py`: ocho casos escritos,
+  aún pendientes de ejecución. Implementación en `m2-ingestion`.
+  Preparación de SPEC/PLAN
   de M2 B: `preparation`, worktree `m2-segments`, sin implementación todavía.
 - Fixture de memoria: `tests/memory_fixtures.py` en `m2-preparation` y `m2-ingestion`.
   ZIPs hostiles sintéticos de M5: `tests/portability_fixtures.py` en `m2-segments`.
   Memoria está incluida en el candidato Green; los ZIPs siguen como preparación,
   sin implementación de importador. Conservar las copias hasta integrar sus tareas.
+- Fixtures M3 listos, sin implementar búsqueda/reproducción: `search_fixtures.py`
+  en `m2-preparation` y `playback_fixtures.py` en `m2-segments`, sin commit.
+  No son benchmark de búsqueda ni certificación de seek.
+- Baseline RED inmutable: worktree propio `ruling19-review`, reutilizado limpio
+  en detached `6c422f0`; su rama anterior de PR #20 sigue conservada. No modificar
+  ese baseline mientras corren las regresiones.
 - Reportes y logs de los roles: `.superpowers/sdd/M2_CATALOG_PLAN/` del worktree
   principal `m2-catalog`; el ledger `progress.md` registra los commits y handoffs.
 
