@@ -12,7 +12,7 @@ niveles de evidencia. M5 exige distribución Windows 1.0.0 y aceptación real.
 ## Código y secuencia
 
 - Base de trabajo: `878e7d4`, v0.2.0, PR #19 mergeado. `main` incorporó PR #20
-  en `763a891`; su integración en la rama M2 queda pendiente tras estos docs.
+  en `763a891`, integrado en esta rama con los contratos del ruling 19.
 - Grupo actual: `codex/m2-catalog`, worktree
   `C:/Users/savar/.codex/worktrees/m2-catalog/here`.
 - Orden: M2 A (`M2_CATALOG`, 1–3), M2 B (`M2_LIFECYCLE`, 4–5),
@@ -28,7 +28,8 @@ niveles de evidencia. M5 exige distribución Windows 1.0.0 y aceptación real.
 
 ## Tarea en curso
 
-`docs/development/M2_CATALOG_PLAN.md`, tarea 1: modelos, migraciones y repositorio.
+`docs/development/M2_CATALOG_PLAN.md`, tarea 2 en review independiente; tarea 3
+con RED completo, a la espera de integrar el contrato de tarea 2.
 SPEC: `docs/development/M2_CATALOG_SPEC.md`. Hito: `docs/MILESTONE_2_PLAN.md`.
 Implementación local y review independiente aceptadas, incluida la corrección de
 `Busy` en lecturas bloqueadas. Foco: 34 pasan/1 skip en 4,70 s. Corrida final
@@ -38,9 +39,11 @@ wheel pasaron; los siete skips requieren privilegio de symlink. Código de tarea
 en `9a80060`; integración del grupo y CI de Windows sobre el head del PR siguen
 pendientes.
 
-En paralelo: tarea 2 con foco GREEN (310 pasan/1 skip en 24,60 s) y suite completa
-en curso; tarea 3 escribe RED en worktree separado y espera contratos integrados
-antes de implementar archivos compartidos. Preparación de M2 B y fixtures
+Tarea 2: commit `037fc03`, foco GREEN (310 pasan/1 skip en 24,60 s), suite
+completa 783 pasan/8 skips en 160,71 s; review independiente en curso.
+Tarea 3: RED 31 fallos/18 pasan en 2,50 s, worktree
+`C:/Users/savar/.codex/worktrees/m2-ingestion/here`; espera integración/review
+de tarea 2 antes de implementar archivos compartidos. Preparación de M2 B y fixtures
 sintéticos disponibles. No hay cierre de M2 A ni de M2, ni certificación nueva de
 hardware, proveedor o instalación limpia.
 
@@ -59,8 +62,9 @@ hardware, proveedor o instalación limpia.
 
 ## Próxima acción
 
-Integrar estos docs y el main con ruling 19, completar review y suite de tarea 2 y
-RED/GREEN/review de tarea 3; después abrir PR del grupo con suite y evidencia.
+Completar review e integración de tarea 2 y GREEN/review/docs de tarea 3;
+después abrir PR del grupo con suite y evidencia. El PR del grupo A aún no está
+abierto; ningún gate de merge del grupo se considera cumplido.
 En una reanudación consultar el ledger local
 `.superpowers/sdd/M2_CATALOG_PLAN/progress.md` del worktree y git log antes de
 redistribuir tareas.

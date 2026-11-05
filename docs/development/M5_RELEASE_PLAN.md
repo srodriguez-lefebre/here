@@ -3,9 +3,10 @@
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
 > review, then independent agent review. The author merges after Copilot review, CI and independent subagent review (rulings 16 and 17). Steps use checkbox
 > syntax. **Status: not in execution (ruling 15).** Start only on an explicit user
-> instruction after M5 group B merges. Hardware rows need the clean machine and the
-> credential the user provides on request (ruling 5); ask for them when a row needs
-> them, with the protocol written, not before.
+> instruction after M5 group B merges. Hardware rows need the clean machine the user
+> provides on request (ruling 5); ask for it when a row needs it, with the protocol
+> written, not before. Provider smokes use `HERE_PROVIDER_SMOKE_KEY` from the user's
+> `.env` without asking again (ruling 19), and skip when it is undefined.
 
 **Goal:** Version 1.0.0 packaged with multimedia and FTS5 verified, an About screen,
 an honest upgrade path from 0.2.0, and the final Windows acceptance matrix.
@@ -86,10 +87,13 @@ data, backup and startup, then uninstalls and checks preservation; a separate
   ask and about: tab order, accessible names, visible focus, contrast against tokens.
 - [ ] Implement the fixes those tests expose; implement the explicit data-deletion
   action with confirmation.
-- [ ] Request the clean machine and credential from the user with the written
-  protocol; run installation, Start launch, both-source recording, playback with seek,
-  local and provider intelligence smoke with synthetic audio and text, export and
-  import, upgrade, uninstall and data deletion; capture screenshots in light and dark.
+- [ ] Request the clean machine from the user with the written protocol; run
+  installation, Start launch, both-source recording, playback with seek, local and
+  provider intelligence smoke with synthetic audio and text, export and import,
+  upgrade, uninstall and data deletion; capture screenshots in light and dark. The
+  provider smoke reads `HERE_PROVIDER_SMOKE_KEY` from the user's `.env` without
+  asking again (ruling 19), skips when it is undefined, and never prints or persists
+  the key.
 - [ ] Record every run in `M5_RELEASE_EVIDENCE.json` and the matrix rows in
   `ACCEPTANCE.md`; write the two-hour row as "omitted by ruling 5".
 - [ ] Run the full suite and the Windows package workflow at the release head;

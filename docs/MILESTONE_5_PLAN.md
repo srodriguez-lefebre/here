@@ -92,7 +92,8 @@ lo anterior adentro; B depende de los ajustes de raíz de datos de A.
 
 - Overlay y marca no cambian (ruling 8). La bandeja no reemplaza al overlay: el
   overlay sigue siendo el indicador de trabajo activo.
-- Hay máquina Windows limpia y credencial real a pedido; la reunión de dos horas con
+- Hay máquina Windows limpia a pedido; la credencial real está autorizada para los
+  smokes vía `HERE_PROVIDER_SMOKE_KEY` (ruling 19); la reunión de dos horas con
   medición de recursos sigue omitida y así se registra en la matriz (ruling 5).
 - Versión 1.0.0 al cerrar M5 (ruling 9). Un tag no publicado se renumera sin costo.
 - Retención indefinida con borrado manual. Sin purga programada; si algún día se
