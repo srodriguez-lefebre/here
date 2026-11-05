@@ -16,11 +16,11 @@ las definiciones de terminado y los tres niveles de evidencia. Versión vigente
 - Base histórica: `878e7d4`, v0.2.0; PR #20/ruling 19 mergeado en `763a891` e
   integrado. Grupo actual: `codex/m2-catalog`, worktree
   `C:/Users/savar/.codex/worktrees/m2-catalog/here`.
-- Código integrado actual: `1f1bc88513840b84c388a61d9c077907cf2fba2e`, con fixture
+- Código integrado actual: `2a3a31e2eb97c257981e9c9b22ffa729162325d2`, con fixture
   `1277e19`, candidato `3370483`, fix 1 `3a83482` y guard de legacy `1f1bc88`.
-  Equivale a Green `c28472b` (fixes `16263c4` + `c28472b`): src tree
-  `780529d42936c979740443c51f1022fd2bb99a5e`, tests tree
-  `d226358ec038837dba6e40790c77eac74e74b538`. Source/config/scripts/workflows sin
+  Incluye fix 2 `2a3a31e`, equivalente a Green `944e358`: src tree
+  `d11e678490f52ffcc6ec933201afc364fb219abe`, tests tree
+  `a734c86beacd85cc6a755b3ca51b55fa1b572282`. Source/config/scripts/workflows sin
   diferencias con Green. Integración no equivale a aceptación ni merge del grupo.
 - Los nueve grupos se conservan: M2 A (`M2_CATALOG`, 1–3), M2 B
   (`M2_LIFECYCLE`, 4–5), M3 A (`M3_SEARCH`, 1–2), M3 B (`M3_LIBRARY`, 3–4),
@@ -53,29 +53,35 @@ las definiciones de terminado y los tres niveles de evidencia. Versión vigente
   nuevos mensajes. Esa re-review sigue solicitando cambios por **NB1 Important/P2**:
   doble publicación del controller y replay de marcador postcommit se confunden
   con un retry nuevo y dejan parent obsoleto. No hay aceptación de tarea/grupo.
-- **Full integrado root cerrado: 5 fallos, 920 pasan, 7 skips en 553,39 s**.
+- **Full histórico sobre `1f1bc88`: 5 fallos, 920 pasan, 7 skips en 553,39 s**.
   Logs/XML `.superpowers/m2a-integrated-final-1.*`; 932 casos, cinco failures y
   cero errors. Ambos smokes del wheel pasan; los siete skips son de symlink.
-  Pendientes de diagnóstico/fix: tres snapshots de `test_capture_recovery.py`
+  Sus fallos fueron: tres snapshots de `test_capture_recovery.py`
   incluyen locks nuevos, `test_trans_command_completes_failed_session_audio`
   tiene stub sf.info sin subtype y `test_legacy_audio_only_session_still_retries`
   queda bloqueado por session.json ausente. No se omiten ni relajan assertions.
+- Ronda 2: NB1 y las regresiones de integración están **ADDRESSED** por review
+  independiente. Foco congelado: 61 pasan/68,06 s; foco existente de controller,
+  procesamiento y UI: 69 pasan/23,02 s. Ruff/format de diez archivos limpios;
+  mypy 79/79 sin nuevos. Nuevo **NB2 Important/P2**: un capture ID absoluto de
+  candidato stale puede sondear una ruta externa antes de rechazar su UUID.
+  Falta RED/fix/re-review de ese guard, y la suite completa del código corregido.
 - Wheel y sdist frescos CPython 3.13.15 construidos. Probe no editable, off-repo
   con `-I`: 65 módulos Python byte-idénticos, schema 2, FTS5, FK/integrity correctos;
-  `.superpowers/m2a-wheel-catalog-probe.json` guarda hashes. Es evidencia automática
+  Los probes de `1f1bc88` y `2a3a31e` guardan sus hashes por separado; este último
+  en `.superpowers/m2a-wheel-catalog-probe-2a3a31e.json`. No empezó un nuevo full
+  sobre `2a3a31e` porque NB2 debe corregirse primero. Es evidencia automática
   local, sin hardware/proveedor ni certificación de instalador o hito.
 
 ## Próxima acción obligatoria
 
-1. Completar fixes de ronda 2: NB1 tiene RED independiente de 6 fallos/2 controles
-   que pasan en 35,00 s, copiado a Green en `test_memory_publication_replay.py`.
-   La fixture CLI pasó con WAV real y todas sus aserciones intactas; los otros
-   cuatro fallos del full requieren correcciones de producto. La separación de
-   guardas también tiene dos RED de materialización de journal legado y control
-   de dos PASS contra `c28472b`. Los casos de lineage audio-only siguen en curso.
-   Corregir sin debilitar snapshots, validación ni evidencia.
-2. Focos, re-review de NB1/correcciones, nueva suite estable y review de todo el
-   grupo. No convertir los siete ADDRESSED en aceptación mientras quede NB1.
+1. Completar ronda 3 de NB2: RED en `test_memory_candidate_identity_paths.py`,
+   validación de capture UUID antes de construir/sondear journal cuando falta
+   metadata, manteniendo IDs opacos válidos cuando el manifiesto existe.
+   Baseline aislado `ruling19-review` limpio en `944e358`; no modificarlo.
+2. Foco y re-review de NB2, nueva suite estable y review de todo el grupo.
+   NB1 y los cinco fallos previos tienen cobertura/review, pero no se da la tarea
+   por aceptada mientras NB2 y los gates agregados sigan abiertos.
 3. PR de A, Copilot sobre head exacto recibido/respondido y CI Windows verde;
    merge guardado y ledger. Todavía no hay PR ni CI de A aprobados.
 4. Después del merge A y de los PRs de docs de contratos necesarios, root crea
