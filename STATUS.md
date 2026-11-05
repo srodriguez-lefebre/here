@@ -88,3 +88,17 @@ redistribuir tareas.
   Son archivos propios sin commit, conservar hasta integrarlos con sus tareas.
 - Reportes y logs de los roles: `.superpowers/sdd/M2_CATALOG_PLAN/` del worktree
   principal `m2-catalog`; el ledger `progress.md` registra los commits y handoffs.
+
+## Verificación que queda abierta
+
+La fuente de tarea 3 está implementada con focos GREEN, pero no tiene commit ni
+suite final aprobada. Captura aislada falló también en la base pre-tarea 3
+(15 fallos/18 pasan/87,08 s) y en el candidato (17/16/87,56 s). El diagnóstico
+`capture-diagnostic-report.md` midió un timeout durante bootstrap y reprodujo la
+interferencia de un lector con replace; no se atribuyen todas las fallas a carga.
+`catalog_red` corrige solo el arnés de `tests/test_isolated_capture.py` en
+`m2-preparation`, sin cambiar deadlines del producto (ruling 29).
+`capture_diagnostics` hará la review independiente de ese fixture. Antes de dar
+el grupo por listo faltan fixture GREEN, suite completa estable, review independiente
+de tarea 3 y del grupo, y los gates exactos de GitHub. No ejecutar tests/builds/mypy
+en paralelo mientras se corre la suite de deadlines.

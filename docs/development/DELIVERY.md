@@ -245,6 +245,20 @@ Los rulings nuevos se escriben en español por el ruling 6.
     por conjetura. **Cost if wrong:** ajustar la resolución del contexto de retry
     y los mappings de origen, conservando audio y revisiones ya publicadas.
 
+29. **Ruling:** el arnés sintético de captura espera de forma acotada una
+    confirmación real de que su backend fake terminó el bootstrap antes de devolver
+    el helper a la prueba del dispositivo. La confirmación no simula `ready` del
+    protocolo: enumeración, apertura, lectura y cierre siguen siendo ejercidos con
+    sus límites y watchdogs originales. No se cambia ningún deadline del producto.
+    En los tests de consumidor/pipe bloqueados, progreso primario se observa sin
+    abrir el journal activo; el journal se inspecciona tras el cierre real del hijo.
+    Motivo medido: un fake sano agotó el lease de 1,5 s durante imports antes del
+    request; un lector abierto reprodujo `WinError 5` en el writer sin cambios.
+    La comparación pre-M2 A también falló 15 casos de 33; no se atribuye a la tarea
+    3 ni se presenta una causa global no probada. **Cost if wrong:** rehacer la
+    instrumentación del fixture y su evidencia, manteniendo intactos los límites
+    operativos y criterios de captura.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
