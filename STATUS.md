@@ -1,71 +1,58 @@
 # Estado de here
 
-Actualizado: 2026-11-04. Este archivo se reescribe; el historial y los rulings viven en
+Actualizado: 2026-11-05. Este archivo se reescribe; el historial y los rulings viven en
 `docs/development/DELIVERY.md`. Leé `CLAUDE.md` primero.
 
 ## Objetivo vigente
 
-**Preparar el plan para ejecución autónoma. No implementar.** Decidido por el usuario
-el 2026-11-04 (ruling 1). M2 no arranca hasta una instrucción explícita. M1 quedó
-cerrado bajo alcance reducido con el PR #14 (merge `beeedac`, v0.2.0).
+**Implementar el hito 2, memoria estructurada**, según `docs/MILESTONE_2_PLAN.md`
+(ruling 13). Empieza por el grupo A, `docs/development/M2_CATALOG_PLAN.md`, tarea 1.
+Versión objetivo al cerrar M2: 0.3.0.
 
 ## Dónde está el código
 
-- `origin/main` = `beeedac`, v0.2.0. Suite local: 741 pasan, 8 skips esperados,
-  1 falla por falta de `pwsh` en la máquina (no es un bug).
-- PR #16 abierto (`docs/agent-start`): este archivo, `CLAUDE.md` y los rulings.
-- `codex/ui-configuration-errors`: descartada por ruling 2 y borrada en local y
-  `origin`.
-- Worktrees que siguen en disco y no se tocaron: `.codex/worktrees/five-milestones`
-  (`codex/m1-desktop-recovery`, mergeada), `here-worktrees/live-logo-overlay` y
-  `here-worktrees/windows-app-core` (ambas mergeadas en septiembre). Candidatos a
-  limpieza; no es urgente.
+- `origin/main` = `16d7beb`, v0.2.0, con PR #16 (hoja de arranque, rulings, plan de
+  M2) y PR #17 (workflow de Ubuntu eliminado) mergeados el 2026-11-05.
+- Suite en `main`: 741 pasan, 8 skips esperados, 1 falla local por falta de `pwsh`.
 - Omitido de M1 y que sigue omitido: la reunión de dos horas con medición de
-  recursos (ruling 5). La transcripción larga con diarización contra el proveedor
-  real pasa a ser ejecutable porque hay credencial disponible, pero no está
-  programada.
+  recursos (ruling 5). Máquina limpia y credencial real están disponibles a pedido.
+- Worktrees viejos en disco con ramas ya mergeadas, sin tocar:
+  `.codex/worktrees/five-milestones`, `here-worktrees/live-logo-overlay`,
+  `here-worktrees/windows-app-core`. Candidatos a limpieza; no es urgente.
 
 ## Tarea en curso
 
-Preparación del plan, en este orden. Ninguna implementa producto.
+Ninguna empezada. La siguiente es M2 grupo A, tarea 1: modelos, migraciones y
+repositorio (`M2_CATALOG_PLAN.md`). Rama sugerida: `claude/m2-catalog`.
 
-1. ~~`CLAUDE.md` y este archivo~~ — hecho.
-2. ~~Resolver las doce decisiones abiertas y registrarlas como rulings~~ — hecho,
-   rulings 1–12 en `DELIVERY.md`.
-3. ~~Actualizar `PRODUCT_DESIGN.md` §1 y §6~~ — hecho. Tres brechas cerradas por M1,
-   dos abiertas, una abierta en parte; la frase del modelo de M4 ahora apunta a
-   `CLEANUP_MODEL` y al ruling 7.
-4. ~~Criterios verificables de M2~~ — hecho, 16 criterios en `docs/MILESTONE_2_PLAN.md`.
-5. ~~`M2_CATALOG_SPEC.md` y `M2_CATALOG_PLAN.md`~~ — hecho, grupo A (tareas 1–3).
-   El grupo B (`M2_LIFECYCLE_*`) se escribe cuando A esté mergeado.
-6. ~~Cerrar pendientes de `LIVE_LOGO_PLAN.md`~~ — hecho con el ruling 8.
-7. ~~`DELIVERY.md` como ledger append-only~~ — hecho.
-8. Sanear lint en un PR aparte: `ruff check --fix` y `ruff format` sobre toda la base
-   (53 avisos, 15 archivos), mover `select` a `[tool.ruff.lint]`, y decidir si mypy se
-   integra al layout plano o se saca de las convenciones. Hoy ninguno es gate.
+Secuencia prevista, cada grupo en su PR, el usuario mergea cada uno (ruling 4):
 
-## Acciones decididas que esperan confirmación del usuario
+1. M2 grupo A: catálogo inmutable (tareas 1–3). Plan escrito.
+2. M2 grupo B: ciclo de vida y borrado (tareas 4–5). El agente escribe
+   `M2_LIFECYCLE_SPEC.md` y `_PLAN.md` al cerrar A (ruling 14).
+3. Cierre de M2: criterios de `MILESTONE_2_PLAN.md` verificados, `ACCEPTANCE.md` con
+   las corridas, versión 0.3.0, `WHATS_NEW.md`. Después el agente escribe
+   `MILESTONE_3_PLAN.md` y el primer SPEC/PLAN de M3 (ruling 14).
+4. M3, M4, M5 con la misma mecánica. Diseño en `PRODUCT_DESIGN.md` (ruling 3).
 
-Son irreversibles o tocan el remoto; el agente no las ejecuta solo.
+Pendiente aparte, sin bloquear nada: sanear lint en un PR propio (`ruff check --fix`
+y `ruff format` sobre toda la base, mover `select` a `[tool.ruff.lint]`, decidir si
+mypy se integra al layout plano). Hoy ninguno es gate.
 
-- ~~Borrar `codex/ui-configuration-errors`~~ — hecho. En `origin` el 2026-11-04; en
-  local el 2026-11-05 junto con el worktree de Codex que la tenía checkeada, cuyo
-  trabajo sin commitear (lista de grabaciones y navegación en la UI, siete archivos)
-  el usuario decidió descartar. Último commit de la rama: `5b93630`, ya sin
-  referencias.
-- ~~Eliminar el workflow de Ubuntu~~ — hecho en la rama `ci/remove-ubuntu-workflow`,
-  PR aparte, pendiente de merge.
+## Decisiones abiertas
+
+Ninguna. Las catorce decididas están en `DELIVERY.md`, "Rulings vigentes". Los tres
+defaults de `MILESTONE_2_PLAN.md` ("Lo que queda pendiente de decidir") se adoptan
+sin consulta y se registran como ruling si se usan.
 
 ## Bloqueos que dependen de un humano
 
+- Merge de cada PR a `main` (ruling 4).
+- Revisión y merge de cada plan nuevo antes de implementarlo (ruling 14).
 - Reunión de dos horas con medición de recursos: sin disponibilidad (ruling 5).
-- Máquina Windows limpia y credencial real: disponibles a pedido; el agente las pide
-  cuando una fila de aceptación las necesite, no antes.
-- Merge de cualquier PR a `main`: siempre el usuario (ruling 4).
 
-## Próxima acción sugerida
+## Próxima acción
 
-El usuario revisa y mergea el PR #16. Después, en este orden y sin preguntar nada:
-la tarea 8 (lint) en un PR aparte, y las dos acciones destructivas de arriba cuando
-las confirme. La implementación de M2 espera una instrucción explícita (ruling 1);
-cuando llegue, el agente arranca por `docs/development/M2_CATALOG_PLAN.md`, tarea 1.
+Un agente con este archivo delante arranca `M2_CATALOG_PLAN.md`, tarea 1, en una
+rama nueva desde `main`, y abre el PR del grupo A cuando las tres tareas tengan
+evidencia. No necesita preguntar nada antes de eso.

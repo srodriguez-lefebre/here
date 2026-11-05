@@ -65,6 +65,12 @@ Preguntá antes de hacerlo, y mientras tanto hacé todo lo que no depende de la 
 Cada decisión no trivial que tomes solo se registra en `DELIVERY.md` con el formato
 que ya se usa: `Ruling: <decisión>. Cost if wrong: <qué habría que rehacer>.`
 
+Los planes siguientes los escribís vos, sin preguntar (ruling 14): al cerrar un grupo
+de PRs, el SPEC y el PLAN del grupo siguiente; al cerrar un hito, el
+`docs/MILESTONE_<n+1>_PLAN.md` con criterios verificables. Mismo formato e idiomas
+que los de M2. Cada plan va en un PR de documentación que el usuario mergea antes de
+que empiece su implementación.
+
 Nunca, sin importar quién lo pida:
 
 - inventar timestamps, hablantes, nombres de dispositivos o progreso que el sistema no midió;
