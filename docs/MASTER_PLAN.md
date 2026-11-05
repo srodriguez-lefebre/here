@@ -79,8 +79,8 @@ permanece abierto hasta demostrar conjuntamente su definición de terminado.
 
 El 2026-10-03 el usuario acotó la ejecución actual: cerrar el hito 1 en Windows
 y terminar ahí. Los hitos 2–5 conservan su lugar en este plan maestro, pero su
-implementación queda fuera de esta ejecución. La validación de Ubuntu se conserva
-aparte y no se ejecuta ni condiciona el cierre del hito 1.
+implementación queda fuera de esta ejecución. El workflow manual de Ubuntu se eliminó el 2026-11-04 (ruling 11); Linux no es
+objetivo de producto ni condiciona ningún hito.
 
 
 ### Estado al 2026-11-04

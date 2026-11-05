@@ -44,9 +44,16 @@ Preparación del plan, en este orden. Ninguna implementa producto.
 
 Son irreversibles o tocan el remoto; el agente no las ejecuta solo.
 
-- Borrar `codex/ui-configuration-errors` en local y en `origin` (ruling 2).
-- Eliminar `.github/workflows/ci-ubuntu-manual.yml` y sus referencias en un PR aparte
-  (ruling 11).
+- ~~Borrar `codex/ui-configuration-errors` en `origin`~~ — hecho el 2026-11-04. La
+  rama local sigue existiendo porque está checkeada en el worktree de Codex
+  `C:/Users/savar/.codex/worktrees/m1-windows-distribution/here`, que tiene trabajo
+  sin commitear encima (README, WHATS_NEW, `src/ui/configuration.py`,
+  `src/ui/main_window.py`, `tests/test_ui_lifecycle.py`, y nuevos
+  `src/ui/recordings.py`, `tests/test_desktop_navigation.py`). Último commit de la
+  rama: `5b93630`. Falta decidir si ese trabajo se descarta con el worktree o se
+  guarda en una rama de respaldo antes de borrarlo.
+- ~~Eliminar el workflow de Ubuntu~~ — hecho en la rama `ci/remove-ubuntu-workflow`,
+  PR aparte, pendiente de merge.
 
 ## Bloqueos que dependen de un humano
 
