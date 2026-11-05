@@ -56,9 +56,27 @@ class RecoveryService:
     def __init__(self, root: Path) -> None:
         self.root = root.absolute()
 
+    def _owner_identity(self, directory: Path, source_id: str | None) -> str | None:
+        """A legacy manifest keeps its ID; its normalized origin locates its owner."""
+        try:
+            if source_id is not None and str(UUID(source_id)) == source_id:
+                return source_id
+        except ValueError:
+            pass
+        data_dir = get_data_dir()
+        if (data_dir / "library.sqlite3").exists():
+            parent = MemoryService(data_dir).retry_parent(directory, source_id)
+            if parent is not None:
+                return parent[0]
+        return source_id
+
     @contextmanager
-    def _ownership(self, identity: str | None, *, claim: bool = False) -> Iterator[None]:
+    def _ownership(
+        self, identity: str | None, *, directory: Path | None = None, claim: bool = False
+    ) -> Iterator[None]:
         """Guard inspection/replay and recheck a stale selection before mutation."""
+        if directory is not None:
+            identity = self._owner_identity(directory, identity)
         try:
             canonical = identity is not None and str(UUID(identity)) == identity
         except ValueError:
@@ -101,7 +119,7 @@ class RecoveryService:
                 metadata = read_session_metadata(directory)
                 if metadata is None:
                     continue
-                with self._ownership(metadata.meeting_id):
+                with self._ownership(metadata.meeting_id, directory=directory):
                     marker = session_artifact_path(directory, "memory_pending.json")
                     if marker.exists() and metadata.status != "pending":
                         expected, intent = read_pending_intent(directory, metadata.meeting_id)
@@ -115,7 +133,7 @@ class RecoveryService:
                 if metadata.status == "completed":
                     completed.add(key)
                     continue
-                with self._ownership(metadata.meeting_id):
+                with self._ownership(metadata.meeting_id, directory=directory):
                     available = validate_recovery_audio(directory, metadata)
                 error_summary = metadata.failure_stage
                 errors_path = session_artifact_path(directory, ERRORS_FILE)
@@ -168,7 +186,7 @@ class RecoveryService:
     def materialize(self, candidate: RecoveryCandidate) -> Path:
         if candidate.session_dir.absolute().parent != self.root:
             raise UnsafeSessionPath("Recovery destination is outside sessions root")
-        with self._ownership(candidate.capture_id, claim=True):
+        with self._ownership(candidate.capture_id, directory=candidate.session_dir, claim=True):
             return self._materialize_owned(candidate)
 
     def _materialize_owned(self, candidate: RecoveryCandidate) -> Path:

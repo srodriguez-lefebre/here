@@ -436,7 +436,10 @@ class SessionProcessor:
         existing_metadata = read_session_metadata(audio_path.parent)
         if existing_metadata is not None:
             _check_capture_owner(audio_path.parent.parent, existing_metadata.meeting_id)
-            MemoryService.check_owner(get_data_dir(), existing_metadata.meeting_id)
+            MemoryService.check_owner(
+                self._memory.data_dir if self._memory else get_data_dir(),
+                self._retry_meeting_id or existing_metadata.meeting_id,
+            )
             session_artifact_path(audio_path.parent, audio_path.name)
             validate_recovery_audio(audio_path.parent, existing_metadata)
         source_session = session_from_audio_file(audio_path)
@@ -1202,7 +1205,10 @@ class SessionProcessor:
         validate_session_artifacts(session_dir)
         metadata = read_session_metadata(session_dir)
         _check_capture_owner(session_dir.parent, metadata.meeting_id if metadata else None)
-        MemoryService.check_owner(get_data_dir(), metadata.meeting_id if metadata else None)
+        MemoryService.check_owner(
+            self._memory.data_dir if self._memory else get_data_dir(),
+            self._retry_meeting_id or (metadata.meeting_id if metadata else None),
+        )
         audio_file = (
             metadata.recoverable_audio if metadata and metadata.recoverable_audio else AUDIO_FILE
         )
