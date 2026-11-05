@@ -33,8 +33,9 @@ The main flow is:
 - `output/`: Pydantic metadata models, Markdown rendering, and session artifact
   writing.
 - `memory/`: immutable catalog DTOs, operation-owned SQLite connections, numbered
-  migrations with managed backups, and an explicit transaction repository. M2 A
-  task 1 supplies this foundation; ingestion and producer wiring remain task 3.
+  migrations with managed backups, an explicit transaction repository, validated
+  artifact ingestion and local revision publication/reconciliation. Task 3 has a
+  passing local suite but seven open independent-review findings.
 - `ui/`: Qt Widgets presentation, the live-logo overlay, and the single adapter
   from visual actions to the application contract.
 
@@ -170,7 +171,8 @@ search/RAG layer.
 `open_library(data_dir)` owns one connection per worker or operation to
 `<data_dir>/library.sqlite3`; the connection is never shared with the Qt thread.
 Connections enable foreign keys, FULL synchronous writes and a 250 ms busy timeout.
-Local roots use WAL; UNC roots use rollback journaling. Future schema versions are
+Proven-local Windows volumes use WAL; remote/mapped or unproven-local volumes use
+rollback journaling with a warning. Future schema versions are
 refused before persistent pragmas are changed. Managed database, sidecar and backup
 paths reuse the output path validators.
 
@@ -188,10 +190,90 @@ Frozen DTOs carry stored values without introducing global speaker identities.
 SQLite busy/locked errors from migration reads, repository reads and writes become
 the recoverable `Busy` error, including the rollback-journal exclusive-lock case.
 
-This database foundation does not yet publish immutable revision files, ingest
-sessions, index FTS or wire recording/file/retry producers into the catalog. Those
-task 3 responsibilities must preserve audio independently of catalog success and
-complete the staged file/database publication sequence before M2 A can close.
+Task 3 builds publication and producer integration on this foundation as described
+below. Candidate `6c422f0` passed its stable local suite, but task/group acceptance
+requires round-1 fixes, fresh verification and independent re-review, followed by
+exact-head hosted checks before M2 A can close.
+
+## Catalog publication and local recovery (M2 A task 3)
+
+`MemoryService.ingest_session(session_dir, *, revision_of=None)` interprets v1
+artifacts without modifying the origin. Known artifact roles and explicit WAV
+references are validated before referenced files are opened, hashed or probed;
+`session.json` is always included. A contained `.env` or unknown manifest entry is
+not authorized input. Nested managed paths reuse the shared path helpers.
+
+Publication holds `.memory.lock` with bounded acquisition while using short DB
+transactions. It reserves `.staging/<operation-uuid>`, durably writes the planned
+file/hash registration in `.publication.json`, copies and verifies recognized
+artifacts, records a prepared operation, then renames to
+`meetings/<meeting-uuid>/revisions/<revision-uuid>`. One DB transaction inserts the
+entities/evidence, updates active-complete FTS and activates the revision. Copies,
+hashing and provider work remain outside SQLite transactions.
+
+After DB commit, `catalog.json` records the revision's IDs, hashes, assets and
+origin mapping; append-only `states/<row_version>-<uuid>.json` preserves the latest
+meeting status and active pointer. The operation becomes complete afterward.
+Reconciliation can finish receipts for known committed entities or revert an
+uncommitted owned publication. Cleanup validates all entries first; only registered
+protocol names may be removed, and unknown files/subdirectories defer cleanup with
+a warning. A UUID directory alone never establishes ownership of its contents.
+
+With a missing catalog, managed receipts and state snapshots supply reconstruction
+evidence without reopening external origins. Unreceipted material is uncertain and
+is retained/reported. If DB commit knowledge and the receipt are both lost, recovery
+does not infer that the material was committed. Receipt/pending metadata are
+untrusted. The frozen candidate validates their artifact roles before reads/hashes,
+and generated state names before opening state files. Earlier missing-guard
+observations describe superseded source, not a current review finding.
+
+Origin plus fingerprint makes ordinary import idempotent. Trusted explicit retry
+supplies the expected active revision under `revision_of`. Covered GUI legacy
+retry resolves an existing origin without rewriting its optional manifest UUID;
+the existing-session CLI route still has the F2 identity defect described below.
+Aware
+dates preserve their instants in UTC; naive source dates remain unspecified with
+a warning. FTS5 indexes active complete revisions using accent-folding unicode61;
+missing capability returns typed `FtsUnavailable` while preserving publication.
+
+The service exposes `.owners/<meeting-uuid>.lock` handles for capture/provider-work
+lifetimes. Catalog reconciliation probes OS ownership and preserves live rows;
+residual lock filenames or PIDs do not prove liveness. Competing application
+producer and recovery/materialization enforcement still require the F5 fix below.
+Abandoned
+recording/processing rows become interrupted. Remote/mapped/unproven-local Windows
+volumes use rollback journaling with a visible warning; proven local storage uses WAL.
+
+`SessionProcessor` publishes memory only after compatible session artifacts exist,
+including capture-failure outcomes. If catalog publication is unavailable it keeps
+audio/text and writes only version, original optional meeting ID, expected revision
+and ingest/status intent into `memory_pending.json` in its own output folder.
+`RecoveryService.discover()` validates and replays that local intent without a
+provider call. Failed/cancelled retries with no new transcript update only durable
+state and retain the prior complete active revision, including during busy replay.
+
+`MEMORY_INGESTED` follows `SESSION_PERSISTED` before terminal completion. Nonfatal
+catalog issues populate `ApplicationSnapshot.memory_warning`; the existing window
+detail displays it only when no real `last_error` has priority. New work or clean
+publication clears the warning, without changing a completed recording into failure.
+Maintenance CLI ingest/reconcile/show use the same service and expose JSON results;
+postcommit result and typed error classification still require F4/F7 fixes.
+
+The exact reviewed 27-file candidate was committed separately in the ingestion
+worktree as `6c422f0`, after test-only fixture commit `efb73a9`; it is not integrated
+or accepted as task 3. Its stable suite passed 883 tests with nine explicit skips.
+Independent review still requests seven corrections: explicit revision-to-audio
+links, legacy CLI identity preservation, identical-retry state/revision completion,
+postcommit result classification, ownership before producer/recovery mutation,
+malformed marker isolation and typed CLI error categories. These are current
+limitations of the candidate rather than proved guarantees of the paragraphs above.
+
+Ruling 31 defines the pending F1 fix: migration 2 adds `revision_audio_assets`
+(meeting/revision/asset, source name and ordinal) without changing migration 1.
+Version-2 receipts, rebuild and `show` JSON retain the exact ordered references,
+including reused assets in A→B→A retries; cumulative meeting assets cannot substitute
+for those links. Ambiguous old evidence is retained/warned, not assigned by guess.
+The migration/receipt changes have not yet been implemented or verified here.
 
 ## Existing Audio Transcription
 

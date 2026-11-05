@@ -1,7 +1,11 @@
 # M2 immutable catalog specification
 
-Status: written 2026-11-04, not in execution. Implementation starts only on an explicit
-user instruction (ruling 1 in `DELIVERY.md`). Governing design:
+Status: in execution under the explicit 2026-11-05 mandate (ruling 20).
+Tasks 1/2 have local verification and independent reviews. Task 3 candidate
+`6c422f0` passed a stable local suite (883 passed/9 skipped), but independent review
+requests seven contract fixes; task/group approval and hosted gates remain open.
+Requirements below include the pending ruling 31 fix, not a claim that this
+candidate already satisfies it. Governing design:
 `PRODUCT_DESIGN.md` §2–§4, which is a taken decision (ruling 3). Spanish plan and
 acceptance criteria: `../MILESTONE_2_PLAN.md`.
 
@@ -29,6 +33,13 @@ disks, `synchronous=FULL` for durable writes. Mutations use short `BEGIN IMMEDIA
 transactions that never wait on the provider, copy audio or hash files inside. A busy
 database returns a typed recoverable error, not a hang.
 
+The Windows volume capability probe includes mapped remote drives; remote or
+unproven-local storage uses rollback journaling with a visible warning instead of
+assuming a drive-letter path is local (ruling 24). Publication and reconciliation
+share a bounded OS lock at `.memory.lock`. Per-meeting `.owners/<uuid>.lock`
+handles represent actual capture/provider-work ownership, rather than PID or
+timestamp guesses; a residual filename alone does not prove a live worker (ruling 23).
+
 ### Schema and migrations
 
 Tables and invariants exactly as `PRODUCT_DESIGN.md` §4 "Tablas mínimas":
@@ -37,6 +48,12 @@ Tables and invariants exactly as `PRODUCT_DESIGN.md` §4 "Tablas mínimas":
 `ingest_sources`, `pending_operations`, `deleted_origins`. This group creates all of
 them so group B does not need a second migration to add lifecycle tables; group B may
 add columns.
+
+Ruling 31 authorizes a separate migration 2 for `revision_audio_assets`, preserving
+migration 1 and its checksum. The relation records meeting/revision/asset identity,
+source name and ordinal, with composite FKs preventing cross-meeting references and
+unique per-revision name/ordinal. This is a pending round-1 fix, not part of the
+reviewed candidate's implemented schema.
 
 Migrations are numbered, applied in a transaction, validated with
 `foreign_key_check` and `integrity_check`, and preceded by a managed backup taken
@@ -52,6 +69,25 @@ A v1 session without `meeting_id` receives a UUID at import time; `ingest_source
 maps normalized origin path plus origin fingerprint to that meeting so repeated
 imports are idempotent. Same UUID with different content is a readable conflict, never
 an overwrite. Two different meetings with identical audio stay two meetings.
+
+`ingest_session(session_dir, *, revision_of=None)` accepts the expected active
+revision ID only from a trusted explicit retry. A stale precondition cannot replace
+a newer active revision. For an already imported v1 origin without a manifest
+UUID, the application resolves its existing normalized-origin lineage and expected
+revision without rewriting the external v1 identity; ambiguous lineage is rejected
+(rulings 22/28). Ordinary import remains governed by origin plus fingerprint.
+
+Aware source datetimes are normalized to UTC while preserving their instants.
+Naive historical dates remain unspecified in the catalog with a warning, rather
+than acquiring an invented timezone; original manifest bytes remain in evidence.
+
+Every revision must retain explicit ordered references to the audio assets it
+consumed, including reused assets. Trusted retries using audio A, B, then A again
+must resolve as A/B/A independently of file recency or cumulative meeting assets.
+The ruling 31 version-2 receipt carries those links and only the referenced assets;
+rebuild and `show` JSON expose the same `revision_audio_assets`. An older receipt
+without unambiguous proof stays uncertain with a warning; no relationship is
+invented. This invariant remains open as review finding F1 at the candidate head.
 
 ### Segments and evidence
 
@@ -73,6 +109,12 @@ Retry creates a new revision and activates it only after its files are published
 its transaction commits; the previous revision stays readable and is flagged
 historical. A failed retry never removes earlier text.
 
+A trusted completed retry also completes its durable outcome and revision contract
+when its evidence matches the previous result; ordinary idempotent import is a
+separate branch. After a committed activation, receipt/state/operation-housekeeping
+failure reports committed inserted/revised success with a recoverable warning,
+not a precommit rejection. The candidate's F3/F4 fixes remain pending.
+
 Publication sequence: stage under `.staging/` → validate files and hashes → insert a
 `pending_operations` row in state `prepared` → rename into the immutable destination →
 one transaction inserting entities, indexing and activating the revision → mark the
@@ -80,9 +122,31 @@ operation `complete`. A crash before commit leaves a reconcilable operation; a c
 after commit leaves files already published. Reconciliation at startup finishes or
 reverts prepared operations idempotently and never issues network calls.
 
+Before copying, each reserved stage writes and flushes a versioned
+`.publication.json` containing its operation UUID and planned artifact hashes.
+Cleanup requires this validated registration or a persisted operation's registered
+names, validates every entry before removing siblings, and defers with a warning
+when unknown files or subdirectories exist. A UUID directory alone is not deletion
+authority (ruling 30).
+
+Each committed revision has a post-commit `catalog.json` receipt containing
+meeting/revision/segment IDs, asset hashes and origin mappings. Append-only
+`meetings/<uuid>/states/<row_version>-<uuid>.json` snapshots preserve later durable
+status and active-pointer changes without rewriting historical revisions (ruling 26).
+Rebuild uses validated managed receipts and state snapshots only; it does not scan
+external origins. With the live DB, reconciliation can finish a missing receipt
+from committed entities. If both commit knowledge and its receipt are lost, the
+uncertain tree is retained and reported rather than guessed complete.
+
+Source artifact roles are explicit: known session JSON/text/Markdown plus validated
+WAV references. Containment alone never authorizes opening, probing or hashing a
+credential or unknown file. `session.json` is included even if a legacy output list
+omits it. Hashes/paths in receipts and pending operations are untrusted data and
+must receive the same role, identity and containment validation before access.
+
 ### Application-owned persistence
 
-Introduce `MemoryService.ingest_session(session_dir) -> IngestResult` (`inserted`,
+Introduce `MemoryService.ingest_session(session_dir, *, revision_of=None) -> IngestResult` (`inserted`,
 `unchanged`, `revised`, `rejected`, with `meeting_id` and warnings) and route every
 producer through the application layer: the controller after `SessionProcessor`
 publishes, `here trans`, and retry. The three direct `write_session_artifacts` calls
@@ -90,6 +154,19 @@ in `src/cli.py` (`_save_transcription`, `_transcribe_audio_path`) are consolidat
 behind that path. Catalog failure must not touch audio: the WAV and `session.json`
 remain, the result reports "audio saved; library pending recovery", and the next
 startup retries local tasks only.
+
+Application-owned output folders may persist a durable `memory_pending.json`
+with only schema version, original optional meeting ID, expected `revision_of`
+and `intent` (`ingest` or `status`). Startup validates that local intent and
+replays catalog work only, never provider transcription. A failed/cancelled retry
+with no new result retains the previous complete active revision and replays only
+its durable outcome under the same expected-revision precondition (ruling 27).
+
+`MEMORY_INGESTED` follows `SESSION_PERSISTED` and precedes terminal completion.
+The additive `ApplicationSnapshot.memory_warning` renders library warnings in the
+existing detail area while real `last_error` retains priority; clean publication
+or new work clears the warning. A completed recording remains completed when
+only the catalog is unavailable (ruling 24).
 
 ### Durable meeting state
 
@@ -100,6 +177,18 @@ and `SessionMetadata.status` are not reused as the meeting state. `paused` remai
 event, not a status. Destructive cancellation during recording deletes the
 `recording` row together with the capture directory.
 
+File transcription and explicit retry also hold actual owner locks throughout
+provider work, with durable `processing` state and no open SQLite transaction
+around that work. Reconciliation preserves live owners and marks abandoned
+recording/processing rows interrupted only after ownership is no longer held.
+
+A competing producer must acquire actual ownership before mutating session output
+or calling the provider. Recovery discovery/materialization must exclude a live
+owner before reading changing material or attempting persistence/cleanup, and
+materialization rechecks stale candidates. Merely preserving the catalog row is
+insufficient. Malformed marker envelope/field types reject that entry without
+aborting valid siblings. These F5/F6 contracts are pending round-1 correction.
+
 ### FTS
 
 Create the FTS5 virtual table over active complete revisions in this group, kept in
@@ -107,6 +196,24 @@ sync inside the publication transaction, with `unicode61 remove_diacritics 2`. N
 product query uses it yet; it exists so group B can prove deletion purges it and M3
 can build on it. If FTS5 is unavailable at runtime, record the capability and skip
 indexing with a typed warning; do not fail ingestion.
+
+The warning exposes code `fts_unavailable`. The derived `segments_fts` table has
+meeting/revision/segment IDs, text and title; historical/partial revisions are not
+indexed. Product search remains M3.
+
+### Maintenance CLI
+
+`here memory ingest PATH --json`, `here memory reconcile --json` and
+`here memory show UUID --json` operate on the configured data root without a
+provider key. Exit codes: 0 success, 2 invalid arguments/missing input, 3 rejected
+identity or missing meeting, 4 unavailable/corrupt catalog. JSON success includes
+the relevant result; errors include a nonempty `error` or rejected-result warnings.
+An ordinary successful transcription with catalog-only failure retains its
+existing successful exit and reports local recovery pending.
+
+Typed service/result categories distinguish invalid input (2), identity conflict
+(3) and source/publication I/O or integrity failure (4), without parsing warning
+prose. The candidate collapses some cases to rejected/3; F7 remains open.
 
 ## Acceptance
 
@@ -142,8 +249,9 @@ indexing with a typed warning; do not fail ingestion.
 
 ## Boundaries
 
-No listing, filtering, search UI, playback, participants editing, deletion, export,
-import, intelligence or settings UI. No change to capture, overlay or chunking beyond
+No listing, filtering, search UI, playback, participants editing, deletion, portable
+package export/import, intelligence or settings UI. Explicit v1 session ingestion is
+part of this group. No change to capture, overlay or chunking beyond
 carrying `meeting_id` and segments. No global speaker identity. No provider call in
 any catalog operation.
 

@@ -1,6 +1,6 @@
 # What's new
 
-## M2 in progress — preserved transcript evidence
+## M2 in progress — preserved evidence and local catalog
 
 Successful recordings, file transcriptions and retries now keep the uncleaned
 text in `raw_transcript.txt` alongside the display transcript and segment evidence.
@@ -8,8 +8,15 @@ This makes cleanup changes inspectable across live processing and offline fallba
 Text-only responses keep their words without inventing timestamps or speakers;
 nullable timing provenance and recorded-audio offsets remain explicit.
 
-These changes are verified automatically with local synthetic tests. Catalog
-ingestion and immutable revisions are still in progress; M2 is not complete.
+The catalog implementation now links saved sessions to durable identities and
+immutable transcript revisions, so an explicit retry can retain earlier evidence.
+Local ingest, inspect and reconcile commands work without the provider. A separate
+library-pending warning keeps saved audio/text available when catalog work needs
+recovery; opening the app replays local persistence rather than transcription.
+
+The candidate's stable local suite passed, but independent review found seven
+contract issues requiring fixes and fresh verification. Catalog work remains under
+review; M2 is not complete or released, and version 0.2.0 remains current.
 
 ## 0.2.0 — Windows M1 delivery
 

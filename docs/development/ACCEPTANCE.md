@@ -12,7 +12,7 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M1 | Provider/timestamps and diarization | Synthetic real-provider run and segment output inspected | Single/multiple-source TTS smokes passed; long transcription/diarization omitted by explicit user instruction |
 | M1 | Failure/crash/network/disconnection/disk-pressure recovery | Fault-injection plus bounded hardware run | PR12 faults, writer/publication process kills and helper-owner death passed; native recoverable saved failure passed; no repeated installed fault matrix claim; long run omitted by user |
 | M1 | Installed application opens, records and uninstalls | Fresh Windows installation and bundled-runtime smoke | Incorporated-source `1740b2d` local Windows 11 frozen GUI/CLI, Start launch, active-update refusal, reinstall/uninstall and data preservation passed; recording retains earlier source evidence; distribution peer review/clean hosted package CI/merge pending |
-| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | Parcial: base de catálogo verificada localmente en M2A-T1-FINAL-20261105; ingestión, publicación de archivos y ciclo de vida pendientes |
+| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | Tareas 1/2 aceptadas localmente; candidato task 3 con 883 pasan/9 skips pero siete hallazgos abiertos de review. No aceptación de tarea/grupo/hito; B abierto |
 | M2 · criterio 2 | Grabación, archivo y retry comparten persistencia de aplicación | CLI delega a SessionProcessor, artefactos y fallos compatibles | Consolidación de artefactos verificada localmente en M2A-T2-FOCUS-20261105 y M2A-T2-CAPTURE-RECOVERY-20261105; integración con catálogo y CI pendientes |
 | M2 · criterios 6–7 | Segmentos nullable y pausa sin desplazar el WAV | Cinco recorridos con proveedor fake, procedencia y seek de marcas en WAV sintético | Verificados automáticamente en local: M2A-T2-FOCUS-20261105; ordinal en catálogo depende de tarea 3; no certificación de captura o proveedor |
 | M2 · criterio 8 | Migración transaccional, backup administrado y rechazo de esquema futuro | FK/integrity, rollback de DDL y snapshot SQLite API con WAL comprometido | Verificado automáticamente en local: M2A-T1-LOCK-GREEN-20261105 y M2A-T1-FINAL-20261105; CI del grupo pendiente |
@@ -37,9 +37,11 @@ proveedor o instalación limpia. La prueba de dos horas permanece omitida por
 ruling 5, nunca aprobada. Las exclusiones históricas de M1 conservan su procedencia;
 ninguna observación corta certifica una ejecución larga.
 
-Los checkpoints locales de tareas 1/2 no cierran M2: publicación de revisiones
-inmutables, ingestión, FTS, integración de productores con el catálogo y ciclo de
-vida siguen pendientes, además de CI del grupo. Los smokes reales de proveedor
+Los checkpoints locales de tareas 1/2 no cierran M2. La implementación de tarea 3
+aporta ingestión, FTS, revisiones inmutables e integración de productores. Su
+candidato pasó la suite estable, pero review pidió siete correcciones: ronda 1,
+verificación corregida y re-review siguen pendientes; ciclo de vida B y CI del grupo
+siguen abiertos. Los smokes reales de proveedor
 autorizados por ruling 19/20 usan solo audio y texto sintéticos; no se ejecutaron
 en estos checkpoints. No se leyó el
 `.env` real, la biblioteca del usuario ni grabaciones privadas. La matriz y las
@@ -133,6 +135,145 @@ en el contrato de metadata. El rollback por errores I/O restaura bytes raw, pero
 no es una transacción de filesystem frente a muerte de proceso o escritores
 concurrentes. Publicación de revisiones de catálogo y reconciliación son tarea 3.
 No hay CI hospedado de M2 A, certificación nueva, cierre de grupo ni cierre de M2.
+
+## Tarea 3 — candidato con suite local verde y review solicitando cambios
+
+Fuente candidata en `m2-ingestion`, base `1cdaadb`: fixture
+`efb73a92ea89bc53318ce1a811eaf61129a76fbf` y Task3
+`6c422f0b8671d2f736645abb6835d351783cbcc7`. Los 27 hashes coinciden con
+`task-3-candidate-files.json`, verificado de forma independiente por este autor
+de docs sin ejecutar código. Commits locales solo para fijar FIX_BASE, todavía
+sin integrar en root ni aprobar tarea/grupo. Los focos históricos siguientes
+pertenecen a estados de fuente distintos y no se suman. La suite estable posterior
+pasó, pero review solicita siete cambios; aún no hay CI/Copilot del grupo.
+
+| RED o corrección | Resultado observado y alcance |
+|---|---|
+| Servicio/artefactos/controlador | 31 fallos/18 pasan en 2,50 s; root confirma en 4,25 s; faltaba `here.memory.service`, sin error de colección |
+| CLI e integración inicial | Ocho fallos CLI en 5,94 s; conjunto root 39 fallos/18 pasan en 7,33 s |
+| Propiedad/recovery y volumen | Siete fallos por feature ausente en 1,44 s; el caso de volumen remoto mapeado falló en 2,00 s por WAL en lugar de DELETE; conjunto ocho fallos en 1,21 s |
+| Rebuild/archivo fallido | Dos fallos en 5,99 s en preparación (servicio ausente y archivo fallido sin catálogo); el implementador reprodujo dos brechas concretas en Green en 6,41 s |
+| Privacidad | Dos intentos de acceso a credencial sintética detenidos antes de leer/probar, 2,58 s contra Green; implementador reproduce dos fallos en 3,37 s. No se leyó un secreto real |
+| Warning UI | Tres fallos en 5,65 s por ausencia del campo aprobado `memory_warning`; UI real, sin error de colección/teardown |
+| Procesamiento/owner y retry fallido | Cuatro fallos concretos en 9,78 s; implementador reproduce cuatro en 9,26 s: faltaba estado/propiedad real durante proveedor e intención durable de desenlace fallido |
+| Retry legado | Un fallo concreto en 7,58 s: el retry explícito duplicaba UUID de origen v1 sin ID, después de preservar audio y metadata compatible |
+| Fechas UTC | Dos fallos concretos en 2,46 s: instantes correctos todavía guardaban offset -03:00; no era error de instante ni de bytes fuente |
+| Compatibilidad de identidad nueva | El full diagnóstico encontró expectativa vieja `meeting_id=None` en un nuevo archivo externo; el autor cambió solo ese caso a UUID canónico estable y conservó identidad exacta de sesiones existentes; tres variantes pasan en 10,99 s |
+| Limpieza desconocida | Un fallo concreto en 2,43 s: reconcile borraba un archivo no reconocido dentro de staging UUID. Registro de plan/limpieza diferida incluidos luego en foco 122/108,36 s y suite del candidato |
+| Roles de receipt/pending/inventario y estados | Tres fallos concretos en 5,00 s y uno de `states/.env` en 3,08 s, detenidos por guards sintéticos antes de leer; roles y nombres generados corregidos antes del snapshot revisado |
+
+| Foco GREEN intermedio | Resultado observado |
+|---|---|
+| Servicio/artefactos/controlador inicial | 49 pasan en 28,07 s |
+| CLI y procesamiento | 50 pasan en 36,99 s |
+| Propiedad/recovery y política de almacenamiento | Ocho pasan en 22,78 s |
+| Rebuild/servicio/artefactos/propiedad | 34 pasan en 53,42 s |
+| Warning UI y controlador | 27 pasan en 9,61 s |
+| Privacidad/preflight y capture recovery | 70 pasan en 86,61 s |
+| Ocho archivos de memoria combinados | 48 pasan en 51,99 s |
+| Procesamiento/propiedad/recovery/CLI/controlador | 85 pasan en 79,17 s |
+| Retry legado y procesamiento | Cinco pasan en 14,10 s |
+| Fechas UTC | Dos pasan en 1,83 s |
+| Foco estable tras registro de staging | 122 pasan en 108,36 s |
+| Guards de roles/estado y recovery | 46 pasan en 66,62 s; foco anterior relacionado 31 pasan en 34,78 s |
+
+Los cinco cortes de publicación ejecutan hijos reales con `os._exit(73)` en las
+fronteras copy/rename/activation/commit/completion. Propiedad usa procesos/locks
+reales y muerte del dueño; Busy usa otra conexión SQLite real y los paths incluyen
+junction temporal real. No son certificación de micrófono, proveedor o instalación.
+Los reportes `task-3-*-red-report.md`, `task-3-identity-compatibility-report.md` y
+el draft `task-3-implementation-report.md` conservan IDs, comandos y límites de
+cada corrida. El autor de docs leyó esa evidencia, sin ejecutar tests nuevos.
+
+### Fallos diagnósticos de captura y arnés sintético
+
+| Corrida | Resultado y límite |
+|---|---|
+| Full diagnóstico inicial | 34 fallos/822 pasan/9 skips en 363,35 s, con fuente cambiando y otros checks superpuestos. Catorce fallos expusieron catálogo inicializado antes del preflight rechazado; luego se corrigieron sin quitar assertions. No es el full final |
+| Aislado diagnóstico posterior | 21 fallos/12 pasan en 75,37 s; registro de cada ID/traceback en `task3-isolated-diagnostic.txt` |
+| Candidato quieto a 21:06:32 UTC | 17 fallos/16 pasan en 87,56 s, mayormente lease de apertura y un journal replace WinError 5; no se atribuyen todos a carga |
+| Base con intérprete y paquete propios | 15 fallos/18 pasan en 87,08 s; demuestra presencia anterior de fallos del arnés, sin probar una causa global |
+| Comparación aislada de un caso previa | Base 7,41 s y candidato 7,68 s pasan, pero el hijo aún resolvía el paquete Green instalado: no era aislamiento completo de fuentes. Un `[read]` había fallado una vez |
+| Foco del arnés corregido | Cuatro pasan/29 deseleccionados en 19,71 s, sin otros workloads pesados |
+| Aislado completo del arnés corregido | 33 pasan en 126,10 s, sin skips y sin otros workloads pesados |
+
+H1 se observó en un lanzamiento fake sano: el lease original de 1,5 s expiró en
+imports, antes de request, journal o dispositivo. H2 reprodujo el mecanismo de
+sharing de Windows en un journal desechable: un lector abierto causó WinError 5 y
+al cerrarlo el mismo writer funcionó. No se trazó ese solapamiento en el fallo
+original, por lo que H2 no se presenta como su causa demostrada.
+
+El fixture espera una confirmación real de bootstrap con presupuesto sintético
+acotado de 10 s antes de devolver el helper. No emite un `ready` de protocolo ni
+cambia el timeout de apertura/lectura/cierre/watchdog del producto. El progreso de
+los dos tests de backpressure se observa tras checkpoints reales mediante marcas
+independientes; el journal final se lee después del reap del hijo. No cambió ningún
+deadline ni escenario de stall del producto. Review independiente del fixture por
+`capture_diagnostics`: SPEC/calidad PASS sin hallazgos, SHA256
+`665181979ffd5b0d354c473de9a6e1f12fbc3209f42561e1af5f99b0dad67ca1`.
+El reviewer no repitió suites; su aceptación cubre solo ese fixture, no tarea 3.
+
+Antes de la última enmienda de staging, Ruff/format pasaron sobre 24 archivos y
+el mypy con layout temporal canónico comparó 79 diagnósticos de base/79 actuales
+(62/64 módulos) sin errores nuevos en archivos tocados. El raw mypy plano reportó
+232 errores/43 archivos; no se presenta una base limpia. Después de las enmiendas
+de staging/roles, Ruff/format/diff pasaron sobre 27 archivos y mypy canónico quedó
+79/79, sin mensajes nuevos en archivos tocados. Los guards de roles antes de
+hash/read y de nombre de estado antes de lectura están en el candidato revisado;
+la observación anterior de ausencia de esos guards quedó superada.
+
+### Suite estable y checkpoint de review — ronda 1 abierta
+
+| Corrida nombrada | Resultado y alcance |
+|---|---|
+| M2A-T3-STABLE-FULL1-20261105 | Seis fallos/877 pasan/9 skips en 486,12 s, 892 casos en XML (seis failures, cero errors, nueve skipped). Fallan solo `test_postcommit_audio_cleanup_fault_preserves_committed_outcome`, read/missing_metadata/invalid_json × completed/failed, por contador de dos lecturas en lugar de una |
+| M2A-T3-CLEANUP-AUTHOR-20261105 | Diez pasan en 16,76 s: el autor RED acota inyección/contador al delegado real `_cleanup_replaced_audio`, preservando exact-one, corrupción JSON real, resultado, causa original y bytes/rutas |
+| M2A-T3-CLEANUP-GREEN-20261105 | Los diez casos transferidos pasan en 17,10 s; ahora se ejecutan también sus assertions de bytes posteriores al contador |
+| M2A-T3-CANDIDATE-FULL-20261105 | 883 pasan/9 skips en 598,56 s, 892 casos en XML (cero failures/errors, nueve skipped), ejecutado solo con fuente congelada. No equivale a aprobar siete contratos estáticos abiertos |
+
+Logs y XML permanecen separados en el worktree Green:
+`.superpowers/task3-full-final.txt`/`.xml` y
+`.superpowers/task3-full-final-2.txt`/`.xml`. Las duraciones anteriores son las
+resumidas por pytest; el atributo interno de tiempo JUnit es 485,253 s y 592,473 s,
+respectivamente. Los nueve skips son siete de privilegio de symlink y dos smokes
+del wheel no editable sin `HERE_WHEEL_PYTHON`; no se afirma que CI vaya a omitirlos
+ni que ese wheel haya sido certificado en esta corrida.
+
+La corrección de instrumentación está documentada en
+`task-3-cleanup-instrumentation-report.md`: publicación de catálogo relee metadata
+legítimamente después del cleanup; la inyección global antigua contaba también ese
+consumidor independiente. No se cambió código productivo, deadline ni assertion
+para arreglar el contador. El primer full fallido y sus límites se conservan.
+
+La review estática independiente `task-3-review-report.md` contra los 27 hashes
+exactos solicita cambios de SPEC y calidad; el reviewer no ejecutó tests:
+
+| ID | Prioridad | Contrato abierto, sin fix aprobado todavía |
+|---|---|---|
+| F1 | P1 | Relación explícita e inmutable revisión/audio, incluyendo A→B→A con assets reutilizados; ruling 31 autoriza migración 2/recibo v2/show/rebuild, todavía pendientes |
+| F2 | P2 | `here trans` sobre sesión v1 importada con ID None no debe inventar otra identidad ni reescribir la opcional; el test GUI de legacy no cubría esa ruta CLI |
+| F3 | P2 | Retry explícito con evidencia idéntica debe completar estado/revisión; no quedarse processing y luego interrupted |
+| F4 | P2 | Fallo de housekeeping posterior al commit no puede reportar rechazo precommit cuando la revisión nueva ya está activa |
+| F5 | P2 | Adquirir ownership antes de mutación/proveedor y excluir/revalidar dueño vivo en discovery/materialize antes de recuperar o limpiar |
+| F6 | P2 | Marcadores JSON array/null o revisión no-string se rechazan sin abortar recovery de vecinos válidos |
+| F7 | P2 | Categorías tipadas separan entrada inválida (2), conflicto (3) e I/O/integridad (4), sin inferirlas del texto de warnings |
+
+F5 incluye la ruta concreta segunda instancia → discovery → materialize →
+persistencia/cleanup. La discovery por sí sola no cambia la fila de catálogo; no
+se observó ni se afirma borrado real de audio. Ese alcance pertenece a propiedad
+de M2 A, no se difiere al borrado/edición de B. Correcciones: RED independiente,
+GREEN, re-review y suite de fuente corregida; luego review del grupo y gates de
+GitHub. Los commits del candidato no son aceptación ni están integrados en root.
+
+| Nivel | Estado de este checkpoint |
+|---|---|
+| 1 · Implementado | Existe candidato local `6c422f0` con suite pasando; la tarea está sin aprobar por siete contratos abiertos |
+| 2 · Verificado automáticamente | Suite local 883/9 y focos con datos sintéticos; siete omisiones de symlink explícitas y wheel opt-in ausente; hosted CI del grupo pendiente |
+| 3 · Certificado | Sin nueva certificación de hardware, proveedor, instalación limpia o wheel del candidato |
+
+M2 A y M2 siguen abiertos. Versión vigente 0.2.0; 0.3.0 solo al cerrar B/M2.
+El PLAN de B se ajusta en su PR de documentación antes de implementar, conservando
+contratos y los gates estrictos del grupo A.
 
 ## Runs
 

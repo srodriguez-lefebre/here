@@ -140,6 +140,48 @@ pause/resume and processing lifecycle events without storing raw audio blocks.
 The project produces transcripts and processing metadata. It does not currently
 generate summaries or action items.
 
+## Local catalog (M2 in progress)
+
+The source candidate implements cataloging of recordings, file transcriptions
+and explicit retries under the configured user data root. It keeps managed copies
+and immutable transcript revisions; importing a saved session leaves the original
+folder unchanged. Repeated import of the same origin is unchanged. Conflicting
+content with the same meeting UUID is rejected; an explicit application retry
+is intended to create the next revision while retaining earlier evidence.
+
+These maintenance commands work without a provider key:
+
+```powershell
+$result = here memory ingest path\to\saved-session --json | ConvertFrom-Json
+here memory show $result.meeting_id --json
+here memory reconcile --json
+```
+
+`ingest` reports `status`, `meeting_id` and warnings. `show` returns the meeting,
+audio assets, revisions and segments; `reconcile` reports local recovery warnings.
+The intended exit codes are 0 for success, 2 for invalid input, 3 for a rejected conflict or
+missing meeting, and 4 for an unavailable/corrupt catalog. `--json` keeps the result
+machine-readable. Local catalog commands never transcribe or contact the provider.
+
+The data root contains `library.sqlite3`, `meetings/<uuid>/revisions/`, managed
+backups and staging material. Keep these together for recovery. Completed revision
+receipts and later state snapshots allow reconstruction from managed evidence;
+uncertain publications are retained with a warning. Unknown source files are not
+imported merely because they share a session folder.
+
+If only catalog publication fails, saved audio and text remain usable. The desktop
+shows a separate library-pending warning, and later discovery retries local catalog
+work without repeating transcription. A failed provider retry keeps the previous
+complete revision active. Ordinary application retry still requires an explicit
+action and the provider credential.
+
+M2 is not released or complete. Candidate `6c422f0` passed 883 local tests with
+nine explicit skips, but independent review requests seven corrections in audio
+association, retry identity/state, ownership/recovery and result/error reporting.
+Those contracts are not approved yet. Fix verification, re-review and current-head
+hosted CI/Copilot gates are tracked in [STATUS.md](STATUS.md).
+The packaged 0.2.0 delivery above retains its recorded M1 scope.
+
 ## Audio Diagnostics
 
 Windows audio devices can be inspected without using an API key:

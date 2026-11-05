@@ -269,6 +269,21 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Cost if wrong:** versionar el lector del plan de staging y reintentar limpieza
     local; material desconocido y fuentes originales permanecen preservados.
 
+31. **Ruling:** cada revisión registra explícitamente los assets de audio que
+    consumió, incluso si sus bytes ya existían y no se copian otra vez. La
+    migración 2 agrega `revision_audio_assets` con reunión, revisión, asset, ordinal
+    y nombre de fuente; las claves foráneas compuestas impiden cruzar reuniones y
+    ordinal/nombre son únicos dentro de la revisión. No se altera el checksum de
+    la migración 1. `MemoryService.show` y su JSON CLI exponen
+    `revision_audio_assets`. El recibo de publicación versión 2 conserva esos
+    vínculos y solo sus assets; rebuild restaura la misma asociación A→B→A, sin
+    elegir audio por orden de archivos o por conjetura sobre el hash agregado.
+    Un recibo antiguo sin prueba inequívoca no autoriza inventar el vínculo:
+    material incierto se conserva y se advierte. La biblioteca real 0.2.0 no tenía
+    este catálogo; esto no autoriza reescribir sus sesiones v1. **Cost if wrong:**
+    nueva migración/versión de recibo y adaptación del lector/rebuild y de M2 B,
+    conservando evidencia inmutable y asociaciones ya comprobadas.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
@@ -822,3 +837,144 @@ global flat-layout mypy baseline remains unclean.
 Task 3 subsequently completed combined CLI/service/artifact/controller RED:
 39 failed/18 passed in 7.33s (`task-3-complete-root-red.log`). A distinct agent is
 implementing GREEN; no passing result or task 3 completion is claimed yet.
+
+## 2026-11-05 — M2 A task 3 protocol and scoped evidence (pending final)
+
+Candidate source remains in `m2-ingestion` on base `1cdaadb`, uncommitted at this
+checkpoint. The protocol follows rulings 23–30: actual capture/processing owner
+locks, local ingest/status markers, visible nonfatal warning, explicit source roles,
+post-commit `catalog.json` receipts, append-only state snapshots, trusted legacy
+retry lineage and registered-stage cleanup. The three maintenance CLI commands
+share the local service and JSON exit codes 0/2/3/4. No final task/group completion,
+stable final full-suite pass or independent task/group approval is claimed.
+
+The source reserves and registers staging before copies, prepares the DB journal,
+renames to immutable revision material, commits entities/evidence/FTS/activation,
+then writes a completion receipt/state snapshot and marks the operation complete.
+Rebuild uses managed committed receipts only; lost DB/journal plus missing receipt
+leaves uncertain material retained with warnings. Imported source remains unchanged;
+aware dates normalize to UTC and naive historical dates remain unspecified. Failed
+provider retry updates only state and preserves the previous complete revision,
+including when a local status marker must be replayed after Busy. Opening the app
+never repeats provider work. The library warning remains separate from actual
+capture/provider errors and is cleared by new work or clean publication.
+
+Observed RED scopes include original 31 failures/18 passes (2.50s; root 4.25s),
+eight CLI failures (5.94s), root combined 39/18 (7.33s), seven missing ownership
+features (1.44s), wrong WAL for mapped remote storage (one failure, 2.00s), rebuild/
+failed-file gaps (two Green failures, 6.41s), contained synthetic credential read
+attempts stopped by traps (two author failures, 2.58s; implementer 3.37s), warning
+UI field (three failures, 5.65s), provider-work ownership/state-only replay (four
+author failures, 9.78s; implementer 9.26s), legacy retry duplicate UUID (one, 7.58s),
+UTC offset storage (two, 2.46s), and unknown-stage file deletion (one, 2.43s).
+No trap permitted an actual private credential read. The last preservation
+amendment still needs final checks. Receipt privacy and audio/revision association
+are concrete independent-review focus; required guarantees are not inferred from
+staging or path containment alone.
+
+Scoped GREEN results at distinct source states: 49 service/artifact/controller
+cases in 28.07s, 50 CLI/processing in 36.99s, eight ownership/storage in 22.78s,
+34 rebuild/service/artifacts/ownership in 53.42s, 27 warning UI/controller in 9.61s,
+70 privacy/preflight/recovery in 86.61s, 48 combined memory in 51.99s, 85 processing/
+ownership/recovery/CLI/controller in 79.17s, five legacy/processing in 14.10s and
+two UTC in 1.83s. They cannot be summed or presented as the stable final suite.
+The single old external-file identity expectation was adjusted by the independent
+test author to canonical pending UUID preservation; existing-session identity
+remained exact, and all three compatibility variants passed in 10.99s.
+
+The first full diagnostic had changing source and overlapping focus/mypy work:
+34 failed/822 passed/9 skipped in 363.35s. It exposed 14 early catalog-init/preflight
+failures, later corrected without weakening assertions, the obsolete new-ID
+expectation above, and capture opening/journal faults. Later isolated diagnostics
+gave 21 failed/12 passed in 75.37s; stable quiet Green gave 17 failed/16 passed in
+87.56s. A fully source-isolated prior baseline also failed 15/33 cases (18 passed,
+87.08s), so those failures are not all attributed to task 3. A preliminary one-case
+comparison passed at 7.41s/7.68s but its child still used the Green installation;
+it is not represented as fully isolated source proof.
+
+Independent diagnostics observed H1 in one normal fake launch: its original 1.5s
+lease expired during bootstrap imports before request/device work. H2 reproduced
+the Windows sharing mechanism on a disposable journal, with a held reader causing
+WinError 5 and the unchanged writer succeeding after close; the original failing
+case's exact overlap remains unproven. Ruling 29 authorized only test bootstrap
+acknowledgement and checkpoint-based progress observation, keeping product
+opening/read/close/watchdog limits, stalls and actual child reaping unchanged.
+Author focus passed four cases/29 deselected in 19.71s; full isolated passed all
+33 in 126.10s, each run alone. `capture_diagnostics` accepted SPEC/quality of fixture
+SHA256 `665181979ffd5b0d354c473de9a6e1f12fbc3209f42561e1af5f99b0dad67ca1`
+without rerunning suites. That review does not approve task 3.
+
+Pre-amendment static evidence: Ruff/format on 24 files passed. Raw flat-layout mypy
+had 232 errors/43 files; canonical-layout baseline/current had 79/79 diagnostics
+over 62/64 modules with no new touched-file messages. Registered-stage preservation
+was added afterward and requires fresh checks. Final stable source result/head,
+independent task/whole-branch review, hosted Windows CI and received/responded
+Copilot remain gates. M2 B needs its contract-adjusted documentation PR before
+implementation; version 0.3.0 is only for closing B/M2. Two-hour acceptance stays
+omitted, never passed. No hardware/provider/installer certification is claimed.
+
+## 2026-11-05 — Task 3 frozen candidate, suite result and seven open findings
+
+The candidate is now committed **only in `m2-ingestion`**: synthetic capture fixture
+`efb73a92ea89bc53318ce1a811eaf61129a76fbf` and task source
+`6c422f0b8671d2f736645abb6835d351783cbcc7`. All 27 file hashes match the independent
+review manifest `task-3-candidate-files.json`; docs independently compared them
+read-only. These commits establish immutable FIX_BASE, not task acceptance or
+integration into the root catalog branch.
+
+After the earlier checkpoint, registered cleanup and receipt/pending/state privacy
+guards were verified. Stable memory/UI/controller/processing focus: 122 passed in
+108.36s. Additional concrete privacy RED: three failures in 5.00s and one unknown
+state-name access in 3.08s; traps stopped before reading any synthetic credential.
+Shared role validation now precedes hash/read/delete, undeclared WAV inventory does
+not confer ownership, and generated state validation precedes state reads.
+Immediate post-fix focus passed 46 in 66.62s (earlier related focus 31/34.78s).
+Earlier missing-guard observations describe superseded source and are not a finding
+against this frozen candidate. Final candidate Ruff/format/diff pass on 27 files;
+canonical mypy remains baseline/current 79/79, no new touched-file diagnostics.
+
+The first stable full, `M2A-T3-STABLE-FULL1-20261105`, reported **6 failed,
+877 passed, 9 skipped in 486.12s**. All six failures were the existing postcommit
+audio-cleanup fault test's read/missing_metadata/invalid_json × completed/failed
+parameters: its global metadata-read injection also counted the new independent
+catalog consumer. The RED author scoped the injection/count only to the real
+cleanup delegate while retaining exact-one, real JSON corruption, outcome, original
+cause and all path/audio-byte assertions. Author ten-case focus passed in 16.76s;
+Green transferred rerun passed ten in 17.10s. No product code or deadline changed
+for this correction. First log/XML remain intact.
+
+The second stable full, `M2A-T3-CANDIDATE-FULL-20261105`, ran alone against frozen
+source and reported **883 passed, 9 skipped in 598.56s**. Its XML has 892 cases,
+zero failures/errors and nine skips; first full XML has 892 cases/six failures/
+zero errors/nine skips. Logs and XML are separately retained under
+`.superpowers/task3-full-final.*` and `task3-full-final-2.*` in Green. Pytest wall
+summary and internal JUnit durations are distinguished in `ACCEPTANCE.md`.
+Seven skips need symlink privilege (including task 1's memory case); two wheel
+smokes lack a noneditable environment. This is local automatic verification of
+covered behavior, not hosted CI, a wheel pass or hardware/provider certification.
+
+Independent static review by `ingestion_review` requests SPEC and quality changes:
+
+- F1 P1: explicit immutable revision/audio relationship, including reused A→B→A.
+- F2 P2: preserve imported legacy None identity in existing-session CLI trans.
+- F3 P2: identical explicit retry must complete durable state/revision.
+- F4 P2: report committed publication success after housekeeping failure.
+- F5 P2: require actual owner before producer/provider or recovery mutation.
+- F6 P2: malformed marker envelope/types must not abort valid siblings.
+- F7 P2: typed input/conflict/I/O categories must preserve CLI 2/3/4.
+
+All seven remain open. The reviewer ran no tests and the passing suite does not
+resolve these static paths. F5 includes second-instance discovery→materialize→
+persistence/cleanup reachability before owner exclusion; discovery alone does not
+change durable catalog status, and no actual audio loss is observed or claimed.
+Round-1 RED/fixes/re-review and a corrected stable suite remain required, followed
+by whole-group review and the exact-head GitHub gates. Ruling 31 above authorizes
+the pending migration 2/receipt v2/show/rebuild relationship fix without changing
+migration 1 or inferring ambiguous old evidence. It is not implemented yet.
+
+Evidence levels remain separate: candidate code exists with a passing suite;
+automatic verification is local and scoped to its covered cases; no new real
+hardware/provider/clean-install certification. Task 3, group A and M2 are not
+accepted or closed. Version remains 0.2.0; 0.3.0 belongs to B/M2 closure. Preparation
+of B's adjusted SPEC/PLAN stays a separate documentation PR gate, not authorization
+to implement B or bypass the seven findings.

@@ -31,13 +31,14 @@ Lo que M1 ya entrega y M2 consume tal cual:
 Lo que falta y M2 construye:
 
 - Un catálogo con autoridad sobre identidad, título, participantes, relaciones y
-  revisiones. Hoy la única "identidad" es la carpeta por fecha.
-- Revisiones inmutables de transcripción. Hoy `retry` reescribe la misma carpeta.
+  revisiones. Tarea 3 implementa identidad e ingestión con verificación final pendiente.
+- Revisiones inmutables de transcripción. Tarea 3 conserva snapshots propios;
+  los archivos compatibles de la sesión pueden actualizarse durante retry.
 - Un estado durable propio de la reunión, separado de los nueve estados del
   controlador y de los cuatro literales de `session.json`.
 - Integración del catálogo con la vía de persistencia de aplicación. La tarea 2
-  ya movió las tres escrituras directas de `src/cli.py` a `SessionProcessor`;
-  la publicación de revisiones de catálogo corresponde a la tarea 3.
+  movió las escrituras directas de CLI a `SessionProcessor`; la tarea 3 agrega
+  publicación y replay local, todavía sin aceptación final del grupo.
 - Borrado íntegro: FTS, revisiones, archivos propios, backups administrados y, más
   adelante, respuestas de M4 que citen la reunión.
 
@@ -171,12 +172,14 @@ no editable pasaron. Límites y comandos en `development/ACCEPTANCE.md`.
 
 | Criterio | Estado de evidencia |
 |---|---|
-| 2. Vía de persistencia de aplicación | Consolidación CLI/archivo/retry verificada localmente en tarea 2; integración del catálogo y CI de grupo pendientes |
-| 6–7. Segmentos y pausa | Texto/ordinal/hablante nullable, procedencia y seek sobre WAV sintético verificados localmente; su persistencia en catálogo depende de tarea 3 |
+| 1–5. Productores, identidad y revisiones | Candidato task 3 con suite 883/9, pero siete hallazgos abiertos; ronda 1/fixes/re-review, fuente corregida y CI pendientes |
+| 6–7. Segmentos y pausa | Tarea 2 verifica evidencia/seek sintético; focos de tarea 3 preservan segmentos en catálogo, con verificación final/review pendientes |
 | 8. Migración, backup y esquema futuro | Verificación automática local de la base de catálogo; falta CI de Windows en el head del grupo |
 | 14. DB ocupada y transacciones cortas | Verificación automática local de escrituras y lecturas bloqueadas; la publicación con archivos/proveedor aún depende de tarea 3 |
 | 15. Suite en CI de Windows | Pendiente; una suite local no cierra este criterio |
-| 1, 3–5, 9–13, 16 | Pendientes de integración, tareas restantes y evidencia de grupo; no se cierran con el repositorio aislado |
+| 9–10, 13. Crash, catálogo pendiente y rutas | Focos y suite local del candidato; guards de roles/estado corregidos, pero F4–F6 de resultado/ownership/recovery abiertos, sin aceptación global |
+| 11–12. Borrado sin resurrección | Grupo B pendiente; no lo cierra la limpieza de staging de tarea 3 |
+| 16. Docs y evidencia de cierre | Checkpoints locales documentados; cierre de grupo/hito pendiente |
 
 La tarea 2 (`037fc03`, integrada como `1cdaadb`) preserva `raw_transcript.txt`
 separado del texto limpio y `segments.json` en vivo, offline, fallback, archivo y
@@ -186,8 +189,25 @@ calidad PASS, sin hallazgos. Foco 310 pasan/1 skip en 24,60 s; captura/recuperac
 con fases de kill conservadas 68 pasan en 25,64 s. Corrida
 `M2A-T2-FINAL-20261105`: 783 pasan/8 skips en 160,71 s (seis symlinks y dos smokes
 de wheel sin entorno opt-in). Tarea 3 completó RED conjunto de 39 fallos/18 pasan
-en 7,33 s y está implementando GREEN, sin resultado aprobado todavía ni escritores
-simultáneos compartidos.
+en 7,33 s y fijó el candidato `6c422f0` en su worktree, sin integración ni aprobación.
+
+Checkpoint de tarea 3: implementa ingestión, staging registrado, recibos
+post-commit y snapshots de estado sin reescribir historia; retries confiables con
+revisión activa esperada, incluso para sesiones v1 sin UUID en el manifiesto;
+propiedad real de captura/procesamiento; replay solo local de ingestión o desenlace
+fallido; FTS derivado, fechas UTC y aviso no fatal en la ventana. La segunda suite
+estable del candidato pasó 883 tests/9 skips en 598,56 s. La primera dio seis
+fallos de instrumentación de limpieza; se conservó y el autor acotó solo la inyección
+sin cambiar assertions (diez pasan/16,76 s; Green 17,10 s). Detalles y XML en
+`ACCEPTANCE.md`. La preservación desconocida y los guards de recibos/estado fueron
+verificados en el candidato; el hallazgo previo de guards ausentes quedó superado.
+La review pide siete correcciones, una P1 de asociación revisión/audio y seis P2
+de identidad/retry/resultado/ownership/marcadores/errores. Ruling 31 define la
+migración 2 y recibo v2 pendientes, sin alterar migración 1; no están implementados.
+Se requiere RED, GREEN, re-review y suite corregida antes de aceptar tarea/grupo.
+La corrección del arnés sintético de captura
+pasó 33 casos y review independiente, sin cambiar deadlines del producto; no
+certifica hardware ni aprueba los contratos cuestionados.
 No hay certificación nueva de hardware, proveedor o instalación limpia, ni cierre
 del grupo A o de M2. La versión sigue en 0.2.0 hasta el cierre de hito previsto.
 

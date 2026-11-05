@@ -114,7 +114,14 @@ los principios y las definiciones de terminado de este plan. El grupo actual es
 M2 A: la base de catálogo de su tarea 1 (`9a80060`) tiene review independiente
 aceptada y verificación local; `M2A-T1-FINAL-20261105` registra 778 pasan/7 skips
 en `ACCEPTANCE.md`, sin sustituir CI del grupo.
-Ingestión, revisiones de archivos, ciclo de vida y cierre de M2 siguen pendientes.
+La tarea 2 conserva raw y segmentos en todos los recorridos. La tarea 3 fijó el
+candidato `6c422f0` en su worktree y pasó 883 tests locales/9 skips en 598,56 s;
+la review independiente pide siete correcciones, así que el candidato no está
+aceptado ni integrado. Faltan RED/fixes/re-review de ronda 1, suite corregida y
+review del grupo, además de los gates de GitHub. El ciclo
+de vida/borrado y el cierre de M2 siguen pendientes; no cambia la versión a 0.3.0
+hasta cerrar el grupo B. Su PLAN ajustado se entrega antes en un PR de docs según
+ruling 14, sin sustituir los gates del grupo A.
 
 Cada merge exige review independiente, Copilot recibido y respondido sobre el head
 actual y CI de Windows verde en ese head; el ruling 20 no permite omitir una

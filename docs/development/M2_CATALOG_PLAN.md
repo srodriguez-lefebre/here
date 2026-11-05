@@ -4,8 +4,9 @@
 > review, then independent agent review. The author merges after Copilot review, CI and independent subagent review (rulings 16 and 17). Steps use checkbox
 > syntax. **Status: in execution since 2026-11-05 (ruling 20).** Task 1 independent
 > review accepted after its Busy correction. Task 2 SPEC/quality review passed;
-> local suite evidence is recorded below. Task 3 and current-head Windows CI remain
-> separate gates.
+> local suite evidence is recorded below. Task 3 candidate passed its local suite,
+> but independent review requests seven round-1 corrections; task/group acceptance
+> and current-head Windows CI remain separate gates.
 
 **Goal:** Durable meeting identity, immutable transcript revisions and one
 application-owned persistence path, rebuildable from files and usable without a key.
@@ -142,6 +143,17 @@ revision publication, group hosted CI or M2.
 `tests/test_memory_service.py`, `tests/test_memory_artifacts.py`,
 `tests/test_application_controller.py`, `tests/test_cli.py`.
 
+Authorized narrow additions: `src/recording/isolated.py` exposes only the journal
+meeting ID; `src/ui/main_window.py` renders the existing detail fallback and uses
+absolute imports; `src/memory/database.py` adds the volume capability/warning
+policy without changing the migration. Additional synthetic tests cover memory
+CLI, recovery ownership, storage policy, rebuild, import privacy, processing
+ownership, legacy retry, dates, unknown cleanup and warning UI. The reusable
+`tests/memory_fixtures.py` is synthetic. Existing desktop CLI identity assertions
+preserve an existing UUID and require a new pending UUID to survive retry.
+`tests/test_isolated_capture.py` has a separately reviewed test-only bootstrap/
+measurement correction (ruling 29), retaining all product deadlines and kill cases.
+
 **Interfaces:** `MemoryService.ingest_session(session_dir: Path, *,
 revision_of: str | None = None) -> IngestResult`;
 `MemoryService.reconcile() -> RecoveryReport`; `IngestResult` with
@@ -154,19 +166,31 @@ The additive optional `revision_of` is the expected active revision ID supplied
 only by a trusted explicit retry path (ruling 22). Ordinary ingestion omits it;
 same-UUID imports with changed content remain conflicts. Task 3 RED tests must
 cover both distinctions, stale expected IDs and failed-publication preservation
-before this planned contract is claimed implemented.
+before final task verification. Additional contracts in rulings 23–30 cover actual
+owner locks, local ingest/status markers, visible nonfatal warnings, allowed source
+roles, post-commit receipts/state snapshots, trusted legacy lineage and registered
+cleanup. Aware dates normalize to UTC; naive dates remain unspecified with warning.
 
-- [ ] Write failing tests: ingest a v1 session folder (no `meeting_id`) → UUID
+Ruling 31 adds the pending migration-2 `revision_audio_assets` relation and receipt
+v2/show/rebuild contract for exact ordered revision-to-audio links, preserving
+migration 1 and warning on ambiguous old evidence. It is not implemented in the
+reviewed `6c422f0` candidate; RED, GREEN and re-review remain required.
+The round-1 schema writer may extend `src/memory/database.py`, `models.py` and
+`repository.py` for that approved relation; four separate
+`tests/test_memory_review1_*.py` files provide independent RED for the seven
+findings. This authorization does not alter migration 1 or allow parallel schema writers.
+
+- [x] Write failing tests: ingest a v1 session folder (no `meeting_id`) → UUID
   assigned, `legacy_session_id` kept, `ingest_sources` fingerprint stored; second
   ingest → `unchanged`; same UUID different content → readable conflict; identical
   audio in two folders → two meetings.
 - [ ] Implement `artifacts.py` (v1 reading, fingerprint, hash, path validation through
   `src/output/paths.py`) and `service.py` ingestion inside the publication sequence of
   the spec, with `pending_operations` rows.
-- [ ] Write failing fault-injection tests that kill a subprocess at each publication
+- [x] Write failing fault-injection tests that kill a subprocess at each publication
   boundary and assert one identity, one active revision and no orphans after
   `reconcile()`; assert reconciliation issues zero provider calls.
-- [ ] Write failing retry tests: revision `n+1` created, activated only after commit,
+- [x] Write failing retry tests: revision `n+1` created, activated only after commit,
   `n` historical and readable; failed retry leaves `n` active.
 - [ ] Wire the controller, `here trans` and retry to `ingest_session`; inject a
   catalog failure during a recording and assert audio plus `session.json` survive and
@@ -177,10 +201,49 @@ before this planned contract is claimed implemented.
 - [ ] Run focused tests and the full offscreen suite; self-review; independent agent
   review; commit as "memory: ingestion, identity and revisions".
 
+Task 3 checkpoint remains **changes requested / round 1 pending**. Candidate-only
+commits in `m2-ingestion`: test fixture `efb73a92ea89bc53318ce1a811eaf61129a76fbf`,
+task source `6c422f0b8671d2f736645abb6835d351783cbcc7`. All 27 file hashes match
+the independent review manifest; these commits freeze FIX_BASE and are not review
+approval or root integration. Original RED 31 failures/18 passes in 2.50s;
+CLI RED eight failures in 5.94s; root combined confirmation 39 failures/18 passes
+in 7.33s. Scoped GREEN covers initial service/artifacts/controller (49 passed),
+CLI/processing (50), ownership/storage (8), rebuild/service/artifacts/ownership
+(34), warning UI/controller (27), privacy/preflight/capture recovery (70), combined
+memory focus (48), processing/recovery/CLI/controller (85), legacy retry/processing
+(5) and UTC (2). These are distinct source-state scopes, not a summed suite result.
+
+The first diagnostic full run was 34 failed/822 passed/9 skipped in 363.35s while
+source evolved and other checks overlapped. Later stable isolated capture failed
+17/33 cases; a fully source-isolated pre-task baseline also failed 15/33. Measured
+diagnostics and the narrow test-only correction are recorded in `ACCEPTANCE.md`;
+the corrected fixture passed its four-case focus and all 33 isolated cases, with
+independent fixture SPEC/quality review PASS. Post-amendment focus passed 122 tests
+in 108.36s; receipt/pending/state role guards then passed 46 cases in 66.62s (earlier
+related focus 31/34.78s). All 27 candidate files pass static checks and the resolved
+mypy comparison remains 79/79 with no new touched-file diagnostics.
+
+The first stable full gave 6 failed/877 passed/9 skipped in 486.12s. The RED author
+scoped the old cleanup fault counter to the real cleanup delegate without changing
+its assertions: 10 passed in 16.76s, transferred Green rerun 10/17.10s. The second
+stable run `M2A-T3-CANDIDATE-FULL-20261105` passed 883 with nine skips in 598.56s;
+log and JUnit are retained separately from the first failure. This verifies the
+candidate's covered software paths, not the seven static-review contracts.
+
+Review `task-3-review-report.md` requests F1 revision/audio association (P1), F2
+legacy CLI identity, F3 identical-retry outcome, F4 postcommit result, F5 producer/
+recovery owner exclusion, F6 malformed-marker sibling isolation and F7 typed CLI
+input/conflict/I/O categories (P2). All seven are open. The old missing-role guards
+were corrected before this reviewed snapshot and are not a current finding.
+Round-1 RED/fixes/re-review and the corrected stable suite remain required; no
+task/group completion, root integration, hosted CI or M2 close is claimed.
+
 ## Closing the group
 
 - Update `README.md` (new commands, data root), `ARCHITECTURE.md` (memory package and
   publication sequence), `docs/MILESTONE_2_PLAN.md` (criteria 1–10, 13–15 status),
   `ACCEPTANCE.md` (M2 rows with the run that closes them) and `WHATS_NEW.md`.
 - Open one PR with the three task commits, self-review and independent agent review in
-  the description, CI green. The author merges per rulings 16 and 17. Then write group B's SPEC and PLAN.
+  the description, CI green. The author merges per rulings 16/17/20. Before group B
+  implementation, deliver its contract-adjusted SPEC/PLAN in the documentation PR
+  required by ruling 14; that next-plan work does not close M2 A or bypass its gates.
