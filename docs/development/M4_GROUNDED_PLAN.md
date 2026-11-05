@@ -28,7 +28,7 @@ schemas, the existing OpenAI SDK, pytest with mock transport; no new dependency.
   tokens by default; truncation is reported, never hidden.
 - `intelligence/` does not import Qt or Typer and does not open SQLite directly.
 - Tests use synthetic corpora, temporary roots and a mock transport; the one real
-  provider smoke is opt-in and stores no key.
+  provider smoke reads `HERE_PROVIDER_SMOKE_KEY` only (ruling 19) and stores no key.
 - Register `here.intelligence` in `pyproject.toml`. Touched files leave ruff clean and
   formatted; no new mypy errors in them (baseline not clean, `CLAUDE.md` §6).
 
@@ -117,8 +117,9 @@ Verified | Rejected(reasons)`; one bounded repair attempt then `VerificationFail
   policy.
 - [ ] Implement the adapter, schema, verifier, repair loop and cancellation checks
   before each call and before publication.
-- [ ] Add the opt-in real-provider smoke with synthetic text, gated by an explicit
-  environment flag, recording model and date to the evidence file without the key.
+- [ ] Add the opt-in real-provider smoke with synthetic text, gated by
+  `HERE_PROVIDER_SMOKE_KEY` (ruling 19; skipped when unset), recording model, date and
+  provider-reported usage to the evidence file without the key.
 - [ ] Record the chosen `INTELLIGENCE_MODEL` as a dated ruling in `DELIVERY.md`
   (ruling 7).
 - [ ] Run focused tests and the full suite; self-review; independent agent review;

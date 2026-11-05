@@ -111,8 +111,9 @@ construye UI de citas sobre un verificador que todavía no rechaza citas inváli
   cambia herramientas, red, política ni esquema.
 - Borrado: una respuesta que cita una reunión borrada se elimina completa con sus
   claims; una respuesta en curso cuando se borra una de sus reuniones se descarta.
-- Prueba con proveedor real: opt-in, con texto sintético, con credencial disponible a
-  pedido (ruling 5); registra modelo y fecha y no guarda la clave.
+- Prueba con proveedor real: opt-in, con texto sintético, leyendo
+  `HERE_PROVIDER_SMOKE_KEY` del `.env` del usuario sin preguntar (ruling 19);
+  registra modelo, fecha y uso informado, y no guarda la clave.
 - Versión: 0.5.0 al cerrar M4 (ruling 9).
 - Idioma: este plan y los criterios en español; SPEC y PLAN en inglés (ruling 6).
 
@@ -168,8 +169,9 @@ El hito se considera terminado cuando se cumplen conjuntamente:
     códigos de salida 0, 2, 3, 4 y 5; sin credencial, `--mode provider` sale con 5 y
     un mensaje que explica cómo configurarla.
 18. Toda la suite pasa en CI de Windows sin credencial y sin display; existe una
-    prueba opt-in con proveedor real y texto sintético, documentada en
-    `ACCEPTANCE.md` con modelo y fecha, sin guardar la clave; `README.md`,
+    prueba opt-in con proveedor real y texto sintético, corrida con
+    `HERE_PROVIDER_SMOKE_KEY` y documentada en `ACCEPTANCE.md` con modelo, fecha y
+    uso informado, sin guardar la clave; `README.md`,
     `ARCHITECTURE.md`, este plan y `WHATS_NEW.md` reflejan lo implementado.
 
 ## Lo que queda pendiente de decidir

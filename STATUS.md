@@ -72,8 +72,9 @@ Ninguna. Las quince decididas están en `DELIVERY.md`, "Rulings vigentes".
 ## Bloqueos que dependen de un humano
 
 - Instrucción explícita para empezar a implementar (ruling 15).
-- Máquina Windows limpia y credencial real, a pedido, cuando una fila de aceptación
-  las necesite (ruling 5).
+- Máquina Windows limpia, a pedido, cuando una fila de aceptación la necesite
+  (ruling 5). La credencial real ya está autorizada para los smokes opt-in vía
+  `HERE_PROVIDER_SMOKE_KEY` en el `.env` del usuario (ruling 19).
 - Reunión de dos horas con medición de recursos: sin disponibilidad (ruling 5).
 - Cambios al ruleset o a los permisos del repositorio.
 

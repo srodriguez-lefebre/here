@@ -76,7 +76,10 @@ Nunca, sin importar quién lo pida:
 
 - inventar timestamps, hablantes, nombres de dispositivos o progreso que el sistema no midió;
 - llamar al proveedor sin una acción explícita del usuario (abrir la app no es una);
-- leer el `.env` real, grabaciones privadas o la biblioteca del usuario en tests o evidencia;
+- leer grabaciones privadas o la biblioteca del usuario en tests o evidencia; ni
+  leer `OPENAI_API_KEY` del `.env` real desde un test. La única excepción es
+  `HERE_PROVIDER_SMOKE_KEY`, que solo leen los smokes opt-in contra el proveedor
+  (ruling 19), con audio y texto sintéticos, sin imprimirla ni persistirla;
 - borrar audio salvo en la cancelación destructiva confirmada que el plan define;
 - presentar como aprobado algo omitido, no corrido o fallado.
 
@@ -105,6 +108,9 @@ No cambies una definición de terminado para convertir un bloqueo de hardware en
     un test falla con `FileNotFoundError`, no es un bug del código;
   - `HERE_WHEEL_PYTHON` apuntando a un Python con el wheel instalado no editable para
     los dos tests de aceptación de wheel; sin la variable se saltean.
+  - `HERE_PROVIDER_SMOKE_KEY` para los smokes opt-in contra el proveedor real (M4 y
+    M5); el usuario la dejó en su `.env` (ruling 19). Sin ella se saltean. Nunca se
+    imprime ni se copia a ningún artefacto.
 - Skips esperados en una máquina sin privilegio de symlinks: seis, todos en
   `test_output_session_writer.py` y `test_session_artifact_safety.py`.
 - `scripts/build_windows.ps1` descarga y verifica Inno Setup 6.7.0 por su cuenta;
@@ -198,7 +204,7 @@ eventos sintéticos, sin audio ni proveedor).
 | Gate | Qué hacés mientras tanto |
 |---|---|
 | Máquina Windows limpia para aceptar el instalador | Está disponible a pedido. Pedila cuando una fila de aceptación la necesite, con el protocolo escrito; no antes |
-| Credencial real del proveedor | Está disponible a pedido. Test con transporte simulado por defecto; el smoke real es opt-in, con audio sintético, y se pide cuando toca |
+| Credencial real del proveedor | Ya autorizada (ruling 19): los smokes opt-in leen `HERE_PROVIDER_SMOKE_KEY` del `.env` del usuario sin preguntar. Todo lo demás usa key sintética y transporte simulado |
 | Reunión de dos horas con medición de recursos | No hay disponibilidad. Tests de duración virtual; la fila sigue "omitida", nunca "aprobada" |
 | Cualquier cambio de alcance de un hito | Proponelo en `STATUS.md` como decisión abierta con tu recomendación |
 | Cambios al ruleset o a los permisos del repositorio | Nunca los hagas; pedilos |
