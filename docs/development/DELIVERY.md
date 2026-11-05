@@ -39,9 +39,10 @@ Los rulings nuevos se escriben en español por el ruling 6.
    `docs/development/` en inglés. Lo existente no se traduce. **Cost if wrong:** docs
    bilingües; sin impacto en el producto.
 7. **Ruling:** el modelo de `INTELLIGENCE_MODEL` para M4 se decide al implementar M4,
-   con un ruling que registre modelo y fecha. No existe "modelo de texto ya usado" en
-   el proyecto; esa frase de `PRODUCT_DESIGN.md` queda sin efecto. **Cost if wrong:**
-   ninguno hasta M4.
+   con un ruling que registre modelo y fecha. La frase "coherente con el modelo de
+   texto ya usado" de `PRODUCT_DESIGN.md` se refiere a `CLEANUP_MODEL`
+   (`gpt-4.1-mini`, limpieza de transcript); no obliga a reutilizarlo.
+   **Cost if wrong:** ninguno hasta M4.
 8. **Ruling:** overlay. Una cancelación, destructiva o recuperable, hace que el logo
    vuelva a reposo y desaparezca sin check ni cruz; el detalle queda en la ventana
    principal. La marca actual no se rediseña en M2–M5. Cierra las dos decisiones
@@ -63,6 +64,12 @@ Los rulings nuevos se escriben en español por el ruling 6.
     review humano es el usuario, que también mergea. Generaliza la instrucción de
     cierre de M1. **Cost if wrong:** menos ojos por PR; se compensa con CI de Windows
     y los criterios verificables por hito.
+
+## Ledger histórico (append-only)
+
+Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
+de entonces, checkpoints de evidencia, reviews y merges. No se edita; se agrega al
+final. El estado vigente está en `STATUS.md` y en los rulings de arriba.
 
 ## Current authorized objective
 

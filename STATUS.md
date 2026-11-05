@@ -28,19 +28,14 @@ Preparación del plan, en este orden. Ninguna implementa producto.
 1. ~~`CLAUDE.md` y este archivo~~ — hecho.
 2. ~~Resolver las doce decisiones abiertas y registrarlas como rulings~~ — hecho,
    rulings 1–12 en `DELIVERY.md`.
-3. Actualizar `docs/development/PRODUCT_DESIGN.md` §1: marcar qué brechas ya cerró M1
-   (segmentos en `TranscriptionResult`, `meeting_id` UUID, API key opcional) y cuáles
-   siguen (cuatro estados literales en `session.json`, tres llamadas directas a
-   `write_session_artifacts` en `cli.py`). Tachar la frase "modelo de texto ya usado"
-   por el ruling 7.
-4. Escribir la lista de criterios verificables de M2, con el formato de la de
-   `docs/MILESTONE_1_PLAN.md`, en español.
-5. Escribir `docs/development/M2_CATALOG_SPEC.md` y `M2_CATALOG_PLAN.md` (en inglés)
-   para el primer grupo de PRs de M2: tareas 1–3 del diseño (modelos, migraciones,
-   repositorio; segmentos y snapshots atómicos; ingestión e identidad).
-6. Cerrar las dos decisiones pendientes de `docs/LIVE_LOGO_PLAN.md` con el ruling 8.
-7. Reordenar `DELIVERY.md`: rulings vigentes arriba (hecho), historial como ledger
-   append-only debajo con un encabezado que lo diga.
+3. ~~Actualizar `PRODUCT_DESIGN.md` §1 y §6~~ — hecho. Tres brechas cerradas por M1,
+   dos abiertas, una abierta en parte; la frase del modelo de M4 ahora apunta a
+   `CLEANUP_MODEL` y al ruling 7.
+4. ~~Criterios verificables de M2~~ — hecho, 16 criterios en `docs/MILESTONE_2_PLAN.md`.
+5. ~~`M2_CATALOG_SPEC.md` y `M2_CATALOG_PLAN.md`~~ — hecho, grupo A (tareas 1–3).
+   El grupo B (`M2_LIFECYCLE_*`) se escribe cuando A esté mergeado.
+6. ~~Cerrar pendientes de `LIVE_LOGO_PLAN.md`~~ — hecho con el ruling 8.
+7. ~~`DELIVERY.md` como ledger append-only~~ — hecho.
 8. Sanear lint en un PR aparte: `ruff check --fix` y `ruff format` sobre toda la base
    (53 avisos, 15 archivos), mover `select` a `[tool.ruff.lint]`, y decidir si mypy se
    integra al layout plano o se saca de las convenciones. Hoy ninguno es gate.
@@ -62,5 +57,7 @@ Son irreversibles o tocan el remoto; el agente no las ejecuta solo.
 
 ## Próxima acción sugerida
 
-Tareas 3 a 7 de arriba, en ese orden, en el mismo PR #16 o en uno siguiente. Ninguna
-requiere preguntar nada.
+El usuario revisa y mergea el PR #16. Después, en este orden y sin preguntar nada:
+la tarea 8 (lint) en un PR aparte, y las dos acciones destructivas de arriba cuando
+las confirme. La implementación de M2 espera una instrucción explícita (ruling 1);
+cuando llegue, el agente arranca por `docs/development/M2_CATALOG_PLAN.md`, tarea 1.
