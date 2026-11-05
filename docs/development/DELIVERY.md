@@ -114,6 +114,18 @@ Los rulings nuevos se escriben en español por el ruling 6.
     solapamientos entre grupos que esa sección permite, ninguno más. **Cost if
     wrong:** conflictos de merge o contratos desalineados entre grupos; se detectan
     en CI y en la review independiente.
+19. **Ruling:** el usuario autoriza el 2026-11-05 a usar su credencial real de OpenAI
+    en los smokes opt-in contra el proveedor sin volver a preguntar. La credencial se
+    expone como `HERE_PROVIDER_SMOKE_KEY` en el `.env` del usuario (mismo valor que
+    `OPENAI_API_KEY`); solo los tests marcados como smoke de proveedor la leen, y se
+    saltean cuando no está definida. La suite normal sigue usando una key sintética y
+    transporte simulado. Sigue prohibido imprimir la key, copiarla a logs, evidencia,
+    QSettings, exports o commits, y usar grabaciones privadas: los smokes usan solo
+    audio y texto sintéticos. Cada corrida registra modelo, fecha y costo informado
+    por el proveedor en `ACCEPTANCE.md`. Precisa el ruling 5: la credencial ya no es
+    "a pedido" para los smokes; la máquina Windows limpia sí lo sigue siendo.
+    **Cost if wrong:** gasto en la cuenta del usuario por smokes repetidos; se acota
+    porque solo corren en los pasos que los PLAN nombran, con texto corto.
 
 ## Ledger histórico (append-only)
 

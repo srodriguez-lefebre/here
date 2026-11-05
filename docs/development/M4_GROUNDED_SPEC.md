@@ -116,8 +116,9 @@ messages are redacted: no key, no meeting text by default. Typed errors as in
   local mode works with the key unset.
 - Cancellation before the provider call issues no request; cancellation after it
   publishes nothing.
-- Opt-in real-provider smoke with synthetic text records model and date in
-  `ACCEPTANCE.md` and stores no key; it is skipped without the opt-in flag.
+- Opt-in real-provider smoke with synthetic text records model, date and reported
+  usage in `ACCEPTANCE.md` and stores no key; it runs only when
+  `HERE_PROVIDER_SMOKE_KEY` is set (ruling 19) and is skipped otherwise.
 - Full Windows CI suite passes with `QT_QPA_PLATFORM=offscreen`, a synthetic key,
   temporary roots and no real `.env` or private recordings.
 
