@@ -79,9 +79,18 @@ permanece abierto hasta demostrar conjuntamente su definición de terminado.
 
 El 2026-10-03 el usuario acotó la ejecución actual: cerrar el hito 1 en Windows
 y terminar ahí. Los hitos 2–5 conservan su lugar en este plan maestro, pero su
-implementación queda fuera de esta ejecución. La validación de Ubuntu se conserva
-aparte y no se ejecuta ni condiciona el cierre del hito 1.
+implementación queda fuera de esta ejecución. El workflow manual de Ubuntu se eliminó el 2026-11-04 (ruling 11); Linux no es
+objetivo de producto ni condiciona ningún hito.
 
+
+### Estado al 2026-11-04
+
+El hito 1 quedó cerrado bajo el alcance reducido de abajo (PR #14, v0.2.0). El
+2026-11-04 el usuario resolvió doce decisiones abiertas, registradas como rulings en
+[`development/DELIVERY.md`](development/DELIVERY.md). El objetivo vigente es preparar
+el plan del hito 2 para ejecución autónoma, sin implementar; el plan específico es
+[`MILESTONE_2_PLAN.md`](MILESTONE_2_PLAN.md). La hoja de arranque para agentes es
+`CLAUDE.md` en la raíz y el estado corto es `STATUS.md`.
 
 ### Alcance final autorizado del hito 1 — 2026-10-03
 

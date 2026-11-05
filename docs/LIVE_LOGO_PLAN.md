@@ -136,15 +136,17 @@ La posición inicial queda fijada en la esquina inferior derecha del área útil
 
 Estas decisiones no requieren consulta mientras preserven legibilidad, rendimiento y el comportamiento acordado. Deben elevarse al usuario solo si cambian el producto o introducen un tradeoff material.
 
-## Decisiones pendientes
+## Decisiones cerradas el 2026-11-04
+
+Ruling 8 en `development/DELIVERY.md`.
 
 ### Representación de una cancelación
 
-Definir la transición visual posterior a una cancelación solicitada por el usuario. No debe presentarse como éxito ni borrar la distinción entre cancelación y error. También debe respetar la diferencia de datos: cancelar grabación no deja sesión, mientras cancelar procesamiento sí deja una sesión recuperable.
+Ante cualquier cancelación confirmada, destructiva durante grabación o recuperable durante procesamiento, el logo vuelve a su estado de reposo y desaparece. No muestra check ni cruz: no es un éxito ni un error. La diferencia de datos se comunica en la ventana principal, no en el overlay: una cancelación de grabación no deja sesión; una de procesamiento deja una sesión recuperable visible en el selector de recuperación.
 
 ### Forma final de la marca
 
-Diseñar la marca central y las geometrías de onda, carga y check como un sistema reconocible. Este plan fija la secuencia y el comportamiento, no el logo definitivo.
+La marca actual se mantiene durante M2–M5. No hay rediseño previsto; si se plantea, entra como decisión nueva y no bloquea ningún hito.
 
 ## Fuera de alcance de esta iniciativa
 
