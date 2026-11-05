@@ -303,6 +303,21 @@ Los rulings nuevos se escriben en español por el ruling 6.
     ajustar el handoff/cierre y los lectores de recovery, preservando journals y
     audio; nunca sustituir propiedad real por heurísticas.
 
+33. **Ruling:** un productor explícito sobre un v1 todavía sin mapping resuelve
+    primero su identidad canónica mediante importación local validada, antes de
+    normalizar, escribir pending o llamar al proveedor. Para el `meeting_id=None`
+    legado y para el ID opaco que el productor M1 ya acepta, conserva exactamente
+    el valor en metadata y en la entrada al proveedor; `meetings.id` sigue siendo
+    UUID y el vínculo usa origen normalizado, huella y revisión activa esperada.
+    El permiso para el ID opaco pertenece solo al recorrido interno confiable,
+    no a la importación ordinaria, que conserva su validación UUID estricta. No
+    se crea una segunda identidad determinista solo para saltar la propiedad.
+    Si el catálogo no puede resolver la identidad, el productor falla de forma
+    recuperable antes de mutar la sesión o ejecutar al proveedor. Es cobertura
+    de F2/F5, con RED y review pendientes, sin comando/flujo nuevo ni modificación
+    del origen v1. **Cost if wrong:** ajustar resolución y handoff de ownership,
+    conservando el ID legado original, la evidencia previa y los mappings válidos.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
