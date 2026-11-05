@@ -65,6 +65,23 @@ Los rulings nuevos se escriben en español por el ruling 6.
     cierre de M1. **Cost if wrong:** menos ojos por PR; se compensa con CI de Windows
     y los criterios verificables por hito.
 
+### Rulings del 2026-11-05
+
+13. **Ruling:** se levanta el ruling 1. El objetivo vigente es implementar el hito 2
+    según `docs/MILESTONE_2_PLAN.md`, empezando por el grupo A
+    (`M2_CATALOG_PLAN.md`, tarea 1). Los PRs #16 y #17 están mergeados en `main`
+    (`16d7beb`, `1d1e96f`). **Cost if wrong:** el trabajo queda en ramas y PRs sin
+    mergear; nada toca `main` sin el usuario (ruling 4).
+14. **Ruling:** el agente redacta los planes siguientes por su cuenta, sin preguntar:
+    al cerrar un grupo de PRs escribe el SPEC y el PLAN del grupo siguiente; al cerrar
+    un hito escribe el `MILESTONE_<n+1>_PLAN.md` con criterios verificables, en el
+    mismo formato y los mismos idiomas que los de M2. Cada plan nuevo se entrega en un
+    PR de documentación que el usuario revisa y mergea antes de que empiece su
+    implementación; esa revisión es el único punto de contacto obligatorio entre
+    hitos. Las preguntas de la sección 3 de `CLAUDE.md` siguen vigentes dentro de cada
+    plan. **Cost if wrong:** un plan mal encaminado se corrige en su PR antes de que
+    exista código.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
