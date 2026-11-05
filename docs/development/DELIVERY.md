@@ -235,6 +235,16 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Cost if wrong:** ajustar el lector de intención del marcador y los adaptadores
     de procesamiento; el historial de evidencia previo permanece intacto.
 
+28. **Ruling:** el retry explícito de una sesión v1 ya importada que conserva
+    `meeting_id=None` en sus archivos reutiliza la identidad canónica del catálogo
+    mediante su origen normalizado y la revisión activa esperada. La huella nueva
+    del resultado no crea otra reunión en ese recorrido confiable. La importación
+    ordinaria conserva el contrato ruta + huella; el retry no reescribe el ID
+    opcional del artefacto legado para resolver la asociación. Si el origen apunta
+    a varias identidades posibles, se informa conflicto en lugar de elegir una
+    por conjetura. **Cost if wrong:** ajustar la resolución del contexto de retry
+    y los mappings de origen, conservando audio y revisiones ya publicadas.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
