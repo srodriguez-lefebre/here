@@ -15,11 +15,21 @@ from here.memory.models import (
     Meeting,
     MeetingStatus,
     PendingOperation,
+    RevisionAudioAsset,
     Segment,
     TranscriptRevision,
 )
 
-T = TypeVar("T", Meeting, AudioAsset, TranscriptRevision, Segment, IngestSource, PendingOperation)
+T = TypeVar(
+    "T",
+    Meeting,
+    AudioAsset,
+    TranscriptRevision,
+    Segment,
+    IngestSource,
+    PendingOperation,
+    RevisionAudioAsset,
+)
 
 
 class MemoryRepository:
@@ -89,6 +99,16 @@ class MemoryRepository:
 
     def insert_revision(self, revision: TranscriptRevision) -> None:
         self._insert("transcript_revisions", revision)
+
+    def insert_revision_audio_asset(self, link: RevisionAudioAsset) -> None:
+        self._insert("revision_audio_assets", link)
+
+    def get_revision_audio_assets(self, revision_id: str) -> tuple[RevisionAudioAsset, ...]:
+        rows = self.library.execute(
+            "SELECT * FROM revision_audio_assets WHERE revision_id=? ORDER BY ordinal",
+            (revision_id,),
+        )
+        return tuple(RevisionAudioAsset(**dict(row)) for row in rows)
 
     def get_revision(self, revision_id: str) -> TranscriptRevision | None:
         return self._get("transcript_revisions", revision_id, TranscriptRevision)

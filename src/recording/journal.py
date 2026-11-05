@@ -11,6 +11,7 @@ from uuid import UUID, uuid4
 
 import numpy as np
 import soundfile as sf
+from here.output.ownership import FileLease
 from here.output.paths import (
     UnsafeSessionPath,
     session_artifact_path,
@@ -46,6 +47,7 @@ class CaptureJournal:
         self.root = root.absolute()
         self.document = document
         self._lock = threading.RLock()
+        self._owner: FileLease | None = None
         self.validate()
 
     @property
@@ -82,7 +84,7 @@ class CaptureJournal:
             SessionEventMetadata.model_validate(event)
 
     @classmethod
-    def create(cls, root: Path) -> CaptureJournal:
+    def create(cls, root: Path, *, owned: bool = False) -> CaptureJournal:
         now = datetime.now().astimezone()
         identity = str(uuid4())
         journal = cls(
@@ -94,9 +96,27 @@ class CaptureJournal:
                 updated_at=now,
             ),
         )
-        journal.directory.mkdir(parents=True)
-        journal._publish()
+        if owned:
+            path = cls.owner_path(root, identity)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            journal._owner = FileLease(path)
+        try:
+            journal.directory.mkdir(parents=True)
+            journal._publish()
+        except BaseException:
+            journal.release_ownership()
+            raise
         return journal
+
+    @staticmethod
+    def owner_path(root: Path, capture_id: str) -> Path:
+        if str(UUID(capture_id)) != capture_id:
+            raise UnsafeSessionPath("Invalid capture identity")
+        return session_artifact_path(root / ".capture_owners", f"{capture_id}.lock")
+
+    def release_ownership(self) -> None:
+        if self._owner is not None:
+            self._owner.close()
 
     @classmethod
     def load(cls, root: Path, capture_id: str) -> CaptureJournal:

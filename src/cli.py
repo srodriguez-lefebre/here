@@ -96,7 +96,7 @@ def memory_ingest(path: Path, json_output: bool = typer.Option(False, "--json"))
         return
     _memory_output(asdict(result), json_output)
     if result.status == "rejected":
-        raise typer.Exit(3)
+        raise typer.Exit({"invalid_input": 2, "io": 4}.get(result.error_category or "conflict", 3))
 
 
 @memory_app.command("reconcile")

@@ -1,14 +1,17 @@
 """Local, explicit and idempotent recovery. Discovery never invokes a provider."""
 
-import json
+from collections.abc import Iterator
+from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import UUID
 
 from here.application.processing import SessionProcessor, _validated_recovery_source
 from here.config.paths import get_data_dir
-from here.memory.service import MemoryService
+from here.memory.artifacts import managed_path, read_pending_intent
+from here.memory.service import MemoryService, OwnershipBusy
 from here.output.metadata import ErrorMetadataDocument, SessionMetadata
+from here.output.ownership import FileLease, LeaseBusy
 from here.output.paths import UnsafeSessionPath, session_artifact_path, validate_session_directory
 from here.output.session_writer import ERRORS_FILE, read_session_metadata
 from here.recording.journal import CaptureJournal
@@ -53,6 +56,32 @@ class RecoveryService:
     def __init__(self, root: Path) -> None:
         self.root = root.absolute()
 
+    @contextmanager
+    def _ownership(self, identity: str | None, *, claim: bool = False) -> Iterator[None]:
+        """Guard inspection/replay and recheck a stale selection before mutation."""
+        try:
+            canonical = identity is not None and str(UUID(identity)) == identity
+        except ValueError:
+            canonical = False
+        if not canonical:
+            yield
+            return
+        assert identity is not None
+        with ExitStack() as owners:
+            try:
+                for path in (
+                    CaptureJournal.owner_path(self.root, identity),
+                    managed_path(get_data_dir(), f".owners/{identity}.lock"),
+                ):
+                    if claim:
+                        path.parent.mkdir(parents=True, exist_ok=True)
+                    if claim or path.exists():
+                        lease = FileLease(path, timeout=0)
+                        owners.callback(lease.close)
+                yield
+            except LeaseBusy as exc:
+                raise OwnershipBusy(str(exc)) from exc
+
     def discover(self) -> list[RecoveryCandidate]:
         validate_session_directory(self.root)
         try:
@@ -72,29 +101,22 @@ class RecoveryService:
                 metadata = read_session_metadata(directory)
                 if metadata is None:
                     continue
-                marker = session_artifact_path(directory, "memory_pending.json")
-                if marker.exists() and metadata.status != "pending":
-                    pending = json.loads(marker.read_text(encoding="utf-8"))
-                    expected = pending.get("revision_of")
-                    if (
-                        pending.get("schema_version") != 1
-                        or pending.get("meeting_id") != metadata.meeting_id
-                        or pending.get("intent", "ingest") not in {"ingest", "status"}
-                        or expected is not None
-                        and str(UUID(expected)) != expected
-                    ):
-                        raise ValueError("Invalid pending catalog intent")
-                    SessionProcessor().publish_memory(
-                        directory,
-                        revision_of=expected,
-                        status_only=pending.get("intent") == "status",
-                    )
+                with self._ownership(metadata.meeting_id):
+                    marker = session_artifact_path(directory, "memory_pending.json")
+                    if marker.exists() and metadata.status != "pending":
+                        expected, intent = read_pending_intent(directory, metadata.meeting_id)
+                        SessionProcessor().publish_memory(
+                            directory,
+                            revision_of=expected,
+                            status_only=intent == "status",
+                        )
                 # A copied manifest does not own other directories with the same ID.
                 key = (metadata.meeting_id or directory.name, directory)
                 if metadata.status == "completed":
                     completed.add(key)
                     continue
-                available = validate_recovery_audio(directory, metadata)
+                with self._ownership(metadata.meeting_id):
+                    available = validate_recovery_audio(directory, metadata)
                 error_summary = metadata.failure_stage
                 errors_path = session_artifact_path(directory, ERRORS_FILE)
                 if errors_path.exists():
@@ -123,12 +145,13 @@ class RecoveryService:
             journals = []
         for directory in journals:
             try:
-                journal = CaptureJournal.load(self.root, directory.name)
-                # Only metadata at this journal's validated reservation supersedes it.
-                key = (journal.document.capture_id, journal.destination)
-                if key in completed or key in candidates:
-                    continue
-                recording = journal.recording_session()
+                with self._ownership(directory.name):
+                    journal = CaptureJournal.load(self.root, directory.name)
+                    # Only metadata at this journal's validated reservation supersedes it.
+                    key = (journal.document.capture_id, journal.destination)
+                    if key in completed or key in candidates:
+                        continue
+                    recording = journal.recording_session()
                 candidates[key] = RecoveryCandidate(
                     journal.destination,
                     journal.document.started_at.strftime("%Y%m%d_%H%M%S"),
@@ -143,6 +166,12 @@ class RecoveryService:
         return [item for key, item in candidates.items() if key not in completed]
 
     def materialize(self, candidate: RecoveryCandidate) -> Path:
+        if candidate.session_dir.absolute().parent != self.root:
+            raise UnsafeSessionPath("Recovery destination is outside sessions root")
+        with self._ownership(candidate.capture_id, claim=True):
+            return self._materialize_owned(candidate)
+
+    def _materialize_owned(self, candidate: RecoveryCandidate) -> Path:
         directory = candidate.session_dir.absolute()
         if directory.parent != self.root:
             raise UnsafeSessionPath("Recovery destination is outside sessions root")

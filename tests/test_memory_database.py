@@ -310,7 +310,11 @@ def test_failed_migration_rolls_back_ddl_and_version_and_retains_backup(tmp_path
 
 def test_existing_v1_upgrade_backs_up_before_applying_numbered_migration(tmp_path, monkeypatch):
     database = _database()
-    library = _open(tmp_path)
+    migrations = tuple(database.MIGRATIONS)
+    synthetic_version = migrations[-1].version + 1
+    with monkeypatch.context() as v1_only:
+        v1_only.setattr(database, "MIGRATIONS", migrations[:1])
+        library = _open(tmp_path)
     try:
         connection = library.connection
         _meeting(connection)
@@ -320,17 +324,17 @@ def test_existing_v1_upgrade_backs_up_before_applying_numbered_migration(tmp_pat
             database,
             "MIGRATIONS",
             (
-                *database.MIGRATIONS,
+                *migrations,
                 database.Migration(
-                    version=2,
+                    version=synthetic_version,
                     name="synthetic_upgrade",
                     sql="CREATE TABLE synthetic_upgrade (value TEXT NOT NULL);",
                 ),
             ),
         )
         report = database.migrate(library)
-        assert (report.from_version, report.to_version) == (1, 2)
-        assert tuple(report.applied_versions) == (2,)
+        assert (report.from_version, report.to_version) == (1, synthetic_version)
+        assert tuple(report.applied_versions) == tuple(range(2, synthetic_version + 1))
         assert connection.execute("SELECT COUNT(*) FROM synthetic_upgrade").fetchone()[0] == 0
         assert connection.execute("SELECT title FROM meetings").fetchone()[0] == "Synthetic"
         backup_path = Path(report.backup_path)
@@ -352,19 +356,27 @@ def test_existing_v1_upgrade_backs_up_before_applying_numbered_migration(tmp_pat
 
 def test_failed_upgrade_preserves_v1_schema_rows_and_migration_ledger(tmp_path, monkeypatch):
     database = _database()
-    library = _open(tmp_path)
+    migrations = tuple(database.MIGRATIONS)
+    synthetic_version = migrations[-1].version + 1
+    with monkeypatch.context() as v1_only:
+        v1_only.setattr(database, "MIGRATIONS", migrations[:1])
+        library = _open(tmp_path)
     try:
         connection = library.connection
         _meeting(connection)
         connection.commit()
         before = [tuple(row) for row in connection.execute("SELECT * FROM schema_migrations")]
+        before_schema = [
+            tuple(row)
+            for row in connection.execute("SELECT * FROM sqlite_master ORDER BY type, name")
+        ]
         monkeypatch.setattr(
             database,
             "MIGRATIONS",
             (
-                *database.MIGRATIONS,
+                *migrations,
                 database.Migration(
-                    version=2,
+                    version=synthetic_version,
                     name="synthetic_failing_upgrade",
                     sql="CREATE TABLE should_rollback (value TEXT); INSERT INTO absent VALUES (1);",
                 ),
@@ -376,6 +388,10 @@ def test_failed_upgrade_preserves_v1_schema_rows_and_migration_ledger(tmp_path, 
         assert [
             tuple(row) for row in connection.execute("SELECT * FROM schema_migrations")
         ] == before
+        assert [
+            tuple(row)
+            for row in connection.execute("SELECT * FROM sqlite_master ORDER BY type, name")
+        ] == before_schema
         assert connection.execute("SELECT title FROM meetings").fetchone()[0] == "Synthetic"
         assert (
             connection.execute(

@@ -31,6 +31,7 @@ from here.config.settings import require_provider_key, settings_operation
 from here.live_processing import LiveTranscriptionController
 from here.memory.service import MemoryService
 from here.output.metadata import SessionEventMetadata
+from here.output.ownership import owned_job
 from here.output.session_writer import SessionArtifactPaths, read_session_metadata
 from here.recording.control import ControllableRecording
 from here.recording.models import CaptureFailed
@@ -260,6 +261,7 @@ class HereApplicationController:
         )
 
     @settings_operation
+    @owned_job()
     def _run_recording(self) -> None:
         request = self._request
         assert request is not None

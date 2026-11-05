@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import re
 import shutil
 import threading
@@ -18,9 +17,9 @@ from here.audio.mix import materialize_normalized_session
 from here.config.paths import get_data_dir
 from here.config.settings import get_settings, require_provider_key, settings_operation
 from here.live_processing import LiveTranscriptionController
-from here.memory.artifacts import write_durable_json
+from here.memory.artifacts import read_pending_intent, write_durable_json
 from here.memory.database import LibraryError
-from here.memory.service import IngestResult, MemoryService
+from here.memory.service import IngestResult, MemoryService, OwnershipBusy
 from here.output.metadata import (
     CaptureSourceMetadata,
     ChunkMetadata,
@@ -35,6 +34,7 @@ from here.output.metadata import (
     capture_metadata,
     source_metadata,
 )
+from here.output.ownership import FileLease, LeaseBusy
 from here.output.paths import (
     UnsafeSessionPath,
     session_artifact_path,
@@ -138,6 +138,20 @@ def _is_canonical_capture_id(capture_id: str) -> bool:
     except ValueError:
         return False
     return str(identity) == capture_id
+
+
+def _check_capture_owner(root: Path, identity: str | None) -> None:
+    if identity is None or not _is_canonical_capture_id(identity):
+        return
+    from here.recording.journal import CaptureJournal
+
+    path = CaptureJournal.owner_path(root, identity)
+    if path.exists():
+        try:
+            lease = FileLease(path, timeout=0)
+        except LeaseBusy as exc:
+            raise OwnershipBusy(str(exc)) from exc
+        lease.close()
 
 
 def _validated_recovery_source(
@@ -275,19 +289,23 @@ def _catalog_producer(
                 except (LibraryError, OSError):
                     pass
             self._retry_meeting_id = meeting_id
+            self._retry_revision = expected
         try:
             artifacts = method(self, *args, **kwargs)
         except (SessionProcessingFailed, ProcessingCancelled) as exc:
             self.publish_memory(
-                exc.session_dir, revision_of=expected, status_only=bool(expected and meeting_id)
+                exc.session_dir,
+                revision_of=self._retry_revision,
+                status_only=bool(self._retry_revision and self._retry_meeting_id),
             )
             raise
         else:
-            self.publish_memory(artifacts.session_dir, revision_of=expected)
+            self.publish_memory(artifacts.session_dir, revision_of=self._retry_revision)
             return artifacts
         finally:
             self._release_processing()
             self._retry_meeting_id = None
+            self._retry_revision = None
 
     return publish
 
@@ -313,6 +331,7 @@ class SessionProcessor:
         self._memory = memory_service
         self._owned_processing_id: str | None = None
         self._retry_meeting_id: str | None = None
+        self._retry_revision: str | None = None
 
     def _memory_service(self) -> MemoryService:
         if self._memory is None:
@@ -320,16 +339,25 @@ class SessionProcessor:
         return self._memory
 
     def _claim_processing(self, meeting_id: str | None) -> None:
-        meeting_id = meeting_id or self._retry_meeting_id
+        if meeting_id is None or not _is_canonical_capture_id(meeting_id):
+            meeting_id = self._retry_meeting_id
         if not meeting_id or not _is_canonical_capture_id(meeting_id):
-            return
-        self._owned_processing_id = meeting_id
+            raise LibraryError("Processing requires a resolved canonical identity")
         try:
             self._memory_service().begin_processing(meeting_id)
-        except Exception:
+        except OwnershipBusy:
+            raise
+        except (LibraryError, OSError):
             # Compatibility artifacts remain the recovery authority when the
             # independent catalog cannot write its processing state.
             pass
+        self._owned_processing_id = meeting_id
+
+    def _resolve_retry(self, directory: Path, source_id: str | None) -> None:
+        if self._retry_revision is None:
+            self._retry_meeting_id, self._retry_revision = self._memory_service().prepare_retry(
+                directory, source_id
+            )
 
     def _release_processing(self) -> None:
         identity, self._owned_processing_id = self._owned_processing_id, None
@@ -344,17 +372,13 @@ class SessionProcessor:
             if metadata is None:
                 raise ValueError("Session metadata is missing")
             marker = session_artifact_path(session_dir, "memory_pending.json")
-            if marker.exists() and revision_of is None:
-                previous = json.loads(marker.read_text(encoding="utf-8"))
-                if (
-                    previous.get("schema_version") != 1
-                    or previous.get("meeting_id") != metadata.meeting_id
-                    or previous.get("intent", "ingest") not in {"ingest", "status"}
-                ):
-                    raise ValueError("Pending catalog identity changed")
-                revision_of = previous.get("revision_of")
-                status_only = previous.get("intent", "ingest") == "status"
-            if revision_of is not None and str(UUID(revision_of)) != revision_of:
+            if marker.exists():
+                expected, intent = read_pending_intent(session_dir, metadata.meeting_id)
+                if revision_of is None:
+                    revision_of, status_only = expected, intent == "status"
+            if revision_of is not None and (
+                not isinstance(revision_of, str) or str(UUID(revision_of)) != revision_of
+            ):
                 raise ValueError("Invalid pending revision UUID")
             write_durable_json(
                 marker,
@@ -372,7 +396,11 @@ class SessionProcessor:
                     metadata.meeting_id, metadata.status, revision_of=revision_of
                 )
             else:
-                result = self._memory_service().ingest_session(session_dir, revision_of=revision_of)
+                result = (
+                    self._memory_service().ingest_retry(session_dir, revision_of=revision_of)
+                    if revision_of is not None
+                    else self._memory_service().ingest_session(session_dir)
+                )
             if result.status != "rejected":
                 session_artifact_path(session_dir, marker.name).unlink(missing_ok=True)
         except Exception as exc:
@@ -407,14 +435,20 @@ class SessionProcessor:
         completed_at = self._clock()
         existing_metadata = read_session_metadata(audio_path.parent)
         if existing_metadata is not None:
+            _check_capture_owner(audio_path.parent.parent, existing_metadata.meeting_id)
+            MemoryService.check_owner(get_data_dir(), existing_metadata.meeting_id)
             session_artifact_path(audio_path.parent, audio_path.name)
             validate_recovery_audio(audio_path.parent, existing_metadata)
         source_session = session_from_audio_file(audio_path)
         source_session.meeting_id = (
-            existing_metadata.meeting_id if existing_metadata else None
-        ) or str(uuid4())
+            existing_metadata.meeting_id if existing_metadata else str(uuid4())
+        )
         previous_chunks = _load_chunk_metadata(audio_path.parent) if existing_metadata else []
         previous_errors = _load_error_metadata(audio_path.parent) if existing_metadata else []
+
+        if existing_metadata is not None:
+            self._resolve_retry(audio_path.parent, existing_metadata.meeting_id)
+        self._claim_processing(source_session.meeting_id)
 
         if existing_metadata is not None:
             session_dir = audio_path.parent
@@ -490,7 +524,6 @@ class SessionProcessor:
             else capture_metadata(source_session),
             newly_owned_audio=newly_owned_audio,
         )
-        self._claim_processing(source_session.meeting_id)
         try:
             result = self._transcribe(
                 recoverable_session,
@@ -628,7 +661,7 @@ class SessionProcessor:
             capture_sources=provenance,
         )
         if previous is not None:
-            metadata.meeting_id = previous.meeting_id or session.meeting_id
+            metadata.meeting_id = previous.meeting_id
         try:
             write_artifact_text(session_dir / METADATA_FILE, metadata.model_dump_json(indent=2))
         except Exception as publication_error:
@@ -1168,6 +1201,8 @@ class SessionProcessor:
             require_provider_key()
         validate_session_artifacts(session_dir)
         metadata = read_session_metadata(session_dir)
+        _check_capture_owner(session_dir.parent, metadata.meeting_id if metadata else None)
+        MemoryService.check_owner(get_data_dir(), metadata.meeting_id if metadata else None)
         audio_file = (
             metadata.recoverable_audio if metadata and metadata.recoverable_audio else AUDIO_FILE
         )
@@ -1206,23 +1241,6 @@ class SessionProcessor:
                     raw_sources.append(actual)
                     item.duration_seconds = actual.duration_seconds
 
-        if audio_path.exists():
-            # Only this shape identifies a single persisted source as audio.wav;
-            # legacy multi-source manifests may instead describe the original inputs.
-            expected = (
-                metadata.sources[0]
-                if metadata is not None
-                and metadata.recoverable_audio == audio_file
-                and len(metadata.sources) == 1
-                else None
-            )
-            recovered_source = _validated_recovery_source(audio_path, expected)
-        else:
-            raw_sources = [source for source in raw_sources if source.frames > 0]
-            if not raw_sources:
-                raise RuntimeError(f"Recoverable audio does not exist: {audio_path}")
-            self._materialize(RecordingSession(raw_sources), session_dir, output_name=audio_file)
-            recovered_source = _validated_recovery_source(audio_path)
         chunks_path = session_dir / CHUNKS_FILE
         errors_path = session_dir / ERRORS_FILE
         events_path = session_dir / EVENTS_FILE
@@ -1247,11 +1265,33 @@ class SessionProcessor:
             if events_path.exists()
             else []
         )
+        if audio_path.exists():
+            # Only this shape identifies a single persisted source as audio.wav;
+            # legacy multi-source manifests may instead describe the original inputs.
+            expected = (
+                metadata.sources[0]
+                if metadata is not None
+                and metadata.recoverable_audio == audio_file
+                and len(metadata.sources) == 1
+                else None
+            )
+            recovered_source = _validated_recovery_source(audio_path, expected)
+        else:
+            raw_sources = [source for source in raw_sources if source.frames > 0]
+            if not raw_sources:
+                raise RuntimeError(f"Recoverable audio does not exist: {audio_path}")
+            self._resolve_retry(session_dir, metadata.meeting_id if metadata else None)
+            self._claim_processing(metadata.meeting_id if metadata else None)
+            self._materialize(RecordingSession(raw_sources), session_dir, output_name=audio_file)
+            recovered_source = _validated_recovery_source(audio_path)
         source = RecordingSession(
             [recovered_source], meeting_id=metadata.meeting_id if metadata else None
         )
         cancellation = cancel_event or threading.Event()
         settings = get_settings()
+        if self._owned_processing_id is None:
+            self._resolve_retry(session_dir, source.meeting_id)
+            self._claim_processing(source.meeting_id)
         self.publish_pending(
             source,
             session_dir,
@@ -1261,7 +1301,6 @@ class SessionProcessor:
             use_alt_transcription_model=metadata.alt_model_used if metadata else False,
             capture_sources=metadata.capture_sources if metadata else None,
         )
-        self._claim_processing(source.meeting_id)
         try:
             result = self._offline_with_retries(
                 source,

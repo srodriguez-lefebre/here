@@ -6,8 +6,6 @@ import json
 import os
 import shutil
 import sqlite3
-import sys
-import time
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
@@ -21,6 +19,7 @@ from here.memory.artifacts import (
     normalized_origin,
     read_artifacts,
     read_meeting_state,
+    read_retry_artifacts,
     validate_artifact_roles,
     write_durable_json,
 )
@@ -31,10 +30,12 @@ from here.memory.models import (
     Meeting,
     MeetingStatus,
     PendingOperation,
+    RevisionAudioAsset,
     Segment,
     TranscriptRevision,
 )
 from here.memory.repository import MemoryRepository
+from here.output.ownership import FileLease, LeaseBusy
 from here.output.paths import session_artifact_path, validate_session_directory
 
 
@@ -49,11 +50,16 @@ class IngestResult:
     status: str
     meeting_id: str | None = None
     warnings: tuple[object, ...] = ()
+    error_category: str | None = None
 
 
 @dataclass(frozen=True)
 class RecoveryReport:
     warnings: tuple[object, ...] = ()
+
+
+class OwnershipBusy(Busy):
+    """A live job owns the session; no provider or compatibility mutation may start."""
 
 
 def _utc_timestamp(value: str | datetime | None) -> str | None:
@@ -75,43 +81,12 @@ def fts_available(connection: sqlite3.Connection) -> bool:
         return False
 
 
-class _FileLock:
+class _FileLock(FileLease):
     def __init__(self, path: Path, *, timeout: float = 0.25) -> None:
-        self.path = session_artifact_path(path.parent, path.name)
-        self.stream = self.path.open("a+b")
-        if self.path.stat().st_size == 0:
-            self.stream.write(b"0")
-            self.stream.flush()
-        deadline = time.monotonic() + timeout
-        while True:
-            try:
-                self.stream.seek(0)
-                if sys.platform == "win32":
-                    import msvcrt
-
-                    msvcrt.locking(self.stream.fileno(), msvcrt.LK_NBLCK, 1)
-                else:
-                    import fcntl
-
-                    fcntl.flock(self.stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-                return
-            except OSError as exc:
-                if time.monotonic() >= deadline:
-                    self.stream.close()
-                    raise Busy("Library operation is busy; retry locally") from exc
-                time.sleep(0.01)
-
-    def close(self) -> None:
-        self.stream.seek(0)
-        if sys.platform == "win32":
-            import msvcrt
-
-            msvcrt.locking(self.stream.fileno(), msvcrt.LK_UNLCK, 1)
-        else:
-            import fcntl
-
-            fcntl.flock(self.stream.fileno(), fcntl.LOCK_UN)
-        self.stream.close()
+        try:
+            super().__init__(path, timeout=timeout)
+        except LeaseBusy as exc:
+            raise Busy(str(exc)) from exc
 
 
 def _remove_tree(root: Path, relative: str, names: set[str] | None = None) -> None:
@@ -240,26 +215,67 @@ class MemoryService:
             library.close()
 
     def ingest_session(self, session_dir: Path, *, revision_of: str | None = None) -> IngestResult:
+        return self._ingest_session(session_dir, revision_of=revision_of)
+
+    def prepare_retry(self, session_dir: Path, source_id: str | None) -> tuple[str, str]:
+        """Resolve a canonical parent before an explicit producer mutates the v1."""
+        parent = self.retry_parent(session_dir, source_id)
+        if parent and parent[1] is not None:
+            return parent[0], parent[1]
+        result = self._ingest_session(session_dir, trusted_legacy=True)
+        if result.status == "rejected" or result.meeting_id is None:
+            raise ValueError(f"Legacy identity could not be resolved: {result.warnings}")
+        active = self.active_revision(result.meeting_id)
+        if active is None:
+            raise LibraryError("Legacy retry has no canonical active parent")
+        return result.meeting_id, active
+
+    def ingest_retry(self, session_dir: Path, *, revision_of: str) -> IngestResult:
+        """Publish explicit trusted retry evidence under its expected active parent."""
+        return self._ingest_session(session_dir, revision_of=revision_of, trusted_legacy=True)
+
+    def _ingest_session(
+        self, session_dir: Path, *, revision_of: str | None = None, trusted_legacy: bool = False
+    ) -> IngestResult:
         identity: str | None = None
         operation: PendingOperation | None = None
         staging_rel: str | None = None
+        committed = False
+        source_read = False
+        warnings: tuple[object, ...] = ()
+        active: TranscriptRevision | None = None
         # Opening the catalog is a typed storage boundary; CLI must distinguish a
         # broken database from a rejected source or publication conflict.
         with self._operation() as repo:
             try:
-                source = read_artifacts(session_dir)
+                source = (
+                    read_retry_artifacts(session_dir)
+                    if trusted_legacy
+                    else read_artifacts(session_dir)
+                )
+                source_read = True
                 previous_origin = repo.get_ingest_source(source.origin_path, source.fingerprint)
-                identity = source.metadata.meeting_id or (
+                source_identity = source.metadata.meeting_id
+                try:
+                    canonical = (
+                        source_identity is not None
+                        and str(UUID(source_identity)) == source_identity
+                    )
+                except ValueError:
+                    canonical = False
+                identity = (source_identity if canonical else None) or (
                     previous_origin.meeting_id if previous_origin else str(uuid4())
                 )
-                if source.metadata.meeting_id is None and revision_of is not None:
+                if not canonical and revision_of is not None:
                     parent = repo.get_revision(revision_of)
                     if parent is None:
                         return IngestResult(
-                            "rejected", warnings=("Revision conflict: missing parent",)
+                            "rejected",
+                            warnings=("Revision conflict: missing parent",),
+                            error_category="conflict",
                         )
                     identity = parent.meeting_id
-                if previous_origin:
+                if previous_origin and revision_of is None:
                     return IngestResult("unchanged", previous_origin.meeting_id)
                 previous = repo.get_meeting(identity)
                 active = (
@@ -267,7 +283,7 @@ class MemoryService:
                     if (previous and previous.active_revision_id)
                     else None
                 )
-                if active and active.content_hash == source.content_hash:
+                if active and active.content_hash == source.content_hash and revision_of is None:
                     with repo.transaction():
                         repo.insert_ingest_source(
                             IngestSource(
@@ -281,10 +297,12 @@ class MemoryService:
                     return IngestResult("unchanged", identity)
                 if active and revision_of != active.id:
                     return IngestResult(
-                        "rejected", identity, ("Identity conflict: content differs",)
+                        "rejected", identity, ("Identity conflict: content differs",), "conflict"
                     )
                 if revision_of is not None and (not active or revision_of != active.id):
-                    return IngestResult("rejected", identity, ("Revision conflict: stale retry",))
+                    return IngestResult(
+                        "rejected", identity, ("Revision conflict: stale retry",), "conflict"
+                    )
                 revision_id = str(uuid4())
                 number = repo.library.execute(
                     "SELECT COALESCE(MAX(revision_number),0)+1 FROM transcript_revisions "
@@ -299,24 +317,26 @@ class MemoryService:
                 staging = managed_path(self.data_dir, staging_rel, directory=True)
                 staging.mkdir(parents=True)
                 existing_audio = repo.library.execute(
-                    "SELECT sha256 FROM audio_assets WHERE meeting_id=?", (identity,)
+                    "SELECT * FROM audio_assets WHERE meeting_id=? ORDER BY id", (identity,)
                 ).fetchall()
-                known_hashes = {row[0] for row in existing_audio}
+                known_assets = {row["sha256"]: AudioAsset(**dict(row)) for row in existing_audio}
                 assets = []
+                links = []
                 audio_names = {item["name"] for item in source.audio}
-                for audio in source.audio:
-                    if audio["sha256"] in known_hashes:
-                        continue
+                for ordinal, audio in enumerate(source.audio):
                     values = dict(audio)
                     name = values.pop("name")
-                    assets.append(
-                        AudioAsset(
+                    asset = known_assets.get(audio["sha256"])
+                    if asset is None:
+                        asset = AudioAsset(
                             id=str(uuid4()),
                             meeting_id=identity,
                             relative_path=f"{destination_rel}/{name}",
                             **values,
                         )
-                    )
+                        assets.append(asset)
+                        known_assets[asset.sha256] = asset
+                    links.append(RevisionAudioAsset(identity, revision_id, asset.id, ordinal, name))
                 new_audio_names = {Path(a.relative_path).name for a in assets}
                 plan = {
                     name: digest
@@ -387,9 +407,7 @@ class MemoryService:
                     repo.insert_pending_operation(operation)
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 staging.rename(destination)
-                warnings: tuple[object, ...] = (
-                    (repo.library.storage_warning,) if repo.library.storage_warning else ()
-                )
+                warnings = (repo.library.storage_warning,) if repo.library.storage_warning else ()
                 if meeting.started_at is None or meeting.completed_at is None:
                     warnings += ("Legacy date has no timezone; catalog UTC date left unspecified",)
                 with repo.transaction():
@@ -415,16 +433,19 @@ class MemoryService:
                     for asset in assets:
                         repo.insert_audio_asset(asset)
                     repo.insert_revision(revision)
+                    for link in links:
+                        repo.insert_revision_audio_asset(link)
                     repo.insert_segments(segments)
-                    repo.insert_ingest_source(
-                        IngestSource(
-                            str(uuid4()),
-                            source.origin_path,
-                            source.fingerprint,
-                            identity,
-                            revision_id,
+                    if previous_origin is None:
+                        repo.insert_ingest_source(
+                            IngestSource(
+                                str(uuid4()),
+                                source.origin_path,
+                                source.fingerprint,
+                                identity,
+                                revision_id,
+                            )
                         )
-                    )
                     if self._fts(repo):
                         repo.library.execute(
                             "DELETE FROM segments_fts WHERE meeting_id=?", (identity,)
@@ -444,12 +465,19 @@ class MemoryService:
                     else:
                         warnings += (FtsUnavailable(),)
                     repo.activate_revision(identity, revision_id)
+                committed = True
                 self._write_receipt(repo, operation)
                 self._write_state(repo, identity)
                 with repo.transaction():
                     repo.transition_pending_operation(operation_id, "complete")
                 return IngestResult("revised" if active else "inserted", identity, warnings)
             except Exception as exc:
+                if committed:
+                    # The entity transaction is authoritative. Leave its prepared
+                    # operation for replay if receipt/state/completion fails.
+                    return IngestResult(
+                        "revised" if active else "inserted", identity, warnings + (str(exc),)
+                    )
                 # An ordinary failed publication reverts, unlike an abrupt process
                 # death. Never let reconciliation activate a failed explicit retry.
                 if operation is not None:
@@ -464,7 +492,13 @@ class MemoryService:
                         pass
                 if isinstance(exc, LibraryError):
                     raise
-                return IngestResult("rejected", identity, (str(exc),))
+                category = (
+                    "invalid_input"
+                    if isinstance(exc, ValueError)
+                    or (not source_read and isinstance(exc, FileNotFoundError))
+                    else "io"
+                )
+                return IngestResult("rejected", identity, (str(exc),), category)
 
     def _reconcile_operation(self, repo: MemoryRepository, operation: PendingOperation) -> None:
         if operation.kind != "publish_revision":
@@ -531,15 +565,21 @@ class MemoryService:
         if revision is None or meeting is None or revision.meeting_id != meeting.id:
             raise ValueError("A publication receipt requires committed catalog entities")
         snapshot = {
-            "schema_version": 1,
+            "schema_version": 2,
             "meeting": asdict(meeting),
             "revision": asdict(revision),
             "segments": [asdict(segment) for segment in repo.get_segments(revision.id)],
             "audio_assets": [
                 dict(row)
                 for row in repo.library.execute(
-                    "SELECT * FROM audio_assets WHERE meeting_id=?", (meeting.id,)
+                    "SELECT a.* FROM audio_assets a JOIN revision_audio_assets l "
+                    "ON l.asset_id=a.id AND l.meeting_id=a.meeting_id "
+                    "WHERE l.revision_id=? ORDER BY l.ordinal",
+                    (revision.id,),
                 )
+            ],
+            "revision_audio_assets": [
+                asdict(link) for link in repo.get_revision_audio_assets(revision.id)
             ],
             "ingest_sources": [
                 dict(row)
@@ -580,7 +620,7 @@ class MemoryService:
                         continue
                     snapshot = json.loads(receipt.read_text(encoding="utf-8"))
                     if (
-                        snapshot.get("schema_version") != 1
+                        snapshot.get("schema_version") != 2
                         or snapshot["meeting"]["id"] != identity
                         or snapshot["revision"]["meeting_id"] != identity
                         or snapshot["revision"]["id"] != revision_id
@@ -605,6 +645,16 @@ class MemoryService:
                     for segment in snapshot["segments"]:
                         if segment["revision_id"] != revision_id:
                             raise ValueError("Managed segment revision mismatch")
+                    assets_by_id = {asset["id"]: asset for asset in snapshot["audio_assets"]}
+                    for ordinal, link in enumerate(snapshot["revision_audio_assets"]):
+                        if (
+                            link["meeting_id"] != identity
+                            or link["revision_id"] != revision_id
+                            or link["asset_id"] not in assets_by_id
+                            or link["ordinal"] != ordinal
+                        ):
+                            raise ValueError("Managed revision audio relationship mismatch")
+                        validate_artifact_roles(revision_dir, (link["source_file"],))
                     for origin in snapshot["ingest_sources"]:
                         if origin["meeting_id"] != identity or origin["revision_id"] != revision_id:
                             raise ValueError("Managed source identity mismatch")
@@ -635,6 +685,8 @@ class MemoryService:
                             if values["id"] not in inserted_assets:
                                 repo.insert_audio_asset(AudioAsset(**values))
                                 inserted_assets.add(values["id"])
+                        for values in snapshot["revision_audio_assets"]:
+                            repo.insert_revision_audio_asset(RevisionAudioAsset(**values))
                         for values in snapshot["ingest_sources"]:
                             repo.insert_ingest_source(IngestSource(**values))
                     if meeting.active_revision_id:
@@ -720,10 +772,8 @@ class MemoryService:
     def begin_capture(self, meeting_id: str, *, started_at: str | None = None) -> None:
         if str(UUID(meeting_id)) != meeting_id:
             raise ValueError("Invalid capture identity")
-        directory = managed_path(self.data_dir, ".owners", directory=True)
-        directory.mkdir(parents=True, exist_ok=True)
         if meeting_id not in self._owners:
-            self._owners[meeting_id] = _FileLock(directory / f"{meeting_id}.lock")
+            self._acquire_owner(meeting_id)
         with self._operation() as repo:
             with repo.transaction():
                 if repo.get_meeting(meeting_id) is None:
@@ -750,10 +800,9 @@ class MemoryService:
         """Own the local processing lifetime, preserving any prior active evidence."""
         if str(UUID(meeting_id)) != meeting_id:
             raise ValueError("Invalid processing identity")
-        directory = managed_path(self.data_dir, ".owners", directory=True)
-        directory.mkdir(parents=True, exist_ok=True)
-        if meeting_id not in self._owners:
-            self._owners[meeting_id] = _FileLock(directory / f"{meeting_id}.lock")
+        if meeting_id in self._owners:
+            raise OwnershipBusy("A processing job already owns this meeting")
+        self._acquire_owner(meeting_id)
         with self._operation() as repo:
             with repo.transaction():
                 if repo.get_meeting(meeting_id) is None:
@@ -766,6 +815,33 @@ class MemoryService:
                     )
             self._write_state(repo, meeting_id)
 
+    def _acquire_owner(self, meeting_id: str) -> None:
+        try:
+            directory = managed_path(self.data_dir, ".owners", directory=True)
+            directory.mkdir(parents=True, exist_ok=True)
+            self._owners[meeting_id] = _FileLock(directory / f"{meeting_id}.lock")
+        except (Busy, OSError) as exc:
+            # Unlike a failed SQLite state update, this failure proves no lease.
+            raise OwnershipBusy(str(exc)) from exc
+
+    @staticmethod
+    def check_owner(data_dir: Path, meeting_id: str | None) -> None:
+        """Probe an actual cross-process lease without opening or writing SQLite."""
+        if meeting_id is None:
+            return
+        try:
+            if str(UUID(meeting_id)) != meeting_id:
+                return
+        except ValueError:
+            return
+        path = managed_path(data_dir, f".owners/{meeting_id}.lock")
+        if path.exists():
+            try:
+                probe = _FileLock(path, timeout=0)
+            except Busy as exc:
+                raise OwnershipBusy(str(exc)) from exc
+            probe.close()
+
     def finish_attempt(
         self, meeting_id: str | None, status: str, *, revision_of: str
     ) -> IngestResult:
@@ -774,7 +850,11 @@ class MemoryService:
             raise ValueError("Only unsuccessful retry outcomes use state-only publication")
         with self._operation() as repo:
             with repo.transaction():
-                if meeting_id is None:
+                try:
+                    canonical = meeting_id is not None and str(UUID(meeting_id)) == meeting_id
+                except ValueError:
+                    canonical = False
+                if meeting_id is None or not canonical:
                     parent = repo.get_revision(revision_of)
                     if parent is None:
                         return IngestResult(
@@ -838,6 +918,15 @@ class MemoryService:
                 for row in repo.library.execute(
                     "SELECT s.* FROM segments s JOIN transcript_revisions r ON r.id=s.revision_id "
                     "WHERE r.meeting_id=? ORDER BY r.revision_number,s.ordinal",
+                    (meeting_id,),
+                )
+            ]
+            result["revision_audio_assets"] = [
+                dict(row)
+                for row in repo.library.execute(
+                    "SELECT l.* FROM revision_audio_assets l JOIN transcript_revisions r "
+                    "ON r.id=l.revision_id WHERE l.meeting_id=? "
+                    "ORDER BY r.revision_number,l.ordinal",
                     (meeting_id,),
                 )
             ]

@@ -159,6 +159,30 @@ def normalized_origin(directory: Path) -> str:
     return os.path.normcase(str(directory.resolve()))
 
 
+def read_pending_intent(directory: Path, meeting_id: str | None) -> tuple[str | None, str]:
+    """Read only the typed application-owned replay envelope, never provider work."""
+    pending = json.loads(
+        session_artifact_path(directory, "memory_pending.json").read_text(encoding="utf-8")
+    )
+    if not isinstance(pending, dict):
+        raise ValueError("Invalid pending catalog envelope")
+    expected = pending.get("revision_of")
+    intent = pending.get("intent", "ingest")
+    if (
+        type(pending.get("schema_version")) is not int
+        or pending["schema_version"] != 1
+        or pending.get("meeting_id") != meeting_id
+        or not isinstance(intent, str)
+        or intent not in {"ingest", "status"}
+        or expected is not None
+        and (not isinstance(expected, str) or str(UUID(expected)) != expected)
+        or intent == "status"
+        and expected is None
+    ):
+        raise ValueError("Invalid pending catalog intent")
+    return expected, intent
+
+
 def _milliseconds(value: Any) -> int | None:
     if isinstance(value, bool) or not isinstance(value, (float, int)):
         return None
@@ -180,6 +204,15 @@ class SessionArtifacts:
 
 
 def read_artifacts(directory: Path) -> SessionArtifacts:
+    return _read_artifacts(directory)
+
+
+def read_retry_artifacts(directory: Path) -> SessionArtifacts:
+    """Trusted explicit M1 reprocessing keeps the source's optional opaque ID."""
+    return _read_artifacts(directory, trusted_legacy=True)
+
+
+def _read_artifacts(directory: Path, *, trusted_legacy: bool = False) -> SessionArtifacts:
     directory = directory.absolute()
     validate_session_directory(directory)
     metadata = SessionMetadata.model_validate_json(
@@ -187,7 +220,11 @@ def read_artifacts(directory: Path) -> SessionArtifacts:
     )
     if metadata.schema_version != 1:
         raise ValueError("Unsupported session schema")
-    if metadata.meeting_id is not None and str(UUID(metadata.meeting_id)) != metadata.meeting_id:
+    if (
+        not trusted_legacy
+        and metadata.meeting_id is not None
+        and str(UUID(metadata.meeting_id)) != metadata.meeting_id
+    ):
         raise ValueError("Invalid meeting UUID")
     audio_references = {p.audio_file for p in metadata.capture_sources if p.audio_file}
     if metadata.recoverable_audio:
@@ -201,6 +238,10 @@ def read_artifacts(directory: Path) -> SessionArtifacts:
         if path.exists():
             paths[name] = path
     audio_names = [metadata.recoverable_audio] if metadata.recoverable_audio else []
+    if trusted_legacy and audio_names and not paths[audio_names[0]].exists():
+        # An explicit M1 retry may reconstruct a missing derived mix from its
+        # validated raw sources; preserve those as the original revision evidence.
+        audio_names = []
     if not audio_names and session_artifact_path(directory, "audio.wav").exists():
         audio_names = ["audio.wav"]
         paths["audio.wav"] = session_artifact_path(directory, "audio.wav")

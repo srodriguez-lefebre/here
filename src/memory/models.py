@@ -53,6 +53,15 @@ class AudioAsset:
 
 
 @dataclass(frozen=True, slots=True)
+class RevisionAudioAsset:
+    meeting_id: str
+    revision_id: str
+    asset_id: str
+    ordinal: int
+    source_file: str
+
+
+@dataclass(frozen=True, slots=True)
 class TranscriptRevision:
     id: str
     meeting_id: str

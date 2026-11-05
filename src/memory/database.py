@@ -128,7 +128,21 @@ CREATE TABLE deleted_origins (
     origin_fingerprint TEXT PRIMARY KEY NOT NULL, deleted_at TEXT NOT NULL
 );
 """
-MIGRATIONS = (Migration(1, "initial_catalog", _INITIAL_SQL),)
+_REVISION_AUDIO_SQL = """
+CREATE UNIQUE INDEX audio_assets_meeting_id ON audio_assets(meeting_id, id);
+CREATE TABLE revision_audio_assets (
+    meeting_id TEXT NOT NULL, revision_id TEXT NOT NULL, asset_id TEXT NOT NULL,
+    ordinal INTEGER NOT NULL CHECK (ordinal >= 0), source_file TEXT NOT NULL,
+    PRIMARY KEY (revision_id, ordinal), UNIQUE (revision_id, source_file),
+    FOREIGN KEY (meeting_id, revision_id) REFERENCES transcript_revisions(meeting_id, id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (meeting_id, asset_id) REFERENCES audio_assets(meeting_id, id)
+);
+"""
+MIGRATIONS = (
+    Migration(1, "initial_catalog", _INITIAL_SQL),
+    Migration(2, "revision_audio_assets", _REVISION_AUDIO_SQL),
+)
 BUSY_TIMEOUT_MS = 250
 
 
