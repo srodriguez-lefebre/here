@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import shutil
 import threading
 import time
@@ -7,7 +8,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import soundfile as sf
 from here.audio.mix import materialize_normalized_session
@@ -173,6 +174,66 @@ def _cleanup_capture_after_commit(cleanup: Callable[[], None], session_dir: Path
         )
 
 
+def _load_chunk_metadata(session_dir: Path) -> list[ChunkMetadata]:
+    chunks_path = session_dir / CHUNKS_FILE
+    if not chunks_path.exists():
+        return []
+    return ChunkMetadataDocument.model_validate_json(chunks_path.read_text(encoding="utf-8")).chunks
+
+
+def _load_error_metadata(session_dir: Path) -> list[ErrorMetadata]:
+    errors_path = session_dir / ERRORS_FILE
+    if not errors_path.exists():
+        return []
+    return ErrorMetadataDocument.model_validate_json(errors_path.read_text(encoding="utf-8")).errors
+
+
+def _cleanup_replaced_audio(
+    session_dir: Path,
+    previous: SessionMetadata | None,
+    *,
+    input_path: Path,
+    current_audio: str,
+) -> None:
+    """Best-effort removal of one known derived file after final publication."""
+    if previous is None or previous.recoverable_audio is None:
+        return
+    name = previous.recoverable_audio
+    if re.fullmatch(r"audio(?:_[0-9a-f]{32})?\.wav", name) is None:
+        logger.warning("Previous recoverable audio has an unknown name; retained: {}", name)
+        return
+    try:
+        current = read_session_metadata(session_dir)
+        if (
+            current is None
+            or current.status not in {"completed", "failed"}
+            or current.session_id != previous.session_id
+            or current.meeting_id != previous.meeting_id
+            or current.recoverable_audio != current_audio
+        ):
+            raise ValueError("Final session metadata could not be confirmed")
+        references = [*current.output_files, current_audio]
+        references.extend(
+            item.audio_file
+            for item in (*previous.capture_sources, *current.capture_sources)
+            if item.audio_file
+        )
+        protected = {
+            input_path.absolute(),
+            *((session_dir / item).absolute() for item in references),
+        }
+        candidate = session_artifact_path(session_dir, name)
+        if candidate.absolute() in protected:
+            return
+        candidate.unlink(missing_ok=True)
+    except (OSError, ValueError, RuntimeError) as exc:
+        logger.warning(
+            "Session metadata committed; replaced audio retained because cleanup failed: {}: {}",
+            name,
+            exc,
+        )
+
+
 class SessionProcessor:
     """Owns recoverable persistence, live fallback, retries and session reprocessing."""
 
@@ -190,6 +251,183 @@ class SessionProcessor:
         self._transcribe = transcribe
         self._retry_delays = tuple(retry_delays)
         self._sleeper = sleeper
+
+    def transcribe_audio_path(
+        self,
+        audio_path: Path,
+        target_dir: Path,
+        *,
+        use_alt_transcription_model: bool = False,
+    ) -> SessionArtifactPaths:
+        """Transcribe an explicit file without taking ownership of its external origin."""
+        from here.application.recovery import validate_recovery_audio
+
+        require_provider_key()
+        if not audio_path.exists():
+            raise RuntimeError(f"Audio file does not exist: {audio_path}")
+
+        settings = get_settings()
+        transcription_model = (
+            settings.ALT_TRANSCRIPTION_MODEL
+            if use_alt_transcription_model
+            else settings.TRANSCRIPTION_MODEL
+        )
+        completed_at = self._clock()
+        existing_metadata = read_session_metadata(audio_path.parent)
+        if existing_metadata is not None:
+            session_artifact_path(audio_path.parent, audio_path.name)
+            validate_recovery_audio(audio_path.parent, existing_metadata)
+        source_session = session_from_audio_file(audio_path)
+        source_session.meeting_id = existing_metadata.meeting_id if existing_metadata else None
+        previous_chunks = _load_chunk_metadata(audio_path.parent) if existing_metadata else []
+        previous_errors = _load_error_metadata(audio_path.parent) if existing_metadata else []
+
+        if existing_metadata is not None:
+            session_dir = audio_path.parent
+            session_id = existing_metadata.session_id
+        else:
+            session_id, session_dir = create_session_dir(target_dir, completed_at)
+
+        recoverable_audio = AUDIO_FILE
+        if existing_metadata is not None:
+            if audio_path.name == existing_metadata.recoverable_audio:
+                recoverable_audio = audio_path.name
+            else:
+                # A managed raw input must not replace audio referenced by the old
+                # completed manifest before pending publication has committed.
+                recoverable_audio = f"audio_{uuid4().hex}.wav"
+        recoverable_session: RecordingSession | None = None
+        newly_owned_audio = False
+        try:
+            if audio_path.parent == session_dir and audio_path.name == recoverable_audio:
+                recoverable_session = source_session
+            else:
+                recoverable_session = (self._normalize or materialize_normalized_session)(
+                    source_session,
+                    session_dir,
+                    output_name=recoverable_audio,
+                )
+                newly_owned_audio = True
+        except Exception as exc:
+            if existing_metadata is not None:
+                raise RuntimeError("Recoverable audio preparation failed") from exc
+            errors = [
+                *previous_errors,
+                error_metadata("recoverable_audio", exc),
+            ]
+            write_session_artifacts(
+                session=source_session,
+                capture_sources=existing_metadata.capture_sources
+                if existing_metadata
+                else capture_metadata(source_session),
+                target_dir=target_dir,
+                completed_at=existing_metadata.completed_at if existing_metadata else completed_at,
+                transcription_model=transcription_model,
+                cleanup_model=settings.CLEANUP_MODEL,
+                cleanup_enabled=settings.CLEANUP_ENABLED,
+                alt_model_used=use_alt_transcription_model,
+                live_pipeline_attempted=existing_metadata.live_pipeline_attempted
+                if existing_metadata
+                else False,
+                live_pipeline_used=existing_metadata.live_pipeline_used
+                if existing_metadata
+                else False,
+                fallback_used=existing_metadata.fallback_used if existing_metadata else False,
+                chunks=previous_chunks,
+                errors=errors,
+                status="failed",
+                failure_stage="recoverable_audio",
+                session_dir=session_dir,
+                session_id=session_id,
+            )
+            raise RuntimeError("Recoverable audio preparation failed") from exc
+
+        self.publish_pending(
+            recoverable_session,
+            session_dir,
+            session_id=session_id,
+            completed_at=completed_at,
+            recoverable_audio=recoverable_audio,
+            use_alt_transcription_model=use_alt_transcription_model,
+            capture_sources=existing_metadata.capture_sources
+            if existing_metadata
+            else capture_metadata(source_session),
+            newly_owned_audio=newly_owned_audio,
+        )
+        try:
+            result = self._transcribe(
+                recoverable_session,
+                use_alt_transcription_model=use_alt_transcription_model,
+            )
+        except Exception as exc:
+            failed_chunks = previous_chunks + list(getattr(exc, "chunks", []))
+            errors = [
+                *previous_errors,
+                error_metadata("offline_transcription", exc),
+            ]
+            write_session_artifacts(
+                session=recoverable_session,
+                capture_sources=existing_metadata.capture_sources
+                if existing_metadata
+                else capture_metadata(source_session),
+                target_dir=target_dir,
+                completed_at=existing_metadata.completed_at if existing_metadata else completed_at,
+                transcription_model=transcription_model,
+                cleanup_model=settings.CLEANUP_MODEL,
+                cleanup_enabled=settings.CLEANUP_ENABLED,
+                alt_model_used=use_alt_transcription_model,
+                live_pipeline_attempted=existing_metadata.live_pipeline_attempted
+                if existing_metadata
+                else False,
+                live_pipeline_used=existing_metadata.live_pipeline_used
+                if existing_metadata
+                else False,
+                fallback_used=existing_metadata.fallback_used if existing_metadata else False,
+                chunks=failed_chunks,
+                errors=errors,
+                status="failed",
+                failure_stage="offline_transcription",
+                recoverable_audio=recoverable_audio,
+                session_dir=session_dir,
+                session_id=session_id,
+            )
+            _cleanup_replaced_audio(
+                session_dir,
+                existing_metadata,
+                input_path=audio_path,
+                current_audio=recoverable_audio,
+            )
+            raise RuntimeError("Transcription failed") from exc
+
+        artifacts = write_session_artifacts(
+            session=recoverable_session,
+            capture_sources=existing_metadata.capture_sources
+            if existing_metadata
+            else capture_metadata(source_session),
+            target_dir=target_dir,
+            transcript_text=result.final_text,
+            raw_transcript_text=getattr(result, "raw_text", None),
+            segments=getattr(result, "segments", None),
+            completed_at=existing_metadata.completed_at if existing_metadata else completed_at,
+            transcription_model=transcription_model,
+            cleanup_model=settings.CLEANUP_MODEL,
+            cleanup_enabled=settings.CLEANUP_ENABLED,
+            alt_model_used=use_alt_transcription_model,
+            live_pipeline_attempted=existing_metadata.live_pipeline_attempted
+            if existing_metadata
+            else False,
+            live_pipeline_used=existing_metadata.live_pipeline_used if existing_metadata else False,
+            fallback_used=existing_metadata.fallback_used if existing_metadata else False,
+            chunks=previous_chunks + list(getattr(result, "chunks", [])),
+            status="completed",
+            recoverable_audio=recoverable_audio,
+            session_dir=session_dir,
+            session_id=session_id,
+        )
+        _cleanup_replaced_audio(
+            session_dir, existing_metadata, input_path=audio_path, current_audio=recoverable_audio
+        )
+        return artifacts
 
     def publish_pending(
         self,
@@ -709,6 +947,7 @@ class SessionProcessor:
             capture_sources=capture_metadata(session),
             target_dir=target_dir,
             transcript_text=outcome.result.final_text,
+            raw_transcript_text=getattr(outcome.result, "raw_text", None),
             segments=getattr(outcome.result, "segments", None),
             completed_at=completed_at,
             transcription_model=transcription_model,
@@ -961,6 +1200,7 @@ class SessionProcessor:
             session=source,
             target_dir=session_dir.parent,
             transcript_text=result.final_text,
+            raw_transcript_text=getattr(result, "raw_text", None),
             segments=getattr(result, "segments", None),
             capture_sources=metadata.capture_sources if metadata else None,
             completed_at=metadata.completed_at if metadata else datetime.now().astimezone(),

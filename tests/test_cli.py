@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 
+import here.application.processing as processing_module
 import here.cli as cli_module
 import pytest
 import typer
@@ -469,7 +470,7 @@ def test_trans_command_transcribes_external_audio(
     output_dir = tmp_path / "transcriptions"
 
     monkeypatch.setattr(
-        cli_module.sf,
+        processing_module.sf,
         "info",
         lambda path: SimpleNamespace(samplerate=16000, channels=1, frames=32000),
     )
@@ -514,7 +515,7 @@ def test_trans_command_writes_failed_session_when_recoverable_audio_fails(
     output_dir = tmp_path / "transcriptions"
 
     monkeypatch.setattr(
-        cli_module.sf,
+        processing_module.sf,
         "info",
         lambda path: SimpleNamespace(samplerate=16000, channels=1, frames=32000),
     )
@@ -576,7 +577,7 @@ def test_trans_command_completes_failed_session_audio(
     )
 
     monkeypatch.setattr(
-        cli_module.sf,
+        processing_module.sf,
         "info",
         lambda path: SimpleNamespace(samplerate=16000, channels=1, frames=32000),
     )

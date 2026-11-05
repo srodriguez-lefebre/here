@@ -547,11 +547,11 @@ w.write(np.full(80,1234,dtype=np.int16)); w.close()
 if phase=='normalize': processing.materialize_normalized_session=lambda *a,**kw:block()
 if phase=='remove': CaptureJournal.discard=lambda *a:block()
 original=output._publish_metadata_and_segments
-def publish(path,meta,segments,obsolete_paths=()):
+def publish(path,meta,segments,obsolete_paths=(),*,raw_text=None):
     import json
     state=json.loads(meta)['status']
     if phase=='final_before' and state=='completed': block()
-    original(path,meta,segments,obsolete_paths)
+    original(path,meta,segments,obsolete_paths,raw_text=raw_text)
     if (phase=='pending' and state=='pending') or (phase=='final_after' and state=='completed'):
         block()
 output._publish_metadata_and_segments=publish
@@ -635,12 +635,12 @@ def test_crash_boundaries_keep_mapping_and_completed_metadata_wins(tmp_path, mon
         else:
             publish = output._publish_metadata_and_segments
 
-            def publish_at(path, metadata, segments, obsolete_paths=()):
+            def publish_at(path, metadata, segments, obsolete_paths=(), *, raw_text=None):
                 state = json.loads(metadata)["status"]
                 target = "pending" if boundary.startswith("pending") else "completed"
                 if state == target and boundary.endswith("before"):
                     crash()
-                publish(path, metadata, segments, obsolete_paths)
+                publish(path, metadata, segments, obsolete_paths, raw_text=raw_text)
                 if state == target and boundary.endswith("after"):
                     crash()
 

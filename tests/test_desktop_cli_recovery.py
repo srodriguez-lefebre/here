@@ -2,6 +2,7 @@ import json
 import sys
 from pathlib import Path
 
+import here.application.processing as processing_module
 import numpy as np
 import pytest
 import soundfile as sf
@@ -146,10 +147,10 @@ def test_postcommit_audio_cleanup_fault_preserves_committed_outcome(
     attempted = []
     warnings = []
     provider_error = OSError("original provider failure")
-    original_write = cli.write_session_artifacts
-    original_read = cli.read_session_metadata
+    original_write = processing_module.write_session_artifacts
+    original_read = processing_module.read_session_metadata
     original_unlink = Path.unlink
-    original_path = cli.session_artifact_path
+    original_path = processing_module.session_artifact_path
 
     def write(**kwargs):
         nonlocal committed
@@ -186,9 +187,9 @@ def test_postcommit_audio_cleanup_fault_preserves_committed_outcome(
             raise provider_error
         return TranscriptionResult("new", "new")
 
-    monkeypatch.setattr(cli, "write_session_artifacts", write)
-    monkeypatch.setattr(cli, "read_session_metadata", read)
-    monkeypatch.setattr(cli, "session_artifact_path", artifact_path)
+    monkeypatch.setattr(processing_module, "write_session_artifacts", write)
+    monkeypatch.setattr(processing_module, "read_session_metadata", read)
+    monkeypatch.setattr(processing_module, "session_artifact_path", artifact_path)
     monkeypatch.setattr(Path, "unlink", unlink)
     monkeypatch.setattr(cli, "transcribe_recording_session", provider)
     token = cli.logger.add(lambda message: warnings.append(str(message)), level="WARNING")
@@ -234,7 +235,7 @@ def test_audio_cleanup_preserves_protected_and_unknown_previous_file(
     metadata_path.write_text(json.dumps(metadata))
     old_bytes = old.read_bytes()
     raw_bytes = (directory / "source_01.wav").read_bytes()
-    original_write = cli.write_session_artifacts
+    original_write = processing_module.write_session_artifacts
 
     def write(**kwargs):
         # Remove old capture provenance at final publication: even then the
@@ -253,7 +254,7 @@ def test_audio_cleanup_preserves_protected_and_unknown_previous_file(
         metadata_path.write_text(json.dumps(current))
         return result
 
-    monkeypatch.setattr(cli, "write_session_artifacts", write)
+    monkeypatch.setattr(processing_module, "write_session_artifacts", write)
     monkeypatch.setattr(
         cli, "transcribe_recording_session", lambda *a, **kw: TranscriptionResult("ok", "ok")
     )
@@ -275,7 +276,7 @@ def test_postcommit_cleanup_rechecks_previous_path_safety(tmp_path, monkeypatch,
     old = directory / "audio.wav"
     external = tmp_path / "canary.wav"
     external.write_bytes(b"external canary")
-    original_write = cli.write_session_artifacts
+    original_write = processing_module.write_session_artifacts
     warnings = []
 
     def write(**kwargs):
@@ -287,7 +288,7 @@ def test_postcommit_cleanup_rechecks_previous_path_safety(tmp_path, monkeypatch,
             old.mkdir()
         return result
 
-    monkeypatch.setattr(cli, "write_session_artifacts", write)
+    monkeypatch.setattr(processing_module, "write_session_artifacts", write)
     monkeypatch.setattr(
         cli, "transcribe_recording_session", lambda *a, **kw: TranscriptionResult("ok", "ok")
     )

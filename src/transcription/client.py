@@ -24,11 +24,13 @@ class AudioTranscription:
 
 
 def coerce_audio_transcription(value: AudioTranscription | str) -> AudioTranscription:
-    if isinstance(value, AudioTranscription):
-        return value
     if isinstance(value, str):
-        return AudioTranscription(text=value, segments=[])
-    raise TypeError("Unsupported transcription payload")
+        value = AudioTranscription(text=value, segments=[])
+    if not isinstance(value, AudioTranscription):
+        raise TypeError("Unsupported transcription payload")
+    if not value.segments and value.text.strip():
+        return AudioTranscription(text=value.text, segments=[TranscriptSegment(value.text)])
+    return value
 
 
 def _value_from_payload(payload: object, key: str) -> object | None:
