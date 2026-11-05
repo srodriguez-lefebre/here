@@ -67,9 +67,13 @@ las definiciones de terminado y los tres niveles de evidencia. Versión vigente
 
 ## Próxima acción obligatoria
 
-1. RED independiente de NB1 en `tests/test_memory_publication_replay.py` (en
-   preparación/ejecución, sin resultado entregado aún) y diagnóstico de los cinco
-   fallos del full integrado. Corregir sin debilitar la evidencia.
+1. Completar fixes de ronda 2: NB1 tiene RED independiente de 6 fallos/2 controles
+   que pasan en 35,00 s, copiado a Green en `test_memory_publication_replay.py`.
+   La fixture CLI pasó con WAV real y todas sus aserciones intactas; los otros
+   cuatro fallos del full requieren correcciones de producto. La separación de
+   guardas también tiene dos RED de materialización de journal legado y control
+   de dos PASS contra `c28472b`. Los casos de lineage audio-only siguen en curso.
+   Corregir sin debilitar snapshots, validación ni evidencia.
 2. Focos, re-review de NB1/correcciones, nueva suite estable y review de todo el
    grupo. No convertir los siete ADDRESSED en aceptación mientras quede NB1.
 3. PR de A, Copilot sobre head exacto recibido/respondido y CI Windows verde;
@@ -113,6 +117,10 @@ El resto conserva sus dependencias; no se inicia ningún frente en este checkpoi
 - Rulings 31–34 registran asociación revision/audio/schema2, legacy confiable y
   lease nativa `.capture_owners/` retenida por scope del trabajo hasta cierre real
   y persistencia. La review de ronda 1 está en `task-3-fix-1-review-report.md`.
+- Rulings 36/37 fijan el contrato pendiente de marker v2/recibo v3 con token y
+  prueba durable del replay, handoff privado de una sola publicación y reserva
+  audio-only sin padre ficticio ni fechas de captura inventadas. No se agrega
+  migración. Implementación de ronda 2 en `m2-ingestion`, aún sin aceptar.
 - Todas las corridas anteriores, incluidos fulls fallidos y diagnóstico de captura,
   conservan alcance y límites en ACCEPTANCE/DELIVERY/evidence JSON. El arnés revisado
   no cambió deadlines del producto; H1 bootstrap se observó en un caso y H2 sharing
