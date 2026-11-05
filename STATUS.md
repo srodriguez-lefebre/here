@@ -74,3 +74,17 @@ abierto; ningún gate de merge del grupo se considera cumplido.
 En una reanudación consultar el ledger local
 `.superpowers/sdd/M2_CATALOG_PLAN/progress.md` del worktree y git log antes de
 redistribuir tareas.
+
+## Recuperación de la orquestación actual
+
+- Implementador de tarea 3: subagente `ingestion_green`, worktree `m2-ingestion`,
+  base `1cdaadb`; no tocar sus fuentes mientras escribe.
+- RED adicional de propiedad real y reintento local: `catalog_red`, archivo nuevo
+  `tests/test_memory_recovery_ownership.py` en worktree `m2-preparation`.
+- Ruling 23 fija locks reales y marcador local; no hay nueva dependencia ni red.
+- Reviewer independiente disponible: `catalog_review`. Docs/evidencia: `segments_red`.
+- Fixture de memoria: `tests/memory_fixtures.py` en `m2-preparation` y `m2-ingestion`.
+  ZIPs hostiles sintéticos de M5: `tests/portability_fixtures.py` en `m2-segments`.
+  Son archivos propios sin commit, conservar hasta integrarlos con sus tareas.
+- Reportes y logs de los roles: `.superpowers/sdd/M2_CATALOG_PLAN/` del worktree
+  principal `m2-catalog`; el ledger `progress.md` registra los commits y handoffs.

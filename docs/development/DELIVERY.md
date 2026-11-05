@@ -171,6 +171,23 @@ Los rulings nuevos se escriben en español por el ruling 6.
     ingestión antes de que ciclo de vida dependa de él; no se reescriben revisiones
     previas para resolver el conflicto.
 
+23. **Ruling:** la publicación y reconciliación locales del catálogo se serializan
+    con `<data_dir>/.memory.lock`; la propiedad real de captura/procesamiento se
+    acredita con un lock de archivo del sistema operativo en
+    `<data_dir>/.owners/<uuid>.lock`, sin inferir actividad de un PID o timestamp.
+    Adquisición acotada a 250 ms devuelve `Busy`; los locks no sustituyen las
+    transacciones cortas ni permiten copiar/calcular hashes dentro de ellas. No se
+    agrega dependencia ni proceso residente. La aplicación puede conservar en su
+    carpeta de sesión propia `memory_pending.json`, con versión, identidad y la
+    revisión esperada del retry explícito, para reintentar solo ingestión local
+    cuando la DB estuvo ocupada o corrupta. No contiene secretos, payloads del
+    proveedor ni autoridad sobre rutas externas; nunca dispara proveedor al abrir.
+    Los paths y cada componente se validan con los helpers existentes. La
+    reconciliación conserva trabajos con propiedad real vigente; un archivo de
+    lock residual no demuestra actividad. **Cost if wrong:** ajustar el layout
+    interno de locks y el lector de marcadores antes de que M2 B/M5 dependan de
+    ellos; los archivos originales y revisiones previas siguen preservados.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
