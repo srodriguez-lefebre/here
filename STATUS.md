@@ -14,8 +14,12 @@ cerrado bajo alcance reducido con el PR #14 (merge `beeedac`, v0.2.0).
 - `origin/main` = `beeedac`, v0.2.0. Suite local: 741 pasan, 8 skips esperados,
   1 falla por falta de `pwsh` en la máquina (no es un bug).
 - PR #16 abierto (`docs/agent-start`): este archivo, `CLAUDE.md` y los rulings.
-- `codex/ui-configuration-errors`: descartada por ruling 2. Pendiente de borrar en
-  local y `origin` cuando el usuario confirme.
+- `codex/ui-configuration-errors`: descartada por ruling 2 y borrada en local y
+  `origin`.
+- Worktrees que siguen en disco y no se tocaron: `.codex/worktrees/five-milestones`
+  (`codex/m1-desktop-recovery`, mergeada), `here-worktrees/live-logo-overlay` y
+  `here-worktrees/windows-app-core` (ambas mergeadas en septiembre). Candidatos a
+  limpieza; no es urgente.
 - Omitido de M1 y que sigue omitido: la reunión de dos horas con medición de
   recursos (ruling 5). La transcripción larga con diarización contra el proveedor
   real pasa a ser ejecutable porque hay credencial disponible, pero no está
@@ -44,14 +48,11 @@ Preparación del plan, en este orden. Ninguna implementa producto.
 
 Son irreversibles o tocan el remoto; el agente no las ejecuta solo.
 
-- ~~Borrar `codex/ui-configuration-errors` en `origin`~~ — hecho el 2026-11-04. La
-  rama local sigue existiendo porque está checkeada en el worktree de Codex
-  `C:/Users/savar/.codex/worktrees/m1-windows-distribution/here`, que tiene trabajo
-  sin commitear encima (README, WHATS_NEW, `src/ui/configuration.py`,
-  `src/ui/main_window.py`, `tests/test_ui_lifecycle.py`, y nuevos
-  `src/ui/recordings.py`, `tests/test_desktop_navigation.py`). Último commit de la
-  rama: `5b93630`. Falta decidir si ese trabajo se descarta con el worktree o se
-  guarda en una rama de respaldo antes de borrarlo.
+- ~~Borrar `codex/ui-configuration-errors`~~ — hecho. En `origin` el 2026-11-04; en
+  local el 2026-11-05 junto con el worktree de Codex que la tenía checkeada, cuyo
+  trabajo sin commitear (lista de grabaciones y navegación en la UI, siete archivos)
+  el usuario decidió descartar. Último commit de la rama: `5b93630`, ya sin
+  referencias.
 - ~~Eliminar el workflow de Ubuntu~~ — hecho en la rama `ci/remove-ubuntu-workflow`,
   PR aparte, pendiente de merge.
 
