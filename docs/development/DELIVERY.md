@@ -210,6 +210,20 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Cost if wrong:** extender explícitamente los tipos de artefacto permitidos
     cuando un formato legítimo lo requiera; las fuentes externas no se modifican.
 
+26. **Ruling:** la reconstrucción del catálogo usa snapshots administrados
+    autocontenidos con IDs, revisiones, segmentos, assets, hashes y procedencia.
+    `catalog.json` dentro de la revisión se publica después del commit de DB y
+    sirve como recibo de terminación; un árbol preparado sin recibo no acredita
+    una revisión publicada. Los estados durables se conservan sin reescribir
+    historia en `meetings/<uuid>/states/<row_version>-<uuid>.json`. Con la DB
+    vigente, reconciliación puede terminar recibos pendientes desde lo que fue
+    comprometido; si se pierden DB/journal antes del recibo, el árbol incierto se
+    informa y no se activa por conjetura. La reconstrucción valida rutas y hashes,
+    usa solo archivos administrados y no escanea fuentes externas ni llama al
+    proveedor. **Cost if wrong:** versionar los snapshots/recibos y ajustar el
+    lector de reconstrucción y la purga de M2 B; las revisiones anteriores no se
+    modifican para corregir el formato.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
