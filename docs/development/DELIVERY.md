@@ -224,6 +224,17 @@ Los rulings nuevos se escriben en español por el ruling 6.
     lector de reconstrucción y la purga de M2 B; las revisiones anteriores no se
     modifican para corregir el formato.
 
+27. **Ruling:** transcribir un archivo y reintentar desde la aplicación también
+    mantienen estado durable `processing` y propiedad real durante el trabajo del
+    proveedor, sin mantener una transacción SQLite abierta. Si un retry falla sin
+    devolver una transcripción, conserva la revisión activa anterior y solo cambia
+    el estado a `failed`; no fabrica una revisión nueva con texto viejo. Cuando la
+    DB está ocupada, el marcador local puede distinguir un intento de ingestión de
+    una actualización de estado y guardar ese desenlace junto a la revisión esperada.
+    El replay local respeta esa precondición y no ejecuta de nuevo al proveedor.
+    **Cost if wrong:** ajustar el lector de intención del marcador y los adaptadores
+    de procesamiento; el historial de evidencia previo permanece intacto.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
