@@ -405,8 +405,11 @@ def _remove_tree(root: Path, relative: str, names: set[str] | None = None) -> No
 
 
 class MemoryService:
-    def __init__(self, data_dir: Path) -> None:
+    def __init__(self, data_dir: Path, *, sessions_root: Path | None = None) -> None:
         self.data_dir = Path(data_dir).absolute()
+        self._sessions_roots: dict[str, Path] = {}
+        if sessions_root is not None:
+            self._register_sessions_root(sessions_root)
         self._owners: dict[str, _FileLock] = {}
         self.before_delete: list[Callable[[str], None]] = []
         self._derived_row_purgers: list[Callable[[MemoryRepository, str], None]] = []
@@ -422,6 +425,31 @@ class MemoryService:
                 # allowed to start even when its independent catalog is unavailable.
                 # The actual operation reports the typed failure to its caller.
                 pass
+
+    def _register_sessions_root(self, root: Path) -> None:
+        """Retain explicit composition authority lexically, without resolving or probing it."""
+        directory = Path(os.path.abspath(root))
+        self._sessions_roots.setdefault(os.path.normcase(str(directory)), directory)
+
+    def _retain_native_owners(self, identity: str, leases: ExitStack) -> None:
+        """Probe only declared native roots; retain existing applicable leases."""
+        if not self._sessions_roots:
+            raise LibraryError("Explicit native ownership context is required for cleanup")
+        if not _is_uuid(identity):
+            raise LibraryError("Cleanup requires a canonical meeting identity")
+        try:
+            for key in sorted(self._sessions_roots):
+                root = self._sessions_roots[key]
+                # Shared validators reject redirects, junctions, non-directories,
+                # unsafe owner roles and multiple links before any file is opened.
+                path = session_artifact_path(root / ".capture_owners", f"{identity}.lock")
+                try:
+                    owner = _FileLock(path, timeout=0, create=False)
+                except FileNotFoundError:
+                    continue  # Never create a declared root/owner to discover activity.
+                leases.callback(owner.close)
+        except (OSError, ValueError) as exc:
+            raise LibraryError("Native ownership context could not be verified") from exc
 
     @contextmanager
     def _operation(self) -> Iterator[MemoryRepository]:
@@ -641,6 +669,7 @@ class MemoryService:
     def _delete_owner(
         self, repo: MemoryRepository, identity: str, leases: ExitStack, *, accepted: bool = False
     ) -> None:
+        self._retain_native_owners(identity, leases)
         path = managed_path(self.data_dir, f".owners/{identity}.lock")
         path.parent.mkdir(parents=True, exist_ok=True)
         lease = _FileLock(path, timeout=0)
@@ -877,7 +906,7 @@ class MemoryService:
                 else:
                     operation = self._delete_journal(repo, record)
                 return self._finish_delete(repo, record, operation)
-        except (InvalidInput, NotFound, Conflict, Busy) as exc:
+        except LibraryError as exc:
             # Atomic replace may have succeeded before its caller observed failure.
             records, _ = _deletion_registry(self.data_dir)
             accepted = accepted or any(record.meeting_id == meeting_id for record in records)
@@ -1438,7 +1467,9 @@ class MemoryService:
                 )
                 return IngestResult("rejected", identity, (str(exc),), category)
 
-    def _reconcile_operation(self, repo: MemoryRepository, operation: PendingOperation) -> None:
+    def _reconcile_operation(
+        self, repo: MemoryRepository, operation: PendingOperation, *, owners_held: bool = False
+    ) -> None:
         records, _ = _deletion_registry(self.data_dir)
         if operation.kind == "delete":
             record = next(
@@ -1447,7 +1478,10 @@ class MemoryService:
             if record is None:
                 raise ValueError("Delete journal has no durable suppression authority")
             self._validate_delete_operation(operation, record)
-            self._finish_delete(repo, record, operation)
+            with ExitStack() as owners:
+                if not owners_held:
+                    self._delete_owner(repo, record.meeting_id, owners, accepted=True)
+                self._finish_delete(repo, record, operation)
             return
         if (
             operation.meeting_id
@@ -1487,28 +1521,33 @@ class MemoryService:
             raise ValueError("Pending operation paths disagree with identity")
         validate_artifact_roles(destination if destination.exists() else staging, payload["hashes"])
         committed = repo.get_revision(revision_id) is not None
-        if committed:
-            if not destination.is_dir():
-                raise ValueError("Committed revision files are missing")
-            for name, digest in payload["hashes"].items():
-                if file_hash(session_artifact_path(destination, name)) != digest:
-                    raise ValueError("Published revision hash mismatch")
-            self._write_receipt(repo, operation)
-            self._write_state(repo, operation.meeting_id)
-        else:
-            _remove_tree(self.data_dir, destination_rel, set(payload["hashes"]))
-        if staging.exists():
-            _remove_tree(self.data_dir, staging_rel, set(payload["hashes"]))
-        if not committed:
-            # Remove only empty operation-created ancestors, preserving siblings.
-            for directory in (destination.parent, destination.parent.parent):
-                validate_session_directory(directory)
-                try:
-                    directory.rmdir()
-                except OSError:
-                    pass
-        with repo.transaction():
-            repo.transition_pending_operation(operation.id, "complete" if committed else "reverted")
+        with ExitStack() as owners:
+            if (not committed or staging.exists()) and not owners_held:
+                self._delete_owner(repo, operation.meeting_id, owners, accepted=True)
+            if committed:
+                if not destination.is_dir():
+                    raise ValueError("Committed revision files are missing")
+                for name, digest in payload["hashes"].items():
+                    if file_hash(session_artifact_path(destination, name)) != digest:
+                        raise ValueError("Published revision hash mismatch")
+                self._write_receipt(repo, operation)
+                self._write_state(repo, operation.meeting_id)
+            else:
+                _remove_tree(self.data_dir, destination_rel, set(payload["hashes"]))
+            if staging.exists():
+                _remove_tree(self.data_dir, staging_rel, set(payload["hashes"]))
+            if not committed:
+                # Remove only empty operation-created ancestors, preserving siblings.
+                for directory in (destination.parent, destination.parent.parent):
+                    validate_session_directory(directory)
+                    try:
+                        directory.rmdir()
+                    except OSError:
+                        pass
+            with repo.transaction():
+                repo.transition_pending_operation(
+                    operation.id, "complete" if committed else "reverted"
+                )
 
     def _write_state(self, repo: MemoryRepository, identity: str) -> None:
         meeting = repo.get_meeting(identity)
@@ -1936,6 +1975,7 @@ class MemoryService:
             identities = {row[0] for row in active_rows} | {row["meeting_id"] for row in rows}
             live = set()
             checked = set()
+            native_checked = set()
 
             def protect(identity: str | None) -> None:
                 if identity is None:
@@ -1950,10 +1990,13 @@ class MemoryService:
                     owner_path.parent.mkdir(parents=True, exist_ok=True)
                     probe = _FileLock(owner_path, timeout=0)
                     leases.callback(probe.close)
+                    if self._sessions_roots:
+                        self._retain_native_owners(identity, leases)
+                        native_checked.add(identity)
                 except Busy:
                     live.add(identity)
-                    skipped.append(RecoveryOutcome(identity, "Live catalog owner; work preserved"))
-                except (OSError, ValueError) as exc:
+                    skipped.append(RecoveryOutcome(identity, "Live local owner; work preserved"))
+                except (OSError, ValueError, LibraryError) as exc:
                     warnings.append(str(exc))
                     # An invalid owner path is not proof the job has stopped.
                     live.add(identity)
@@ -1965,6 +2008,9 @@ class MemoryService:
                 protect(identity)
             for row in rows:
                 if row["meeting_id"] in live:
+                    skipped.append(
+                        RecoveryOutcome(row["id"], "Local ownership prevents operation recovery")
+                    )
                     continue
                 if row["kind"] == "delete":
                     # Already handled above with the same retained ownership path.
@@ -1972,7 +2018,11 @@ class MemoryService:
                 if row["meeting_id"] in suppressed:
                     continue
                 try:
-                    self._reconcile_operation(repo, PendingOperation(**dict(row)))
+                    self._reconcile_operation(
+                        repo,
+                        PendingOperation(**dict(row)),
+                        owners_held=row["meeting_id"] in native_checked,
+                    )
                     after = repo.get_pending_operation(row["id"])
                     if after is not None and after.phase == "complete":
                         completed.append(
@@ -2008,10 +2058,42 @@ class MemoryService:
                     if relative in protected:
                         continue
                     try:
-                        UUID(entry.name)  # only owned UUID staging trees
+                        if not _is_uuid(entry.name):
+                            raise LibraryError(
+                                "Invalid staging operation identity; material retained"
+                            )
+                        # R54 preserves A's private pre-journal cleanup authority.
+                        # Check ALL journal kinds/references first: an inconsistent
+                        # reference must not turn identified work into an orphan.
+                        rows = repo.library.execute(
+                            "SELECT id,kind,meeting_id,staging_path FROM pending_operations "
+                            "WHERE staging_path=? OR destination_path=? OR id=?",
+                            (relative, relative, entry.name),
+                        ).fetchall()
+                        if not rows:
+                            # Same publication lock, existing A plan/role/path and
+                            # all-children preflight; no meeting/native authority,
+                            # invented re-hash or committed-data access is needed.
+                            _remove_tree(self.data_dir, relative)
+                            continue
+                        if (
+                            len(rows) != 1
+                            or rows[0]["kind"] != "publish_revision"
+                            or rows[0]["id"] != entry.name
+                            or rows[0]["staging_path"] != relative
+                            or not _is_uuid(rows[0]["meeting_id"])
+                        ):
+                            raise LibraryError("Inconsistent staging journal; material retained")
+                        identity = rows[0]["meeting_id"]
+                        protect(identity)
+                        if identity in live or identity not in native_checked:
+                            raise LibraryError(
+                                "Staging cleanup ownership unavailable; material retained"
+                            )
                         _remove_tree(self.data_dir, relative)
-                    except (OSError, ValueError) as exc:
+                    except (OSError, ValueError, LibraryError) as exc:
                         warnings.append(str(exc))
+                        skipped.append(RecoveryOutcome(entry.name, "Staging cleanup deferred"))
             state_operations: list[PendingOperation] = []
             with repo.transaction():
                 for row in active_rows:

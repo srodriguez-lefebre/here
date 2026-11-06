@@ -185,6 +185,7 @@ class HereApplicationController:
                 raise InvalidApplicationCommand(
                     f"Cannot start while application is {self._snapshot.state.value}"
                 )
+            self._memory._register_sessions_root(request.output_dir)
             audio_reservation.acquire()
             previous = self._snapshot.state
             started_at = self._clock()

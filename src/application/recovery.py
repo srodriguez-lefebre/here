@@ -66,7 +66,9 @@ class RecoveryService:
         data_dir = get_data_dir()
         if (data_dir / "library.sqlite3").exists():
             try:
-                parent = MemoryService(data_dir).retry_parent(directory, source_id)
+                parent = MemoryService(data_dir, sessions_root=self.root).retry_parent(
+                    directory, source_id
+                )
             except (NotFound, OwnershipBusy, UnsafeSessionPath):
                 raise
             except (LibraryError, ValueError) as exc:
@@ -122,7 +124,7 @@ class RecoveryService:
         try:
             data_dir = get_data_dir()
             if (data_dir / "library.sqlite3").exists() or (data_dir / "meetings").exists():
-                MemoryService(data_dir).reconcile()
+                MemoryService(data_dir, sessions_root=self.root).reconcile()
         except (OSError, ValueError, RuntimeError):
             pass
         if not self.root.exists():
@@ -155,7 +157,11 @@ class RecoveryService:
                             )
                         if pending is not None and metadata.status != "pending":
                             claim()
-                            result = SessionProcessor().publish_memory(
+                            result = SessionProcessor(
+                                memory_service=MemoryService(
+                                    get_data_dir(), sessions_root=self.root
+                                )
+                            ).publish_memory(
                                 directory,
                                 revision_of=pending.revision_of,
                                 status_only=pending.intent == "status",
@@ -300,7 +306,7 @@ class RecoveryService:
             session, RuntimeError("Capture interrupted before final persistence")
         )
         return (
-            SessionProcessor()
+            SessionProcessor(memory_service=MemoryService(get_data_dir(), sessions_root=self.root))
             .persist_capture_failure(
                 failure,
                 self.root,

@@ -101,9 +101,12 @@ def memory_ingest(path: Path, json_output: bool = typer.Option(False, "--json"))
 
 
 @memory_app.command("reconcile")
+@settings_operation
 def memory_reconcile(json_output: bool = typer.Option(False, "--json")) -> None:
     try:
-        report = MemoryService(get_data_dir()).reconcile()
+        report = MemoryService(
+            get_data_dir(), sessions_root=get_settings().TRANSCRIPTIONS_DIR
+        ).reconcile()
     except (LibraryError, OSError) as exc:
         _memory_lifecycle_error(exc, json_output)
         return
@@ -128,6 +131,7 @@ def memory_show(meeting_id: str, json_output: bool = typer.Option(False, "--json
 
 
 @memory_app.command("delete")
+@settings_operation
 def memory_delete(
     meeting_id: str,
     yes: bool = typer.Option(
@@ -138,7 +142,9 @@ def memory_delete(
     if not yes:
         _memory_lifecycle_error(InvalidInput("Deletion requires --yes"), json_output)
     try:
-        result = MemoryService(get_data_dir()).delete_meeting(meeting_id)
+        result = MemoryService(
+            get_data_dir(), sessions_root=get_settings().TRANSCRIPTIONS_DIR
+        ).delete_meeting(meeting_id)
     except (LibraryError, OSError) as exc:
         _memory_lifecycle_error(exc, json_output)
         return
