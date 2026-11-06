@@ -152,6 +152,27 @@ class MeetingDetail:
 
 
 @dataclass(frozen=True, slots=True)
+class SuppressionSnapshot:
+    suppressed_meeting_ids: tuple[str, ...]
+    fingerprint: str
+
+
+@dataclass(frozen=True, slots=True)
+class DeletionResult:
+    status: str
+    meeting_id: str | None = None
+    reason: str = ""
+    warnings: tuple[object, ...] = ()
+    error_category: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ReindexReport:
+    indexed_meetings: int = 0
+    indexed_segments: int = 0
+    warnings: tuple[object, ...] = ()
+
+@dataclass(frozen=True, slots=True)
 class MeetingQuery:
     text: str = ""
     from_utc: str | None = None

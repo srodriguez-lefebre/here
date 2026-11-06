@@ -127,6 +127,36 @@ def memory_show(meeting_id: str, json_output: bool = typer.Option(False, "--json
     _memory_output(result, json_output)
 
 
+@memory_app.command("delete")
+def memory_delete(
+    meeting_id: str,
+    yes: bool = typer.Option(
+        False, "--yes", help="Confirm removal of the managed meeting and derivatives."
+    ),
+    json_output: bool = typer.Option(False, "--json"),
+) -> None:
+    if not yes:
+        _memory_lifecycle_error(InvalidInput("Deletion requires --yes"), json_output)
+    try:
+        result = MemoryService(get_data_dir()).delete_meeting(meeting_id)
+    except (LibraryError, OSError) as exc:
+        _memory_lifecycle_error(exc, json_output)
+        return
+    _memory_output(result, json_output)
+    if result.status != "completed":
+        raise typer.Exit({"invalid_input": 2, "conflict": 3}.get(result.error_category or "io", 4))
+
+
+@memory_app.command("reindex")
+def memory_reindex(json_output: bool = typer.Option(False, "--json")) -> None:
+    try:
+        result = MemoryService(get_data_dir()).reindex()
+    except (LibraryError, OSError) as exc:
+        _memory_lifecycle_error(exc, json_output)
+        return
+    _memory_output(result, json_output)
+
+
 def _memory_lifecycle_error(error: Exception, json_output: bool) -> None:
     if isinstance(error, InvalidInput):
         category, code = "invalid_input", 2
