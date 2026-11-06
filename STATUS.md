@@ -71,10 +71,11 @@ parcial. B todavía no tiene writer UI. Processing continúa sin concesión.
 Cualquier handoff adicional se concede explícitamente. Migraciones/pyproject/uv.lock/versiones
 siguen seriales y requieren permiso de root. Global docs son root-only.
 
-Runtime ACTUAL: M3 UI tiene ventana exclusiva para corregir sus tres findings:
-refresh al volver, retry/error de participantes y capture-controls busy. Su RED4
-en7044b12 contra source825f3e6 produjo4F/0E/12,70s, sin fix previo. Mismo GREEN
-continúa con fix/foco42/Ruff; sin full/mypy/build/benchmark/uv. B no tiene runtime.
+Runtime ACTUAL: host libre, reservado a root hasta próximo comando READY. M3 liberó
+tras42P/13,37s y Ruff/format; source7e554f1, R1–R3 ADDRESSED en re-review aprobada.
+Integra UI/docs y B4 congelado antes de pedir mypy; B5 RED escribe sin runtime.
+La validación corta de integridad del fixture M4 también terminó y liberó host:
+exit0/0,326s; sin here/proveedor/pytest. Sin full/mypy/build/benchmark/uv M3 aún.
 Cada coordinador libera inmediatamente al terminar los comandos, antes de reportes
 o commits; root rota el host con esa confirmación. Escritura autorizada, docs y
 reviews de lectura siguen en paralelo, nunca dos tests/builds/mypy pesados.
@@ -84,8 +85,11 @@ src4ca55bbe7e88ff59f79dee47e8740fef2253718e y testsbf4f471a87ad84df8ac41f8da375f
 Review R1 ADDRESSED/SPEC/quality aprobados sin hallazgos; mypy79→79 sin delta.
 FULL2 pasó1043P/9S/390,03s, XML1052/0F/0E/9S/interno389,952s en
 `task-4-full-2.*`; HEAD/src/tests clean y sin mutaciones. Dos skips wheel sin
-entorno y siete privilegios symlink. Coordinador liberó host. Autor distinto
-finalizaTask4 docs/evidence; handoff B4 completo y B5 esperan aceptación docs.
+entorno y siete privilegios symlink. Task4 ACEPTADA en local tras docs distintos
+96e8aed255a442acb14bbdff5c32877ec201c628, source/tests invariantes. Root autorizó a
+M3 consumir SOLO ese frozen B4, preservando DTOs/error canónico y sin lease libre
+de core. Edición real/FTS M3 espera pruebas de consumo; B5 guard/reindex pendientes.
+B5 RED WRITE-ONLY ya despachado después de aceptación; GREEN espera RED real.
 
 RED históricos y alcance, sin sumar sus resultados a corridas posteriores:
 
@@ -221,10 +225,14 @@ No exige máquina limpia antes de M5 ni convierte full B4 con R1 abierto en cier
 Fixture sintético M4 preparado por catalog_group_fixes, único archivo nuevo
 `m2-preparation/here/tests/grounded_fixtures.py`, blob7d74c8221c219779099d5a3d4654951692f2997e,
 SHA256318E31615073D5DDC9B73937DA10A1DA7BA291A59F74497C1983533F6094D265.
-4 reuniones/5 revisiones/13 pasajes/8 anchors, estándar y declarativo. Sin ejecución
-ni validación; futuro RED inspecciona/valida al recibirlo UNA vez por root.
+4 reuniones/5 revisiones/13 pasajes/8 anchors, estándar y declarativo. Validación
+independiente de integridad exit0/0,326s, dos construcciones frescas, IDs/referencias/
+8 spans Unicode y hash inalterados; sin here/proveedor/pytest. Dos exit1 previos
+del arnés (whitelist tuple y stdout cp1252) conservados en
+`m4-synthetic-corpus-validation-report.md`; ninguna aceptación semántica M4.
+Futuro RED inspecciona/consume al recibirlo UNA vez por root.
 Reporte `m4-synthetic-corpus-preparation-report.md` en ese worktree; corpus previos intactos.
 
-No hay bloqueo humano actual. Próxima acción: cerrar docs/aceptarTask4 B y entregar
-su fuente real a M3; B5 RED empieza después, mientras M3 corrige findings de UI.
+No hay bloqueo humano actual. Próxima acción: integrar B4 en M3 y ejecutar su mypy
+cuando esté listo; recoger readiness B5 RED para la siguiente ventana exclusiva.
 Reanudar desde estos IDs/reportes sin recrear los chats ni repetir el catálogo A.
