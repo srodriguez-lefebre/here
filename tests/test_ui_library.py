@@ -1285,3 +1285,124 @@ def test_slow_library_query_disables_capture_actions_until_shared_worker_finishe
         qtbot.waitUntil(lambda: not desktop.jobs.busy)
     assert all(control.isEnabled() for control in controls)
     assert controller.core.command_log == []
+
+
+def _hit_identities(page):
+    return {(hit.meeting_id, hit.revision_id, hit.segment_id) for hit in page.items}
+
+
+@pytest.fixture
+def real_title_library(tmp_path, monkeypatch, qapp, qtbot):
+    """Publish with accepted A ingest so title tests exercise actual complete FTS."""
+    from memory_fixtures import MEETING_ID, make_session
+
+    library_type = _feature("here.ui.library", "LibraryView")
+    search_query = _feature("here.memory.models", "SearchQuery")
+    default_root = tmp_path / "unused-title-default"
+    default_root.mkdir()
+    monkeypatch.setenv("HERE_DATA_DIR", str(default_root))
+    memory = _feature("here.memory.service", "MemoryService")(tmp_path / "title-catalog")
+    source = make_session(tmp_path / "oldcinnabar", meeting_id=MEETING_ID)
+    publication = memory.ingest_session(source.directory)
+    assert publication.status == "inserted"
+    assert publication.meeting_id is not None
+    controller = _feature("here.application", "HereApplicationController")(memory_service=memory)
+    adapter = ApplicationUiAdapter(controller, tmp_path / "empty-title-sessions")
+    before = adapter.get_meeting(publication.meeting_id)
+    assert before.meeting.title.strip()
+    assert len(before.segments) == 2
+    expected_hits = {
+        (before.meeting.id, segment.revision_id, segment.id) for segment in before.segments
+    }
+    original_page = adapter.search(search_query(text=before.meeting.title))
+    assert not original_page.degraded, "Title integration requires the real complete FTS route"
+    assert _hit_identities(original_page) == expected_hits
+    desktop = HereDesktop(
+        qapp,
+        adapter,
+        settings=QSettings(str(tmp_path / "title-ui.ini"), QSettings.Format.IniFormat),
+    )
+    desktop.show()
+    tabs = desktop.main_window.findChild(QTabWidget)
+    assert tabs is not None
+    view = desktop.main_window.findChild(library_type)
+    assert view is not None
+    library_index = next(index for index in range(tabs.count()) if tabs.widget(index) is view)
+    tabs.setCurrentIndex(library_index)
+    qtbot.waitUntil(lambda: before.meeting.title in _text(view))
+    qtbot.waitUntil(lambda: not desktop.jobs.busy)
+    _select_first_meeting(view, qtbot)
+    qtbot.waitUntil(lambda: before.segments[0].text in _text(view))
+    qtbot.waitUntil(lambda: not desktop.jobs.busy)
+    return desktop, view, before, expected_hits, default_root
+
+
+def test_real_title_editor_current_version_updates_catalog_fts_and_keeps_original_evidence(
+    real_title_library, qtbot
+):
+    desktop, view, before, expected_hits, default_root = real_title_library
+    adapter = desktop.controller
+    search_query = _feature("here.memory.models", "SearchQuery")
+    editor = _named(view, QLineEdit, r"t[ií]tulo")
+    assert editor.text() == before.meeting.title
+    editor.selectAll()
+    qtbot.keyClicks(editor, "Published saffron agenda")
+    qtbot.mouseClick(_named(view, QPushButton, r"guardar.*t[ií]tulo"), Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: "Published saffron agenda" in _text(view))
+    qtbot.waitUntil(lambda: not desktop.jobs.busy)
+    after = adapter.get_meeting(before.meeting.id)
+    assert after.meeting.title == "Published saffron agenda"
+    assert after.meeting.row_version == before.meeting.row_version + 1
+    assert after.meeting.active_revision_id == before.meeting.active_revision_id
+    assert after.revisions == before.revisions
+    assert after.segments == before.segments
+    updated_page = adapter.search(search_query(text="saffron"))
+    assert not updated_page.degraded
+    assert _hit_identities(updated_page) == expected_hits
+    old_page = adapter.search(search_query(text=before.meeting.title))
+    assert not old_page.degraded
+    assert old_page.items == ()
+    assert not (default_root / "library.sqlite3").exists()
+
+
+def test_real_title_editor_stale_version_shows_conflict_without_overwrite_or_retry(
+    real_title_library, qtbot
+):
+    desktop, view, before, expected_hits, default_root = real_title_library
+    adapter = desktop.controller
+    patch = _feature("here.memory.models", "MeetingPatch")
+    search_query = _feature("here.memory.models", "SearchQuery")
+    editor = _named(view, QLineEdit, r"t[ií]tulo")
+    assert editor.text() == before.meeting.title
+    concurrent = adapter.update_meeting(
+        before.meeting.id,
+        patch(title="Concurrent coriander agenda"),
+        before.meeting.row_version,
+    )
+    assert concurrent.meeting.row_version == before.meeting.row_version + 1
+    # No application event is published for this independent writer: the editor
+    # must submit the version it actually displayed and handle the real Conflict.
+    assert editor.text() == before.meeting.title
+    editor.selectAll()
+    qtbot.keyClicks(editor, "Attempted tamarind agenda")
+    qtbot.mouseClick(_named(view, QPushButton, r"guardar.*t[ií]tulo"), Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(
+        lambda: editor.text() == "Concurrent coriander agenda"
+        and re.search(r"(cambi[oó]|conflicto|versi[oó]n actual)", _text(view), re.IGNORECASE)
+        is not None
+    )
+    qtbot.waitUntil(lambda: not desktop.jobs.busy)
+    assert "Concurrent coriander agenda" in _text(view)
+    after = adapter.get_meeting(before.meeting.id)
+    assert after.meeting.title == "Concurrent coriander agenda"
+    assert after.meeting.row_version == concurrent.meeting.row_version
+    assert after.meeting.active_revision_id == before.meeting.active_revision_id
+    assert after.revisions == before.revisions
+    assert after.segments == before.segments
+    current_page = adapter.search(search_query(text="coriander"))
+    assert not current_page.degraded
+    assert _hit_identities(current_page) == expected_hits
+    attempted_page = adapter.search(search_query(text="tamarind"))
+    assert not attempted_page.degraded
+    assert attempted_page.items == ()
+    assert not (default_root / "library.sqlite3").exists()
