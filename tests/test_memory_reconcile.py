@@ -461,3 +461,180 @@ def test_r48_controller_exposes_read_only_actual_memory_service_and_real_catalog
     assert controller.memory_service is exposed
     if injected:
         assert not (default_root / "library.sqlite3").exists()
+
+
+@pytest.mark.parametrize(
+    ("transition", "terminal_status"),
+    [
+        ("stale", "interrupted"),
+        ("set_status", "failed"),
+        ("set_status", "cancelled"),
+        ("finish_attempt", "failed"),
+        ("finish_attempt", "cancelled"),
+    ],
+    ids=[
+        "stale-interrupted",
+        "set-status-failed",
+        "set-status-cancelled",
+        "finish-attempt-failed",
+        "finish-attempt-cancelled",
+    ],
+)
+def test_r1_committed_terminal_state_repairs_snapshot_before_catalog_loss(
+    tmp_path, monkeypatch, transition, terminal_status
+):
+    from here.memory.artifacts import read_meeting_snapshot
+
+    class SyntheticStateWriteFailure(OSError):
+        pass
+
+    root = tmp_path / "data"
+    memory = MemoryService(root)
+    source = make_session(tmp_path / "r1-source", meeting_id=MEETING_ID)
+    assert memory.ingest_session(source.directory).status == "inserted"
+    memory.begin_processing(MEETING_ID)
+    evidence_before = memory.show(MEETING_ID)
+    parent_revision = evidence_before["meeting"]["active_revision_id"]
+    state_directory = root / "meetings" / MEETING_ID / "states"
+    baseline_files = {path: path.read_bytes() for path in state_directory.glob("*.json")}
+    assert any(
+        read_meeting_snapshot(state_directory, path.name, MEETING_ID)["meeting"]["status"]
+        == "processing"
+        for path in baseline_files
+    )
+    event_columns = (
+        "id",
+        "meeting_id",
+        "kind",
+        "occurred_at",
+        "recorded_duration_ms",
+        "payload",
+    )
+    event_query = (
+        f"SELECT {','.join(event_columns)} FROM lifecycle_events "
+        "WHERE meeting_id=? ORDER BY id"
+    )
+    meeting_query = (
+        "SELECT status,row_version,active_revision_id,updated_at FROM meetings WHERE id=?"
+    )
+    initial_events = _rows(root, event_query, (MEETING_ID,))
+    initial_ids = {row[0] for row in initial_events}
+    initial_version = evidence_before["meeting"]["row_version"]
+    fault_snapshot = {}
+    write_state = MemoryService._write_state
+
+    def fail_once_after_commit(self, repo, identity):
+        row = _rows(root, meeting_query, (MEETING_ID,))[0]
+        if identity == MEETING_ID and row[0] == terminal_status and not fault_snapshot:
+            events = _rows(root, event_query, (MEETING_ID,))
+            (event,) = [entry for entry in events if entry[0] not in initial_ids]
+            assert row[1:3] == (initial_version + 1, parent_revision)
+            assert event[1] == MEETING_ID and event[2] == "status_changed"
+            assert event[3] and event[4] == 2000
+            assert json.loads(event[5]) == {"from": "processing", "to": terminal_status}
+            # A second connection observed the committed row and exact event.
+            # Only local snapshot housekeeping fails; no recovery path is mocked.
+            fault_snapshot.update(meeting=row, events=events, event=event)
+            raise SyntheticStateWriteFailure("Synthetic one-shot postcommit state write failure")
+        return write_state(self, repo, identity)
+
+    if transition == "stale":
+        memory.finish_capture(MEETING_ID)
+    try:
+        with monkeypatch.context() as patch:
+            patch.setattr(MemoryService, "_write_state", fail_once_after_commit)
+            try:
+                if transition == "stale":
+                    memory.reconcile()
+                elif transition == "set_status":
+                    memory.set_status(MEETING_ID, terminal_status)
+                else:
+                    result = memory.finish_attempt(
+                        MEETING_ID, terminal_status, revision_of=parent_revision
+                    )
+                    assert (result.status, result.meeting_id) == ("unchanged", MEETING_ID)
+            except SyntheticStateWriteFailure:
+                # Existing void/status adapters may expose the postcommit I/O
+                # exception. Its presence cannot undo the independently read SQL.
+                pass
+    finally:
+        memory.finish_capture(MEETING_ID)
+
+    assert fault_snapshot, "The injected failure must follow the actual terminal SQL commit"
+    assert _rows(root, meeting_query, (MEETING_ID,)) == [fault_snapshot["meeting"]]
+    assert _rows(root, event_query, (MEETING_ID,)) == fault_snapshot["events"]
+    pending_before_repair = _rows(
+        root,
+        "SELECT id,phase FROM pending_operations "
+        "WHERE meeting_id=? AND kind='persist_state' ORDER BY id",
+        (MEETING_ID,),
+    )
+
+    # SQL is healthy and authoritative during this recovery opportunity.
+    # The regression is failing to persist its already committed terminal event.
+    repaired = memory.reconcile()
+    snapshots = [
+        read_meeting_snapshot(state_directory, path.name, MEETING_ID)
+        for path in state_directory.glob("*.json")
+    ]
+    repaired_snapshots = [
+        snapshot
+        for snapshot in snapshots
+        if (
+            snapshot["meeting"]["status"],
+            snapshot["meeting"]["row_version"],
+            snapshot["meeting"]["active_revision_id"],
+            snapshot["meeting"]["updated_at"],
+        ) == fault_snapshot["meeting"]
+    ]
+    assert repaired_snapshots, (
+        "Healthy reconciliation missed the committed terminal snapshot repair",
+        transition,
+        terminal_status,
+        fault_snapshot["meeting"],
+    )
+    assert any(
+        sorted(
+            tuple(event[column] for column in event_columns)
+            for event in snapshot["lifecycle_events"]
+        ) == fault_snapshot["events"]
+        for snapshot in repaired_snapshots
+    ), "Snapshot repair must preserve original event IDs, occurrence times and payloads"
+    assert pending_before_repair and all(phase == "prepared" for _, phase in pending_before_repair)
+    for operation_id, _phase in pending_before_repair:
+        assert _rows(root, "SELECT phase FROM pending_operations WHERE id=?", (operation_id,)) == [
+            ("complete",)
+        ]
+        _outcome(repaired, "completed", operation_id)
+    assert _rows(root, meeting_query, (MEETING_ID,)) == [fault_snapshot["meeting"]]
+    assert _rows(root, event_query, (MEETING_ID,)) == fault_snapshot["events"]
+    memory.reconcile()
+    assert _rows(root, meeting_query, (MEETING_ID,)) == [fault_snapshot["meeting"]]
+    assert _rows(root, event_query, (MEETING_ID,)) == fault_snapshot["events"]
+    assert all(path.read_bytes() == contents for path, contents in baseline_files.items())
+
+    # All service SQL connections are operation-scoped, and the actual owner was
+    # released in finally above. Remove only this synthetic catalog's named files.
+    MemoryService.check_owner(root, MEETING_ID)
+    with closing(sqlite3.connect(root / "library.sqlite3")) as connection:
+        assert connection.execute("PRAGMA wal_checkpoint(TRUNCATE)").fetchone()[0] == 0
+    for suffix in ("", "-wal", "-shm", "-journal"):
+        path = root / ("library.sqlite3" + suffix)
+        assert path.absolute().parent == root.absolute()
+        assert path.resolve().is_relative_to(tmp_path.resolve()) and not path.is_symlink()
+        path.unlink(missing_ok=True)
+    restored = MemoryService(root)
+    restored.reconcile()
+    restored.reconcile()
+    assert _rows(root, meeting_query, (MEETING_ID,)) == [fault_snapshot["meeting"]]
+    assert _rows(root, event_query, (MEETING_ID,)) == fault_snapshot["events"]
+    assert _rows(
+        root,
+        "SELECT COUNT(*) FROM lifecycle_events WHERE id=?",
+        (fault_snapshot["event"][0],),
+    ) == [(1,)]
+    rebuilt = restored.show(MEETING_ID)
+    for key in ("revisions", "segments", "audio_assets", "revision_audio_assets"):
+        assert sorted(rebuilt[key], key=lambda value: str(value)) == sorted(
+            evidence_before[key], key=lambda value: str(value)
+        )
