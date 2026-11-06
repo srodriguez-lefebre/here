@@ -64,16 +64,17 @@ pedidos de leases/handoffs se registran en su progreso/reporte local.
 
 Leases actuales: B posee memory repository/database/service/artifacts, controller/
 recovery y CLI; artifacts se concedió para estados version2 con compatibilidad1.
-M3 posee search.py/tests, UI enumerada y TEMPORALMENTE models.py tras su RED;
-B congeló models en246faec y no escribe hasta devolución expresa antes de B5.
+M3 posee search.py/tests y UI enumerada; models.py DEVUELTO A B para R48 después
+de congelar DTOs M3 en5c9197a/integración42d147a, blob4680f29d.
 M3 puede integrar solo ese commit y errores canónicos0452945, no el service B4
 parcial. B todavía no tiene writer UI. Processing continúa sin concesión.
 Cualquier handoff adicional se concede explícitamente. Migraciones/pyproject/uv.lock/versiones
 siguen seriales y requieren permiso de root. Global docs son root-only.
 
-Runtime ACTUAL: B4 GREEN/focos/Ruff/mypy comparativo concedido; sin full/build
-todavía. M3 liberó su RED y escribe GREEN propio sin nuevas corridas hasta otra
-concesión. Cada rol libera la ventana con evidencia real; root la asigna al otro
+Runtime ACTUAL: M3 UI RED post-DTO y primer foco GREEN Task1 concedidos después
+de ACK global B sin procesos. B escribe R48 sin tests/lint/mypy/build hasta nueva
+concesión. Sin full/build/benchmark todavía. Cada coordinador libera la ventana
+con evidencia real; root la asigna al otro
 frente. Nunca dos tests/builds/mypy pesados en el host. Leer/escribir archivos
 autorizados y preparación documental sí puede seguir en paralelo.
 
@@ -87,6 +88,14 @@ RED observados, sin aceptación nueva de tareas:
   privados diferidos/6,91s, fuente test-only3d6a6ac; XML112/111F/0E/1S.
   UI:2 fallan/8 pasan/3,31s, fuente3becc79;16 casos de widgets pendientes de DTOs.
   No presentar preparaciones/deselecciones como tests aprobados.
+
+Checkpoints posteriores: B4 selección111/111 GREEN76,83s, foco afectado294 pasan/
+4 deselected/162,35s y mypy79→79 sin delta (previos al suplemento R48).
+R48 RED observado11F/39deselected/5,26s, commit1f4d22d; lecturas/DTOs/getter nuevos
+en candidato122 líneas aún sin verificar. M3 SearchService integradoeef3dcb,
+480 líneas, foco listo con los66 controles de codec adaptados sin cambiar sus
+assertions; todavía sin GREEN observado. R48 completa lectura real de participantes
+y assignments; M3 espera backend aceptado, no crea otra autoridad de datos.
 
 Leér reportes de progreso canónicos para pedidos de lease y resultados (además
 de wait_threads): `faab/here/.superpowers/sdd/M2_LIFECYCLE_PLAN/progress.md` y
@@ -166,6 +175,6 @@ No se leyó el `.env` real ni audio/biblioteca privados. Smokes opt-in futuros u
 solo HERE_PROVIDER_SMOKE_KEY y texto/audio sintéticos según ruling19, sin imprimir
 ni persistir la credencial. Máquina Windows limpia: pedir al necesitar la fila,
 con protocolo escrito. Prueba de dos horas: **omitida por ruling 5**, nunca aprobada.
-No hay bloqueo humano actual. Próxima acción: recoger GREEN/focos B4, su release
-de runtime y el commit de DTOs M3; alternar focos, revisar y coordinar B5 después.
+No hay bloqueo humano actual. Próxima acción: recoger RED UI/foco M3 y su release,
+devolver runtime para GREEN R48 B4 y validar su handoff antes de review/B5.
 Reanudar desde estos IDs/reportes sin recrear los chats ni repetir el catálogo A.

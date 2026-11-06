@@ -562,6 +562,27 @@ Los rulings nuevos se escriben en español por el ruling 6.
     diseño, no un comando o pantalla nuevo. **Cost if wrong:** adaptar anotaciones
     y despacho de consumidores conservando los dos DTOs, filtros y aceptación.
 
+48. **Ruling:** se completa el contrato de lectura B4 que ya requiere Biblioteca,
+    sin una API alternativa en UI ni nuevas tablas. `MemoryService.get_meeting(id)`
+    retorna MeetingDetail coherente de DB con sus participantes, vínculos/roles y
+    asignaciones; `list_participants(meeting_id=None)` retorna tuples de Participant
+    con IDs/nombres reales para el filtro, globales o asociados según argumento.
+    MeetingDetail agrega al final de sus campos existentes `participants`,
+    `participant_links` y `speaker_assignments`, con tuples vacíos compatibles.
+    Los vínculos son MeetingParticipant(meeting_id,participant_id,role=None) y las
+    asignaciones SpeakerAssignment(meeting_id,revision_id,speaker_key,participant_id),
+    con participant_id nullable como la DB; no se interpreta una etiqueta como
+    identidad global. B implementa las lecturas y luego integra el guard R42 antes
+    de exposición; M3 no consulta SQL ni reconstruye relaciones por su cuenta.
+    ApplicationController expone su MemoryService real por una propiedad read-only
+    `memory_service`, preservando la raíz inyectada y R40. M3 devuelve ahora el lease
+    de models tras congelar sus DTOs; B agrega el contrato y entrega un commit
+    acotado, sin importar toda la búsqueda M3 en su grupo. El RED independiente
+    suplementario prueba estas lecturas antes del GREEN correspondiente. No cambia
+    pantalla, comando, retención, dependencias ni criterio de terminado.
+    **Cost if wrong:** adaptar DTOs/adaptadores de lectura y sus callers antes de
+    aceptar B/M3, conservando una sola autoridad y la supresión de datos borrados.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
