@@ -94,11 +94,14 @@ Hasta esa transferencia no hay otro writer. Processing continúa sin concesión.
 Cualquier handoff adicional se concede explícitamente. Migraciones/pyproject/uv.lock/versiones
 siguen seriales y requieren permiso de root. Global docs son root-only.
 
-Runtime del checkpoint: R58 terminó con GLOBAL RELEASE; después RED59 terminó
-y confirmó GLOBAL RELEASE de sesión64364 antes de reportar. Host libre, sin grant
-activo para ningún frente. B implementa productor sobre C20E; consumidor recovery
-en su WT separado. M3 tiene trabajo query source-only R61. Los próximos comandos
-requieren bindings/readiness y concesión concreta; consultar ambos ledgers.
+Runtime del checkpoint: productor R59 liberó53479 y M3 benchmark R61 liberó92885
+antes de reportar. B completó cuatro controles R60 en m2-native-owner-red:
+sourceC20E/test814BF580, runner17F5E82D/freeze84B926A2,4P/11,55s y XML11,520,
+0F/0E/0S;71 pins sin delta. Reporte actual confirma sesión28939 y dos hijos cerrados,
+GLOBAL RELEASE antes de análisis. Root concedió ahora W3 PARCIAL exclusivo:
+WTb5-w3-red/here, source5926/C234, siete casos originales; runnerCBABF69E/bindingA939943C,
+151hashes/149tracked verificados por coordinador. Ventana iniciándose, NOT_RESULT;
+SOURCE COMPLETE/R62 siguen abiertos. No trasladar4P deC20E a5926/C234/R62.
 W1 terminó con release completo:
 RED3F/1P/16,63s → GREEN4P/19,91s y regresión delete79P/5symlink skips/182,92s.
 Fuente42a29fbfaef83c30b895ed6e75af95562313623a, src01400e51c9ac19d66309aaa6bf91976a95c91992;
@@ -121,10 +124,18 @@ ausente y7 por módulo ausente, dos regresiones de identidad de excepción del
 caller y dos controles Busy que pasan. Runner real en `b5-w2-red/here`, rama
 `codex/m2-b5-r59-red`, HEAD05c9fed2449cab24d16f96a9997bcdd86cb461bc/base624,
 serviceA987; testAC636ACC3E2003E67B261EB32829A297F1739350B37BDBE05944FDDEDF154C36.
-No es corrida sobre C20E ni prueba de los cuerpos de guard ausentes. Productor
-service se implementa en faab sobre C20E y consumidor recovery en WT distinto;
-runtime del consumidor espera productor real verificado/handoff, sin stub,
-parser duplicado ni instancia default nueva. Reporte task-5-r59-red-wt-execution-1-report.md.
+No es corrida sobre C20E ni prueba de los cuerpos de guard ausentes.
+Checkpoint B-R59-PRODUCER-20261106: GREEN2 real40P/13,85s/XML13,818 sobre
+service DIRTY5926969BA9466288AC1F1A96EACE91CC7ED677A944A0128CC6736D44BA8038E4 y
+testF70551A820D2568196DB0A88996AFF08D559341F11D75DF948F7C72367DB04E6;71pins intactos.
+RunnerWT b5-w2-red recibió65 fuentes MAIN, no source Git624 como si fuera5926.
+Apéndice final task-5-r59-producer-review-report.md APPROVED productor/SPEC/calidad,
+0hallazgos; su headerNOT_RUN es histórico. ConsumerC234/W3 sigue parcial: edge
+marker unmapped confirmado. R62/dd59c82 fija scope WRITER/revalidación antes de
+material/marker sobre mismo servicio, sin inventarID/padre; nuevo RED asignado.
+Contrato R62 APPROVED estático en análisis raíz; no GREEN de ese writer.
+Reader40P no prueba ese writer ni SOURCE COMPLETE/aceptación del consumidor.
+Productor service y consumidor recovery conservan sus writers/WT separados.
 
 M3 terminó10 controles R55 y240 de regresión, sin fallos; benchmark40 válido
 p95=902,413285ms FALLA500. Perfil residual2 exit0 liberado: control5207ms/perfil2744ms,
@@ -147,7 +158,17 @@ en r58-ui-review-report.md sobre el mismo2b/source12774, sin findings. Coordina 
 con páginas; page/page/título/crossview/externos conservan límites. No p95<500ms,
 full/grupo/certificación. Reporte r58-ui-verification-report.md; hashes en ACCEPTANCE.
 R61commit62a5197 autoriza query source-only: representación local del cursor y
-equivalencia de bytesv2; sin corrida ni p95 nuevo.
+equivalencia de bytesv2. Checkpoint M3-R61-2e69-20261106: ownWT m3-search-green,
+HEAD2e69c117c66f2ed1763b4e507c76947729dd9647/src04f3fd9802b378efc588df393d92e238915f203f,
+tests1ebd4f67002a13300f454e18dcb49580d9d416e0/config7143. Existentes10P/4,95s +
+240P/52,48s enab837 con misma producción04f3; captura old7821/e198/f303 real1P/
+1,78s/XML1,656, oráculo11E2CF6B data-only. Comparación actual8P/1,96s/XML1,912,
+capture DESELECTED/cero hidden skips,84bindings. Benchmark original cinco warmups+
+40 correctas FALLA p95=848,6797799909255ms frente a<500,1F/49,08s/XML48,730,
+0E/0S y siete hashes invariantes; muestras retenidas, sin rerun ni causa inventada.
+R61 no integrado al reporte; no pase combinado con R58. Propuesta query siguiente
+solo texto autorizada; R52 UI RED preparado sin handoff aceptado. Reports/hashes
+en ACCEPTANCE; no full/tipos/Task1/grupo/certificación.
 Handback posterior: M3 integró mecánicamente R58 como
 `38cff90dba7bd2914e44491ec60e8cf58771a2f4`; src12774/tests a2ac/config7143
 son idénticos a2b (diff de source/tests/config vacío). No es otra corrida.
@@ -160,7 +181,8 @@ Review whole Task5 original CHANGES REQUESTED, Critical0/Important3: W1/P2 pierd
 del WAV v1 durante purge; W2/P1 puede completar con staging publicado identificado
 todavía presente; W3/P2 discovery de journal nativo omite supresión antes de audio/
 candidato. Root leyó informe completo y acepta los tres como defectos del contrato
-existente. Sus continuaciones acotadas cerraron W1 y W2; W3/C5/R59 siguen abiertos.
+existente. Sus continuaciones acotadas cerraron W1/W2 y aceptaron solo el reader
+R59; W3/C5 y handoff writer R62 siguen abiertos.
 service.py conserva GREEN principal para W2/R59; recovery.py ya está transferido
 al consumidor distinto, con preparación sin pase de integración. El lote v2 sobre
 624be55 terminó sin fallos: native31P/4skips, CORECOMPAT-A98P/5skips,
@@ -472,10 +494,11 @@ no provee selección meeting_ids ni OR del retrieval M4: handoff interno pendien
 sin asumir MemoryService.search, SQL directo de intelligence o filtro post-LIMIT.
 Root resolverá ese contrato; no es bloqueo humano ni aceptación de un adapter.
 
-No hay bloqueo humano actual. Próximo: GREEN productor/consumidor R59 tras RED real,
-regresiones/finaltypes/full2 B; R58 integrado tras su review acotada APPROVED,
-y fuente query R61 antes de nueva verificación. Host libre/sin grant vigente;
-R55 conserva p95 FALLIDO y R57 es diagnóstico. Root concede la próxima ventana.
+No hay bloqueo humano actual. Próximo: recibo de controles R60, RED writer
+R62 y productor/consumidor reales; regresiones/finaltypes/full2 B. R58 conserva su
+handoff aprobado; R61 mantiene p95 FALLIDO848,6798ms y próxima propuesta solo texto.
+R52 UI espera handoff aceptado. Grant W3 parcial activo, sin resultado todavía;
+R57 sigue siendo diagnóstico, no aceptación.
 PR documental24 ya mergeado; M3 B todavía espera GO y handoffs reales.
 Alternar host tras release confirmado.
 Consultar ledgers antes de rotar

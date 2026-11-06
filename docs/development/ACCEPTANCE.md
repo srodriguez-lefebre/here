@@ -18,15 +18,88 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M2 · criterio 8 | Migración transaccional, backup administrado y rechazo de esquema futuro | FK/integrity, rollback de DDL y snapshot SQLite API con WAL comprometido | Verificado automáticamente en local: M2A-T1-LOCK-GREEN-20261105 y M2A-T1-FINAL-20261105, más CI final A980/2/307,46 s |
 | M2 · criterio 14 | Busy tipado y acotado, sin trabajo de proveedor/archivos en transacción | Segunda conexión real con bloqueo de escritura y EXCLUSIVE sobre lecturas | Base verificada en tarea1 y publicación implementada en tarea 3, con focos de recuperación Busy; review técnica y CI final A980/2/307,46 s aceptados; B/M2 pendientes |
 | M2 · criterio 15 | Suite completa en CI de Windows sin credencial real ni display | Corrida hospedada sobre el head exacto del PR M2 A | Verificado automáticamente para A por M2A-CI-FINAL-8a498e2-20261106:980 pasan/2 skips wheel/307,46 s, run42155415514; B/cierre M2 exige su propia CI final |
-| M2 | Deletion clears managed memory without resurrection | DB/FTS/files/answers/backup inspection after restart | Abierto: B5 sobre624be55 verifica automáticamente focos native/corecompat/service/guard v2; nueve omisiones de privilegio symlink explícitas. Faltan gates integrados/finales B5, consumidores, full/tipos y CI/review/merge del grupo; no certificación ni cierre |
+| M2 | Deletion clears managed memory without resurrection | DB/FTS/files/answers/backup inspection after restart | Abierto: reader R59/service5926/testF705 verifica40P y review final del productor APPROVED acotada. Consumer C234/W3 sigue parcial: R62 fija handoff WRITER y requiere su RED/GREEN, sin aceptar el consumidor. Focos624 y W1/W2 conservan bindings; faltan integración/finales B5, full/tipos/CI/review/merge del grupo; sin certificación ni cierre |
 | M3 | Listing/filter/search and original moment navigation | End-to-end Qt selection and seek plus real WAV marker playback | Open |
-| M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | Abierto: p95 históricos0bea1303,482595ms y R55/e198902,413285ms FALLAN<500ms; R55 conserva10 controles y240 de regresión. R58/2b66246 verifica automáticamente foco44P y gate UI original1P: ocho consultas completas, max8,9216ms<50ms. Review Task2 del suplemento R58 APPROVED acotada, sin integración en primary al reporte; no p95 nuevo, cierre de grupo ni certificación. Fallos UI anteriores conservados |
+| M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | Abierto: R61/source04f3 conserva10+240 controles y8 comparaciones verdes, pero benchmark original40 muestras FALLA p95=848,6797799909255ms frente al requisito<500ms. Fallos históricos0bea1303,482595 y R55/e198902,413285 retenidos. R58/source12774 tiene gate UI ocho consultas/max8,9216ms<50ms y review acotada APPROVED en su propio scope; no verifica combinación con R61, grupo ni hardware |
 | M4 | Multi-meeting answers/extractions with valid evidence | Source-resolution and semantic synthetic corpus, provider smoke | Open |
 | M4 | Uncertainty/injection/cancellation/deletion remain honest | No-evidence, invalid-citation, concurrent delete/redaction tests | Open |
 | M5 | Offline first run, settings, tray/startup and safe exit | Qt, process concurrency and Windows settings tests | Open |
 | M5 | Portable data including optional audio and citations | Export/import on a fresh root, hashes and hostile ZIP tests | Open |
 | M5 | Install/update/uninstall preserve user memory | N to N+1 installation and separate uninstall test | Open |
 | All | PR groups reviewed and merged | PR URLs, reviewed heads, comment dispositions, CI and merge SHAs | M2–M5 en ejecución por ruling 20; cada uno de los nueve grupos requiere review independiente, Copilot recibido/respondido y CI Windows verde sobre el head exacto antes del merge; M2 A mergeado por PR21/53712c5 con todos los gates; los ocho grupos restantes pendientes |
+
+## Checkpoint B-R59-PRODUCER / M3-R61 — 20261106
+
+Evidencia posterior al checkpoint b8d35fa y contrato R62 de DELIVERYdd59c82;
+no nuevas corridas de este autor, no resultados sumados para fabricar un full.
+
+### B: reader R59 verificado, handoff writer aún pendiente
+
+Productor DIRTY/uncommitted service SHA256
+`5926969BA9466288AC1F1A96EACE91CC7ED677A944A0128CC6736D44BA8038E4`, test estilizado
+`F70551A820D2568196DB0A88996AFF08D559341F11D75DF948F7C72367DB04E6`.
+Ejecución en `b5-w2-red/here`/HEAD05c9fed, con65 fuentes copiadas mecánicamente
+desde MAIN y71 pins/0mismatches: el source Git624 del runner es solo BASE, no los
+bytes del productor ejecutado. No se atribuye GREEN al test originalAC636.
+
+| Corrida nombrada | Resultado observado | Alcance y límites |
+|---|---|---|
+| task-5-r59-producer-green-2 ·20261106 | 40 pasan/0F/0E/0S/13,85s; XML40/interno13,818s; exit0 | Archivo completo del reader/módulo/delegación, aliases/legacy, errores exactos del caller, Busy/recursos y contender real de exclusión; no consumidor W3 ni handoff writer |
+| task-5-r60-scope-controls-1 ·20261106 | 4 pasan/11,55s; XML4/0F/0E/0S/interno11,520s; exit0 | WTm2-native-owner-red, sourceC20E/test814BF580;71 pins/0mismatches y release28939. Foreign SQL, unknown sin SQL, complete+unknown nuevo y pre-barrier sin rechazo global; controles de primer pase, no RED inventado ni resultado sobre5926 |
+
+El apéndice vigente de `task-5-r59-producer-review-report.md` declara productor
+R59 SPEC/calidad APPROVED con GREEN2 y0 hallazgos nuevos; sucede a su encabezado
+histórico NOT_RUN. GLOBAL RELEASE53479 precedió lectura/reportes. Consumer
+`C2349242B4766FCED54FA63B21A6D66A05631C0D577FAAB81DC3359B5A337387` sigue parcial:
+un marker None/opaco realmente unmapped no prueba un lease. R62 fija WRITER del
+mismo servicio/root, fuera del read guard, exclusión/revalidación antes de material/
+marker y reuso privado ya locked; su RED independiente está asignado. Los40
+pases del reader no prueban ese writer ni aceptan consumer/W3/C5/Task5/B/M2.
+`task-5-r60-scope-controls-actual-1-report.md` confirma los cuatro cuerpos completos,
+dos hijos síncronos exit73 y GLOBAL RELEASE28939 antes de análisis. Su snapshot
+C20E es independiente de5926/C234/R62; recibo del mismo reviewer aún separado.
+R62/dd59c82 tiene APPROVED estático en el análisis raíz, no GREEN de su writer.
+
+### M3: controles R61 y oráculo real, p95 original fallido
+
+WT `m3-search-green/here`, HEAD `2e69c117c66f2ed1763b4e507c76947729dd9647`, src
+`04f3fd9802b378efc588df393d92e238915f203f`, tests
+`1ebd4f67002a13300f454e18dcb49580d9d416e0`, config
+`7143d4deff5acb55e524baa5ee15c101bce9b3b5`. Existentes10+240 corrieron antes en
+HEADab837/testsa2ac con la misma producción04f3/config7143 y helpers originales;
+se conservan como corridas distintas, no repeticiones sobre2e69 ni source primary.
+
+| Corrida nombrada ·20261106 | Resultado observado | Alcance y límites |
+|---|---|---|
+| r61-generation-controls-1 | 10 pasan/4,95s; XML10/0F/0E/0S/interno4,829s | Controles existentes sobreab837/source04f3, no un RED nuevo |
+| r61-regression-1 | 240 pasan/52,48s; XML240/0F/0E/0S/interno52,394s | Search/fallback/guard/facade/scale, selección acotada, no full |
+| r61-baseline-capture-1 | 1 pasa/1,78s; XML1/0F/0E/0S/interno1,656s | Captura REAL old7821/sourcee198/queryf303; medición baseline, no equivalencia del candidato. Freeze posterior solo data08e15/blob657c, oráculo SHA11E2CF6B75992CE2863FDC9E0F485A48BB1142FFE3C57707C89CFC046F671718 |
+| r61-row-controls-1 | 8 pasan/1,96s; XML8/0F/0E/0S/interno1,912s | En2e69, capture node DESELECTED explícito, cero skips; siete vectores reales bytes/digest/error/factory y cursor viejo público.84 bindings invariantes; primer pass es control, no RED inventado |
+| r61-query-benchmark-1 | 1 falla/49,08s; XML1/1F/0E/0S/interno48,730s; exit1 | Cinco warmups+40 consultas públicas correctas, p95 inclusivo848,6797799909255ms FALLA requisito<500ms; muestras completas, no fallo de setup ni medición parcial |
+
+Benchmark original sin instrumentación, mismo corpus físico1000/100000/98901FTS,
+220 registros/221 IDs y44 hits esperados; setup11,002631799987284s fuera del warm.
+Los84 bindings y siete hashes de source/input emitidos por el test permanecieron
+iguales; recomputación p95 coincide, ningún outlier excluido ni rerun. Release
+GLOBAL92885 precede análisis. R61 no estaba integrado en primary al reporte;
+R58/source12774 max8,9216ms aprobado conserva otro snapshot/scope, sin pase
+combinado R58/R61 ni reinterpretación de los fallos1303/902/848. Propuesta query
+posterior es solo texto; R52 UI RED en preparación no prueba handoff aceptado.
+
+Reports/raw en los ledgers respectivos: `task-5-r59-producer-green-2-actual-report.md`,
+review productor y `r59-unmapped-marker-writer-handoff-analysis.md`; M3
+`r61-existing-verification-report.md`, `r61-baseline-capture-1-report.md`,
+`r61-row-controls-1-report.md`, `r61-query-benchmark-1-report.md`. Hashes actuales:
+
+| Artefacto | SHA256 |
+|---|---|
+| task-5-r59-producer-green-2.log / .xml | `4EDED2E519879F469A346D2E594FF37A3004A686616DE92421D4D279D11613D2` / `91049799F5F095D85FA4087AE88630ADA3656F8554FA0EC6698CC40CF588F0F0` |
+| r61-query-benchmark-1.log / .xml | `EE3B28D357AFE5D8E35DD9775C6C91BB3E8348D6CBFEC939FFD449B0736C38E5` / `0FC076C9B1EC36C8CAE1FAEFA05AAF2EB651ACEE3E8B78D82204D952F7162EE5` |
+| r61-query-benchmark-1-measurements.json | `1D345294F931214C359988B74FB9980451E47F2386D3DEF944570F84F55F4AFB` |
+
+Implementado/verificado automáticamente solo en esos scopes; sin certificación
+de hardware/proveedor/instalación limpia, sin full/types/grupo/hito/versión nueva.
+La prueba de dos horas sigue **omitida por ruling 5**, no aprobada.
 
 ## Checkpoint M3-R58-UI-2b66246-20261106 — dos corridas independientes
 
