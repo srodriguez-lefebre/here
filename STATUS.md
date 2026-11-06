@@ -71,9 +71,13 @@ parcial. B todavía no tiene writer UI. Processing continúa sin concesión.
 Cualquier handoff adicional se concede explícitamente. Migraciones/pyproject/uv.lock/versiones
 siguen seriales y requieren permiso de root. Global docs son root-only.
 
-Runtime ACTUAL: host libre, reservado a root hasta próximo comando READY. M3 liberó
-tras42P/13,37s y Ruff/format; source7e554f1, R1–R3 ADDRESSED en re-review aprobada.
-Integra UI/docs y B4 congelado antes de pedir mypy; B5 RED escribe sin runtime.
+Runtime ACTUAL: ventana condicional EXCLUSIVA M3 para corregir/verificar tipos,
+una vez congelado/listo. Primera comparación con B4 real compartido:79 baseline/
+87 candidato,9 diagnósticos nuevos y1 eliminado; nuevos solo UI, ninguno search.py.
+Fuente integrada c4cc8ca, B4 exacto y DTOs R46 preservados. Mismo GREEN corrige
+sus archivos UI sin silencios/B4; Ruff, nuevo mypy y foco42/consumidores título
+si listos, sin full/build/benchmark/uv. B5 RED escribe sin runtime. M3 anterior
+UI42P/13,37s y review R1–R3 aprobada conservan su fuente7e554f1/alcance.
 La validación corta de integridad del fixture M4 también terminó y liberó host:
 exit0/0,326s; sin here/proveedor/pytest. Sin full/mypy/build/benchmark/uv M3 aún.
 Cada coordinador libera inmediatamente al terminar los comandos, antes de reportes
@@ -218,6 +222,11 @@ Contrato B5/M3 R50 fijado tras review independiente estática, reporte
 snapshot de UUIDs y aliases exactos antes de LIMIT, fingerprint incluye IDs
 resueltos; caller abre/cierra. Parser único, sin nuevas migraciones o p95 relajado.
 No es implementación/aceptación B5; ambos frentes reciben API antes de integrarla.
+R51 ya fija DTO DeletionResult/ReindexReport, categorías/fase durable, ACK fuera
+del lock/SQL y revalidación, purger privado en transacción y roles de temporales.
+Reporte `b5-result-hook-contract-review.md`; la interoperabilidad real se prueba
+en M3 integrado con fuente B5 exacta, sin duplicar búsqueda en B. Source B5 aún
+no implementado; las nueve fronteras R42 y todos los gates siguen obligatorios.
 
 Mapa de cierre M2 listo: `m2-milestone-closure-readiness.md` coteja16 criterios y
 DoD, evidencia A y faltantes B/0.3, nueve fronteras R42 y protocolo build/smoke.
