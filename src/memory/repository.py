@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import sqlite3
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import asdict
 from typing import TypeVar
+from uuid import uuid4
 
 from here.memory.database import IntegrityFailure, LibraryConnection, storage_error
 from here.memory.models import (
@@ -14,6 +16,7 @@ from here.memory.models import (
     IngestSource,
     Meeting,
     MeetingStatus,
+    Participant,
     PendingOperation,
     RevisionAudioAsset,
     Segment,
@@ -29,6 +32,7 @@ T = TypeVar(
     IngestSource,
     PendingOperation,
     RevisionAudioAsset,
+    Participant,
 )
 
 
@@ -161,3 +165,46 @@ class MemoryRepository:
         )
         if result.rowcount != 1:
             raise IntegrityFailure("Only prepared operations can transition")
+
+    def insert_participant(self, participant: Participant) -> None:
+        self._insert("participants", participant)
+
+    def get_participant(self, participant_id: str) -> Participant | None:
+        return self._get("participants", participant_id, Participant)
+
+    def record_event(
+        self, meeting_id: str, kind: str, occurred_at: str, payload: dict[str, object]
+    ) -> None:
+        """Keep event payloads bounded and independent of user/provider text."""
+        self._require_transaction()
+        meeting = self.get_meeting(meeting_id)
+        if meeting is None:
+            raise IntegrityFailure("Lifecycle event requires an existing meeting")
+        if kind not in {
+            "status_changed",
+            "metadata_updated",
+            "participant_linked",
+            "speaker_assigned",
+        }:
+            raise IntegrityFailure("Unknown lifecycle event kind")
+        if set(payload) - {"from", "to", "fields"}:
+            raise IntegrityFailure("Unknown lifecycle event payload field")
+        for name in ("from", "to"):
+            value = payload.get(name)
+            if value is not None:
+                if not isinstance(value, str):
+                    raise IntegrityFailure("Invalid lifecycle event status")
+                try:
+                    MeetingStatus(value)
+                except (TypeError, ValueError) as exc:
+                    raise IntegrityFailure("Invalid lifecycle event status") from exc
+        if "fields" in payload:
+            fields = payload["fields"]
+            if not isinstance(fields, list) or any(
+                not isinstance(value, str) or value not in {"title", "notes"} for value in fields
+            ):
+                raise IntegrityFailure("Invalid lifecycle event edited fields")
+        self.library.execute(
+            "INSERT INTO lifecycle_events VALUES (?,?,?,?,?,?)",
+            (str(uuid4()), meeting_id, kind, occurred_at, meeting.duration_ms, json.dumps(payload)),
+        )

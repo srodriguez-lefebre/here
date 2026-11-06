@@ -3,11 +3,12 @@
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
 > review, then independent agent review. Root merges after received/responded
 > current-head Copilot, green Windows CI and independent review (rulings 16/17/20).
-> Steps use checkbox syntax. **Status: planned, not in execution.** The roadmap is authorized by ruling
-> 20. Ruling 35 requires accepted/merged A and merged necessary contract docs PRs before
-> root creates separate M2 B/M3 A project chats/worktrees. One cohesive docs PR may
-> cover both plans. Final merged-A base SHA: `53712c5beedafc2d40e2abf10c13362a1c3c9f78`; pin the accepted A API
-> before execution. No future group starts during this preparation.
+> Steps use checkbox syntax. **Status: task 4 implemented, locally verified and
+> independently reviewed; distinct docs/evidence complete. Task 5 PLANNED;
+> group B/M2 OPEN, version 0.2.0.**
+> Execution base `73d3cb384bd422de6899d8c7b761f3f3159ea3f1`; accepted A merge
+> `53712c5beedafc2d40e2abf10c13362a1c3c9f78` is an ancestor. Exact source/tests,
+> historical failures and current gates: `M2_LIFECYCLE_EVIDENCE.json`.
 
 **Goal:** Participants, reversible speaker assignment, optimistic edits, startup
 reconciliation and deletion that leaves nothing derived behind.
@@ -168,7 +169,7 @@ verification as well as source files; no benchmark/deadline evidence under load.
 tests in `tests/test_memory_participants.py`, `tests/test_memory_reconcile.py`,
 `tests/test_cli.py`.
 
-**Planned B4 interfaces (not implemented in A):** `MemoryService.update_meeting(meeting_id, patch: MeetingPatch,
+**Implemented B4 interfaces (added after A):** `MemoryService.update_meeting(meeting_id, patch: MeetingPatch,
 expected_version: int) -> MeetingDetail`; `MemoryService.assign_speaker(meeting_id,
 speaker_key, participant_id | None, scope) -> MeetingDetail`;
 `MemoryService.add_participant(display_name) -> Participant`;
@@ -183,7 +184,7 @@ CLI:
 `here memory rename ID "Título"`, `here memory participant ID "Nombre" [--speaker KEY]`,
 `here memory reconcile --json`.
 
-- [ ] Write failing tests: participant creation and linking; assignment and removal
+- [x] Write failing tests: participant creation and linking; assignment and removal
   keep the original `speaker_key`; two `speaker_0` labels stay separate; stale
   `expected_version` yields `Conflict` and no change; success increments
   `row_version` and writes a `lifecycle_events` row.
@@ -192,8 +193,8 @@ CLI:
   Bind those checks to accepted schema-2 `revision_audio_assets` and receipt-2/3
   contracts. Preserve R37 NULL capture dates/audio-only origin without fabricating
   historical revisions; update indexed title in the same optimistic edit transaction.
-- [ ] Implement participants, assignments and optimistic `update_meeting`.
-- [ ] Write failing reconciliation tests: stale `processing` meeting becomes
+- [x] Implement participants, assignments and optimistic `update_meeting`.
+- [x] Write failing reconciliation tests: stale `processing` meeting becomes
   `interrupted` with zero provider calls; `prepared` publication operation completes
   or reverts idempotently across repeated runs; missing or tampered asset marked
   `missing`/`corrupt` without deletion; operation path outside root refused while
@@ -205,18 +206,29 @@ CLI:
   Reuse accepted A replay tests for exact proof/new identical retry, sealed marker-3
   matching and uncertain output, invalid-receipt sibling isolation and consistent
   accepted capture-failure cancellation; do not reimplement A fixes here.
-- [ ] Extend group A's existing reconciliation and startup integration, retaining its
+- [x] Extend group A's existing reconciliation and startup integration, retaining its
   OS ownership checks, prepared-publication recovery and local pending-marker retry.
   Add asset verification and detailed completed/reverted/marked/skipped outcomes
   with reasons to `RecoveryReport`; never duplicate startup jobs or block the Qt thread.
   Use the final A postcommit/result categories in CLI and application reporting.
   B5 extends this same path to restore validated R42 suppression/tombstones/delete
   state before ordinary receipt reconstruction or ingest, not a second rebuild.
-- [ ] Add the three CLI commands with JSON output and exit codes 0/2/3/4.
-- [ ] Run focused tests and the full offscreen suite; self-review; commit as
+- [x] Add the three CLI commands with JSON output and exit codes 0/2/3/4.
+- [x] Run focused tests and the full offscreen suite; self-review; commit as
   "memory: participants, optimistic edits and reconciliation".
 
-### Task 5: Transactional deletion and FTS purge
+Task 4 source is frozen at `4e1b2cead486563516b69e09fb45543ee85b53aa`:
+source tree `4ca55bbe7e88ff59f79dee47e8740fef2253718e`, tests tree
+`bf4f471a87ad84df8ac41f8da375f8fd1025f42e`. R46 canonical error identity,
+R48 typed coherent reads/actual controller service and R49 durable existing-journal
+repair are detailed in the SPEC checkpoint. Independent scoped review marks R1
+ADDRESSED/SPEC and quality APPROVED. Current mapped mypy 79→79/delta empty;
+corrected full passes1043/9skips/390.03s (1052 collected,0F/0E), exit0.
+Distinct docs/evidence is recorded in this checkpoint; hosted/group gates remain open.
+Linked attribution reconstructs from state2; unlinked global participants are
+SQL-only. No hardware/provider/wheel/hosted-CI certification is claimed.
+
+### Task 5: Transactional deletion and FTS purge (PLANNED)
 
 **Files:** `src/memory/service.py`, `src/memory/repository.py`, `src/memory/artifacts.py`,
 `src/memory/database.py` (backup regeneration helper), `src/memory/models.py`,
@@ -323,3 +335,25 @@ private fields/guard adapter; no transcript/title/audio/participant data is stor
   until M4 B. Other groups retain STATUS dependencies. This plan does not create
   chats/worktrees or start that future work; M2 closes only with all original DoD
   and acceptance requirements, not by overlap or fixture preparation.
+
+## R50 acceptance additions for planned task 5
+
+Task 5 starts only after R1 resolution, actual corrected-full acceptance and the
+distinct task-4 docs/evidence checkpoint. The SPEC's R50 section fixes the future
+catalog_read_view ownership and exact two-field SuppressionSnapshot contract;
+private canonical entries must not escape as a third public field.
+
+- [ ] Independent RED: fresh caller-owned connection/close-once, lock-before-BEGIN,
+  one read transaction, WAL/rollback Busy, rejected nested/foreign transaction use
+  and owned-resource exception cleanup; no repair/second connection/provider work.
+- [ ] Pending/complete UUIDs plus exact-origin-pair aliases after reconstruction,
+  permitted explicit new origin/new identity with identical audio, absent versus
+  invalid/inaccessible/unsafe registry; retain all nine R42 crash/purge boundaries.
+- [ ] Stable framed canonical digest across fresh connections; alias mapping changes
+  affect fingerprint even with unchanged registry bytes; resolved sorted unique IDs.
+- [ ] Actual M3 shared context and SQL-before-keyset/LIMIT for empty/large sets,
+  ENTIRE complete-FTS generation with suppression fingerprint/R45, R41 partial
+  equivalence before/after the single reindexer. Fakes alone do not close handoff.
+- [ ] Quiet-host unchanged p95/heartbeat measure real lock wait, validation, alias
+  resolution, canonicalization/generation and full page fetch. No performance
+  claim follows from static contract review or preparation.
