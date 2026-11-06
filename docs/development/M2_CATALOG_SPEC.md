@@ -1,12 +1,15 @@
 # M2 immutable catalog specification
 
 Status: in execution under the explicit 2026-11-05 mandate (ruling 20).
-Tasks 1/2 have local verification and independent reviews. Task 3 round-1 source
-`c28472b` is integrated at root `1f1bc88`. Re-review marks F1–F7 ADDRESSED but
-requires Important NB1 (repeat publication/postcommit marker replay). The root full
-run has five failures/920 passes/seven skips; no task/group approval or hosted gates
-are complete. Requirements below distinguish implemented fixes from pending NB1
-and the integrated failures. Governing design:
+Tasks 1/2 have local verification and independent reviews. Source `8087e25`
+matches Green `4a3cb7c`: original F1–F7, NB1 and NB2 are addressed by scoped
+re-reviews. Marker 2/receipt 3 and legacy audio-only lineage are implemented.
+The integrated full passes 940 tests/seven skips; whole-group review has three provisional
+Important findings concerning the metadata-before-marker crash window,
+non-object receipt isolation and accepted capture-cancellation catalog divergence.
+GR1–GR3 remain OPEN; source verdict is changes requested, final docs supplement
+pending. No task/group approval or hosted gates are complete.
+The prior five-failure full remains historical evidence. Governing design:
 `PRODUCT_DESIGN.md` §2–§4, which is a taken decision (ruling 3). Spanish plan and
 acceptance criteria: `../MILESTONE_2_PLAN.md`.
 
@@ -88,8 +91,9 @@ must resolve as A/B/A independently of file recency or cumulative meeting assets
 The ruling 31 version-2 receipt carries those links and only the referenced assets;
 rebuild and `show` JSON expose the same `revision_audio_assets`. An older receipt
 without unambiguous proof stays uncertain with a warning; no relationship is
-invented. Round-1 source implements this invariant; acceptance still waits for NB1,
-the five integrated full failures and the remaining group gates.
+invented. Receipt 3 retains these same links and additionally proves explicit
+publication provenance; receipt 2 remains readable without invented proof.
+Acceptance still waits for whole-group review/corrections and hosted gates despite the passing full.
 
 ### Segments and evidence
 
@@ -115,11 +119,15 @@ A trusted completed retry also completes its durable outcome and revision contra
 when its evidence matches the previous result; ordinary idempotent import is a
 separate branch. After a committed activation, receipt/state/operation-housekeeping
 failure reports committed inserted/revised success with a recoverable warning,
-not a precommit rejection. Re-review marks original F3/F4 addressed. Important NB1
-requires distinguishing a fresh explicit retry from replay of a publication already
-committed under its parent. Replay must not add another revision or leave a stale
-marker; a fresh identical retry still creates its new revision. Neither arbitrary
-stale-parent acceptance nor deletion of uncertain markers is an acceptable shortcut.
+not a precommit rejection. Original F3/F4 and NB1 are addressed by scoped review.
+Each explicit producer invocation receives a new `publication_id` UUID, including
+identical retries. The operation payload and receipt 3 retain `publication_id`,
+`revision_id`, expected `revision_of`, normalized `origin_path`, measured
+`origin_fingerprint` and `source_kind`. Replay must match that exact proof, content
+and a genuinely committed revision. It returns unchanged for that publication;
+a fresh identical retry still creates its new revision. Prepared-only operations,
+arbitrary stale parents or mismatched tokens cannot establish success or authorize
+uncertain-marker removal (ruling 36).
 
 Publication sequence: stage under `.staging/` → validate files and hashes → insert a
 `pending_operations` row in state `prepared` → rename into the immutable destination →
@@ -143,6 +151,11 @@ Rebuild uses validated managed receipts and state snapshots only; it does not sc
 external origins. With the live DB, reconciliation can finish a missing receipt
 from committed entities. If both commit knowledge and its receipt are lost, the
 uncertain tree is retained and reported rather than guessed complete.
+Receipt 3 also records `operation_id` and its validated publication proof; rebuild
+restores the complete operation, including same-meeting parent validation. Receipt
+2 compatibility grants no synthetic token/proof. DB schema remains 2. Every malformed
+receipt must be isolated so valid siblings still rebuild; the current whole-group
+review provisionally found non-object JSON violating this requirement.
 
 Source artifact roles are explicit: known session JSON/text/Markdown plus validated
 WAV references. Containment alone never authorizes opening, probing or hashing a
@@ -161,21 +174,40 @@ behind that path. Catalog failure must not touch audio: the WAV and `session.jso
 remain, the result reports "audio saved; library pending recovery", and the next
 startup retries local tasks only.
 
-Application-owned output folders may persist a durable `memory_pending.json`
-with only schema version, original optional meeting ID, expected `revision_of`
-and `intent` (`ingest` or `status`). Startup validates that local intent and
+Application-owned output folders persist `memory_pending.json` version 2 with
+`schema_version`, original optional `meeting_id`, expected `revision_of`,
+`intent` (`ingest` or `status`), `publication_id` and `source_kind` (`session` or
+`legacy_audio_only`). The reader accepts marker 1 without inventing proof.
+Startup validates that local intent and
 replays catalog work only, never provider transcription. A failed/cancelled retry
 with no new result retains the previous complete active revision and replays only
 its durable outcome under the same expected-revision precondition (ruling 27).
-The controller must not publish an already committed processor result again as a
-fresh stale-parent retry. Committed origin-marker replay requires durable proof and
-idempotent completion; this NB1 path is not yet accepted after round 1.
+The controller consumes the real processor's private, directory/manifest-bound
+result once; unrelated injected processors retain the fallback. This avoids double
+publication while durable proof independently supports restart replay. The scoped
+NB1 review covers actual postcommit child crashes with existing and rebuilt DBs.
+No completed metadata may become unrecoverable before its first durable local
+publication intent; the whole-group review provisionally found that crash gap.
+
+For valid WAV-only legacy retry without `session.json`, reserve a canonical UUID
+and actual lease before mutation/provider, with a measured origin mapping whose
+revision is NULL and zero historical transcript revisions (ruling 37). Provider
+input preserves the source's absent ID. Durable `source_kind=legacy_audio_only`
+keeps capture `started_at`/`completed_at` NULL across retry/receipt/rebuild, even if
+compatibility v1 metadata later contains inferred dates. Real processing timestamps
+describe processing, never unknown recording time.
 
 `MEMORY_INGESTED` follows `SESSION_PERSISTED` and precedes terminal completion.
 The additive `ApplicationSnapshot.memory_warning` renders library warnings in the
 existing detail area while real `last_error` retains priority; clean publication
 or new work clears the warning. A completed recording remains completed when
 only the catalog is unavailable (ruling 24).
+Accepted cancellation while persisting a capture failure must preserve one meeting
+and the capture-error/audio evidence with cancelled UI, compatibility metadata and
+catalog outcome. A later same-operation status change must use the trusted durable
+state/expected-revision path or precede initial publication, preserving ordinary
+same-UUID conflict checks. GR3 finds this consistency requirement currently broken;
+it remains OPEN rather than covered by the existing UI/manifest-only assertions.
 
 ### Durable meeting state
 
@@ -201,8 +233,12 @@ native lease before journal publication. The authoritative native path is
 `<sessions_root>/.capture_owners/<capture_id>.lock` (rulings 32/34), retained by a
 controller job scope through real helper closure and final persistence even on
 catalog failure. Direct wait/open-failure releases only after closure. No product
-protocol or deadline changes. The full run's legacy audio-only compatibility and
-snapshot failures remain unresolved rather than excluded from this requirement.
+protocol or deadline changes. Existing-metadata inspection probes only existing
+leases without creation; journal materialization upgrades ownership before mutation.
+In the missing-metadata branch, canonical capture UUID validation precedes even
+the journal path join/probe. Existing manifests retain optional/opaque source IDs.
+Round-2/3 scoped reviews address the snapshot/audio-only regressions and NB2;
+the new integrated full passes 940 tests/seven skips; group review remains pending.
 
 ### FTS
 
@@ -228,8 +264,9 @@ existing successful exit and reports local recovery pending.
 
 Typed service/result categories distinguish invalid input (2), identity conflict
 (3) and source/publication I/O or integrity failure (4), without parsing warning
-prose. Round-1 source adds typed categories and original F7 is addressed. The full
-run's CLI stub failure remains a separate unresolved integration result.
+prose. Original F7 is addressed. The prior CLI sf.info regression was corrected
+with an independently authored real PCM16 fixture, preserving outcome assertions
+and production media validation; it is covered in the 61-case focus.
 
 ## Acceptance
 

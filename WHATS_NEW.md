@@ -14,11 +14,14 @@ Local ingest, inspect and reconcile commands work without the provider. A separa
 library-pending warning keeps saved audio/text available when catalog work needs
 recovery; opening the app replays local persistence rather than transcription.
 
-Round-1 fixes now preserve revision-specific audio links, legacy identity and
-actual ownership through capture/recovery. Review addressed the seven original
-findings but identified repeat-publication recovery breakage, and the integrated
-suite still has five unresolved failures. M2 remains under review and unreleased;
-version 0.2.0 stays current.
+Scoped fixes now preserve revision-specific audio links, legacy identity and
+actual ownership through capture/recovery. Publication tokens distinguish an
+already committed replay from a fresh retry; WAV-only legacy recovery retains
+unknown capture dates. Pending markers use version 2 and publication receipts
+version 3; the DB stays at schema 2. The integrated suite passes 940 tests with
+seven skips; whole-group review remains open on crash replay, malformed receipts
+and capture-cancellation catalog state. Its three Important findings await fixes
+and final documentation review. M2 is unreleased; version 0.2.0 stays current.
 
 ## 0.2.0 — Windows M1 delivery
 

@@ -12,7 +12,7 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M1 | Provider/timestamps and diarization | Synthetic real-provider run and segment output inspected | Single/multiple-source TTS smokes passed; long transcription/diarization omitted by explicit user instruction |
 | M1 | Failure/crash/network/disconnection/disk-pressure recovery | Fault-injection plus bounded hardware run | PR12 faults, writer/publication process kills and helper-owner death passed; native recoverable saved failure passed; no repeated installed fault matrix claim; long run omitted by user |
 | M1 | Installed application opens, records and uninstalls | Fresh Windows installation and bundled-runtime smoke | Incorporated-source `1740b2d` local Windows 11 frozen GUI/CLI, Start launch, active-update refusal, reinstall/uninstall and data preservation passed; recording retains earlier source evidence; distribution peer review/clean hosted package CI/merge pending |
-| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | Tareas 1/2 aceptadas localmente; ronda 1 de task 3 con F1–F7 addressed pero NB1 abierto y full root 5 fallos/920 pasan/7 skips. Sin aceptación de tarea/grupo/hito; B abierto |
+| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | Tareas 1/2 aceptadas localmente; fuente 8087e25 con F1–F7/NB1/NB2 addressed en reviews acotadas y full 940/7/325,09 s. Review de grupo en curso con tres Important provisionales; sin aceptación de tarea/grupo/hito; B abierto |
 | M2 · criterio 2 | Grabación, archivo y retry comparten persistencia de aplicación | CLI delega a SessionProcessor, artefactos y fallos compatibles | Consolidación de artefactos verificada localmente en M2A-T2-FOCUS-20261105 y M2A-T2-CAPTURE-RECOVERY-20261105; integración con catálogo y CI pendientes |
 | M2 · criterios 6–7 | Segmentos nullable y pausa sin desplazar el WAV | Cinco recorridos con proveedor fake, procedencia y seek de marcas en WAV sintético | Verificados automáticamente en local: M2A-T2-FOCUS-20261105; ordinal en catálogo depende de tarea 3; no certificación de captura o proveedor |
 | M2 · criterio 8 | Migración transaccional, backup administrado y rechazo de esquema futuro | FK/integrity, rollback de DDL y snapshot SQLite API con WAL comprometido | Verificado automáticamente en local: M2A-T1-LOCK-GREEN-20261105 y M2A-T1-FINAL-20261105; CI del grupo pendiente |
@@ -39,10 +39,10 @@ ninguna observación corta certifica una ejecución larga.
 
 Los checkpoints locales de tareas 1/2 no cierran M2. La implementación de tarea 3
 aporta ingestión, FTS, revisiones inmutables e integración de productores. Su
-primer candidato pasó la suite estable y recibió siete correcciones. Ronda 1 las
-marca addressed, pero NB1 y cinco fallos de la suite integrada siguen pendientes;
-ciclo de vida B y CI del grupo
-siguen abiertos. Los smokes reales de proveedor
+primer candidato pasó la suite estable y recibió siete correcciones. Reviews
+acotadas de rondas 1–3 marcan F1–F7/NB1/NB2 addressed; full 8087e25 pasa 940/7.
+La review del grupo sigue en curso con tres Important provisionales; B y CI
+del grupo siguen abiertos. Los smokes reales de proveedor
 autorizados por ruling 19/20 usan solo audio y texto sintéticos; no se ejecutaron
 en estos checkpoints. No se leyó el
 `.env` real, la biblioteca del usuario ni grabaciones privadas. La matriz y las
@@ -278,7 +278,7 @@ M2 A y M2 siguen abiertos. Versión vigente 0.2.0; 0.3.0 solo al cerrar B/M2.
 El PLAN de B se ajusta en su PR de documentación antes de implementar, conservando
 contratos y los gates estrictos del grupo A.
 
-### Ronda 1 integrada — NB1 y cinco fallos pendientes
+### Histórico de ronda 1 — NB1 y cinco fallos en ese checkpoint
 
 Fuente Green revisada `c28472b5bd651f4d7f7fe2f40449f5a23e325f67`, fixes
 `16263c4` + `c28472b`, integrada en root
@@ -317,7 +317,7 @@ No se omiten casos, relajan assertions ni declaran como simple ruido. La review 
 NB1, estos cinco fallos, la suite corregida y la review del grupo son gates antes
 del PR/Copilot/CI/merge. La re-review de originales addressed no aprueba tarea/grupo.
 
-### Wheel y source del mismo código integrado
+### Wheel y source histórico de 1f1bc88
 
 Wheel y sdist frescos construidos con CPython 3.13.15. Probe
 `M2A-INTEGRATED-WHEEL-20261105`, off-repo con `-I`, entorno no editable:
@@ -335,7 +335,7 @@ Es verificación automática local de distribución/importación/catálogo, sin 
 hardware ni proveedor y sin certificar instalación limpia o M2. No convierte en
 éxito la suite integrada fallida.
 
-| Nivel vigente | Resultado |
+| Nivel en el checkpoint histórico de ronda 1 | Resultado |
 |---|---|
 | 1 · Implementación | Código de ronda 1 integrado y originales addressed; tarea completa no aprobada por NB1 y cinco fallos |
 | 2 · Verificación automática | Foco 40 pasan, wheel/source verificables y full con 920 pasan/5 fallos/7 skips; hosted CI pendiente |
@@ -346,6 +346,80 @@ proyecto M2 B/M3 A. Bases de merge, IDs, ramas/worktrees y responsables futuros
 siguen pendientes en STATUS; no se creó ni inició ningún frente. Los PRs docs de
 contratos necesarios preceden al despacho, y los criterios/privacidad/calidad de
 cada hito no cambian.
+
+### Checkpoint vigente 8087e25 — rondas 2/3 y full integrado 2
+
+Root `8087e252112fd2e6de1efeff1d0f3f531d4be77d` equivale a Green
+`4a3cb7ced77a73046098e20cb34aeb00af0e6f61`; src tree
+`948efa342c9569ca751cffb4718d82f3dd872de6`, tests tree
+`30c62e6f7e9e0a818e125a6c7762db91335b47f1`. Lectura Git independiente confirma
+árboles iguales y diff source/config/scripts/workflows vacío.
+
+R36/R37 implementados: marker 2 con token/source_kind; receipt 3 con prueba exacta
+(token/padre/origen/huella/revisión comprometida) y restauración de operaciones
+completas durante rebuild, manteniendo receipt 2 compatible sin inventar prueba.
+El controller consume una vez el handoff privado real; durable replay independiente
+cubre crash real tras commit, con evidencia igual/cambiada y DB presente/reconstruida.
+Reserva audio-only canónica con origen revision NULL/cero revisiones históricas y
+source_kind durable mantiene fechas captura NULL, también tras retry/rebuild.
+Schema DB 2, procesos/protocolos/deadlines/dependencias/versión sin cambios.
+
+`task-3-fix-2-review-report.md` marca NB1 y regresiones de integración ADDRESSED.
+Foco congelado: 61 pasan/68,06 s; controller/procesamiento/UI: 69/23,02 s; Ruff/format de 10 archivos
+limpios, mypy 79/79/sin nuevos. Los snapshots no se relajaron: inspección metadata-only
+no crea locks, materialización con journal adquiere/retiene lease antes de mutar.
+El stub CLI fue reemplazado por WAV PCM16 real por su autor independiente, sin
+fallback artificial en producción. Full 1 fallido permanece histórico arriba.
+
+El foco intermedio de replay dio 16 pasan/1 falla en 315,60 s por timeout de hijo de
+30 s antes de prueba/replay. Mismo caso sin cambios pasó aislado en 5,02 s y en foco
+final de 61 casos (call 2,72 s). Causa no probada; no cambió timeout ni assertion, ni se
+presenta ese fallo como prueba de un mecanismo identificado.
+
+`task-3-fix-3-review-report.md`: NB2 ADDRESSED, sin nuevo Critical/Important en su
+diff. Guard UUID en rama sin metadata precede construir/sondear journal; manifiesto
+existente conserva identidad opcional/opaca. RED: 2 fallan/1 control pasa/2,45 s;
+GREEN: 3/2,40 s y foco de 27/20,86 s. Ruff/format de 2 archivos limpios, mypy 79/79/sin nuevos.
+Reviews estáticas independientes inspeccionan evidencia, sin rerun del reviewer.
+
+**M2A-INTEGRATED-FULL2-8087e25: 940 pasan, 7 skips, cero fallos en 325,09 s**.
+Inició solo a 2026-11-06T00:01:58Z sobre fuente 8087e25, con wheel no editable nuevo.
+Log/XML `.superpowers/m2a-integrated-final-2.txt`/`.xml`: 947 casos, cero failures/
+errors, siete skipped, tiempo interno JUnit 325,029 s. Ambos smokes wheel CLI/GUI
+pasan; siete skips requieren privilegio symlink. Lectura independiente de XML y
+summary confirma resultados; no certifica hardware/proveedor ni promete cero skips CI.
+
+Wheel/sdist CPython 3.13.15 nuevos, probe
+`.superpowers/m2a-wheel-catalog-probe-8087e25.json`: 65 archivos Python byte-idénticos,
+off-repo `-I`/no editable, schema 2/FTS5/foreign_key_check/integrity_check correctos.
+Los probes de 1f1 y 2a3 permanecen históricos con sus hashes propios.
+
+| Artefacto de 8087e25 | SHA-256 |
+|---|---|
+| here-0.2.0-py3-none-any.whl | `4f37ca61d50df87e588ecdd1c2e9221690fd3aa9472dc33081c4116600147ad8` |
+| here-0.2.0.tar.gz | `b5110b1dd0c78c485e52a738e147f21a5a64e6dfaa5aaf515ae68b8d10de5271` |
+
+Review de todo A por `catalog_group_review` en curso contra 763a891..8087e25.
+Tres Important provisionales: metadata completed puede comprometerse antes del primer
+memory_pending marker, dejando un kill sin replay y estado interrupted; rebuild
+puede llamar `.get` sobre receipt JSON array y abortar vecinos válidos; cancelación
+aceptada durante persistencia del fallo de captura deja UI/manifest cancelled,
+catálogo failed y conflicto/marker atascado. `group-review-report.md` registra
+GR1/GR2/GR3 Important/P2 **OPEN**, source verdict **changes requested**. El estado
+global sigue provisional hasta inspeccionar el suplemento docs comprometido; sin
+fix de esos tres caminos. El full verde no los resuelve: faltan
+RED/GREEN/re-review y verificación posterior, aceptación del
+grupo y todos los gates de PR/Copilot/WindowsCI/merge.
+
+| Nivel vigente | Resultado y límite |
+|---|---|
+| 1 · Implementado | Fuente 8087e25 y fixes acotados con suite pasando; tarea/grupo aún sin aceptar por review global pendiente |
+| 2 · Verificado automáticamente | Focos 61/69/3/27, full 940/7 y wheel exacto; evidencia local sintética, hosted CI pendiente |
+| 3 · Certificado | Sin nueva certificación hardware/proveedor/instalador o upgrade limpio |
+
+R35 conserva prioridad: cerrar/mergear A y PRs docs de contratos antes de crear los
+dos chats de proyecto B/M3 A. IDs/ramas/worktrees/base mergeada/responsables pendientes;
+ninguno creado. Versión 0.2.0; meta final 1.0.0 y requisitos de calidad/privacidad intactos.
 
 ## Runs
 

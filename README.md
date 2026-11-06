@@ -175,11 +175,13 @@ work without repeating transcription. A failed provider retry keeps the previous
 complete revision active. Ordinary application retry still requires an explicit
 action and the provider credential.
 
-M2 is not released or complete. Round-1 fixes are integrated at `1f1bc88`; review
-marks the seven original findings addressed but still blocks acceptance on repeat
-publication and committed-marker replay (NB1). The integrated suite has five
-unresolved failures, 920 passes and seven skips. Fix verification, re-review and
-current-head hosted CI/Copilot gates are tracked in [STATUS.md](STATUS.md).
+M2 is not released or complete. Source `8087e25` includes scoped fixes for repeat
+publication/replay and legacy audio-only recovery. The catalog uses version-2
+pending markers and version-3 publication receipts while its DB schema stays 2.
+The integrated suite passes 940 tests with seven symlink skips; whole-group
+review has three provisional findings concerning crash replay, malformed receipt isolation and capture-cancellation
+catalog state. GR1–GR3 remain open; final docs review is pending. Current results,
+remaining corrections and hosted CI/Copilot gates are tracked in [STATUS.md](STATUS.md).
 The packaged 0.2.0 delivery above retains its recorded M1 scope.
 
 ## Audio Diagnostics

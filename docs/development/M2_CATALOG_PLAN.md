@@ -4,9 +4,10 @@
 > review, then independent agent review. The author merges after Copilot review, CI and independent subagent review (rulings 16 and 17). Steps use checkbox
 > syntax. **Status: in execution since 2026-11-05 (ruling 20).** Task 1 independent
 > review accepted after its Busy correction. Task 2 SPEC/quality review passed;
-> local suite evidence is recorded below. Task 3 round-1 corrections address the
-> original seven findings, but Important NB1 and five integrated-suite failures
-> block acceptance. Re-review, whole-group review and current-head Windows CI remain gates.
+> local suite evidence is recorded below. Source `8087e25` includes scoped fixes
+> through round 3: original F1–F7, NB1 and NB2 addressed. Full 2 passes 940/seven skips; whole-group
+> review remains pending, with three provisional Important group findings. No task/group
+> approval or current-head Windows/Copilot gate is complete.
 
 **Goal:** Durable meeting identity, immutable transcript revisions and one
 application-owned persistence path, rebuildable from files and usable without a key.
@@ -184,8 +185,8 @@ Current source implements that relation/schema 2, receipt v2 and typed error
 categories. Native capture ownership now uses shared `src/output/ownership.py`,
 `recording/journal.py`, `isolated.py` and `models.py`, with a controller job scope
 under rulings 32/34; original protocol/deadlines remain unchanged. Trusted unmapped
-legacy preimport before mutation/provider follows ruling 33. These fixes have a
-scoped re-review, but NB1 prevents accepting the task as complete.
+legacy preimport before mutation/provider follows ruling 33. Rulings 36/37 are
+implemented in rounds 2/3 as recorded below; aggregate task acceptance remains open.
 
 - [x] Write failing tests: ingest a v1 session folder (no `meeting_id`) → UUID
   assigned, `legacy_session_id` kept, `ingest_sources` fingerprint stored; second
@@ -247,7 +248,7 @@ were corrected before this reviewed snapshot and are not a current finding.
 At that checkpoint round-1 RED/fixes/re-review and a corrected stable suite were
 required; no task/group completion, root integration, hosted CI or M2 close was claimed.
 
-### Current checkpoint after round-1 integration
+### Historical checkpoint after round-1 integration
 
 The paragraph above is the original candidate checkpoint. Green fixes `16263c4`
 and `c28472b` are now integrated at root `1f1bc88513840b84c388a61d9c077907cf2fba2e`.
@@ -270,6 +271,50 @@ requires missing session.json. Each awaits diagnosis/fix, with assertions intact
 Both noneditable-wheel smokes pass. Fresh wheel/sdist and off-repo `-I` probe verify
 65 byte-identical Python files, schema2/FTS5/FK/integrity; local automatic evidence
 only. New suite, re-review and whole-group approval remain required before PR gates.
+
+### Current source checkpoint after rounds 2/3
+
+Root `8087e252112fd2e6de1efeff1d0f3f531d4be77d` matches Green
+`4a3cb7ced77a73046098e20cb34aeb00af0e6f61`: src tree
+`948efa342c9569ca751cffb4718d82f3dd872de6`, tests tree
+`30c62e6f7e9e0a818e125a6c7762db91335b47f1`; runtime/config/scripts/workflow diff
+is empty. R36/R37 add no migration/dependency/version/process/protocol/deadline.
+
+Marker 2 carries publication UUID and `source_kind` in addition to original optional
+meeting ID, expected parent and ingest/status intent. Receipt 3 and the operation
+carry exact token/parent/origin/fingerprint/committed-revision proof. Rebuild restores
+the proven complete operation; receipt 2 stays compatible without fabricated proof.
+Private single-consumption controller handoff avoids a second real-processor callback,
+while durable replay independently covers actual child crashes with DB present/rebuilt.
+Fresh identical retries retain distinct tokens/revisions. Audio-only reservation
+uses canonical UUID/lease, NULL origin revision and zero historical revisions;
+durable source kind preserves NULL capture dates through retry/rebuild.
+
+Round-2 review marks NB1 and the integration regressions ADDRESSED; 61 cases pass
+in 68.06s plus existing controller/processing/UI 69 in 23.02s. The intermediate
+unchanged 30-second child timeout remains evidence: identical isolated case passed
+in 5.02s and final combined call in 2.72s, with cause unproven and no timeout change.
+Round-3 review `task-3-fix-3-review-report.md` marks NB2 ADDRESSED with no new
+Critical/Important breakage in its diff: capture UUID is checked before missing-
+metadata journal join/probe while opaque existing-manifest identity is preserved.
+Foci 3/2.40s and 27/20.86s; Ruff/format clean, mypy baseline/current79/79/no new.
+
+Full 2 started alone at 2026-11-06T00:01:58Z on root `8087e25`, log/XML
+`.superpowers/m2a-integrated-final-2.*`: **940 passed/7 skipped/zero failures in
+325.09s**, XML 947 cases/zero failures or errors/internal 325.029s. Both wheel
+smokes pass; seven skips need symlink privilege.
+Fresh wheel/sdist and off-repo noneditable `-I` probe on that source verify 65
+byte-identical Python files/schema2/FTS5/FK/integrity. Previous full/probes remain
+historical. Whole-group source review is still in progress with three provisional
+Important paths: completed metadata before the first durable pending marker, and
+non-object receipt JSON aborting valid rebuild siblings, and accepted capture-failure
+cancellation diverging between cancelled manifest/UI and failed catalog with conflict/
+stuck marker. `group-review-report.md` records GR1/GR2/GR3 Important/P2 OPEN,
+source verdict changes requested; final all-source/docs verdict awaits committed
+docs supplement. Cover all three with coordinated RED/GREEN/re-review; preserve
+one meeting, original capture-error/audio evidence and ordinary identity-conflict
+rules. Do not restart already addressed NB1/NB2.
+Closing checkboxes remain unchecked pending aggregate results/review and hosted gates.
 
 ## Closing the group
 

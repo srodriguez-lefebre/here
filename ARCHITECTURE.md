@@ -34,8 +34,8 @@ The main flow is:
   writing.
 - `memory/`: immutable catalog DTOs, operation-owned SQLite connections, numbered
   migrations with managed backups, an explicit transaction repository, validated
-  artifact ingestion and local revision publication/reconciliation. Round-1 fixes
-  are integrated, with NB1 and five full-suite failures still blocking acceptance.
+  artifact ingestion and local revision publication/reconciliation. Scoped fixes
+  through round 3 are integrated; full/group review and hosted gates remain open.
 - `ui/`: Qt Widgets presentation, the live-logo overlay, and the single adapter
   from visual actions to the application contract.
 
@@ -191,9 +191,9 @@ SQLite busy/locked errors from migration reads, repository reads and writes beco
 the recoverable `Busy` error, including the rollback-journal exclusive-lock case.
 
 Task 3 builds publication and producer integration on this foundation as described
-below. Round-1 source `c28472b` is integrated at `1f1bc88`; original F1–F7 are
-addressed in scoped review, but NB1 and five integrated-suite failures require
-further correction, verification and review before the exact-head hosted gates.
+below. Source `8087e25` matches Green `4a3cb7c`; original F1–F7, NB1 and NB2 are
+addressed in scoped re-review. The integrated full passes 940 tests with seven skips; whole-group
+review has three provisional Important findings; exact-head hosted gates remain open.
 
 ## Catalog publication and local recovery (M2 A task 3)
 
@@ -228,7 +228,14 @@ and generated state names before opening state files. Earlier missing-guard
 observations describe superseded source, not a current review finding.
 
 Origin plus fingerprint makes ordinary import idempotent. Trusted explicit retry
-supplies the expected active revision under `revision_of`. Covered GUI legacy
+supplies the expected active revision under `revision_of`. Each explicit producer
+invocation has a new publication UUID. Operation payload and receipt 3 bind it to
+the committed revision, expected parent, normalized origin, measured fingerprint
+and source kind. Exact proof/content/committed-revision matching makes that
+publication's replay unchanged, including after rebuild restores the proven
+complete operation. Prepared-only state cannot prove commit. Fresh identical
+retries still create new revisions; receipt 2 is accepted without invented proof.
+Covered GUI legacy
 retry and existing-session CLI preserve the source optional identity independently
 of canonical catalog ownership. Trusted legacy preparation resolves/preimports its
 lineage before mutation/provider, including None/opaque M1 IDs; ordinary imports
@@ -248,10 +255,13 @@ constructor or catalog fails; no deadline/protocol changes. Abandoned
 recording/processing rows become interrupted. Remote/mapped/unproven-local Windows
 volumes use rollback journaling with a visible warning; proven local storage uses WAL.
 
-`SessionProcessor` publishes memory only after compatible session artifacts exist,
-including capture-failure outcomes. If catalog publication is unavailable it keeps
-audio/text and writes only version, original optional meeting ID, expected revision
-and ingest/status intent into `memory_pending.json` in its own output folder.
+`SessionProcessor` publishes memory after compatible session artifacts exist,
+including capture-failure outcomes. Its version-2 `memory_pending.json` holds
+schema version, original optional meeting ID, expected revision, ingest/status
+intent, publication UUID and `source_kind` (`session`/`legacy_audio_only`). The
+reader also accepts marker 1 without fabricating provenance. Catalog failure keeps
+saved audio/text. The controller consumes its real processor's private
+directory/manifest-bound result once; injected processors retain a fallback.
 `RecoveryService.discover()` validates and replays that local intent without a
 provider call. Failed/cancelled retries with no new transcript update only durable
 state and retain the prior complete active revision, including during busy replay.
@@ -265,19 +275,28 @@ with typed error categories. Postcommit housekeeping now reports committed succe
 with a recoverable warning instead of precommit rejection.
 
 Schema 2 adds `revision_audio_assets` (meeting/revision/asset, source file and
-ordinal) without changing migration 1. Version-2 receipts, rebuild and `show` JSON
+ordinal) without changing migration 1. Version-2/3 receipts, rebuild and `show` JSON
 retain ordered links, including reused assets in A→B→A retries; cumulative assets
 cannot substitute for those references. Ambiguous older evidence is retained with
 a warning rather than assigned by guess. Scoped review marks original F1–F7 addressed.
 
-NB1 remains Important: the controller can publish a successful retry twice, and
-origin-marker replay after commit still looks like a new stale-parent retry. The
-fix must recognize already committed publication durably while preserving one new
-revision for each fresh explicit retry, including identical evidence. It cannot
-accept arbitrary stale parents or erase uncertain markers. No NB1 fix/result is
-claimed yet. The integrated full also reports three capture-recovery snapshots
-with new lock entries, one incomplete sf.info test stub and audio-only legacy
-retry requiring session.json; all five remain pending diagnosis/correction.
+WAV-only legacy retry reserves a canonical identity/actual lease with origin revision
+NULL and no invented historical transcript before provider work. Durable
+`source_kind=legacy_audio_only` keeps unknown capture dates NULL across retries and
+rebuild. Metadata-only recovery inspection does not create lock files; actual
+materialization upgrades and retains the leases before mutation. Missing-metadata
+journal candidates require canonical UUID before constructing/probing the path;
+existing manifests retain their optional/opaque source identity.
+
+Scoped reviews address NB1, NB2 and the five prior integrated failures. Full 2 on
+`8087e25` passes 940 tests/seven skips in 325.09s. Whole-group review has provisional Important findings for
+completed metadata committed before its first local marker and non-object receipt
+JSON aborting valid rebuild siblings, and accepted cancellation after capture-failure
+publication leaving manifest/UI cancelled but catalog failed with conflict/pending
+marker. GR1/GR2/GR3 remain OPEN; source verdict is changes requested, with final
+docs supplement pending. No fix or final all-source/docs acceptance is claimed for
+those paths. The earlier five-failure full and intermittent child timeout remain
+recorded; focused passes and wheel probes do not replace the aggregate gates.
 
 ## Existing Audio Transcription
 

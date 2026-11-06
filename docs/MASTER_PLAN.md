@@ -115,10 +115,14 @@ M2 A: la base de catálogo de su tarea 1 (`9a80060`) tiene review independiente
 aceptada y verificación local; `M2A-T1-FINAL-20261105` registra 778 pasan/7 skips
 en `ACCEPTANCE.md`, sin sustituir CI del grupo.
 La tarea 2 conserva raw y segmentos en todos los recorridos. La tarea 3 integró
-la ronda 1 en `1f1bc88`: la re-review marca los siete hallazgos originales
-ADDRESSED, pero NB1 Important de publicación/replay sigue abierto. La suite root
-dio cinco fallos/920 pasan/7 skips en 553,39 s, no aprobación. Faltan diagnóstico,
-fixes, re-review, suite corregida y review del grupo, además de los gates de GitHub.
+las rondas 2/3 en `8087e25`: reviews acotadas marcan originales F1–F7, NB1 y NB2
+ADDRESSED. El full histórico `1f1bc88` dio cinco fallos/920 pasan/7 skips; sus
+correcciones tienen cobertura, y el full nuevo pasa 940 tests/7 skips en 325,09 s.
+La review de todo A sigue en curso con tres Important provisionales de replay tras
+metadata, aislamiento de recibos inválidos y divergencia de catálogo al cancelar
+captura. GR1–GR3 están abiertos; source verdict changes requested, suplemento docs
+pendiente antes del veredicto final global. Faltan correcciones y sus verificaciones,
+además de todos los gates de GitHub.
 El ciclo
 de vida/borrado y el cierre de M2 siguen pendientes; no cambia la versión a 0.3.0
 hasta cerrar el grupo B. Su PLAN ajustado se entrega antes en un PR de docs según

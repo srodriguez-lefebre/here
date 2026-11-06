@@ -1150,3 +1150,87 @@ base/ownership/dependencies/limits/DoD before RED/GREEN/review/docs execution.
 M5 B may advance after M2 B with claims pending until M4 B; all other dependencies,
 privacy/quality/acceptance/merge gates remain intact. Sensitive suites keep exclusive
 windows. No previous work is restarted or duplicated.
+
+## 2026-11-06 — Task 3 rounds 2/3 integrated, full 2 green, group review pending
+
+Root `8087e252112fd2e6de1efeff1d0f3f531d4be77d` matches Green
+`4a3cb7ced77a73046098e20cb34aeb00af0e6f61` after round-2 `944e358` and round-3
+`4a3cb7c`; src tree `948efa342c9569ca751cffb4718d82f3dd872de6`, tests tree
+`30c62e6f7e9e0a818e125a6c7762db91335b47f1`. Read-only docs-author Git verification
+confirms matching trees and empty source/config/scripts/workflow diff.
+
+Rulings 36/37 are implemented. Marker 2 includes a fresh publication UUID and
+source_kind. Operation payload and receipt 3 retain exact token/expected parent/
+normalized origin/measured fingerprint/committed revision/source-kind proof;
+rebuild restores proven complete operations. Receipt 2 remains accepted without
+invented proof; DB schema stays 2. The real processor's private manifest-bound
+result is consumed once by the controller, while durable replay independently
+covers real postcommit child crashes with existing/rebuilt DB and equal/changed
+evidence. Fresh explicit identical retries still produce a new revision. Valid
+WAV-only legacy retry reserves canonical UUID/lease before mutation/provider,
+with NULL origin revision and zero historical transcript revisions; durable
+source_kind preserves NULL capture dates across retry/rebuild. No process,
+protocol, device/test deadline, dependency or version change was made.
+
+Independent scoped round-2 review marks NB1 and the named integration regressions
+ADDRESSED. Final covering focus: 61 passed in 68.06s; existing controller/processing/
+UI: 69 passed in 23.02s. Metadata-only inspection does not create new lock files;
+journal mutation upgrades ownership without dropping current leases. The CLI
+fixture author supplied real PCM16 instead of invalid bytes/incomplete sf.info;
+original outcome assertions remain and production validation was not weakened.
+An intermediate replay focus reported 16 passed/1 failed in 315.60s, a 30-second
+child timeout before commit proof/replay. Identical unchanged case passed alone
+in 5.02s and in final combined focus (call 2.72s). Mechanism remains unproven; no
+timeout/assertion change or root-cause claim is made. Logs remain retained.
+
+Round-2 review introduced NB2: missing-metadata capture identity had to be validated
+before deriving the journal probe path. Independent author RED: two failures/one
+opaque-existing-manifest control pass in 2.45s. Round-3 scoped review
+`task-3-fix-3-review-report.md` marks NB2 ADDRESSED, no new Critical/Important
+breakage in that diff; covering runs 3 passed/2.40s and 27 passed/20.86s.
+Existing manifests retain optional/opaque identity. Ruff/format clean on ten and
+two files respectively; resolved comparative mypy baseline/current 79/79 with no
+new diagnostic messages, no globally clean claim. Reviewers inspected supplied
+logs/source and ran no tests.
+
+`M2A-INTEGRATED-FULL2-8087e25`, started alone at 2026-11-06T00:01:58Z, completed
+**940 passed, 7 skipped in 325.09s**, zero failures. Root log/XML:
+`.superpowers/m2a-integrated-final-2.txt`/`.xml`. Independent read-only XML confirms
+947 cases, zero failures/errors, seven symlink-privilege skips, internal 325.029s;
+both fresh noneditable wheel CLI/GUI smokes passed. Earlier full 1f1bc88's five
+failures/920 passes/seven skips/553.39s remain historical evidence above; all five
+have later focused coverage and addressed scoped review. No assertion was omitted
+or relaxed to count this run as passing.
+
+Fresh CPython 3.13.15 wheel/sdist and off-repo `-I` noneditable probe of the exact
+8087e25 source verify 65 Python files byte-identical, DB schema 2, FTS5, empty FK
+check and integrity_check=ok. Probe
+`.superpowers/m2a-wheel-catalog-probe-8087e25.json`, artifacts
+`.superpowers/m2a-final-dist-8087e25`; wheel SHA256
+`4f37ca61d50df87e588ecdd1c2e9221690fd3aa9472dc33081c4116600147ad8`, sdist SHA256
+`b5110b1dd0c78c485e52a738e147f21a5a64e6dfaa5aaf515ae68b8d10de5271`.
+Prior probes remain historical with their own hashes. This is local automatic
+verification, not real hardware/provider/clean-install certification.
+
+Whole-group review by `catalog_group_review` is still in progress on
+763a891..8087e25 with three provisional Important findings: completed metadata can
+commit before the first pending marker, leaving a kill without startup replay and
+an interrupted row; non-object receipt JSON can reach `.get` and abort valid rebuild
+siblings; accepted cancellation after capture-failure publication leaves cancelled
+UI/manifest but failed catalog, conflict and a stuck marker. The complete source
+report `group-review-report.md` records GR1/GR2/GR3 Important/P2 OPEN and source
+verdict changes requested. Its global assessment remains provisional pending the
+committed docs supplement. No final all-source/docs acceptance or fixes are claimed.
+Scoped NB1/NB2 acceptance and a green full do not accept Task 3/group A/M2. Await
+final findings, RED/GREEN/re-review and verification after any source correction,
+then current-head PR/Copilot received/responded/Windows CI/guarded merge gates.
+There is no M2 A PR or hosted group CI approval yet.
+
+Rulings 20–37 remain unchanged. R35 ordering is preserved: finish/merge A and
+required contract-doc PRs before root creates separate complete-group project chats
+M2 B and M3 A. Future chat IDs/branches/worktrees/executors/merged-A base remain
+pending; none created. Root alone orchestrates leases/contracts/integration/merges,
+with serialized migrations/pyproject/version and exclusive sensitive suites.
+Prepared four B/M3 A docs in m2-segments were not changed by this writer. Version
+remains 0.2.0; 0.3.0 only at B/M2 closure; final 1.0.0 goal and real acceptance
+requirements remain intact.

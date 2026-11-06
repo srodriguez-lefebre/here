@@ -8,7 +8,7 @@
   "task_2_commit": "037fc036ef43467136bcf7b8e95c6f8395d1aa5e",
   "task_2_base_commit": "878e7d4b531d0b07599b373261279fbb6b440030",
   "task_2_integration_commit": "1cdaadb72f2ebee53ce3a7be2680a01d18de6ad2",
-  "evidence_level": "automatic_local_partial_verification_integrated_suite_failed",
+  "evidence_level": "verified_automatically_local_whole_group_review_pending",
   "certified": false,
   "data_policy": "Temporary SQLite roots, authored synthetic PCM and transcripts, synthetic key; no private sessions or real .env.",
   "runs": [
@@ -195,11 +195,11 @@
     "handled_raw_io_rollback": "Restore previous bytes or remove fresh unpublished raw after metadata replace failure"
   },
   "task_3_progress": {
-    "state": "round_1_integrated_original_findings_addressed_NB1_and_five_full_failures_open",
-    "candidate_suite_green": false,
+    "state": "rounds_2_3_integrated_full2_passed_whole_group_review_three_Important_OPEN_docs_supplement_pending",
+    "candidate_suite_green": true,
     "task_accepted": false,
-    "fix_round": 2,
-    "open_findings_count": 1,
+    "fix_round": 3,
+    "open_findings_count": 3,
     "prior_red_passed": 18,
     "prior_red_failed": 31,
     "author_duration_seconds": 2.5,
@@ -210,7 +210,7 @@
     "combined_root_log": "task-3-complete-root-red.log",
     "candidate_base": "1cdaadb",
     "fixture_commit": "efb73a92ea89bc53318ce1a811eaf61129a76fbf",
-    "candidate_source_commit": "c28472b5bd651f4d7f7fe2f40449f5a23e325f67",
+    "candidate_source_commit": "4a3cb7ced77a73046098e20cb34aeb00af0e6f61",
     "root_integrated": true,
     "hash_comparison_by_docs_author": "Read-only PowerShell Get-FileHash, no source execution",
     "stable_candidate_full_result": {
@@ -234,8 +234,8 @@
       "historical": true,
       "source_commit": "6c422f0b8671d2f736645abb6835d351783cbcc7"
     },
-    "independent_task_review": "changes_requested_NB1_Important_P2_open",
-    "independent_whole_branch_review": "pending",
+    "independent_task_review": "scoped_F1_F7_NB1_NB2_addressed_no_task_or_group_acceptance",
+    "independent_whole_branch_review": "source_changes_requested_GR1_GR2_GR3_OPEN_final_docs_supplement_pending",
     "hosted_ci": "pending",
     "copilot": "pending",
     "historical_candidate_checkpoint": {
@@ -250,31 +250,47 @@
       "superseded_by": "round_1_integrated_checkpoint"
     },
     "initial_candidate_suite_green": true,
-    "integrated_full_failures_count": 5,
-    "root_integration_commit": "1f1bc88513840b84c388a61d9c077907cf2fba2e",
+    "integrated_full_failures_count": 0,
+    "root_integration_commit": "8087e252112fd2e6de1efeff1d0f3f531d4be77d",
     "root_integration_commits": [
       "1277e19",
       "3370483",
       "3a83482",
-      "1f1bc88"
+      "1f1bc88",
+      "2a3a31e",
+      "8087e25"
     ],
     "green_fix_commits": [
       "16263c4180aa13036a812110a6e98554f1a7c56f",
-      "c28472b5bd651f4d7f7fe2f40449f5a23e325f67"
+      "c28472b5bd651f4d7f7fe2f40449f5a23e325f67",
+      "944e358b2908a127d4380afeb4d645522a869cb3",
+      "4a3cb7ced77a73046098e20cb34aeb00af0e6f61"
     ],
-    "src_tree": "780529d42936c979740443c51f1022fd2bb99a5e",
-    "tests_tree": "d226358ec038837dba6e40790c77eac74e74b538",
+    "src_tree": "948efa342c9569ca751cffb4718d82f3dd872de6",
+    "tests_tree": "30c62e6f7e9e0a818e125a6c7762db91335b47f1",
     "root_green_src_tests_identical": true,
     "root_green_source_config_scripts_workflows_diff_empty": true,
     "round_2_red": {
       "file": "tests/test_memory_publication_replay.py",
       "state": "author_preparing_or_executing_no_delivered_result",
       "passed": null,
-      "failed": null
-    }
+      "failed": null,
+      "historical": true,
+      "superseded_by": "task_3_fix_round_2_review"
+    },
+    "historical_round_1_integration": {
+      "source": "c28472b5bd651f4d7f7fe2f40449f5a23e325f67",
+      "root": "1f1bc88513840b84c388a61d9c077907cf2fba2e",
+      "src_tree": "780529d42936c979740443c51f1022fd2bb99a5e",
+      "tests_tree": "d226358ec038837dba6e40790c77eac74e74b538",
+      "state": "round_1_integrated_original_findings_addressed_NB1_and_five_full_failures_open",
+      "full_evidence_key": "task_3_integrated_full"
+    },
+    "scoped_open_findings_count": 0,
+    "provisional_whole_group_Important_findings_count": 3
   },
   "task_3_protocol": {
-    "source_state": "round_1_integrated_unaccepted_NB1_and_full_failures",
+    "source_state": "rounds_2_3_integrated_scoped_fixes_addressed_full2_green_group_review_pending",
     "rulings": [
       22,
       23,
@@ -287,7 +303,9 @@
       31,
       32,
       33,
-      34
+      34,
+      36,
+      37
     ],
     "publication_lock": ".memory.lock",
     "actual_owner_locks": ".owners/<meeting-uuid>.lock",
@@ -308,14 +326,16 @@
     "audio_revision_association_review": "Migration 2 revision_audio_assets and receipt v2 implemented; original F1 ADDRESSED, migration 1 unchanged",
     "rebuild_scope": "Validated managed committed receipts/state snapshots, no external-origin scan",
     "uncertain_unreceipted_tree": "Retained/reported, not inferred committed after loss of DB knowledge",
-    "trusted_retry_precondition": "Explicit fresh retry expects current active revision; ordinary changed same-UUID import remains conflict. NB1 committed-publication recognition/replay still open",
-    "legacy_retry": "Mapped/unmapped None/opaque identities resolved before mutation/provider without rewriting external identity; root audio-only missing-session.json regression remains open",
+    "trusted_retry_precondition": "Fresh explicit retry validates expected active parent and uses a fresh token; exact already-committed publication proof alone allows idempotent replay; arbitrary stale imports conflict",
+    "legacy_retry": "Mapped/unmapped optional/opaque source identity preserved; valid legacy WAV-only source reserves canonical identity/lease before mutation/provider with NULL source revision and no historical transcript",
     "local_marker": "memory_pending.json in application-owned output",
     "marker_fields": [
       "schema_version",
       "meeting_id",
       "revision_of",
-      "intent"
+      "intent",
+      "publication_id",
+      "source_kind"
     ],
     "marker_intents": [
       "ingest",
@@ -345,8 +365,37 @@
     },
     "native_capture_owner_locks": ".capture_owners/<capture-uuid>.lock",
     "native_owner_lifetime": "Acquired before journal publication; retained by actual job scope through helper closure and final persistence",
-    "postcommit_housekeeping": "Original F4 ADDRESSED with committed success plus recoverable warning; separate origin-marker NB1 replay remains open",
-    "typed_errors": "Original F7 ADDRESSED preserving CLI 2/3/4; full CLI sf.info subtype-stub failure remains pending"
+    "postcommit_housekeeping": "Original F4 and NB1 addressed in scoped reviews with real child-crash replay; whole-group metadata-before-first-marker crash window provisionally open",
+    "typed_errors": "Original F7 addressed; prior sf.info regression corrected via independent real PCM16 fixture, no production validation relaxation",
+    "marker_schema_version": 2,
+    "marker_read_versions": [
+      1,
+      2
+    ],
+    "source_kinds": [
+      "session",
+      "legacy_audio_only"
+    ],
+    "publication_proof_fields": [
+      "publication_id",
+      "revision_id",
+      "revision_of",
+      "origin_path",
+      "origin_fingerprint",
+      "source_kind"
+    ],
+    "publication_replay": "Match exact token/parent/origin/fingerprint/source-kind/content and committed revision; prepared-only is insufficient; fresh identical retry creates another revision",
+    "receipt_schema_version_for_proven_publications": 3,
+    "receipt_read_versions": [
+      2,
+      3
+    ],
+    "receipt_v2_proof": "Not invented",
+    "receipt_v3": "Includes operation_id and publication proof; rebuild restores proven complete operation with same-meeting parent validation; no migration beyond existing DB schema2",
+    "controller_handoff": "Private result bound to directory and manifest hash, consumed once; unrelated injected processors keep fallback; not durable replay authority",
+    "legacy_audio_only_capture_dates": "NULL started_at/completed_at across retry/rebuild via durable source_kind; processing timestamps do not imply capture dates",
+    "metadata_only_ownership": "Probe existing leases without creating files; journal materialization upgrades while retaining current leases before mutation",
+    "missing_metadata_identity": "Canonical UUID guard precedes any journal join/probe; existing manifests keep optional/opaque identity"
   },
   "task_3_intermediate_evidence": {
     "scope_limit": "Distinct evolving-source focused runs, not summed and not stable final verification",
@@ -668,9 +717,9 @@
     "superseded_by": "task_3_fix_round_1_review"
   },
   "evidence_levels": {
-    "implemented": "Round-1 source integrated and original F1-F7 addressed; complete task is not accepted because NB1 and five integrated full failures remain",
-    "verified_automatically": "40-case fix focus and fresh noneditable wheel/source probe passed; integrated full 5 failed/920 passed/7 skipped; hosted group CI pending",
-    "certified": "No new real hardware/provider/clean-install certification; wheel probe is local automatic evidence"
+    "implemented": "Source8087e25 and scoped F1-F7/NB1/NB2 fixes have passing full; task/group unaccepted because GR1/GR2/GR3 Important OPEN and final committed-docs supplement pending",
+    "verified_automatically": "Local synthetic foci61/69/3/27, full2 940 passed/7 symlink skips plus current noneditable65-file wheel probe; hosted group CI pending",
+    "certified": "No new real hardware/provider/clean-install certification; current wheel verification is automatic local evidence"
   },
   "capture_harness_correction": {
     "ruling": 29,
@@ -705,18 +754,17 @@
     "review_report": "task-3-capture-fixture-review-report.md"
   },
   "limits": [
-    "Task 1 final suite and both noneditable wheel smokes passed; seven local symlink omissions remain.",
-    "Task 2 final 037fc03 source suite had six symlink and two wheel opt-in skips; later root wheel evidence is separate.",
-    "Task 2 handled-I/O rollback alone is not atomic against process death or concurrent writers; task 3 supplies publication/recovery protocol, still unaccepted.",
-    "Task 3 initial 6c422f0 candidate 883/9 suite and initial seven-open review are historical checkpoints, preserved below and superseded by round-1 integration.",
-    "Round-1 migration 2, receipt v2, explicit revision/audio links and F1-F7 fixes are implemented/re-reviewed as addressed; NB1 Important/P2 remains open.",
-    "Current integrated source 1f1bc88 full failed five cases: 920 passed, seven symlink skips; both wheel smokes passed. No task/group acceptance.",
-    "Round-2 replay RED is being prepared/executed by its author; no result delivered at this checkpoint.",
-    "Fresh wheel/sdist and 65-file off-repo noneditable -I probe are local automatic verification, not installer/hardware/provider certification.",
-    "Whole-group independent review, current-head Copilot received/responded and Windows hosted CI remain pending.",
-    "No future project chats created; IDs/branches/worktrees/executors/real merged-A bases pending under ruling 35.",
-    "No M2 milestone closure or version bump; 0.3.0 only after B/M2 closure.",
-    "Two-hour resource acceptance omitted by ruling 5."
+    "All prior runs remain scoped historical evidence; initial candidate883/9 and first integrated full5failed/920passed/7skipped are not erased.",
+    "Original F1-F7, NB1 and NB2 are addressed by independent scoped reviews; those do not replace whole-group acceptance.",
+    "Current integrated source8087e25 full2:940passed/7symlinkskips/325.09s, both fresh noneditable wheel smokes pass.",
+    "Whole-group source review changes requested: GR1 metadata-before-marker crash handoff, GR2 receipt envelope isolation and GR3 accepted capture-cancellation catalog divergence all Important/P2 OPEN; global assessment provisional pending committed-docs supplement. No acceptance.",
+    "Intermediate replay focus child30s timeout remains recorded; identical case later passed isolated5.02s and final combined call2.72s without changes; cause unproven.",
+    "Receipt3 and marker2 are implemented under R36/R37; DB schema remains2, receipt2 compatibility supplies no invented replay proof.",
+    "Fresh current wheel/sdist probe65sourcefiles/schema2/FTS5/FK/integrity is local automatic evidence, not installer/hardware/provider certification.",
+    "All PR/current-head Copilot received/responded/Windows hostedCI/guardedmerge gates pending; no M2A PR yet.",
+    "R35 future chats/branches/worktrees/executors/real merged-A bases pending; none created; contract-doc PRs required after A before dispatch.",
+    "No new process/protocol/device or test deadlines/dependencies/version;0.2.0 current,0.3 only atB/M2 closure, final1.0.0 goal unchanged.",
+    "Two-hour resource acceptance omitted by ruling5."
   ],
   "pr20": {
     "url": "https://github.com/srodriguez-lefebre/here/pull/20",
@@ -773,7 +821,9 @@
       "canonical_mypy_current": 79,
       "new_diagnostic_messages": {},
       "global_mypy_clean_claimed": false
-    }
+    },
+    "historical": true,
+    "superseded_by": "task_3_fix_round_2_review"
   },
   "task_3_integrated_full": {
     "name": "M2A-INTEGRATED-FULL1-20261105",
@@ -819,11 +869,14 @@
         "status": "pending_diagnosis_fix"
       }
     ],
-    "approval_implied": false
+    "approval_implied": false,
+    "historical": true,
+    "current_disposition": "All five failures covered in round-2 61-case focus and addressed by scoped review; later full2 passes, original failed result retained"
   },
   "task_3_integrated_distribution_probe": {
-    "run": "M2A-INTEGRATED-WHEEL-20261105",
-    "source_head": "1f1bc88513840b84c388a61d9c077907cf2fba2e",
+    "run": "M2A-INTEGRATED-WHEEL-8087e25",
+    "recorded_at_utc": "2026-11-05T21:01:20.658955-03:00",
+    "source_head": "8087e252112fd2e6de1efeff1d0f3f531d4be77d",
     "python": "3.13.15",
     "platform": "Windows-11-10.0.26300-SP0",
     "package_version": "0.2.0",
@@ -833,24 +886,17 @@
     "schema_version": 2,
     "fts5": true,
     "artifact_sha256": {
-      "here-0.2.0-py3-none-any.whl": "bb7a49a9f5b5c6a6b25f48f39b036badc489bee3870c69b0024af8f0d61dd7bd",
-      "here-0.2.0.tar.gz": "8ebd3a3a44d48df68d94dcb8748adf8af52dfde334465bc2bcecfa0d95513358"
+      "here-0.2.0-py3-none-any.whl": "4f37ca61d50df87e588ecdd1c2e9221690fd3aa9472dc33081c4116600147ad8",
+      "here-0.2.0.tar.gz": "b5110b1dd0c78c485e52a738e147f21a5a64e6dfaa5aaf515ae68b8d10de5271"
     },
     "provider_used": false,
     "hardware_used": false,
-    "log": ".superpowers/m2a-wheel-catalog-probe.json",
-    "script": ".superpowers/m2a-wheel-catalog-probe.py",
+    "probe_file": ".superpowers/m2a-wheel-catalog-probe-8087e25.json",
+    "build_artifact_directory": ".superpowers/m2a-final-dist-8087e25",
     "fresh_wheel_and_sdist_build": "success",
     "off_repo_isolated_flag": "-I",
     "foreign_key_check": "empty",
     "integrity_check": "ok",
-    "revision_audio_assets_columns": [
-      "meeting_id",
-      "revision_id",
-      "asset_id",
-      "ordinal",
-      "source_file"
-    ],
     "certification_claimed": false
   },
   "post_M2A_dispatch_ruling_35": {
@@ -918,5 +964,200 @@
     "sensitive_suites_exclusive": true,
     "quality_privacy_acceptance_merge_gates_unchanged": true,
     "restart_or_duplicate_work": false
+  },
+  "task_3_fix_round_2_review": {
+    "report": "task-3-fix-2-review-report.md",
+    "reviewer": "ingestion_review",
+    "independent_of_implementer": true,
+    "reviewed_commit": "944e358b2908a127d4380afeb4d645522a869cb3",
+    "review_type": "static",
+    "tests_run_by_reviewer": false,
+    "addressed": [
+      "NB1",
+      "metadata-only inspection lock creation",
+      "legacy materialization actual ownership",
+      "legacy WAV-only retry without session.json",
+      "incomplete CLI sf.info fixture"
+    ],
+    "verdict_at_review": "NB1_and_integration_addressed_new_Important_NB2",
+    "new_finding_at_review": {
+      "priority": "Important/P2",
+      "id": "NB2",
+      "contract": "Validate missing-metadata capture UUID before journal path construction/probe",
+      "current_status": "ADDRESSED in task_3_fix_round_3_review"
+    },
+    "covering_runs": [
+      {
+        "duration_seconds": 68.06,
+        "log": "task3-fix2-frozen-focus.txt",
+        "passed": 61
+      },
+      {
+        "duration_seconds": 23.02,
+        "log": "task3-fix2-controller-existing.txt",
+        "passed": 69
+      }
+    ],
+    "ruff_and_format_files": 10,
+    "quality": "pass",
+    "canonical_mypy_baseline": 79,
+    "canonical_mypy_current": 79,
+    "new_diagnostic_messages": {},
+    "transient_timeout": {
+      "timeout_or_assertion_changed": false,
+      "duration_seconds": 315.6,
+      "passed": 16,
+      "failed_case": "test_crash_after_real_commit_before_origin_marker_unlink_replays_locally_once[rebuilt-db-identical]",
+      "isolated_unchanged_pass_seconds": 5.02,
+      "scope": "Intermediate replay focus",
+      "unchanged_child_timeout_seconds": 30,
+      "failed": 1,
+      "final_combined_pass_call_seconds": 2.72,
+      "cause": "unproven"
+    },
+    "task_accepted": false
+  },
+  "task_3_fix_round_3_review": {
+    "report": "task-3-fix-3-review-report.md",
+    "reviewer": "ingestion_review",
+    "independent_of_implementer": true,
+    "reviewed_commit": "4a3cb7ced77a73046098e20cb34aeb00af0e6f61",
+    "review_type": "static",
+    "tests_run_by_reviewer": false,
+    "NB2": "ADDRESSED",
+    "new_Critical_or_Important_breakage": "none_in_scoped_diff",
+    "red": {
+      "duration_seconds": 2.45,
+      "failed": 2,
+      "passed": 1
+    },
+    "covering_runs": [
+      {
+        "duration_seconds": 2.4,
+        "log": "task3-fix3-identity.txt",
+        "passed": 3
+      },
+      {
+        "duration_seconds": 20.86,
+        "log": "task3-fix3-recovery-focus.txt",
+        "passed": 27
+      }
+    ],
+    "ruff_and_format_files": 2,
+    "quality": "pass",
+    "canonical_mypy_baseline": 79,
+    "canonical_mypy_current": 79,
+    "new_diagnostic_messages": {},
+    "task_accepted": false,
+    "compatibility": "Guard missing-metadata canonical UUID before first journal join/probe; existing-manifest optional/opaque identity preserved"
+  },
+  "task_3_integrated_full_2": {
+    "name": "M2A-INTEGRATED-FULL2-8087e25",
+    "source_head": "8087e252112fd2e6de1efeff1d0f3f531d4be77d",
+    "started_at_utc": "2026-11-06T00:01:58Z",
+    "run_alone": true,
+    "passed": 940,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 7,
+    "duration_seconds": 325.09,
+    "junit_tests": 947,
+    "junit_internal_time_seconds": 325.029,
+    "log": ".superpowers/m2a-integrated-final-2.txt",
+    "junit": ".superpowers/m2a-integrated-final-2.xml",
+    "noneditable_wheel_smokes_passed": 2,
+    "skip_reasons": {
+      "symlink_privilege": 7
+    },
+    "observed_by_docs_author": "Read-only final log summary and XML parsing",
+    "task_or_group_approval_implied": false
+  },
+  "task_3_distribution_probe_history": [
+    {
+      "run": "M2A-INTEGRATED-WHEEL-20261105",
+      "source_head": "1f1bc88513840b84c388a61d9c077907cf2fba2e",
+      "python": "3.13.15",
+      "platform": "Windows-11-10.0.26300-SP0",
+      "package_version": "0.2.0",
+      "source_files_equal": true,
+      "python_file_count": 65,
+      "editable": false,
+      "schema_version": 2,
+      "fts5": true,
+      "artifact_sha256": {
+        "here-0.2.0-py3-none-any.whl": "bb7a49a9f5b5c6a6b25f48f39b036badc489bee3870c69b0024af8f0d61dd7bd",
+        "here-0.2.0.tar.gz": "8ebd3a3a44d48df68d94dcb8748adf8af52dfde334465bc2bcecfa0d95513358"
+      },
+      "provider_used": false,
+      "hardware_used": false,
+      "log": ".superpowers/m2a-wheel-catalog-probe.json",
+      "script": ".superpowers/m2a-wheel-catalog-probe.py",
+      "fresh_wheel_and_sdist_build": "success",
+      "off_repo_isolated_flag": "-I",
+      "foreign_key_check": "empty",
+      "integrity_check": "ok",
+      "revision_audio_assets_columns": [
+        "meeting_id",
+        "revision_id",
+        "asset_id",
+        "ordinal",
+        "source_file"
+      ],
+      "certification_claimed": false
+    },
+    {
+      "run": "M2A-INTEGRATED-WHEEL-2a3a31e-20261105",
+      "source_head": "2a3a31e2eb97c257981e9c9b22ffa729162325d2",
+      "python": "3.13.15",
+      "platform": "Windows-11-10.0.26300-SP0",
+      "package_version": "0.2.0",
+      "source_files_equal": true,
+      "python_file_count": 65,
+      "editable": false,
+      "schema_version": 2,
+      "fts5": true,
+      "artifact_sha256": {
+        "here-0.2.0-py3-none-any.whl": "4a839175d0536113f8c4568b55ca3f69eba23fe1ef4662055ebb1f0b8baffd7b",
+        "here-0.2.0.tar.gz": "c8b89772b88247d150729371be7952e4c9368ddae67160d97bb65661f72aa1bc"
+      },
+      "provider_used": false,
+      "hardware_used": false,
+      "historical": true
+    }
+  ],
+  "task_3_whole_group_review": {
+    "reviewer": "catalog_group_review",
+    "independent_of_implementer": true,
+    "base": "763a891fa7c0bed54a3158040094b6f083b88f32",
+    "head": "8087e252112fd2e6de1efeff1d0f3f531d4be77d",
+    "state": "complete_provisional_source_assessment_changes_requested_final_docs_supplement_pending",
+    "provisional_Important_findings": [
+      {
+        "id": "GR1",
+        "priority": "Important/P2",
+        "path": "Completed metadata can commit before first memory_pending marker",
+        "effect": "A kill leaves no startup replay and meeting interrupted or old active revision",
+        "status": "OPEN"
+      },
+      {
+        "id": "GR2",
+        "priority": "Important/P2",
+        "path": "Unvalidated non-object receipt JSON or hashes=[] reaches mapping method",
+        "effect": "AttributeError escapes rebuild and aborts valid siblings/startup/maintenance JSON envelope",
+        "status": "OPEN"
+      },
+      {
+        "id": "GR3",
+        "priority": "Important/P2",
+        "path": "Accepted cancellation after real capture-failure publication changes metadata and invalidates private-result handoff",
+        "effect": "Canonical manifest/UI cancelled but catalog failed; ordinary same-UUID ingest conflicts and leaves stuck marker",
+        "status": "OPEN"
+      }
+    ],
+    "accepted": false,
+    "report": "group-review-report.md",
+    "source_verdict": "changes_requested",
+    "final_all_source_docs_verdict": "pending_committed_docs_supplement",
+    "regression_recipes_executed_by_reviewer": false
   }
 }

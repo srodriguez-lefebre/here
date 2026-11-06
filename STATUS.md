@@ -16,12 +16,11 @@ las definiciones de terminado y los tres niveles de evidencia. Versión vigente
 - Base histórica: `878e7d4`, v0.2.0; PR #20/ruling 19 mergeado en `763a891` e
   integrado. Grupo actual: `codex/m2-catalog`, worktree
   `C:/Users/savar/.codex/worktrees/m2-catalog/here`.
-- Código integrado actual: `2a3a31e2eb97c257981e9c9b22ffa729162325d2`, con fixture
-  `1277e19`, candidato `3370483`, fix 1 `3a83482` y guard de legacy `1f1bc88`.
-  Incluye fix 2 `2a3a31e`, equivalente a Green `944e358`: src tree
-  `d11e678490f52ffcc6ec933201afc364fb219abe`, tests tree
-  `a734c86beacd85cc6a755b3ca51b55fa1b572282`. Source/config/scripts/workflows sin
-  diferencias con Green. Integración no equivale a aceptación ni merge del grupo.
+- Código integrado actual: `8087e252112fd2e6de1efeff1d0f3f531d4be77d`, equivalente
+  a Green `4a3cb7c` tras rondas 2/3. Src tree
+  `948efa342c9569ca751cffb4718d82f3dd872de6`, tests tree
+  `30c62e6f7e9e0a818e125a6c7762db91335b47f1`; source/config/scripts/workflows
+  sin diferencias con Green. Integración no equivale a aceptación ni merge de A.
 - Los nueve grupos se conservan: M2 A (`M2_CATALOG`, 1–3), M2 B
   (`M2_LIFECYCLE`, 4–5), M3 A (`M3_SEARCH`, 1–2), M3 B (`M3_LIBRARY`, 3–4),
   M4 A (`M4_GROUNDED`, 1–3), M4 B (`M4_PRODUCT`, 4–5), M5 A
@@ -48,45 +47,56 @@ las definiciones de terminado y los tres niveles de evidencia. Versión vigente
   foco 310/1/24,60 s, capture recovery 68/25,64 s, full 783/8/160,71 s.
   Sus dos skips de wheel no sustituyen la evidencia de wheel de otras corridas.
 - Candidato inicial Task3 `6c422f0`: full estable 883 pasan/9 skips/598,56 s.
-  La review abrió F1–F7. Ronda 1 los marca **ADDRESSED** tras 40 nuevos casos RED
-  pasando juntos en 69,70 s, Ruff/format de 20 archivos limpios y mypy 79/79 sin
-  nuevos mensajes. Esa re-review sigue solicitando cambios por **NB1 Important/P2**:
-  doble publicación del controller y replay de marcador postcommit se confunden
-  con un retry nuevo y dejan parent obsoleto. No hay aceptación de tarea/grupo.
-- **Full histórico sobre `1f1bc88`: 5 fallos, 920 pasan, 7 skips en 553,39 s**.
-  Logs/XML `.superpowers/m2a-integrated-final-1.*`; 932 casos, cinco failures y
-  cero errors. Ambos smokes del wheel pasan; los siete skips son de symlink.
-  Sus fallos fueron: tres snapshots de `test_capture_recovery.py`
-  incluyen locks nuevos, `test_trans_command_completes_failed_session_audio`
-  tiene stub sf.info sin subtype y `test_legacy_audio_only_session_still_retries`
-  queda bloqueado por session.json ausente. No se omiten ni relajan assertions.
-- Ronda 2: NB1 y las regresiones de integración están **ADDRESSED** por review
-  independiente. Foco congelado: 61 pasan/68,06 s; foco existente de controller,
-  procesamiento y UI: 69 pasan/23,02 s. Ruff/format de diez archivos limpios;
-  mypy 79/79 sin nuevos. Nuevo **NB2 Important/P2**: un capture ID absoluto de
-  candidato stale puede sondear una ruta externa antes de rechazar su UUID.
-  Falta RED/fix/re-review de ese guard, y la suite completa del código corregido.
-- Wheel y sdist frescos CPython 3.13.15 construidos. Probe no editable, off-repo
-  con `-I`: 65 módulos Python byte-idénticos, schema 2, FTS5, FK/integrity correctos;
-  Los probes de `1f1bc88` y `2a3a31e` guardan sus hashes por separado; este último
-  en `.superpowers/m2a-wheel-catalog-probe-2a3a31e.json`. No empezó un nuevo full
-  sobre `2a3a31e` porque NB2 debe corregirse primero. Es evidencia automática
-  local, sin hardware/proveedor ni certificación de instalador o hito.
+  Ronda 1 marcó F1–F7 ADDRESSED, pero abrió NB1. El full histórico `1f1bc88`
+  dio **5 fallos/920 pasan/7 skips/553,39 s**, logs/XML
+  `.superpowers/m2a-integrated-final-1.*`; ambos smokes wheel pasaron. Sus tres
+  snapshots con locks nuevos, stub sf.info y retry audio-only tienen corrección
+  y cobertura posterior; el resultado fallido se conserva, sin relajar assertions.
+- Ronda 2: NB1 y las regresiones de integración ADDRESSED por review independiente;
+  61 pasan/68,06 s y foco controller/procesamiento/UI 69/23,02 s. Un timeout hijo
+  intermedio de 30 s permanece registrado: caso idéntico pasó aislado 5,02 s y en
+  foco final (call 2,72 s), sin causa probada ni cambio de timeout.
+- Ronda 3: NB2 ADDRESSED, sin breakage nuevo en su diff; review
+  `task-3-fix-3-review-report.md`. Guard UUID antes de construir/probar journal
+  cuando falta metadata; IDs opacos del manifiesto existente siguen compatibles.
+  Focos 3/2,40 s y 27/20,86 s. Ruff/format y mypy comparativo 79/79 sin nuevos.
+- R36/R37 implementados: marker v2 con token/source_kind, receipt v3 con prueba
+  exacta y restauración de operaciones, replay tras crash real con DB presente o
+  reconstruida; handoff privado consumido una vez por controller. Reserva audio-only
+  canónica con origen/revisión NULL, cero revisiones históricas y fechas captura
+  NULL durables. DB sigue schema 2, receipt v2 compatible sin inventar prueba.
+- **Full integrado 2: 940 pasan/7 skips/cero fallos en 325,09 s**, fuente
+  `8087e25`, iniciado solo a 2026-11-06T00:01:58Z. Log/XML
+  `.superpowers/m2a-integrated-final-2.*`: 947 casos, cero failures/errors,
+  tiempo interno 325,029 s; ambos smokes wheel pasan, skips siete symlinks.
+  Full verde no equivale a aceptación de tarea/grupo mientras falte review global.
+- Review de todo A por `catalog_group_review` en curso, base `763a891`..`8087e25`.
+  Tres Important provisionales: metadata completed puede persistir antes del primer
+  memory_pending marker (kill deja sin replay e interrupted); receipt JSON array
+  puede abortar rebuild de vecinos por `.get`/AttributeError; cancelación aceptada
+  durante persistencia del fallo de captura deja UI/manifest cancelled y catálogo
+  failed con conflicto/marker atascado. GR1/GR2/GR3 Important/P2 están OPEN en
+  `group-review-report.md`, source verdict changes requested. Review global sigue
+  provisional hasta suplemento docs comprometido; sin aceptación. Corregir juntos
+  sin reabrir NB1/NB2 ya addressed.
+- Wheel/sdist nuevos CPython 3.13.15 y probe off-repo `-I` no editable de `8087e25`:
+  65 módulos byte-idénticos, schema 2/FTS5/FK/integrity correctos. Hashes en
+  `.superpowers/m2a-wheel-catalog-probe-8087e25.json`; probes anteriores históricos.
+  Sin hardware/proveedor ni certificación nueva. No procesos, protocolos, deadlines,
+  dependencias o versión nuevos. Meta final M5/1.0.0 intacta.
 
 ## Próxima acción obligatoria
 
-1. Completar ronda 3 de NB2: RED en `test_memory_candidate_identity_paths.py`,
-   validación de capture UUID antes de construir/sondear journal cuando falta
-   metadata, manteniendo IDs opacos válidos cuando el manifiesto existe.
-   Baseline aislado `ruling19-review` limpio en `944e358`; no modificarlo.
-2. Foco y re-review de NB2, nueva suite estable y review de todo el grupo.
-   NB1 y los cinco fallos previos tienen cobertura/review, pero no se da la tarea
-   por aceptada mientras NB2 y los gates agregados sigan abiertos.
+1. Completar la review de grupo; conservar el full 2 verde y sus límites, y los
+   hallazgos/veredictos reales. Rondas acotadas NB1/NB2 ya addressed, sin reiniciarlas.
+2. Atender los tres hallazgos de grupo cuando se formalicen, con RED/GREEN/re-review,
+   focos y nueva suite estable si la fuente cambia. No aceptar tarea/grupo solo
+   por focos y reviews de diffs; falta veredicto de todo A y verificación agregada.
 3. PR de A, Copilot sobre head exacto recibido/respondido y CI Windows verde;
    merge guardado y ledger. Todavía no hay PR ni CI de A aprobados.
 4. Después del merge A y de los PRs de docs de contratos necesarios, root crea
    dos chats de proyecto separados para M2 B y M3 A, con briefs completos y leases.
-   No usar `1f1bc88` como base de merge futura: la SHA real aún es desconocida.
+   No usar `8087e25` como base de merge futura: la SHA real aún es desconocida.
 
 ## Dos frentes futuros — ruling 35, todavía pendientes
 
@@ -118,7 +128,7 @@ El resto conserva sus dependencias; no se inicia ningún frente en este checkpoi
 ## Recuperación, decisiones y límites
 
 - Implementador Green: `ingestion_green`, `m2-ingestion`; reviewer independiente
-  `ingestion_review`; autor RED mantiene archivos propios de ronda 2; docs
+  `ingestion_review`; autor RED mantiene archivos propios del próximo fix; docs
   `segments_red` en root. Nadie toca source de otro writer.
 - Rulings 31–34 registran asociación revision/audio/schema2, legacy confiable y
   lease nativa `.capture_owners/` retenida por scope del trabajo hasta cierre real
@@ -126,7 +136,7 @@ El resto conserva sus dependencias; no se inicia ningún frente en este checkpoi
 - Rulings 36/37 fijan el contrato de marker v2/recibo v3 con token y
   prueba durable del replay, handoff privado de una sola publicación y reserva
   audio-only sin padre ficticio ni fechas de captura inventadas. No se agrega
-  migración. Implementación de ronda 2 en `m2-ingestion`, aún sin aceptar.
+  migración. Implementados e integrados en `8087e25`, aún sin aceptación de tarea/grupo.
 - Todas las corridas anteriores, incluidos fulls fallidos y diagnóstico de captura,
   conservan alcance y límites en ACCEPTANCE/DELIVERY/evidence JSON. El arnés revisado
   no cambió deadlines del producto; H1 bootstrap se observó en un caso y H2 sharing
@@ -142,5 +152,5 @@ El resto conserva sus dependencias; no se inicia ningún frente en este checkpoi
   No hay cierre M2 A/M2, hosted CI de grupo ni certificación nueva real.
 - Para retomar: leer este STATUS, el ledger local
   `.superpowers/sdd/M2_CATALOG_PLAN/progress.md`, los reportes y git log; continuar
-  NB2 y las verificaciones agregadas antes de crear los dos chats; no repetir
+  los hallazgos de grupo y las verificaciones agregadas antes de crear los dos chats; no repetir
   el trabajo ya resuelto de NB1 y de los cinco fallos históricos.
