@@ -35,6 +35,10 @@ STATE_LABELS = {
 }
 
 
+def _display_error(error: object) -> str:
+    return str(error) or type(error).__name__
+
+
 class MainWindow(QMainWindow):
     """Minimal controls backed exclusively by the shared application contract."""
 
@@ -277,8 +281,8 @@ class MainWindow(QMainWindow):
             self._detail_label.show()
 
     def set_diagnostics(self, value, error=None):
-        if error:
-            text = f"Error de audio: {error}"
+        if error is not None:
+            text = f"Error de audio: {_display_error(error)}"
         elif isinstance(value, tuple):
             text = " · ".join(f"{item.source}: {item.name}" for item in value)
         else:
@@ -288,7 +292,7 @@ class MainWindow(QMainWindow):
 
     def set_recovery_error(self, error):
         """A failed explicit retry leaves the current selection available to try again."""
-        self._recovery_label.setText(str(error))
+        self._recovery_label.setText(_display_error(error))
 
     def set_recovery(self, candidates, error=None):
         self._recovery_selector.clear()
@@ -298,7 +302,7 @@ class MainWindow(QMainWindow):
                 text += f" · {item.error_summary}"
             self._recovery_selector.addItem(text, item)
         self._recovery_label.setText(
-            str(error)
+            _display_error(error)
             if error is not None
             else (
                 "Sesiones recuperables"
