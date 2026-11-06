@@ -381,6 +381,26 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Cost if wrong:** ajustar reserva, provenance y lectores, manteniendo audio,
     identidad y fechas desconocidas sin conjeturas.
 
+38. **Ruling:** para cerrar GR1, el writer de artefactos ofrece un callback interno
+    justo antes del replace final de `session.json`, después de publicar los
+    artefactos subordinados. El productor registra primero un marcador versión 3
+    con el mismo token, padre esperado y source kind, más el hash del manifiesto
+    prospectivo y un sello de hashes de sus artefactos con roles validados.
+    Recovery solo publica si toda esa evidencia final coincide; una intención
+    previa sin resultado final coincidente se conserva con aviso, sin importar
+    el resultado viejo ni ejecutar al proveedor. Se mantiene lectura de markers
+    1/2 y recibos 2/3, schema 2 y conflicto estricto de UUID/parent. Para GR3, el
+    controlador real difiere la primera publicación de fallo de captura hasta
+    sellar el resultado bajo el cutover de cancelación existente; la llamada
+    directa a persistencia y los procesadores inyectados conservan su contrato.
+    Una operación conserva una sola identidad/publicación, el audio y la causa
+    original de captura. Hashes, copias y proveedor quedan fuera de transacciones
+    SQLite. No cambia ningún flujo, dependencia, proceso, deadline, versión ni
+    definición de terminado. Es diseño autorizado para una única tanda GR1–GR3,
+    todavía pendiente de RED/GREEN/re-review. **Cost if wrong:** ajustar el sello,
+    su compatibilidad y el handoff de cutover, conservando evidencia incierta y
+    las precondiciones de revisión, sin aceptar como final un intento incompleto.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings

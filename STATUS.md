@@ -127,9 +127,17 @@ El resto conserva sus dependencias; no se inicia ningún frente en este checkpoi
 
 ## Recuperación, decisiones y límites
 
-- Implementador Green: `ingestion_green`, `m2-ingestion`; reviewer independiente
-  `ingestion_review`; autor RED mantiene archivos propios del próximo fix; docs
-  `segments_red` en root. Nadie toca source de otro writer.
+- Tanda única de fixes GR1–GR3: RED `catalog_red` prepara tres archivos nuevos
+  en `m2-preparation` y ejecuta contra baseline detached `8087e25` en
+  `ruling19-review`; tiene la ventana exclusiva de tests. GREEN nuevo
+  `catalog_group_fixes` reutiliza el worktree liberado `m2-ingestion` sobre
+  `codex/m2-final-fixes`, base fuente `8087e25`; primero diseña y espera RED.
+  Scope: processing/controller/recovery, memory service/artifacts y output
+  session_writer; ningún otro escritor. Reviewer `catalog_group_review` cierra
+  su misma review global con el suplemento docs `e00dd08`; después revisa el diff
+  de esta tanda una vez. Docs/evidencia `segments_red` liberó sus once archivos.
+  Brief persistente: `.superpowers/sdd/M2_CATALOG_PLAN/group-fix-brief.md`.
+  No se repiten las tareas ni las rondas anteriores; root integra y controla gates.
 - Rulings 31–34 registran asociación revision/audio/schema2, legacy confiable y
   lease nativa `.capture_owners/` retenida por scope del trabajo hasta cierre real
   y persistencia. La review de ronda 1 está en `task-3-fix-1-review-report.md`.
@@ -137,6 +145,9 @@ El resto conserva sus dependencias; no se inicia ningún frente en este checkpoi
   prueba durable del replay, handoff privado de una sola publicación y reserva
   audio-only sin padre ficticio ni fechas de captura inventadas. No se agrega
   migración. Implementados e integrados en `8087e25`, aún sin aceptación de tarea/grupo.
+- R38 autoriza el diseño interno de sello antes del commit final de metadata
+  (marker3, lectura1/2 compatible) y el cutover de fallo/cancelación antes de la
+  primera publicación. Todavía sin implementación ni evidencia GREEN de esta tanda.
 - Todas las corridas anteriores, incluidos fulls fallidos y diagnóstico de captura,
   conservan alcance y límites en ACCEPTANCE/DELIVERY/evidence JSON. El arnés revisado
   no cambió deadlines del producto; H1 bootstrap se observó en un caso y H2 sharing
