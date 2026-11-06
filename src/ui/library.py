@@ -103,6 +103,7 @@ class LibraryView(QWidget):
         self._items = []
         self._detail = None
         self._detail_notice = ""
+        self._speaker_names = {}
         self._loading = False
 
         self._search = QLineEdit()
@@ -149,6 +150,7 @@ class LibraryView(QWidget):
         self._results.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self._results.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self._results.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self._results.setTabKeyNavigation(False)
         self._results.horizontalHeader().setStretchLastSection(True)
         self._results.cellActivated.connect(self._open_row)
         self._more = QPushButton("Cargar más")
@@ -158,6 +160,7 @@ class LibraryView(QWidget):
         self._detail_panel = QWidget()
         detail_layout = QVBoxLayout(self._detail_panel)
         self._detail_message = _label()
+        self._participants = _label()
         self._transcript = QListWidget()
         self._transcript.setAccessibleName("Transcripción original por segmentos")
         self._transcript.itemActivated.connect(self._select_segment)
@@ -170,6 +173,7 @@ class LibraryView(QWidget):
         self._close.setAccessibleName("Cerrar detalle de reunión")
         self._close.clicked.connect(self.close_detail)
         detail_layout.addWidget(self._detail_message)
+        detail_layout.addWidget(self._participants)
         detail_layout.addWidget(self._transcript)
         detail_layout.addWidget(self._title)
         detail_layout.addWidget(self._save)
@@ -431,6 +435,15 @@ class LibraryView(QWidget):
         messages = [self._detail_notice] if self._detail_notice else []
         messages.extend(str(warning) for warning in detail.warnings)
         self._detail_message.setText("\n".join(messages))
+        names = {participant.id: participant.display_name for participant in detail.participants}
+        self._participants.setText(
+            "Participantes: " + ", ".join(names.values()) if names else "Sin participantes registrados"
+        )
+        self._speaker_names = {
+            (assignment.revision_id, assignment.speaker_key): names[assignment.participant_id]
+            for assignment in detail.speaker_assignments
+            if assignment.meeting_id == detail.meeting.id and assignment.participant_id in names
+        }
         revisions = {revision.id: revision for revision in detail.revisions}
         for segment in detail.segments:
             revision = revisions.get(segment.revision_id)
@@ -441,6 +454,9 @@ class LibraryView(QWidget):
                 context += f" · revisión {revision.revision_number}"
                 if revision.status == "partial":
                     context += " · Parcial"
+            speaker = self._speaker_names.get((segment.revision_id, segment.speaker_key))
+            if speaker is not None:
+                context += f" · {speaker}"
             item = QListWidgetItem(f"{context} · {_timing(segment)}\n{segment.text}")
             item.setData(Qt.ItemDataRole.UserRole, segment)
             self._transcript.addItem(item)
@@ -453,6 +469,7 @@ class LibraryView(QWidget):
         self.segment_selected.emit(CitationTarget(
             meeting_id=meeting.id, revision_id=segment.revision_id, segment_id=segment.id,
             title=meeting.title, started_at=meeting.started_at, text=segment.text,
+            speaker=self._speaker_names.get((segment.revision_id, segment.speaker_key)),
             start_ms=segment.start_ms, end_ms=segment.end_ms, timing_source=segment.timing_source,
             status="current" if segment.revision_id == meeting.active_revision_id else "historical",
         ))
@@ -471,6 +488,8 @@ class LibraryView(QWidget):
         self._detail_generation += 1
         self._detail = None
         self._detail_notice = ""
+        self._speaker_names.clear()
+        self._participants.clear()
         self._transcript.clear()
         self._title.clear()
         self._detail_panel.hide()
