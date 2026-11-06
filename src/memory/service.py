@@ -12,7 +12,7 @@ from contextlib import ExitStack, contextmanager
 from contextvars import ContextVar
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Any, Callable, Iterator
 from uuid import UUID, uuid4
 
@@ -353,6 +353,23 @@ def catalog_read_view(library: LibraryConnection) -> Iterator[SuppressionSnapsho
         finally:
             if lock is not None:
                 lock.close()
+
+
+def _journal_path_key(root: Path, relative: str | None) -> str | None:
+    """Block lexical aliases; this key never grants cleanup authority."""
+    if relative is None:
+        return None
+    if (
+        not isinstance(relative, str)
+        or not relative
+        or any(ord(character) < 32 for character in relative)
+    ):
+        raise LibraryError("Invalid staging journal reference; material retained")
+    spelling = relative.replace("\\", "/")
+    windows = PureWindowsPath(spelling)
+    if (windows.drive and not windows.is_absolute()) or spelling.startswith(("//?/", "//./")):
+        raise LibraryError("Ambiguous staging journal reference; material retained")
+    return os.path.normcase(os.path.normpath(os.path.join(root, spelling)))
 
 
 def _remove_tree(root: Path, relative: str, names: set[str] | None = None) -> None:
@@ -2053,6 +2070,10 @@ class MemoryService:
                 protect(row[0])
             staging = managed_path(self.data_dir, ".staging", directory=True)
             if staging.exists():
+                journal_rows = repo.library.execute(
+                    "SELECT id,kind,meeting_id,staging_path,destination_path "
+                    "FROM pending_operations"
+                ).fetchall()
                 for entry in staging.iterdir():
                     relative = entry.relative_to(self.data_dir).as_posix()
                     if relative in protected:
@@ -2065,11 +2086,17 @@ class MemoryService:
                         # R54 preserves A's private pre-journal cleanup authority.
                         # Check ALL journal kinds/references first: an inconsistent
                         # reference must not turn identified work into an orphan.
-                        rows = repo.library.execute(
-                            "SELECT id,kind,meeting_id,staging_path FROM pending_operations "
-                            "WHERE staging_path=? OR destination_path=? OR id=?",
-                            (relative, relative, entry.name),
-                        ).fetchall()
+                        key = _journal_path_key(self.data_dir, relative)
+                        rows = [
+                            row
+                            for row in journal_rows
+                            if row["id"] == entry.name
+                            or key
+                            in (
+                                _journal_path_key(self.data_dir, row["staging_path"]),
+                                _journal_path_key(self.data_dir, row["destination_path"]),
+                            )
+                        ]
                         if not rows:
                             # Same publication lock, existing A plan/role/path and
                             # all-children preflight; no meeting/native authority,
