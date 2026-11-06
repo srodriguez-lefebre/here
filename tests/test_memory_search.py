@@ -6,8 +6,10 @@ the SQL mutations here are controlled corpus fixtures, not lifecycle substitutes
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import importlib
+import json
 from dataclasses import replace
 from uuid import UUID
 
@@ -395,6 +397,113 @@ def test_malformed_cursor_is_rejected_before_page_sql(catalog, cursor):
     with pytest.raises(_invalid_input()):
         service.search(models.SearchQuery(text="synthetic", cursor=cursor))
     assert not any("MATCH" in sql.upper() for sql, _, _ in factory.calls)
+
+
+def _malformed_envelope(cursor, path, value):
+    """Mutate the agreed private envelope, preserving all unrelated real keys."""
+    padded = cursor + "=" * (-len(cursor) % 4)
+    payload = json.loads(base64.urlsafe_b64decode(padded).decode("utf-8"))
+    target = payload
+    for key in path[:-1]:
+        target = target[key]
+    target[path[-1]] = value
+    # Deliberately permit NaN/Infinity in malformed JSON numeric payloads; the
+    # production decoder must reject them rather than issue SQLite page SQL.
+    encoded = json.dumps(payload, ensure_ascii=False, allow_nan=True).encode("utf-8")
+    return base64.urlsafe_b64encode(encoded).decode("ascii").rstrip("=")
+
+
+@pytest.mark.parametrize("operation", ["list_meetings", "search"])
+@pytest.mark.parametrize(
+    ("path", "value"),
+    [
+        (("v",), 2),
+        (("v",), True),
+        (("v",), "1"),
+        (("v",), None),
+        (("kind",), "unrecognized-kind"),
+        (("kind",), 1),
+        (("order",), "unrecognized-order"),
+        (("order",), None),
+        (("keys",), []),
+        (("keys",), "not-a-key-object"),
+        (("keys", "null"), True),
+        (("keys", "null"), False),
+        (("keys", "null"), "0"),
+        (("keys", "null"), 0.0),
+        (("keys", "null"), 2),
+        (("keys", "null"), None),
+        # Real first-page fixture cursors have non-NULL dates and null=0.
+        (("keys", "null"), 1),
+        (("keys", "date"), None),
+        (("keys", "date"), True),
+        (("keys", "date"), 20260101),
+        (("keys", "date"), "not-a-date"),
+        (("keys", "date"), "2026-02-30T00:00:00+00:00"),
+        (("keys", "date"), "2026-01-01T00:00:00"),
+        (("keys", "date"), "2026-01-01"),
+        (("keys", "meeting_id"), None),
+        (("keys", "meeting_id"), True),
+        (("keys", "meeting_id"), []),
+    ],
+)
+def test_private_cursor_payload_rejects_invalid_types_null_date_version_and_order(
+    catalog, operation, path, value
+):
+    from search_fixtures import COHORT_TOKEN
+
+    search, models = _api()
+    factory = _Factory(catalog[0])
+    service = search.SearchService(factory)
+    query = (
+        models.SearchQuery(text=COHORT_TOKEN, limit=2)
+        if operation == "search" else models.MeetingQuery(limit=2)
+    )
+    first = getattr(service, operation)(query)
+    assert first.next_cursor
+    malformed = _malformed_envelope(first.next_cursor, path, value)
+    factory.calls.clear()
+    with pytest.raises(_invalid_input()):
+        getattr(service, operation)(replace(query, cursor=malformed))
+    assert not any(
+        "MATCH" in sql.upper() or sql.lstrip().upper().startswith(("SELECT", "WITH"))
+        for sql, _, _ in factory.calls
+    ), "Malformed key payload must be rejected before generation/page SQL"
+
+
+@pytest.mark.parametrize(("key", "value"), [
+    ("rank", float("nan")),
+    ("rank", float("inf")),
+    ("rank", float("-inf")),
+    ("rank", True),
+    ("rank", False),
+    ("rank", "0"),
+    ("rank", None),
+    ("rank", []),
+    ("segment_id", None),
+    ("segment_id", True),
+    ("segment_id", 1),
+    ("segment_id", []),
+])
+def test_private_search_cursor_rejects_nonfinite_rank_and_wrong_key_types_before_sql(
+    catalog, key, value
+):
+    from search_fixtures import COHORT_TOKEN
+
+    search, models = _api()
+    factory = _Factory(catalog[0])
+    service = search.SearchService(factory)
+    query = models.SearchQuery(text=COHORT_TOKEN, limit=2)
+    first = service.search(query)
+    assert first.next_cursor
+    malformed = _malformed_envelope(first.next_cursor, ("keys", key), value)
+    factory.calls.clear()
+    with pytest.raises(_invalid_input()):
+        service.search(replace(query, cursor=malformed))
+    assert not any(
+        "MATCH" in sql.upper() or sql.lstrip().upper().startswith(("SELECT", "WITH"))
+        for sql, _, _ in factory.calls
+    ), "Invalid search keys must be rejected before they reach SQLite"
 
 
 @pytest.mark.parametrize(
