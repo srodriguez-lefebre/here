@@ -361,7 +361,10 @@ only and cannot close B4/B5 integration or suppression acceptance.
   the description. Root integrates any required accepted B changes, verifies the
   exact head and merges only after received/responded Copilot and green Windows CI
   plus independent review. No unmet title-edit/reindex dependency is marked complete.
-  M3 B starts from the merged target and DTOs; milestone criteria remain unchanged.
+  M3 B may start from frozen/reviewed A with A's PR open once the required
+  interfaces and contract-documentation PRs are accepted; rebase and final
+  integration follow A's merge. Milestone criteria remain unchanged. This does not
+  start M3 B or duplicate its existing preparation.
 - Root aligns the M3 milestone agenda with ruling 35 in the contract docs PR
   without changing acceptance criteria. After M2 B merges, M5 B may advance with
   its claims hook waiting for M4 B; other group dependencies remain in STATUS.
