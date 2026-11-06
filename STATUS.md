@@ -89,7 +89,10 @@ las definiciones de terminado y los tres niveles de evidencia. Versión vigente
 ## Próxima acción obligatoria
 
 1. Conservar review global terminada y full 2 verde con sus límites. RED de
-   GR1–GR3 en preparación; GREEN espera sus reproducciones. NB1/NB2 ya addressed.
+   GR1–GR3 entregado: 11 fallos/1 control PASS en 12 casos, con logs/reportes;
+   primer GREEN de esos 12 casos pasa en 21,67 s en `m2-final-fixes`, aún sin
+   integrar. Sigue compatibilidad afectada y un control del nuevo corte anterior
+   al replace final, después del resultado/sello. NB1/NB2 ya addressed.
 2. Corregir los tres hallazgos formales con RED/GREEN/re-review,
    focos y nueva suite estable si la fuente cambia. No aceptar tarea/grupo solo
    por focos y reviews de diffs; falta veredicto de todo A y verificación agregada.
@@ -130,9 +133,11 @@ El resto conserva sus dependencias; no se inicia ningún frente en este checkpoi
 
 - Tanda única de fixes GR1–GR3: RED `catalog_red` prepara tres archivos nuevos
   en `m2-preparation` y ejecuta contra baseline detached `8087e25` en
-  `ruling19-review`; tiene la ventana exclusiva de tests. GREEN nuevo
+  `ruling19-review`; liberó esos archivos y la ventana de tests. GREEN nuevo
   `catalog_group_fixes` reutiliza el worktree liberado `m2-ingestion` sobre
-  `codex/m2-final-fixes`, base fuente `8087e25`; primero diseña y espera RED.
+  `codex/m2-final-fixes`, base fuente `8087e25`; tiene la ventana exclusiva de
+  tests/static checks para la tanda. RED conserva solo la adición del nuevo
+  control anterior al replace, en preparación y sin ejecutar mientras GREEN corre.
   Scope: processing/controller/recovery, memory service/artifacts y output
   session_writer; ningún otro escritor. Reviewer `catalog_group_review` terminó
   su misma review global con el suplemento docs `e00dd08`; después revisa el diff
@@ -148,7 +153,8 @@ El resto conserva sus dependencias; no se inicia ningún frente en este checkpoi
   migración. Implementados e integrados en `8087e25`, aún sin aceptación de tarea/grupo.
 - R38 autoriza el diseño interno de sello antes del commit final de metadata
   (marker3, lectura1/2 compatible) y el cutover de fallo/cancelación antes de la
-  primera publicación. Todavía sin implementación ni evidencia GREEN de esta tanda.
+  primera publicación. Implementación en worker con primer foco12 PASS, pendiente
+  de controles restantes, commit, integración, full nuevo y re-review acotada.
 - Todas las corridas anteriores, incluidos fulls fallidos y diagnóstico de captura,
   conservan alcance y límites en ACCEPTANCE/DELIVERY/evidence JSON. El arnés revisado
   no cambió deadlines del producto; H1 bootstrap se observó en un caso y H2 sharing
