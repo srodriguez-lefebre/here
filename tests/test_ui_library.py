@@ -860,6 +860,7 @@ def test_status_filter_transports_canonical_status_and_changes_visible_listing(l
     assert len(failed_options) == 1, "The status filter must offer failed meetings"
     status.setCurrentIndex(failed_options[0])
     qtbot.waitUntil(lambda: "Completed visible meeting" not in _text(view))
+    qtbot.waitUntil(lambda: failed.title in _text(view) and completed.title not in _text(view))
     assert "Failed visible meeting" in _text(view)
 
 
@@ -899,6 +900,7 @@ def test_participant_choices_load_off_thread_and_id_selection_changes_visible_li
     controller.list_handler = filtered_page
     selector.setCurrentIndex(alice_index)
     qtbot.waitUntil(lambda: "Other participant meeting" not in _text(view))
+    qtbot.waitUntil(lambda: selected.title in _text(view) and other.title not in _text(view))
     assert "Alice assigned meeting" in _text(view)
 
 
