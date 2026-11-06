@@ -184,8 +184,13 @@ def fts_available(connection: sqlite3.Connection) -> bool:
         connection.execute("CREATE VIRTUAL TABLE temp.here_fts_probe USING fts5(text)")
         connection.execute("DROP TABLE temp.here_fts_probe")
         return True
-    except sqlite3.OperationalError:
-        return False
+    except sqlite3.Error as error:
+        if (
+            getattr(error, "sqlite_errorcode", None) == sqlite3.SQLITE_ERROR
+            and str(error) == "no such module: fts5"
+        ):
+            return False
+        raise storage_error(error) from error
 
 
 class _FileLock(FileLease):
@@ -212,6 +217,26 @@ class _DeletionRecord:
             ],
             "phase": self.phase,
         }
+
+
+class _CatalogRepository(MemoryRepository):
+    """Operation-local registry evidence, loaded while holding the publication lease."""
+
+    def __init__(self, library: LibraryConnection, records: tuple[_DeletionRecord, ...]) -> None:
+        super().__init__(library)
+        self._deletion_records = records
+
+    def _remember_deletion(self, record: _DeletionRecord) -> None:
+        records = {item.meeting_id: item for item in self._deletion_records}
+        records[record.meeting_id] = record
+        self._deletion_records = tuple(records[identity] for identity in sorted(records))
+
+
+def _catalog_records(repo: MemoryRepository) -> tuple[_DeletionRecord, ...]:
+    """Never fall back to filesystem I/O from a transactional helper."""
+    if not isinstance(repo, _CatalogRepository):
+        raise LibraryError("Catalog suppression evidence was not loaded for this operation")
+    return repo._deletion_records
 
 
 def _origin_pair(value: object) -> tuple[str, str]:
@@ -273,9 +298,10 @@ def _deletion_registry(data_dir: Path) -> tuple[tuple[_DeletionRecord, ...], tup
         raise LibraryError("Deletion registry unavailable; local recovery is required") from exc
 
 
-def _suppression_snapshot(
+def _suppressed_meeting_ids(
     library: LibraryConnection, records: tuple[_DeletionRecord, ...]
-) -> SuppressionSnapshot:
+) -> tuple[str, ...]:
+    """Resolve aliases from the current SQL snapshot without I/O or hashing."""
     ids = {record.meeting_id for record in records}
     pairs = {pair for record in records for pair in record.origins}
     if pairs:
@@ -286,7 +312,13 @@ def _suppression_snapshot(
                 if not _is_uuid(row[0]):
                     raise LibraryError("Invalid suppressed catalog identity")
                 ids.add(row[0])
-    resolved = tuple(sorted(ids))
+    return tuple(sorted(ids))
+
+
+def _suppression_snapshot(
+    library: LibraryConnection, records: tuple[_DeletionRecord, ...]
+) -> SuppressionSnapshot:
+    resolved = _suppressed_meeting_ids(library, records)
     digest = hashlib.sha256()
     for value in ("here-suppression-v1", [record.document() for record in records], resolved):
         encoded = json.dumps(
@@ -398,10 +430,10 @@ class MemoryService:
         lock = _FileLock(self.data_dir / ".memory.lock")
         library: LibraryConnection | None = None
         try:
-            _deletion_registry(self.data_dir)
+            records, _ = _deletion_registry(self.data_dir)
             library = open_library(self.data_dir)
             migrate(library)
-            yield MemoryRepository(library)
+            yield _CatalogRepository(library, records)
         finally:
             if library is not None:
                 library.close()
@@ -753,6 +785,8 @@ class MemoryService:
         write_durable_json(
             session_artifact_path(directory, f"{record.meeting_id}.json"), complete.document()
         )
+        if isinstance(repo, _CatalogRepository):
+            repo._remember_deletion(complete)
         return DeletionResult("completed", record.meeting_id, warnings=warnings)
 
     @staticmethod
@@ -837,6 +871,8 @@ class MemoryService:
                     write_durable_json(
                         session_artifact_path(directory, f"{meeting_id}.json"), record.document()
                     )
+                    if isinstance(repo, _CatalogRepository):
+                        repo._remember_deletion(record)
                     accepted = True
                 else:
                     operation = self._delete_journal(repo, record)
@@ -2179,8 +2215,8 @@ class MemoryService:
 
     @staticmethod
     def _change_status(repo: MemoryRepository, meeting_id: str, status: MeetingStatus) -> None:
-        records, _ = _deletion_registry(repo.library.data_dir)
-        if meeting_id in _suppression_snapshot(repo.library, records).suppressed_meeting_ids:
+        records = _catalog_records(repo)
+        if meeting_id in _suppressed_meeting_ids(repo.library, records):
             raise NotFound("Meeting has been deleted")
         meeting = repo.get_meeting(meeting_id)
         if meeting is None or meeting.status == status:
@@ -2205,8 +2241,8 @@ class MemoryService:
 
     @staticmethod
     def _meeting(repo: MemoryRepository, meeting_id: str) -> Meeting:
-        records, _ = _deletion_registry(repo.library.data_dir)
-        if meeting_id in _suppression_snapshot(repo.library, records).suppressed_meeting_ids:
+        records = _catalog_records(repo)
+        if meeting_id in _suppressed_meeting_ids(repo.library, records):
             raise NotFound("Meeting does not exist")
         meeting = repo.get_meeting(meeting_id)
         if meeting is None:
@@ -2274,14 +2310,15 @@ class MemoryService:
         library = open_library(self.data_dir)
         try:
             with catalog_read_view(library):
-                yield MemoryRepository(library)
+                records, _ = _deletion_registry(self.data_dir)
+                yield _CatalogRepository(library, records)
         finally:
             library.close()
 
     def get_meeting(self, meeting_id: str) -> MeetingDetail:
         self._identity(meeting_id)
         with self._read_operation() as repo:
-            records, _ = _deletion_registry(self.data_dir)
+            records = _catalog_records(repo)
             if meeting_id in _suppression_snapshot(repo.library, records).suppressed_meeting_ids:
                 raise NotFound("Meeting does not exist")
             warnings = (repo.library.storage_warning,) if repo.library.storage_warning else ()
@@ -2494,7 +2531,7 @@ class MemoryService:
 
     def show(self, meeting_id: str) -> dict[str, object] | None:
         with self._read_operation() as repo:
-            records, _ = _deletion_registry(self.data_dir)
+            records = _catalog_records(repo)
             if meeting_id in _suppression_snapshot(repo.library, records).suppressed_meeting_ids:
                 return None
             meeting = repo.get_meeting(meeting_id)
