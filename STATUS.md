@@ -71,9 +71,10 @@ parcial. B todavía no tiene writer UI. Processing continúa sin concesión.
 Cualquier handoff adicional se concede explícitamente. Migraciones/pyproject/uv.lock/versiones
 siguen seriales y requieren permiso de root. Global docs son root-only.
 
-Runtime ACTUAL: B4-R1 RED acotado concedido después del full/release B y de M3.
-M3 escribe UI sin tests/lint/mypy/build hasta nueva concesión. B GREEN R1 espera
-RED real; no repetir full previo. Sin build/benchmark todavía. Cada coordinador libera la ventana
+Runtime ACTUAL: B4-R1 RED terminó5F/0E/4,10s en87f9a302, sin correcciones de
+harness, y su coordinador liberó el host. Ventana exclusiva ahora M3 UI38 casos
+con source846c53f/R48b3628a7/tests544b6e5; B GREEN escribe R49 sin runtime.
+No repetir full previo. Sin build/benchmark todavía. Cada coordinador libera la ventana
 con evidencia real; root la asigna al otro
 frente. Nunca dos tests/builds/mypy pesados en el host. Leer/escribir archivos
 autorizados y preparación documental sí puede seguir en paralelo.
@@ -184,6 +185,12 @@ No se leyó el `.env` real ni audio/biblioteca privados. Smokes opt-in futuros u
 solo HERE_PROVIDER_SMOKE_KEY y texto/audio sintéticos según ruling19, sin imprimir
 ni persistir la credencial. Máquina Windows limpia: pedir al necesitar la fila,
 con protocolo escrito. Prueba de dos horas: **omitida por ruling 5**, nunca aprobada.
-No hay bloqueo humano actual. Próxima acción: recoger RED R1 B4, ceder UI M3 si
-está lista mientras B escribe el fix; después focos/re-review y full corregido.
+Contrato B5/M3 R50 fijado tras review independiente estática, reporte
+`b5-m3-guard-contract-review.md`: B posee lock y única read transaction;
+snapshot de UUIDs y aliases exactos antes de LIMIT, fingerprint incluye IDs
+resueltos; caller abre/cierra. Parser único, sin nuevas migraciones o p95 relajado.
+No es implementación/aceptación B5; ambos frentes reciben API antes de integrarla.
+
+No hay bloqueo humano actual. Próxima acción: recoger foco UI M3 y liberar a
+B para GREEN R1; después re-review acotada y full corregido, sin reiniciar roles.
 Reanudar desde estos IDs/reportes sin recrear los chats ni repetir el catálogo A.

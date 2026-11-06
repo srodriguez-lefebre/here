@@ -598,6 +598,33 @@ Los rulings nuevos se escriben en español por el ruling 6.
     encolado/replay de snapshots y sus warnings, manteniendo el outcome realmente
     commiteado y toda la evidencia de origen.
 
+50. **Ruling:** se concreta el adaptador interno ya requerido por R42/R45, tras
+    review independiente del contrato B5/M3. B posee
+    `memory.service.catalog_read_view(library)`, context manager que recibe una
+    LibraryConnection fresca sin transacción activa; el caller la abre y cierra,
+    B posee el lock acotado existente y la única transacción de lectura. Adquiere
+    el lock antes de BEGIN y lo conserva hasta terminar generación y fetch; no
+    migra, publica, repara ni abre otra conexión. Rechaza uso anidado sin tocar una
+    transacción ajena. Search reemplaza su BEGIN/commit/rollback por ese contexto,
+    conservando factory/finally-close. No hay lock o BEGIN recursivo: los writers
+    ya bloqueados reutilizan solo el parser interno común. El valor inmutable
+    SuppressionSnapshot expone `suppressed_meeting_ids: tuple[str, ...]` ordenado
+    y `fingerprint: str`; las entradas canónicas quedan internas al productor.
+    Los IDs son la unión de UUIDs del registro y reuniones cuyo ingest_sources
+    coincide en el par exacto origen normalizado/fingerprint, resuelto en esa
+    misma vista DB. El fingerprint versionado incluye entradas canónicas y esos
+    IDs resueltos, para detectar cambios de visibilidad por aliases aun con el
+    registro intacto. M3 lo incorpora a la generación R45 existente, conserva el
+    corpus FTS real completo y excluye IDs en SQL antes de keyset/LIMIT, manejando
+    sets vacíos/grandes sin filtrado tardío. Pending y complete suprimen; ausencia
+    genuina es vacía y un registro inválido/inaccesible/inseguro falla cerrado con
+    LibraryError existente. Se mantiene un parser y ninguna autoridad nueva de
+    purga; no cambian protocolo, privacidad, migraciones, dependencias ni p95.
+    Los tests B5 y la integración real con M3 deben probar estas condiciones; esta
+    decisión y su review estática no son evidencia de implementación o aceptación.
+    **Cost if wrong:** ajustar el adaptador interno antes del handoff, preservando
+    una única autoridad de supresión y snapshot coherente de cada página.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
