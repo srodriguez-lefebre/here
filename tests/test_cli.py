@@ -889,3 +889,61 @@ def test_record_os_alt_command_uses_alt_model(
     assert captured["target_dir"] == tmp_path
     assert captured["use_alt_transcription_model"] is True
     assert captured["expected_source_count"] == 1
+
+
+# Task 5: actual CLI adapters and real temporary catalog; no new public flags.
+def test_memory_delete_cli_requires_yes_without_touching_rows_or_owned_files(lifecycle_cli):
+    memory, identity = lifecycle_cli
+    help_result = runner.invoke(cli_module.app, ["memory", "delete", "--help"])
+    assert help_result.exit_code == 0, help_result.output
+    before = memory.show(identity)
+    result = runner.invoke(cli_module.app, ["memory", "delete", identity, "--json"])
+    assert result.exit_code == 2, result.output
+    assert memory.show(identity) == before
+    assert not (memory.data_dir / ".deletions" / f"{identity}.json").exists()
+
+
+def test_memory_delete_cli_yes_purges_real_meeting_and_returns_typed_result(lifecycle_cli):
+    memory, identity = lifecycle_cli
+    result = _lifecycle_cli_json(["delete", identity, "--yes"])
+    assert result["status"] == "completed" and result["meeting_id"] == identity
+    assert isinstance(result["reason"], str)
+    assert result["error_category"] is None
+    assert memory.show(identity) is None
+    assert not list((memory.data_dir / "meetings" / identity).rglob("*"))
+
+
+def test_memory_delete_cli_pending_is_distinct_from_rejected_io(lifecycle_cli):
+    memory, identity = lifecycle_cli
+    unknown = memory.data_dir / "meetings" / identity / "keep-unknown.txt"
+    unknown.write_text("unregistered synthetic material")
+    result = _lifecycle_cli_json(["delete", identity, "--yes"], 4)
+    assert result["status"] == "pending" and result["meeting_id"] == identity
+    assert result["reason"] and result["error_category"] == "io"
+    assert unknown.read_text() == "unregistered synthetic material"
+    assert memory.show(identity) is None
+
+
+@pytest.mark.parametrize("identity,exit_code", [
+    ("invalid-identity", 2), ("99999999-9999-4999-8999-999999999999", 3),
+])
+def test_memory_delete_cli_validation_keeps_existing_error_categories(lifecycle_cli, identity, exit_code):
+    memory, original = lifecycle_cli
+    result = _lifecycle_cli_json(["delete", identity, "--yes"], exit_code)
+    assert result["error_category"] == ("invalid_input" if exit_code == 2 else "conflict")
+    assert memory.show(original) is not None
+
+
+def test_memory_reindex_cli_delegates_to_single_real_index_use_case(lifecycle_cli):
+    import sqlite3
+    from contextlib import closing
+    memory, identity = lifecycle_cli
+    with closing(sqlite3.connect(memory.data_dir / "library.sqlite3")) as connection:
+        connection.execute("DELETE FROM segments_fts")
+        connection.commit()
+    result = _lifecycle_cli_json(["reindex"])
+    assert result["indexed_meetings"] == 1 and result["indexed_segments"] == 2
+    assert isinstance(result["warnings"], list)
+    with closing(sqlite3.connect(memory.data_dir / "library.sqlite3")) as connection:
+        assert connection.execute("SELECT DISTINCT meeting_id FROM segments_fts").fetchall() == [
+            (identity,)]
