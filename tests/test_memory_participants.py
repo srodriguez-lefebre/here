@@ -620,6 +620,7 @@ def test_r48_new_link_and_assignment_dtos_preserve_default_role_and_nullable_ide
 def h2_registry_observer(monkeypatch):
     """Observe actual final-record opens/reads and each live SQLite transaction mode."""
     from pathlib import Path
+
     from here.memory.database import LibraryConnection
 
     observations = []
@@ -650,10 +651,16 @@ def h2_registry_observer(monkeypatch):
         return original_close(library)
 
     def observe(action, path):
-        observations.append((action, path.name, tuple(
-            (state["library"].connection.in_transaction, state["mode"])
-            for state in live.values()
-        )))
+        observations.append(
+            (
+                action,
+                path.name,
+                tuple(
+                    (state["library"].connection.in_transaction, state["mode"])
+                    for state in live.values()
+                ),
+            )
+        )
 
     class RegistryFile:
         def __init__(self, file, path):
@@ -699,23 +706,34 @@ def test_h2_registry_io_precedes_write_transaction_without_losing_atomicity_or_s
     directory = root / ".deletions"
     directory.mkdir()
     # An unrelated valid final forces actual filesystem work on an ordinary write.
-    write_json(directory / f"{OTHER_MEETING_ID}.json", {
-        "schema_version": 1, "meeting_id": OTHER_MEETING_ID, "origins": [], "phase": "pending",
-    })
+    write_json(
+        directory / f"{OTHER_MEETING_ID}.json",
+        {
+            "schema_version": 1,
+            "meeting_id": OTHER_MEETING_ID,
+            "origins": [],
+            "phase": "pending",
+        },
+    )
     detail = memory.get_meeting(MEETING_ID)
     assert detail.meeting.id == MEETING_ID
     assert any(
-        action == "read" and (True, "read") in states
-        for action, _name, states in observations
+        action == "read" and (True, "read") in states for action, _name, states in observations
     ), "R50 must still validate records within its coherent BEGIN read snapshot"
     before = _snapshot(root), _files(root)
     pending_before = _rows(root, "SELECT * FROM pending_operations ORDER BY id")
     version = detail.meeting.row_version
     old_status = detail.meeting.status
     if outcome == "suppressed":
-        write_json(directory / f"{MEETING_ID}.json", {
-            "schema_version": 1, "meeting_id": MEETING_ID, "origins": [], "phase": "pending",
-        })
+        write_json(
+            directory / f"{MEETING_ID}.json",
+            {
+                "schema_version": 1,
+                "meeting_id": MEETING_ID,
+                "origins": [],
+                "phase": "pending",
+            },
+        )
     elif outcome == "event-rollback":
         with closing(sqlite3.connect(root / "library.sqlite3")) as connection:
             connection.execute(
@@ -731,7 +749,9 @@ def test_h2_registry_io_precedes_write_transaction_without_losing_atomicity_or_s
             memory.begin_processing(MEETING_ID)
         else:
             memory.update_meeting(
-                MEETING_ID, _patch(title="H2 atomic title"), expected_version=version,
+                MEETING_ID,
+                _patch(title="H2 atomic title"),
+                expected_version=version,
             )
 
     try:
@@ -750,17 +770,32 @@ def test_h2_registry_io_precedes_write_transaction_without_losing_atomicity_or_s
     # Check effects before the I/O boundary assertion, so a RED identifies the
     # forbidden interval rather than hiding whether the real operation completed.
     if outcome == "committed":
-        assert _rows(root, "SELECT status,row_version,title FROM meetings WHERE id=?", (MEETING_ID,)) == [
-            ("processing" if operation == "begin-processing" else old_status,
-             version + 1, detail.meeting.title if operation == "begin-processing" else "H2 atomic title"),
+        assert _rows(
+            root, "SELECT status,row_version,title FROM meetings WHERE id=?", (MEETING_ID,)
+        ) == [
+            (
+                "processing" if operation == "begin-processing" else old_status,
+                version + 1,
+                detail.meeting.title if operation == "begin-processing" else "H2 atomic title",
+            ),
         ]
-        events = _rows(root, "SELECT kind,payload FROM lifecycle_events WHERE meeting_id=?", (MEETING_ID,))
+        events = _rows(
+            root, "SELECT kind,payload FROM lifecycle_events WHERE meeting_id=?", (MEETING_ID,)
+        )
         assert len(events) == len(before[0]["lifecycle_events"]) + 1
         expected_kind = "status_changed" if operation == "begin-processing" else "metadata_updated"
-        expected_payload = ({"from": old_status, "to": "processing"}
-                            if operation == "begin-processing" else {"fields": ["title"]})
-        assert sum(kind == expected_kind and json.loads(payload) == expected_payload
-                   for kind, payload in events) == 1
+        expected_payload = (
+            {"from": old_status, "to": "processing"}
+            if operation == "begin-processing"
+            else {"fields": ["title"]}
+        )
+        assert (
+            sum(
+                kind == expected_kind and json.loads(payload) == expected_payload
+                for kind, payload in events
+            )
+            == 1
+        )
         for table in ("transcript_revisions", "segments", "audio_assets", "revision_audio_assets"):
             assert _rows(root, f"SELECT * FROM {table} ORDER BY 1") == before[0][table]
     else:

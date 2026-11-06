@@ -57,7 +57,7 @@ from here.memory.models import (
 )
 from here.memory.repository import MemoryRepository
 from here.output.ownership import FileLease, LeaseBusy
-from here.output.paths import session_artifact_path, validate_session_directory
+from here.output.paths import UnsafeSessionPath, session_artifact_path, validate_session_directory
 
 
 @dataclass(frozen=True)
@@ -107,6 +107,11 @@ class InvalidInput(LibraryError):
 
 class OwnershipBusy(Busy):
     """A live job owns the session; no provider or compatibility mutation may start."""
+
+
+class _DeleteScopeUnavailable(LibraryError):
+    def __init__(self) -> None:
+        super().__init__("Private staging retained; pending deletion scope cannot be verified")
 
 
 def _is_uuid(value: object) -> bool:
@@ -337,15 +342,17 @@ def catalog_read_view(library: LibraryConnection) -> Iterator[SuppressionSnapsho
     lock: _FileLock | None = None
     owned_transaction = False
     try:
-        lock = _FileLock(managed_path(library.data_dir, ".memory.lock"))
-        library.execute("BEGIN")
-        owned_transaction = True
-        records, _ = _deletion_registry(library.data_dir)
-        yield _suppression_snapshot(library, records)
-    except sqlite3.Error as exc:
-        raise storage_error(exc) from exc
-    except (OSError, ValueError) as exc:
-        raise LibraryError("Catalog read view unavailable") from exc
+        try:
+            lock = _FileLock(managed_path(library.data_dir, ".memory.lock"))
+            library.execute("BEGIN")
+            owned_transaction = True
+            records, _ = _deletion_registry(library.data_dir)
+            snapshot = _suppression_snapshot(library, records)
+        except sqlite3.Error as exc:
+            raise storage_error(exc) from exc
+        except (OSError, ValueError) as exc:
+            raise LibraryError("Catalog read view unavailable") from exc
+        yield snapshot
     finally:
         try:
             if owned_transaction:
@@ -353,6 +360,105 @@ def catalog_read_view(library: LibraryConnection) -> Iterator[SuppressionSnapsho
         finally:
             if lock is not None:
                 lock.close()
+
+
+def _legacy_retry_parent(
+    library: LibraryConnection, directory: Path, suppressed: tuple[str, ...]
+) -> tuple[str, str | None] | None:
+    """Resolve existing lineage without inspecting source material or inventing an ID."""
+    rows = library.execute(
+        "SELECT DISTINCT m.id,m.active_revision_id FROM ingest_sources i "
+        "JOIN meetings m ON m.id=i.meeting_id WHERE i.origin_path=?",
+        (normalized_origin(directory),),
+    ).fetchall()
+    visible = [row for row in rows if row[0] not in suppressed]
+    if rows and not visible:
+        raise NotFound("Origin has been deleted")
+    if len(visible) > 1:
+        raise ValueError("Legacy origin conflict: more than one catalog identity")
+    return (visible[0][0], visible[0][1]) if visible else None
+
+
+@contextmanager
+def _recovery_read_view_locked(
+    data_dir: Path,
+    directory: Path,
+    declared_identity: str | None,
+    records: tuple[_DeletionRecord, ...],
+) -> Iterator[str | None]:
+    """Already under the sole publication lock; own only any necessary SQL view."""
+    known = _is_uuid(declared_identity)
+    direct = tuple(record.meeting_id for record in records)
+    if known and declared_identity in direct:
+        raise NotFound("Meeting has been deleted")
+    pairs = any(record.origins for record in records)
+    library: LibraryConnection | None = None
+    owned_transaction = False
+    try:
+        try:
+            if pairs or not known:
+                database = managed_path(data_dir, "library.sqlite3")
+                if database.exists():
+                    library = open_library(data_dir)
+                    library.execute("BEGIN")
+                    owned_transaction = True
+                elif pairs:
+                    raise LibraryError("Recovery alias verification requires an available catalog")
+        except sqlite3.Error as exc:
+            raise storage_error(exc) from exc
+        except UnsafeSessionPath:
+            raise
+        except (OSError, ValueError) as exc:
+            raise LibraryError("Recovery SQL read view unavailable") from exc
+
+        identity = declared_identity
+        if library is not None:
+            suppressed = _suppressed_meeting_ids(library, records)
+            if known:
+                if identity in suppressed:
+                    raise NotFound("Meeting has been deleted")
+            else:
+                parent = _legacy_retry_parent(library, directory, suppressed)
+                if parent is not None:
+                    identity = parent[0]
+        validate_session_directory(directory)
+        yield identity
+    finally:
+        if library is not None:
+            try:
+                if owned_transaction:
+                    library.connection.rollback()
+            finally:
+                library.close()
+
+
+@contextmanager
+def recovery_read_view(
+    data_dir: Path, directory: Path, declared_identity: str | None
+) -> Iterator[str | None]:
+    """Hold a real recovery visibility scope without constructing or initializing SQL."""
+    lock: _FileLock | None = None
+    try:
+        try:
+            root = Path(data_dir).absolute()
+            validate_session_directory(root)
+            root.mkdir(parents=True, exist_ok=True)
+            lock = _FileLock(managed_path(root, ".memory.lock"))
+            records, _ = _deletion_registry(root)
+            if declared_identity is not None and not isinstance(declared_identity, str):
+                raise ValueError("Recovery identity must be text or absent")
+            directory = Path(directory).absolute()
+        except sqlite3.Error as exc:
+            raise storage_error(exc) from exc
+        except UnsafeSessionPath:
+            raise
+        except (OSError, ValueError, TypeError) as exc:
+            raise LibraryError("Recovery read view unavailable") from exc
+        with _recovery_read_view_locked(root, directory, declared_identity, records) as identity:
+            yield identity
+    finally:
+        if lock is not None:
+            lock.close()
 
 
 def _journal_path_key(root: Path, relative: str | None) -> str | None:
@@ -372,6 +478,22 @@ def _journal_path_key(root: Path, relative: str | None) -> str | None:
     return os.path.normcase(os.path.normpath(os.path.join(root, spelling)))
 
 
+def _stage_references(
+    root: Path, rows: Iterable[sqlite3.Row], relative: str, operation_id: str
+) -> list[sqlite3.Row]:
+    key = _journal_path_key(root, relative)
+    return [
+        row
+        for row in rows
+        if row["id"] == operation_id
+        or key
+        in (
+            _journal_path_key(root, row["staging_path"]),
+            _journal_path_key(root, row["destination_path"]),
+        )
+    ]
+
+
 def _validate_delete_roles(directory: Path, names: Iterable[str]) -> None:
     """Existing WAVs still need role proof; already removed WAVs need no unlink."""
     remaining = []
@@ -382,7 +504,49 @@ def _validate_delete_roles(directory: Path, names: Iterable[str]) -> None:
     validate_artifact_roles(directory, remaining)
 
 
-def _remove_tree(root: Path, relative: str, names: set[str] | None = None) -> None:
+def _delete_publication_plan(directory: Path) -> dict[str, Any]:
+    registration = session_artifact_path(directory, ".publication.json")
+    plan = json.loads(registration.read_text(encoding="utf-8"))
+    if (
+        not isinstance(plan, dict)
+        or set(plan) != {"schema_version", "operation_id", "hashes"}
+        or type(plan["schema_version"]) is not int
+        or plan["schema_version"] != 1
+        or not _is_uuid(plan["operation_id"])
+        or not isinstance(plan["hashes"], dict)
+        or any(
+            not isinstance(name, str)
+            or not isinstance(digest, str)
+            or re.fullmatch(r"[0-9a-f]{64}", digest) is None
+            for name, digest in plan["hashes"].items()
+        )
+    ):
+        raise ValueError("Invalid registered publication inventory")
+    return plan
+
+
+def _delete_file_order(relative: str) -> tuple[int, bool, str]:
+    path = Path(relative)
+    if path.name in {"catalog.json", ".publication.json", "session.json"}:
+        role = 4
+    elif "states" in path.parts:
+        role = 3
+    elif path.suffix.lower() == ".wav":
+        role = 2
+    elif path.suffix.lower() in {".txt", ".md"}:
+        role = 0
+    else:
+        role = 1
+    return role, path.name == ".publication.json", relative
+
+
+def _remove_tree(
+    root: Path,
+    relative: str,
+    names: set[str] | None = None,
+    *,
+    order: Callable[[str], tuple[int, bool, str]] | None = None,
+) -> None:
     """Remove registered protocol files; unknown material defers cleanup."""
     directory = managed_path(root, relative, directory=True)
     if not directory.exists():
@@ -426,6 +590,9 @@ def _remove_tree(root: Path, relative: str, names: set[str] | None = None) -> No
         raise ValueError(f"Unrecognized material retained; cleanup deferred: {relative}")
     for entry in entries:
         session_artifact_path(directory, entry.name)
+    if order is not None:
+        sort_order = order
+        entries.sort(key=lambda entry: sort_order(entry.name))
     for entry in entries:
         session_artifact_path(directory, entry.name).unlink()
     directory.rmdir()
@@ -557,22 +724,7 @@ class MemoryService:
                 if not registration.exists():
                     # No suffix/UUID-only authority, even for a familiar filename.
                     continue
-                plan = json.loads(registration.read_text(encoding="utf-8"))
-                if (
-                    not isinstance(plan, dict)
-                    or set(plan) != {"schema_version", "operation_id", "hashes"}
-                    or type(plan["schema_version"]) is not int
-                    or plan["schema_version"] != 1
-                    or not _is_uuid(plan["operation_id"])
-                    or not isinstance(plan["hashes"], dict)
-                    or any(
-                        not isinstance(name, str)
-                        or not isinstance(digest, str)
-                        or re.fullmatch(r"[0-9a-f]{64}", digest) is None
-                        for name, digest in plan["hashes"].items()
-                    )
-                ):
-                    raise ValueError("Invalid registered publication inventory")
+                plan = _delete_publication_plan(directory)
                 _validate_delete_roles(directory, plan["hashes"])
                 operation = repo.get_pending_operation(plan["operation_id"])
                 if operation is not None:
@@ -777,21 +929,7 @@ class MemoryService:
 
         # Keep A's proof until all registered content has been removed, enabling
         # restart with SQL loss during the file phase. Unknown material is retained.
-        def purge_order(relative: str) -> tuple[int, bool, str]:
-            path = Path(relative)
-            if path.name in {"catalog.json", ".publication.json", "session.json"}:
-                role = 4
-            elif "states" in path.parts:
-                role = 3
-            elif path.suffix.lower() == ".wav":
-                role = 2
-            elif path.suffix.lower() in {".txt", ".md"}:
-                role = 0
-            else:
-                role = 1
-            return role, path.name == ".publication.json", relative
-
-        files = sorted(inventory["files"], key=purge_order)
+        files = sorted(inventory["files"], key=_delete_file_order)
         for relative in files:
             path = managed_path(self.data_dir, relative)
             path.unlink(missing_ok=True)
@@ -800,10 +938,102 @@ class MemoryService:
             if path.exists():
                 path.rmdir()  # Never recursively remove unregistered children.
 
+    def _delete_stage_journal(self, row: sqlite3.Row, relative: str) -> dict[str, Any]:
+        operation = PendingOperation(**dict(row))
+        if (
+            operation.kind != "publish_revision"
+            or operation.phase not in {"prepared", "complete", "reverted"}
+            or not _is_uuid(operation.id)
+            or not _is_uuid(operation.meeting_id)
+            or relative != f".staging/{operation.id}"
+            or operation.staging_path != relative
+        ):
+            raise ValueError("Inconsistent publication stage retained")
+        payload = json.loads(operation.payload_json)
+        if (
+            not isinstance(payload, dict)
+            or not _is_uuid(payload.get("revision_id"))
+            or not isinstance(payload.get("hashes"), dict)
+            or any(
+                not isinstance(name, str)
+                or not isinstance(digest, str)
+                or re.fullmatch(r"[0-9a-f]{64}", digest) is None
+                for name, digest in payload["hashes"].items()
+            )
+            or operation.destination_path
+            != f"meetings/{operation.meeting_id}/revisions/{payload['revision_id']}"
+        ):
+            raise ValueError("Publication stage destination disagrees with identity")
+        if "publication" in payload:
+            proof = _Publication.read(payload["publication"])
+            if proof.revision_id != payload["revision_id"]:
+                raise ValueError("Publication stage provenance mismatch")
+        directory = managed_path(self.data_dir, relative, directory=True)
+        if directory.exists() and any(directory.iterdir()):
+            plan = _delete_publication_plan(directory)
+            if plan["operation_id"] != operation.id or payload["hashes"] != plan["hashes"]:
+                raise ValueError("Publication stage disagrees with registered journal")
+            _validate_delete_roles(directory, plan["hashes"])
+        return payload
+
+    def _recover_delete_staging(self, repo: MemoryRepository, record: _DeletionRecord) -> None:
+        # Observe current authority, never infer a historical database-loss event.
+        # An existing meeting row retains its normal SQL scope; verified complete
+        # tombstones do not regress because unrelated private material appears.
+        if record.phase != "pending" or repo.get_meeting(record.meeting_id) is not None:
+            return
+        try:
+            staging = managed_path(self.data_dir, ".staging", directory=True)
+            if not staging.exists():
+                return
+            rows = repo.library.execute("SELECT * FROM pending_operations").fetchall()
+            for directory in sorted(staging.iterdir()):
+                if not _is_uuid(directory.name):
+                    raise ValueError("Unidentified private staging retained")
+                relative = directory.relative_to(self.data_dir).as_posix()
+                references = _stage_references(self.data_dir, rows, relative, directory.name)
+                if references:
+                    if len(references) != 1:
+                        raise ValueError("Ambiguous publication stage references retained")
+                    # A validated SQL relation proves this stage's actual scope.
+                    # Foreign stages stay untouched; own stages use R52 below.
+                    self._delete_stage_journal(references[0], relative)
+                    continue
+                directory = managed_path(self.data_dir, relative, directory=True)
+                if any(directory.iterdir()):
+                    plan = _delete_publication_plan(directory)
+                    if plan["operation_id"] != directory.name:
+                        raise ValueError("Private staging plan identity mismatch")
+                # R54 discards only genuinely unreferenced private copies, under
+                # this same publication lock and the existing ALL-child guard.
+                _remove_tree(self.data_dir, relative, order=_delete_file_order)
+        except (OSError, ValueError, LibraryError, KeyError, TypeError) as exc:
+            raise _DeleteScopeUnavailable() from exc
+
+    def _purge_delete_stages(self, repo: MemoryRepository, identity: str) -> None:
+        """Consume only actual meeting journals while their cleanup authority survives."""
+        rows = repo.library.execute("SELECT * FROM pending_operations").fetchall()
+        for row in rows:
+            if row["meeting_id"] != identity or row["staging_path"] is None:
+                continue
+            relative = row["staging_path"]
+            references = _stage_references(self.data_dir, rows, relative, row["id"])
+            if len(references) != 1:
+                raise ValueError("Ambiguous publication stage references retained")
+            payload = self._delete_stage_journal(row, relative)
+            directory = managed_path(self.data_dir, relative, directory=True)
+            if not directory.exists():
+                continue
+            # Existing A all-child preflight; retain W1 proof ordering on partial
+            # unlink and keep the SQL journal until the final core purge succeeds.
+            _remove_tree(self.data_dir, relative, set(payload["hashes"]), order=_delete_file_order)
+
     def _finish_delete(
         self, repo: MemoryRepository, record: _DeletionRecord, operation: PendingOperation
     ) -> DeletionResult:
         warnings = self._prepare_delete(repo, record, operation)
+        self._recover_delete_staging(repo, record)
+        self._purge_delete_stages(repo, record.meeting_id)
         self._purge_delete_files(operation, record)
         repo.library.execute("PRAGMA secure_delete=ON")
         with repo.transaction():
@@ -848,11 +1078,14 @@ class MemoryService:
     @staticmethod
     def _delete_failure(identity: str, error: Exception, *, accepted: bool) -> DeletionResult:
         reason = "busy" if isinstance(error, Busy) else "purge_failed" if accepted else "io"
+        warnings = ("Deletion pending local recovery" if accepted else "Deletion could not start",)
+        if isinstance(error, _DeleteScopeUnavailable):
+            warnings += (str(error),)
         return DeletionResult(
             "pending" if accepted else "rejected",
             identity,
             reason,
-            ("Deletion pending local recovery" if accepted else "Deletion could not start",),
+            warnings,
             "io",
         )
 
@@ -959,6 +1192,14 @@ class MemoryService:
         finally:
             library.close()
 
+    @contextmanager
+    def recovery_read_view(
+        self, directory: Path, declared_identity: str | None
+    ) -> Iterator[str | None]:
+        """Delegate to the same real module reader, preserving this explicit data root."""
+        with recovery_read_view(self.data_dir, directory, declared_identity) as identity:
+            yield identity
+
     def retry_parent(
         self, session_dir: Path, meeting_id: str | None
     ) -> tuple[str, str | None] | None:
@@ -972,18 +1213,9 @@ class MemoryService:
                         raise NotFound("Meeting has been deleted")
                     meeting = repo.get_meeting(meeting_id)
                     return (meeting.id, meeting.active_revision_id) if meeting else None
-                rows = library.execute(
-                    "SELECT DISTINCT m.id,m.active_revision_id FROM ingest_sources i "
-                    "JOIN meetings m ON m.id=i.meeting_id WHERE i.origin_path=?",
-                    (normalized_origin(session_dir),),
-                ).fetchall()
-                visible = [row for row in rows if row[0] not in suppression.suppressed_meeting_ids]
-                if rows and not visible:
-                    raise NotFound("Origin has been deleted")
-                rows = visible
-                if len(rows) > 1:
-                    raise ValueError("Legacy origin conflict: more than one catalog identity")
-                return (rows[0][0], rows[0][1]) if rows else None
+                return _legacy_retry_parent(
+                    library, session_dir, suppression.suppressed_meeting_ids
+                )
         finally:
             library.close()
 
@@ -1986,8 +2218,10 @@ class MemoryService:
                         result = self._finish_delete(repo, record, operation)
                     if result.status == "completed":
                         completed.append(RecoveryOutcome(record.meeting_id, "Deletion completed"))
-                except Exception:
+                except Exception as exc:
                     warnings.append("Deletion remains pending local recovery")
+                    if isinstance(exc, _DeleteScopeUnavailable):
+                        warnings.append(str(exc))
                     skipped.append(RecoveryOutcome(record.meeting_id, "Deletion cleanup pending"))
             suppressed = set(_suppression_snapshot(repo.library, records).suppressed_meeting_ids)
             if repo.library.storage_warning:
@@ -2096,22 +2330,12 @@ class MemoryService:
                         # R54 preserves A's private pre-journal cleanup authority.
                         # Check ALL journal kinds/references first: an inconsistent
                         # reference must not turn identified work into an orphan.
-                        key = _journal_path_key(self.data_dir, relative)
-                        rows = [
-                            row
-                            for row in journal_rows
-                            if row["id"] == entry.name
-                            or key
-                            in (
-                                _journal_path_key(self.data_dir, row["staging_path"]),
-                                _journal_path_key(self.data_dir, row["destination_path"]),
-                            )
-                        ]
+                        rows = _stage_references(self.data_dir, journal_rows, relative, entry.name)
                         if not rows:
                             # Same publication lock, existing A plan/role/path and
                             # all-children preflight; no meeting/native authority,
                             # invented re-hash or committed-data access is needed.
-                            _remove_tree(self.data_dir, relative)
+                            _remove_tree(self.data_dir, relative, order=_delete_file_order)
                             continue
                         if (
                             len(rows) != 1
@@ -2127,7 +2351,7 @@ class MemoryService:
                             raise LibraryError(
                                 "Staging cleanup ownership unavailable; material retained"
                             )
-                        _remove_tree(self.data_dir, relative)
+                        _remove_tree(self.data_dir, relative, order=_delete_file_order)
                     except (OSError, ValueError, LibraryError) as exc:
                         warnings.append(str(exc))
                         skipped.append(RecoveryOutcome(entry.name, "Staging cleanup deferred"))

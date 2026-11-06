@@ -925,10 +925,16 @@ def test_memory_delete_cli_pending_is_distinct_from_rejected_io(lifecycle_cli):
     assert memory.show(identity) is None
 
 
-@pytest.mark.parametrize("identity,exit_code", [
-    ("invalid-identity", 2), ("99999999-9999-4999-8999-999999999999", 3),
-])
-def test_memory_delete_cli_validation_keeps_existing_error_categories(lifecycle_cli, identity, exit_code):
+@pytest.mark.parametrize(
+    "identity,exit_code",
+    [
+        ("invalid-identity", 2),
+        ("99999999-9999-4999-8999-999999999999", 3),
+    ],
+)
+def test_memory_delete_cli_validation_keeps_existing_error_categories(
+    lifecycle_cli, identity, exit_code
+):
     memory, original = lifecycle_cli
     result = _lifecycle_cli_json(["delete", identity, "--yes"], exit_code)
     assert result["error_category"] == ("invalid_input" if exit_code == 2 else "conflict")
@@ -938,6 +944,7 @@ def test_memory_delete_cli_validation_keeps_existing_error_categories(lifecycle_
 def test_memory_reindex_cli_delegates_to_single_real_index_use_case(lifecycle_cli):
     import sqlite3
     from contextlib import closing
+
     memory, identity = lifecycle_cli
     with closing(sqlite3.connect(memory.data_dir / "library.sqlite3")) as connection:
         connection.execute("DELETE FROM segments_fts")
@@ -947,4 +954,5 @@ def test_memory_reindex_cli_delegates_to_single_real_index_use_case(lifecycle_cl
     assert isinstance(result["warnings"], list)
     with closing(sqlite3.connect(memory.data_dir / "library.sqlite3")) as connection:
         assert connection.execute("SELECT DISTINCT meeting_id FROM segments_fts").fetchall() == [
-            (identity,)]
+            (identity,)
+        ]

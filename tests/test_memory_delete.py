@@ -3,6 +3,7 @@
 Faults target filesystem/SQLite boundaries; no production crash switches are used.
 Actual M3 query integration is a separately transferred-source gate.
 """
+
 from __future__ import annotations
 
 import ctypes
@@ -34,8 +35,11 @@ def _rows(root, sql, parameters=()):
 
 
 def _files(directory):
-    return {p.relative_to(directory).as_posix(): p.read_bytes()
-            for p in directory.rglob("*") if p.is_file()}
+    return {
+        p.relative_to(directory).as_posix(): p.read_bytes()
+        for p in directory.rglob("*")
+        if p.is_file()
+    }
 
 
 def _delete(memory, identity=MEETING_ID):
@@ -48,8 +52,14 @@ def _assert_result(result, status):
     assert isinstance(result.reason, str)
     if status != "completed":
         assert result.reason in {
-            "invalid_input", "not_found", "conflict", "busy", "hook_failed",
-            "purge_failed", "io", "cleanup_pending",
+            "invalid_input",
+            "not_found",
+            "conflict",
+            "busy",
+            "hook_failed",
+            "purge_failed",
+            "io",
+            "cleanup_pending",
         }
     if status == "pending":
         assert result.error_category == "io"
@@ -91,11 +101,19 @@ def _lose_database(root, temp_root):
 def _assert_purged(memory):
     root = memory.data_dir
     assert _rows(root, "SELECT id FROM meetings WHERE id=?", (MEETING_ID,)) == []
-    for table in ("transcript_revisions", "audio_assets", "revision_audio_assets",
-                  "ingest_sources", "meeting_participants", "speaker_assignments",
-                  "lifecycle_events", "segments_fts"):
-        assert _rows(root, f"SELECT meeting_id FROM {table} WHERE meeting_id=?",
-                     (MEETING_ID,)) == [], table
+    for table in (
+        "transcript_revisions",
+        "audio_assets",
+        "revision_audio_assets",
+        "ingest_sources",
+        "meeting_participants",
+        "speaker_assignments",
+        "lifecycle_events",
+        "segments_fts",
+    ):
+        assert (
+            _rows(root, f"SELECT meeting_id FROM {table} WHERE meeting_id=?", (MEETING_ID,)) == []
+        ), table
     assert _rows(root, "SELECT COUNT(*) FROM segments") == [(0,)]
     meeting_dir = root / "meetings" / MEETING_ID
     assert not meeting_dir.exists() or not list(meeting_dir.rglob("*"))
@@ -122,16 +140,27 @@ def _assert_purged(memory):
 def no_provider(monkeypatch):
     def forbidden(*args, **kwargs):
         pytest.fail("B5 local deletion/read guard allocated provider/network work")
+
     monkeypatch.setattr("socket.socket.connect", forbidden)
     monkeypatch.setattr("here.transcription.client.build_client", forbidden)
 
 
 @pytest.fixture
 def catalog(tmp_path):
-    source = make_session(tmp_path / "origin", meeting_id=MEETING_ID,
-                          transcript_text=CANARY,
-                          segments=[{"text": CANARY, "start": 0.0, "end": 1.0,
-                                     "speaker": "speaker_0", "speaker_scope": "b5-request"}])
+    source = make_session(
+        tmp_path / "origin",
+        meeting_id=MEETING_ID,
+        transcript_text=CANARY,
+        segments=[
+            {
+                "text": CANARY,
+                "start": 0.0,
+                "end": 1.0,
+                "speaker": "speaker_0",
+                "speaker_scope": "b5-request",
+            }
+        ],
+    )
     memory = MemoryService(tmp_path / "data", sessions_root=tmp_path / "sessions")
     assert memory.ingest_session(source.directory).status == "inserted"
     return memory, source
@@ -190,7 +219,9 @@ def test_residual_unlocked_owner_filename_is_not_live_work(catalog):
 
 
 @pytest.mark.parametrize("unknown", ["unregistered.txt", "unexpected/subdirectory.txt"])
-def test_unknown_meeting_material_is_preserved_pending_without_recursive_authority(catalog, unknown):
+def test_unknown_meeting_material_is_preserved_pending_without_recursive_authority(
+    catalog, unknown
+):
     memory, source = catalog
     path = memory.data_dir / "meetings" / MEETING_ID / unknown
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -214,19 +245,27 @@ def _deny_windows_delete(path):
     if os.name != "nt":
         pytest.skip("Windows FILE_SHARE_DELETE semantics")
     kernel = ctypes.WinDLL("kernel32", use_last_error=True)
-    kernel.CreateFileW.argtypes = [ctypes.c_wchar_p, ctypes.c_uint32, ctypes.c_uint32,
-                                  ctypes.c_void_p, ctypes.c_uint32, ctypes.c_uint32,
-                                  ctypes.c_void_p]
+    kernel.CreateFileW.argtypes = [
+        ctypes.c_wchar_p,
+        ctypes.c_uint32,
+        ctypes.c_uint32,
+        ctypes.c_void_p,
+        ctypes.c_uint32,
+        ctypes.c_uint32,
+        ctypes.c_void_p,
+    ]
     kernel.CreateFileW.restype = ctypes.c_void_p
     kernel.CloseHandle.argtypes = [ctypes.c_void_p]
     handle = kernel.CreateFileW(str(path), 0x80000000, 1, None, 3, 0, None)
     assert handle != ctypes.c_void_p(-1).value, ctypes.get_last_error()
     closed = False
+
     def release():
         nonlocal closed
         if not closed:
             assert kernel.CloseHandle(handle)
             closed = True
+
     try:
         yield release
     finally:
@@ -251,10 +290,12 @@ def test_before_delete_hook_releases_real_playback_handle_before_first_purge(cat
     memory, _ = catalog
     audio = memory.data_dir / memory.show(MEETING_ID)["audio_assets"][0]["relative_path"]
     with _deny_windows_delete(audio) as release:
+
         def stop(identity):
             assert identity == MEETING_ID and audio.exists()
             assert not _registry(memory.data_dir).exists()
             release()
+
         memory.before_delete.append(stop)
         _assert_result(_delete(memory), "completed")
     _assert_purged(memory)
@@ -263,8 +304,10 @@ def test_before_delete_hook_releases_real_playback_handle_before_first_purge(cat
 def test_before_delete_hook_failure_never_accepts_deletion(catalog):
     memory, _ = catalog
     before = _files(memory.data_dir / "meetings")
+
     def fail(identity):
         raise OSError("synthetic player stop failure")
+
     memory.before_delete.append(fail)
     _assert_result(_delete(memory), "rejected")
     assert not _registry(memory.data_dir).exists()
@@ -272,7 +315,9 @@ def test_before_delete_hook_failure_never_accepts_deletion(catalog):
     assert _files(memory.data_dir / "meetings") == before
 
 
-def test_different_explicit_origin_and_identity_with_identical_audio_remains_allowed(catalog, tmp_path):
+def test_different_explicit_origin_and_identity_with_identical_audio_remains_allowed(
+    catalog, tmp_path
+):
     memory, source = catalog
     other = make_session(tmp_path / "explicit-new-origin", meeting_id=OTHER_MEETING_ID)
     assert source.audio.read_bytes() == other.audio.read_bytes()
@@ -293,7 +338,9 @@ def test_same_fingerprint_different_legacy_origin_gets_new_identity_after_delete
     assert memory.delete_meeting(first.meeting_id).status == "completed"
     copied = memory.ingest_session(duplicate)
     assert copied.status == "inserted" and copied.meeting_id != first.meeting_id
-    assert _rows(memory.data_dir, "SELECT origin_fingerprint FROM ingest_sources") == [(fingerprint,)]
+    assert _rows(memory.data_dir, "SELECT origin_fingerprint FROM ingest_sources") == [
+        (fingerprint,)
+    ]
     assert memory.show(copied.meeting_id) is not None
 
 
@@ -319,9 +366,12 @@ def test_audio_a_b_a_exact_links_survive_rebuild_then_all_history_is_deleted(tmp
     hashes = []
     for index in range(3):
         text = f"{CANARY} revision {index}"
-        source = make_session(tmp_path / f"origin-{index}", meeting_id=MEETING_ID,
-                              transcript_text=text,
-                              segments=[{"text": text, "start": 0.0, "end": 1.0}])
+        source = make_session(
+            tmp_path / f"origin-{index}",
+            meeting_id=MEETING_ID,
+            transcript_text=text,
+            segments=[{"text": text, "start": 0.0, "end": 1.0}],
+        )
         if index == 1:
             contents = bytearray(source.audio.read_bytes())
             contents[-2:] = b"\x34\x12"
@@ -329,21 +379,25 @@ def test_audio_a_b_a_exact_links_survive_rebuild_then_all_history_is_deleted(tmp
         hashes.append(hashlib.sha256(source.audio.read_bytes()).hexdigest())
         previous = memory.active_revision(MEETING_ID)
         assert memory.ingest_session(source.directory, revision_of=previous).status == (
-            "inserted" if index == 0 else "revised")
+            "inserted" if index == 0 else "revised"
+        )
         sources.append(source)
     before = memory.show(MEETING_ID)
     links = before["revision_audio_assets"]
     revisions = sorted(before["revisions"], key=lambda r: r["revision_number"])
     assets = {a["id"]: a for a in before["audio_assets"]}
-    ids = [next(link["asset_id"] for link in links if link["revision_id"] == r["id"])
-           for r in revisions]
+    ids = [
+        next(link["asset_id"] for link in links if link["revision_id"] == r["id"])
+        for r in revisions
+    ]
     assert ids[0] == ids[2] != ids[1]
     assert [assets[identity]["sha256"] for identity in ids] == hashes
     _lose_database(memory.data_dir, tmp_path)
     memory = MemoryService(memory.data_dir, sessions_root=memory.data_dir.parent / "sessions")
     memory.reconcile()
-    assert sorted(memory.show(MEETING_ID)["revision_audio_assets"], key=lambda x: x["revision_id"]) == (
-        sorted(links, key=lambda x: x["revision_id"]))
+    assert sorted(
+        memory.show(MEETING_ID)["revision_audio_assets"], key=lambda x: x["revision_id"]
+    ) == (sorted(links, key=lambda x: x["revision_id"]))
     _assert_result(_delete(memory), "completed")
     _lose_database(memory.data_dir, tmp_path)
     memory = MemoryService(memory.data_dir, sessions_root=memory.data_dir.parent / "sessions")
@@ -356,8 +410,10 @@ def _record(root, *, identity=MEETING_ID, phase="pending", origins=()):
     directory = root / ".deletions"
     directory.mkdir(exist_ok=True)
     path = directory / f"{identity}.json"
-    write_json(path, {"schema_version": 1, "meeting_id": identity,
-                      "origins": list(origins), "phase": phase})
+    write_json(
+        path,
+        {"schema_version": 1, "meeting_id": identity, "origins": list(origins), "phase": phase},
+    )
     return path
 
 
@@ -378,14 +434,18 @@ def test_read_view_suppresses_identity_union_exact_origin_pair_aliases(catalog, 
     assert OTHER_MEETING_ID not in snapshot.suppressed_meeting_ids
     # The pair is conjunctive: matching only the hash does not suppress the other origin.
     with closing(sqlite3.connect(memory.data_dir / "library.sqlite3")) as connection:
-        connection.execute("UPDATE ingest_sources SET origin_fingerprint=? WHERE meeting_id=?",
-                           (origin["origin_fingerprint"], OTHER_MEETING_ID))
+        connection.execute(
+            "UPDATE ingest_sources SET origin_fingerprint=? WHERE meeting_id=?",
+            (origin["origin_fingerprint"], OTHER_MEETING_ID),
+        )
         connection.commit()
     assert OTHER_MEETING_ID not in _view(memory.data_dir).suppressed_meeting_ids
     # Matching only the origin with different fingerprint also must remain visible.
     with closing(sqlite3.connect(memory.data_dir / "library.sqlite3")) as connection:
-        connection.execute("UPDATE ingest_sources SET origin_path=?,origin_fingerprint=? "
-                           "WHERE meeting_id=?", (origin["origin_path"], "a" * 64, OTHER_MEETING_ID))
+        connection.execute(
+            "UPDATE ingest_sources SET origin_path=?,origin_fingerprint=? WHERE meeting_id=?",
+            (origin["origin_path"], "a" * 64, OTHER_MEETING_ID),
+        )
         connection.commit()
     assert OTHER_MEETING_ID not in _view(memory.data_dir).suppressed_meeting_ids
 
@@ -432,14 +492,18 @@ def test_read_view_is_two_field_frozen_sorted_snapshot_and_caller_closes_once(ca
     library = open_library(memory.data_dir)
     closed = []
     original_close = LibraryConnection.close
+
     def counted_close(self):
         closed.append(self)
         original_close(self)
+
     monkeypatch.setattr(LibraryConnection, "close", counted_close)
     try:
         with service_module.catalog_read_view(library) as snapshot:
             assert {field.name for field in fields(snapshot)} == {
-                "suppressed_meeting_ids", "fingerprint"}
+                "suppressed_meeting_ids",
+                "fingerprint",
+            }
             assert snapshot.suppressed_meeting_ids == (MEETING_ID, OTHER_MEETING_ID)
             assert isinstance(snapshot.fingerprint, str) and snapshot.fingerprint
             assert not hasattr(snapshot, "entries")
@@ -452,11 +516,14 @@ def test_read_view_is_two_field_frozen_sorted_snapshot_and_caller_closes_once(ca
     assert closed == [library]
 
 
-def test_read_view_lock_precedes_single_begin_and_is_retained_through_caller_fetch(catalog, monkeypatch):
+def test_read_view_lock_precedes_single_begin_and_is_retained_through_caller_fetch(
+    catalog, monkeypatch
+):
     memory, _ = catalog
     library = open_library(memory.data_dir)
     statements = []
     lock_failures = []
+
     def trace(sql):
         statements.append(sql)
         if sql.strip().upper().startswith("BEGIN"):
@@ -466,9 +533,12 @@ def test_read_view_lock_precedes_single_begin_and_is_retained_through_caller_fet
                 return
             lease.close()
             lock_failures.append("BEGIN ran before publication lock acquisition")
+
     library.connection.set_trace_callback(trace)
+
     def forbidden(*args, **kwargs):
         pytest.fail("Read view opened another connection, migrated, or nested an operation")
+
     monkeypatch.setattr(service_module, "open_library", forbidden)
     monkeypatch.setattr(service_module, "migrate", forbidden)
     monkeypatch.setattr(MemoryService, "_operation", forbidden)
@@ -516,9 +586,15 @@ def test_read_view_rejects_foreign_transaction_without_commit_or_rollback(catalo
             with service_module.catalog_read_view(library):
                 pytest.fail("Foreign transaction was accepted")
         assert library.connection.in_transaction
-        assert library.execute("SELECT title FROM meetings").fetchone()[0] == "uncommitted caller value"
+        assert (
+            library.execute("SELECT title FROM meetings").fetchone()[0]
+            == "uncommitted caller value"
+        )
         library.connection.rollback()
-        assert library.execute("SELECT title FROM meetings").fetchone()[0] != "uncommitted caller value"
+        assert (
+            library.execute("SELECT title FROM meetings").fetchone()[0]
+            != "uncommitted caller value"
+        )
     finally:
         library.close()
 
@@ -539,7 +615,9 @@ def test_read_view_rejects_nested_use_without_destroying_outer_snapshot(catalog)
 
 
 @pytest.mark.parametrize("journal", ["WAL", "DELETE"])
-def test_read_view_busy_lock_never_begins_transaction_and_connection_remains_owned(catalog, journal):
+def test_read_view_busy_lock_never_begins_transaction_and_connection_remains_owned(
+    catalog, journal
+):
     memory, _ = catalog
     library = open_library(memory.data_dir)
     library.execute(f"PRAGMA journal_mode={journal}")
@@ -590,7 +668,9 @@ def test_genuinely_absent_registry_is_empty_read_only_and_never_created(catalog)
     assert _files(memory.data_dir / "meetings") == before
 
 
-@pytest.mark.parametrize("damage", ["json", "array", "wrong_identity", "unknown_field", "directory"])
+@pytest.mark.parametrize(
+    "damage", ["json", "array", "wrong_identity", "unknown_field", "directory"]
+)
 def test_invalid_registry_fails_exposure_ingest_and_rebuild_closed_preserving_material(
     catalog, tmp_path, damage
 ):
@@ -608,8 +688,11 @@ def test_invalid_registry_fails_exposure_ingest_and_rebuild_closed_preserving_ma
         document["meeting_id" if damage == "wrong_identity" else "raw_text"] = CANARY
         write_json(path, document)
     before = _files(memory.data_dir / "meetings")
-    for read in (lambda: _view(memory.data_dir), lambda: memory.show(MEETING_ID),
-                 lambda: memory.get_meeting(MEETING_ID)):
+    for read in (
+        lambda: _view(memory.data_dir),
+        lambda: memory.show(MEETING_ID),
+        lambda: memory.get_meeting(MEETING_ID),
+    ):
         with pytest.raises(LibraryError):
             read()
     with pytest.raises(LibraryError):
@@ -628,10 +711,12 @@ def test_inaccessible_registry_is_not_treated_as_absent(catalog, monkeypatch):
     memory, _ = catalog
     path = _record(memory.data_dir)
     original = Path.open
+
     def open_path(self, *args, **kwargs):
         if self == path:
             raise PermissionError("Synthetic registry access denied")
         return original(self, *args, **kwargs)
+
     monkeypatch.setattr(Path, "open", open_path)
     with pytest.raises(LibraryError):
         _view(memory.data_dir)
@@ -683,7 +768,6 @@ def test_unsafe_link_cannot_grant_registry_or_purge_authority(catalog, tmp_path,
     assert _files(outside) == before and link.is_symlink()
 
 
-
 def _install_fault(monkeypatch, root, boundary, *, crash=False):
     """Cut real durable writes/transactions/removals without production test hooks."""
     from here.memory.repository import MemoryRepository
@@ -693,15 +777,19 @@ def _install_fault(monkeypatch, root, boundary, *, crash=False):
     original_execute = LibraryConnection.execute
     original_transaction = MemoryRepository.transaction
     hits = []
+
     def fault():
         hits.append(boundary)
         if crash:
             os._exit(73)
         raise OSError(f"Synthetic B5 {boundary} fault")
+
     def replace(source, target, *args, **kwargs):
         target = Path(target)
         is_record = target.parent == root / ".deletions" and target.suffix == ".json"
-        phase = json.loads(Path(source).read_text(encoding="utf-8")).get("phase") if is_record else None
+        phase = (
+            json.loads(Path(source).read_text(encoding="utf-8")).get("phase") if is_record else None
+        )
         if phase == "pending" and boundary == "before-barrier":
             fault()
         if phase == "complete" and boundary == "before-complete":
@@ -712,6 +800,7 @@ def _install_fault(monkeypatch, root, boundary, *, crash=False):
         if phase == "complete" and boundary == "after-complete":
             fault()
         return result
+
     def unlink(self, *args, **kwargs):
         owned = self.is_relative_to(root / "meetings" / MEETING_ID)
         backup = self.parent == root / "backups"
@@ -721,15 +810,19 @@ def _install_fault(monkeypatch, root, boundary, *, crash=False):
         if owned and boundary == "mid-files":
             fault()
         return result
+
     def execute(self, sql, parameters=()):
         upper = sql.strip().upper()
         if boundary == "wal" and "WAL_CHECKPOINT" in upper:
             fault()
-        if boundary == "sql-rollback" and upper.startswith("UPDATE MEETINGS") and (
-            _registry(root).exists()
+        if (
+            boundary == "sql-rollback"
+            and upper.startswith("UPDATE MEETINGS")
+            and (_registry(root).exists())
         ):
             fault()
         return original_execute(self, sql, parameters)
+
     @contextmanager
     def transaction(self):
         with original_transaction(self) as repo:
@@ -741,6 +834,7 @@ def _install_fault(monkeypatch, root, boundary, *, crash=False):
             ).fetchall()
             if rows and rows[0][0] == "prepared":
                 fault()
+
     monkeypatch.setattr(os, "replace", replace)
     monkeypatch.setattr(Path, "unlink", unlink)
     monkeypatch.setattr(LibraryConnection, "execute", execute)
@@ -748,10 +842,17 @@ def _install_fault(monkeypatch, root, boundary, *, crash=False):
     return hits
 
 
-@pytest.mark.parametrize("boundary", [
-    "before-barrier", "after-barrier", "sql-rollback", "after-delete-commit",
-    "mid-files", "before-complete",
-])
+@pytest.mark.parametrize(
+    "boundary",
+    [
+        "before-barrier",
+        "after-barrier",
+        "sql-rollback",
+        "after-delete-commit",
+        "mid-files",
+        "before-complete",
+    ],
+)
 def test_failure_outcome_respects_durable_barrier_acceptance(catalog, monkeypatch, boundary):
     memory, source = catalog
     original = _files(source.directory)
@@ -782,13 +883,16 @@ def test_temporary_barrier_write_failure_preserves_known_orphan_stage_without_su
     directory = memory.data_dir / ".deletions"
     directory.mkdir()
     from here.output.paths import reserve_artifact_path
+
     unknown = reserve_artifact_path(_registry(memory.data_dir), ".stage")
     unknown.write_bytes(b"not a deletion record")
     original_open = Path.open
+
     def fail_staged_open(self, mode="r", *args, **kwargs):
         if self.parent == directory and any(flag in mode for flag in ("w", "x", "a")):
             raise OSError("synthetic staged barrier write failure")
         return original_open(self, mode, *args, **kwargs)
+
     before = _files(memory.data_dir / "meetings")
     with monkeypatch.context() as faults:
         faults.setattr(Path, "open", fail_staged_open)
@@ -802,19 +906,25 @@ def test_temporary_barrier_write_failure_preserves_known_orphan_stage_without_su
     assert _rows(memory.data_dir, "SELECT id FROM meetings") == [(MEETING_ID,)]
 
 
-def test_durable_barrier_then_real_sql_busy_returns_pending_and_reconcile_finishes(catalog, monkeypatch):
+def test_durable_barrier_then_real_sql_busy_returns_pending_and_reconcile_finishes(
+    catalog, monkeypatch
+):
     memory, _ = catalog
     original_replace = os.replace
     blockers = []
+
     def replace(source, target, *args, **kwargs):
         result = original_replace(source, target, *args, **kwargs)
         if Path(target) == _registry(memory.data_dir):
             document = json.loads(Path(target).read_text())
             if document["phase"] == "pending" and not blockers:
-                connection = sqlite3.connect(memory.data_dir / "library.sqlite3", isolation_level=None)
+                connection = sqlite3.connect(
+                    memory.data_dir / "library.sqlite3", isolation_level=None
+                )
                 connection.execute("BEGIN IMMEDIATE")
                 blockers.append(connection)
         return result
+
     try:
         with monkeypatch.context() as faults:
             faults.setattr(os, "replace", replace)
@@ -832,7 +942,9 @@ def test_durable_barrier_then_real_sql_busy_returns_pending_and_reconcile_finish
 
 
 @pytest.mark.parametrize("boundary", ["wal", "backup"])
-def test_rows_and_files_gone_but_managed_residue_failure_stays_pending(catalog, monkeypatch, boundary):
+def test_rows_and_files_gone_but_managed_residue_failure_stays_pending(
+    catalog, monkeypatch, boundary
+):
     memory, _ = catalog
     backup = memory.data_dir / "backups" / "library-before-delete.sqlite3"
     backup.parent.mkdir()
@@ -871,8 +983,17 @@ raise AssertionError('B5 child failed to reach requested crash boundary')
 """
 
 
-@pytest.mark.parametrize("boundary", ["before-barrier", "after-barrier", "after-delete-commit",
-                                      "mid-files", "before-complete", "after-complete"])
+@pytest.mark.parametrize(
+    "boundary",
+    [
+        "before-barrier",
+        "after-barrier",
+        "after-delete-commit",
+        "mid-files",
+        "before-complete",
+        "after-complete",
+    ],
+)
 @pytest.mark.parametrize("lose_database", [False, True])
 def test_subprocess_crash_restart_obeys_r42_acceptance_and_never_resurrects(
     catalog, tmp_path, boundary, lose_database
@@ -888,9 +1009,19 @@ def test_subprocess_crash_restart_obeys_r42_acceptance_and_never_resurrects(
     env.pop("HERE_PROVIDER_SMOKE_KEY", None)
     env.pop("HERE_WHEEL_PYTHON", None)
     process = subprocess.run(
-        [sys.executable, "-c", _CRASH_SCRIPT, str(Path(__file__).resolve().parents[1]),
-         str(memory.data_dir), boundary, str(tmp_path / "sessions")],
-        env=env, capture_output=True, text=True, timeout=25,
+        [
+            sys.executable,
+            "-c",
+            _CRASH_SCRIPT,
+            str(Path(__file__).resolve().parents[1]),
+            str(memory.data_dir),
+            boundary,
+            str(tmp_path / "sessions"),
+        ],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=25,
         creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
     )
     assert process.returncode == 73, process.stdout + process.stderr
@@ -916,13 +1047,17 @@ def test_subprocess_crash_restart_obeys_r42_acceptance_and_never_resurrects(
     assert _files(source.directory) == original
 
 
-def test_private_parser_is_reused_under_writer_lock_without_public_read_context(catalog, monkeypatch):
+def test_private_parser_is_reused_under_writer_lock_without_public_read_context(
+    catalog, monkeypatch
+):
     memory, source = catalog
     origin = _origin(memory.data_dir)
     _record(memory.data_dir, origins=[origin])
+
     # If a writer calls the public context, it reacquires the non-reentrant lock.
     def forbidden(*args, **kwargs):
         pytest.fail("Already locked writer called public catalog_read_view")
+
     monkeypatch.setattr(service_module, "catalog_read_view", forbidden)
     assert memory.ingest_session(source.directory).status == "rejected"
     memory.reindex()
@@ -936,9 +1071,11 @@ def test_synthetic_m4_derived_purge_hook_runs_in_final_sql_transaction(catalog):
         connection.execute("CREATE TABLE synthetic_m4_citations(meeting_id TEXT, claim TEXT)")
         connection.execute("INSERT INTO synthetic_m4_citations VALUES (?,?)", (MEETING_ID, CANARY))
         connection.commit()
+
     def purge(repo, identity):
         assert repo.connection.in_transaction and identity == MEETING_ID
         repo.library.execute("DELETE FROM synthetic_m4_citations WHERE meeting_id=?", (identity,))
+
     memory._derived_row_purgers.append(purge)
     _assert_result(_delete(memory), "completed")
     assert _rows(memory.data_dir, "SELECT * FROM synthetic_m4_citations") == []
@@ -951,9 +1088,11 @@ def test_synthetic_derived_hook_failure_rolls_back_rows_and_remains_pending(cata
         connection.execute("CREATE TABLE synthetic_m4_citations(meeting_id TEXT, claim TEXT)")
         connection.execute("INSERT INTO synthetic_m4_citations VALUES (?,?)", (MEETING_ID, CANARY))
         connection.commit()
+
     def fail(repo, identity):
         repo.library.execute("DELETE FROM synthetic_m4_citations WHERE meeting_id=?", (identity,))
         raise sqlite3.OperationalError("synthetic derived purge failed")
+
     memory._derived_row_purgers.append(fail)
     _assert_result(_delete(memory), "pending")
     assert _rows(memory.data_dir, "SELECT claim FROM synthetic_m4_citations") == [(CANARY,)]
@@ -962,11 +1101,13 @@ def test_synthetic_derived_hook_failure_rolls_back_rows_and_remains_pending(cata
     assert _rows(memory.data_dir, "SELECT COUNT(*) FROM revision_audio_assets") == [(1,)]
     _hidden(memory)
     memory._derived_row_purgers.clear()
-    memory._derived_row_purgers.append(lambda repo, identity: repo.library.execute(
-        "DELETE FROM synthetic_m4_citations WHERE meeting_id=?", (identity,)))
+    memory._derived_row_purgers.append(
+        lambda repo, identity: repo.library.execute(
+            "DELETE FROM synthetic_m4_citations WHERE meeting_id=?", (identity,)
+        )
+    )
     memory.reconcile()
     _assert_purged(memory)
-
 
 
 def test_control_accepted_fixture_has_raw_text_exact_audio_and_complete_segment(catalog):
@@ -1003,7 +1144,9 @@ def test_restore_old_backup_cannot_expose_or_rebuild_pending_deleted_meeting(cat
     _assert_purged(restored)
 
 
-def test_reconcile_restores_origin_tombstone_before_existing_receipt_rebuild(catalog, tmp_path, monkeypatch):
+def test_reconcile_restores_origin_tombstone_before_existing_receipt_rebuild(
+    catalog, tmp_path, monkeypatch
+):
     memory, _ = catalog
     origin = _origin(memory.data_dir)
     _record(memory.data_dir, origins=[origin])
@@ -1011,14 +1154,18 @@ def test_reconcile_restores_origin_tombstone_before_existing_receipt_rebuild(cat
     restored = MemoryService(memory.data_dir, sessions_root=memory.data_dir.parent / "sessions")
     rebuild = MemoryService._rebuild
     calls = []
+
     def inspect_before_rebuild(self, repo, *args, **kwargs):
         calls.append(True)
         restored_origins = repo.library.execute(
-            "SELECT origin_fingerprint FROM deleted_origins").fetchall()
+            "SELECT origin_fingerprint FROM deleted_origins"
+        ).fetchall()
         assert [tuple(row) for row in restored_origins] == [(origin["origin_fingerprint"],)]
-        assert repo.library.execute("SELECT phase FROM pending_operations WHERE kind='delete'").fetchone()[0] in {
-            "prepared", "complete"}
+        assert repo.library.execute(
+            "SELECT phase FROM pending_operations WHERE kind='delete'"
+        ).fetchone()[0] in {"prepared", "complete"}
         return rebuild(self, repo, *args, **kwargs)
+
     monkeypatch.setattr(MemoryService, "_rebuild", inspect_before_rebuild)
     restored.reconcile()
     assert calls
@@ -1037,8 +1184,10 @@ def test_r50_alias_resolution_and_caller_fetch_share_same_wal_snapshot(catalog):
             with closing(sqlite3.connect(memory.data_dir / "library.sqlite3")) as other:
                 other.execute("UPDATE ingest_sources SET origin_fingerprint=?", ("b" * 64,))
                 other.commit()
-            assert library.execute("SELECT origin_fingerprint FROM ingest_sources").fetchone()[0] == (
-                origin["origin_fingerprint"])
+            assert (
+                library.execute("SELECT origin_fingerprint FROM ingest_sources").fetchone()[0]
+                == (origin["origin_fingerprint"])
+            )
     finally:
         library.close()
     after = _view(memory.data_dir)
@@ -1046,17 +1195,21 @@ def test_r50_alias_resolution_and_caller_fetch_share_same_wal_snapshot(catalog):
     assert after.fingerprint != before.fingerprint
 
 
-def test_unknown_registry_role_is_never_opened_as_record_or_granted_purge_authority(catalog, monkeypatch):
+def test_unknown_registry_role_is_never_opened_as_record_or_granted_purge_authority(
+    catalog, monkeypatch
+):
     memory, _ = catalog
     directory = memory.data_dir / ".deletions"
     directory.mkdir()
     unknown = directory / "private-looking.env"
     unknown.write_bytes(b"SYNTHETIC_UNKNOWN=never-read")
     original_open = Path.open
+
     def reject_unknown(self, *args, **kwargs):
         if self == unknown:
             pytest.fail("Registry opened unrecognized role before validating its name")
         return original_open(self, *args, **kwargs)
+
     before = _files(memory.data_dir / "meetings")
     with monkeypatch.context() as guard:
         guard.setattr(Path, "open", reject_unknown)
@@ -1074,7 +1227,9 @@ def test_pending_delete_journal_unknown_path_does_not_authorize_external_removal
     outside = tmp_path / "outside.txt"
     outside.write_bytes(b"outside must remain")
     with closing(sqlite3.connect(memory.data_dir / "library.sqlite3")) as connection:
-        connection.execute("UPDATE pending_operations SET destination_path='../outside.txt' WHERE kind='delete'")
+        connection.execute(
+            "UPDATE pending_operations SET destination_path='../outside.txt' WHERE kind='delete'"
+        )
         connection.commit()
     memory.reconcile()
     assert outside.read_bytes() == b"outside must remain"
@@ -1083,9 +1238,10 @@ def test_pending_delete_journal_unknown_path_does_not_authorize_external_removal
     assert json.loads(_registry(memory.data_dir).read_text())["phase"] == "pending"
 
 
-
 @pytest.mark.parametrize("target", ["registry", "meeting"])
-def test_windows_junction_never_grants_external_registry_or_cleanup_authority(catalog, tmp_path, target):
+def test_windows_junction_never_grants_external_registry_or_cleanup_authority(
+    catalog, tmp_path, target
+):
     if os.name != "nt":
         pytest.skip("Windows junction semantics")
     memory, _ = catalog
@@ -1093,12 +1249,19 @@ def test_windows_junction_never_grants_external_registry_or_cleanup_authority(ca
     outside.mkdir()
     sentinel = outside / "keep.txt"
     sentinel.write_bytes(b"external synthetic material")
-    link = (memory.data_dir / ".deletions" if target == "registry" else
-            memory.data_dir / "meetings" / MEETING_ID / "junction")
+    link = (
+        memory.data_dir / ".deletions"
+        if target == "registry"
+        else memory.data_dir / "meetings" / MEETING_ID / "junction"
+    )
     assert link.absolute().is_relative_to(tmp_path.absolute())
-    result = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(outside)],
-                            capture_output=True, text=True, timeout=10,
-                            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    result = subprocess.run(
+        ["cmd", "/c", "mklink", "/J", str(link), str(outside)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+    )
     assert result.returncode == 0, result.stdout + result.stderr
     assert link.is_junction()
     try:
@@ -1117,17 +1280,24 @@ def test_windows_junction_never_grants_external_registry_or_cleanup_authority(ca
         link.rmdir()  # Remove only the verified junction itself, never its target.
 
 
-
-
-
 def test_r51_models_keep_exact_default_order_frozen_slots_at_result_boundary(catalog):
     from here.memory import models
+
     memory, _ = catalog
     assert [field.name for field in fields(models.DeletionResult)] == [
-        "status", "meeting_id", "reason", "warnings", "error_category"]
+        "status",
+        "meeting_id",
+        "reason",
+        "warnings",
+        "error_category",
+    ]
     default = models.DeletionResult("pending")
     assert (default.meeting_id, default.reason, default.warnings, default.error_category) == (
-        None, "", (), None)
+        None,
+        "",
+        (),
+        None,
+    )
     assert not hasattr(default, "__dict__")
     result = _delete(memory)
     assert isinstance(result, models.DeletionResult) and not hasattr(result, "__dict__")
@@ -1138,12 +1308,15 @@ def test_before_delete_ack_runs_without_sql_transaction_or_publication_lock(cata
     memory, _ = catalog
     opened = []
     original = service_module.open_library
+
     def track(*args, **kwargs):
         library = original(*args, **kwargs)
         opened.append(library)
         return library
+
     monkeypatch.setattr(service_module, "open_library", track)
     acknowledged = []
+
     def release(identity):
         assert identity == MEETING_ID
         for library in opened:
@@ -1158,21 +1331,26 @@ def test_before_delete_ack_runs_without_sql_transaction_or_publication_lock(cata
                 db.rollback()
         assert not _registry(memory.data_dir).exists()
         acknowledged.append(identity)
+
     memory.before_delete.append(release)
     _assert_result(_delete(memory), "completed")
     assert acknowledged == [MEETING_ID]
 
 
 @pytest.mark.parametrize("hook_fails", [False, True], ids=["ack", "failure"])
-def test_concurrent_acceptance_during_hook_is_rechecked_and_never_reported_rejected(catalog, hook_fails):
+def test_concurrent_acceptance_during_hook_is_rechecked_and_never_reported_rejected(
+    catalog, hook_fails
+):
     memory, _ = catalog
     unknown = memory.data_dir / "meetings" / MEETING_ID / "unknown.txt"
     unknown.write_bytes(b"pending cleanup")
     competing = MemoryService(memory.data_dir, sessions_root=memory.data_dir.parent / "sessions")
+
     def release(identity):
         _assert_result(competing.delete_meeting(identity), "pending")
         if hook_fails:
             raise OSError("private arbitrary callback detail must not become reason")
+
     memory.before_delete.append(release)
     result = _delete(memory)
     _assert_result(result, "pending")
@@ -1191,8 +1369,10 @@ def test_owner_acquired_during_hook_ack_is_revalidated_before_new_barrier(catalo
     owner_path = memory.data_dir / ".owners" / f"{MEETING_ID}.lock"
     owner_path.parent.mkdir(exist_ok=True)
     retained = []
+
     def acquire_after_preflight(identity):
         retained.append(FileLease(owner_path))
+
     memory.before_delete.append(acquire_after_preflight)
     try:
         with pytest.raises(Busy):
@@ -1204,7 +1384,7 @@ def test_owner_acquired_during_hook_ack_is_revalidated_before_new_barrier(catalo
             lease.close()
 
 
-def test_prior_barrier_with_missing_sql_rows_keeps_canonical_pending_on_repeated_final_write_failure(
+def test_prior_barrier_without_sql_rows_keeps_canonical_pending_on_repeated_final_write_failure(
     catalog, monkeypatch
 ):
     memory, _ = catalog
@@ -1212,11 +1392,17 @@ def test_prior_barrier_with_missing_sql_rows_keeps_canonical_pending_on_repeated
         hits = _install_fault(faults, memory.data_dir, "before-complete")
         _assert_result(_delete(memory), "pending")
         assert _rows(memory.data_dir, "SELECT id FROM meetings") == []
-        _assert_result(_delete(MemoryService(
-            memory.data_dir, sessions_root=memory.data_dir.parent / "sessions")), "pending")
+        _assert_result(
+            _delete(
+                MemoryService(memory.data_dir, sessions_root=memory.data_dir.parent / "sessions")
+            ),
+            "pending",
+        )
         assert len(hits) >= 2
-    _assert_result(_delete(MemoryService(
-        memory.data_dir, sessions_root=memory.data_dir.parent / "sessions")), "completed")
+    _assert_result(
+        _delete(MemoryService(memory.data_dir, sessions_root=memory.data_dir.parent / "sessions")),
+        "completed",
+    )
     _assert_purged(memory)
 
 
@@ -1236,8 +1422,10 @@ def test_prior_barrier_with_rows_gone_hook_failure_keeps_pending_identity(catalo
         _install_fault(faults, memory.data_dir, "before-complete")
         _assert_result(_delete(memory), "pending")
     assert _rows(memory.data_dir, "SELECT id FROM meetings") == []
+
     def fail(identity):
         raise RuntimeError("arbitrary private failure")
+
     memory.before_delete.append(fail)
     result = _delete(memory)
     _assert_result(result, "pending")
@@ -1246,17 +1434,27 @@ def test_prior_barrier_with_rows_gone_hook_failure_keeps_pending_identity(catalo
 
 def test_known_orphan_stage_is_never_parsed_or_deleted_and_is_reported(catalog, monkeypatch):
     from here.output.paths import reserve_artifact_path
+
     memory, _ = catalog
     (memory.data_dir / ".deletions").mkdir()
     stage = reserve_artifact_path(_registry(memory.data_dir), ".stage")
     # Even record-shaped bytes at a temporary role cannot establish acceptance.
-    write_json(stage, {"schema_version": 1, "meeting_id": MEETING_ID,
-                       "origins": [_origin(memory.data_dir)], "phase": "pending"})
+    write_json(
+        stage,
+        {
+            "schema_version": 1,
+            "meeting_id": MEETING_ID,
+            "origins": [_origin(memory.data_dir)],
+            "phase": "pending",
+        },
+    )
     original_open = Path.open
+
     def prohibit_temp_read(self, mode="r", *args, **kwargs):
         if self == stage and "r" in mode:
             pytest.fail("Known producer stage was read as a deletion record")
         return original_open(self, mode, *args, **kwargs)
+
     with monkeypatch.context() as guard:
         guard.setattr(Path, "open", prohibit_temp_read)
         assert _view(memory.data_dir).suppressed_meeting_ids == ()
@@ -1282,46 +1480,62 @@ def test_unknown_stage_name_fails_closed_without_accepting_or_purging(catalog):
     assert unknown.read_bytes() == b"unrecognized synthetic material"
 
 
-def test_derived_purgers_keep_order_same_transaction_and_relationships_until_final_core_delete(catalog):
+def test_derived_purgers_keep_order_same_transaction_and_relationships_until_final_core_delete(
+    catalog,
+):
     memory, _ = catalog
     detail = memory.show(MEETING_ID)
     revision = detail["meeting"]["active_revision_id"]
     participant = memory.add_meeting_participant(
-        MEETING_ID, "Synthetic linked person", speaker_key=detail["segments"][0]["speaker_key"])
+        MEETING_ID, "Synthetic linked person", speaker_key=detail["segments"][0]["speaker_key"]
+    )
     assert participant.speaker_assignments
     with closing(sqlite3.connect(memory.data_dir / "library.sqlite3")) as db:
         db.execute("CREATE TABLE synthetic_m4_citations(revision_id TEXT, claim TEXT)")
         db.execute("INSERT INTO synthetic_m4_citations VALUES (?,?)", (revision, CANARY))
         db.commit()
     seen = []
+
     def first(repo, identity):
         assert repo.connection.in_transaction
         assert repo.get_meeting(identity) is not None
-        assert repo.library.execute(
-            "SELECT COUNT(*) FROM revision_audio_assets WHERE meeting_id=?", (identity,)
-        ).fetchone()[0] == 1
-        assert repo.library.execute(
-            "SELECT COUNT(*) FROM speaker_assignments WHERE meeting_id=?", (identity,)
-        ).fetchone()[0] == 1
+        assert (
+            repo.library.execute(
+                "SELECT COUNT(*) FROM revision_audio_assets WHERE meeting_id=?", (identity,)
+            ).fetchone()[0]
+            == 1
+        )
+        assert (
+            repo.library.execute(
+                "SELECT COUNT(*) FROM speaker_assignments WHERE meeting_id=?", (identity,)
+            ).fetchone()[0]
+            == 1
+        )
         repo.library.execute(
             "DELETE FROM synthetic_m4_citations WHERE revision_id IN "
-            "(SELECT id FROM transcript_revisions WHERE meeting_id=?)", (identity,))
+            "(SELECT id FROM transcript_revisions WHERE meeting_id=?)",
+            (identity,),
+        )
         seen.append(("first", repo, repo.connection))
+
     def second(repo, identity):
         assert seen[-1] == ("first", repo, repo.connection)
         assert repo.connection.in_transaction and repo.get_revision(revision) is not None
-        assert repo.library.execute("SELECT COUNT(*) FROM synthetic_m4_citations").fetchone()[0] == 0
+        assert (
+            repo.library.execute("SELECT COUNT(*) FROM synthetic_m4_citations").fetchone()[0] == 0
+        )
         seen.append(("second", repo, repo.connection))
+
     memory._derived_row_purgers.extend([first, second])
     _assert_result(_delete(memory), "completed")
     assert [entry[0] for entry in seen] == ["first", "second"]
     _assert_purged(memory)
 
 
-
 @pytest.mark.parametrize("kind", ["symlink", "hardlink"])
 def test_known_stage_role_is_not_safe_when_linked_and_fails_closed(catalog, tmp_path, kind):
     from here.output.paths import reserve_artifact_path
+
     memory, _ = catalog
     directory = memory.data_dir / ".deletions"
     directory.mkdir()

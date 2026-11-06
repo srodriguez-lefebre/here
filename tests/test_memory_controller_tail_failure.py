@@ -113,12 +113,18 @@ def test_live_finally_failure_unwinds_native_job_without_releasing_canonical_own
             controller.start(StartRequest(output_dir=sessions))
         assert controller.snapshot.state is ApplicationState.COMPLETED
         assert events == [
-            "native_helper_closed", "persisted", "live_abort", "live_cleanup",
-            "live_close_failed", "native_release",
+            "native_helper_closed",
+            "persisted",
+            "live_abort",
+            "live_cleanup",
+            "live_close_failed",
+            "native_release",
         ]
         assert finish_calls == [], "Failed live teardown must not authorize catalog release"
         identity = captures[0].meeting_id
-        with closing(FileLease(CaptureJournal.owner_path(sessions, identity), timeout=0, create=False)):
+        with closing(
+            FileLease(CaptureJournal.owner_path(sessions, identity), timeout=0, create=False)
+        ):
             pass  # Native cleanup really released the OS lease despite the job exception.
         with pytest.raises(Busy):
             MemoryService.check_owner(root, identity)
