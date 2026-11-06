@@ -10,7 +10,7 @@ import importlib
 from dataclasses import replace
 
 import pytest
-from test_memory_search import _Factory, _api, _open_catalog, _search_all
+from test_memory_search import _api, _Factory, _open_catalog, _search_all
 
 
 @pytest.fixture
@@ -33,8 +33,11 @@ def generation_catalog(tmp_path, monkeypatch):
 def _ordered_cohort_segments(corpus, suppressed=()):
     # Authored cohort0..49 has equal BM25 inputs and dates tied in groups of4.
     indices = sorted(range(50), key=lambda index: (-(index // 4), index))
-    return [corpus.segment_id(index, 0) for index in indices
-            if corpus.meeting_id(index) not in suppressed]
+    return [
+        corpus.segment_id(index, 0)
+        for index in indices
+        if corpus.meeting_id(index) not in suppressed
+    ]
 
 
 @pytest.mark.parametrize(
@@ -56,18 +59,24 @@ def test_nonmatching_or_suppressed_index_change_beyond_early_rows_invalidates_cu
     ).fetchall()
     target = rows[-1 if position == -1 else position - 1]
     assert COHORT_TOKEN not in target["text"]
-    assert library.execute(
-        "SELECT status FROM meetings WHERE id=?", (target["meeting_id"],)
-    ).fetchone()[0] == "completed"
+    assert (
+        library.execute(
+            "SELECT status FROM meetings WHERE id=?", (target["meeting_id"],)
+        ).fetchone()[0]
+        == "completed"
+    )
     if hidden:
         _record(root, identity=target["meeting_id"], phase="pending")
     snapshot = _view(root)
     assert snapshot.suppressed_meeting_ids == ((target["meeting_id"],) if hidden else ())
     # Real B suppression leaves all source rows and the target document alive.
     assert library.execute("SELECT count(*) FROM segments_fts").fetchone()[0] == 819
-    assert library.execute(
-        "SELECT text FROM segments_fts WHERE segment_id=?", (target["segment_id"],)
-    ).fetchone()[0] == target["text"]
+    assert (
+        library.execute(
+            "SELECT text FROM segments_fts WHERE segment_id=?", (target["segment_id"],)
+        ).fetchone()[0]
+        == target["text"]
+    )
     query = models.SearchQuery(text=COHORT_TOKEN, include_partial=True, limit=7)
     first = search.SearchService(_Factory(root)).search(query)
     assert first.next_cursor
@@ -108,9 +117,12 @@ def test_large_real_reindex_noop_preserves_fresh_instance_cursor_and_all_continu
     _record(root, identity=suppressed, phase="complete")
     snapshot = _view(root)
     assert snapshot.suppressed_meeting_ids == (suppressed,)
-    assert library.execute(
-        "SELECT count(*) FROM segments_fts WHERE meeting_id=?", (suppressed,)
-    ).fetchone()[0] == 13
+    assert (
+        library.execute(
+            "SELECT count(*) FROM segments_fts WHERE meeting_id=?", (suppressed,)
+        ).fetchone()[0]
+        == 13
+    )
     memory = backend.MemoryService(root)
     # The original fixture indexes a complete deleting row. The FIRST real B
     # rebuild normalizes deleting/suppressed visibility; it is NOT called a no-op.
