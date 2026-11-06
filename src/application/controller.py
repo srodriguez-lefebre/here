@@ -32,7 +32,7 @@ from here.config.settings import require_provider_key, settings_operation
 from here.live_processing import LiveTranscriptionController
 from here.memory.service import MemoryService
 from here.output.metadata import SessionEventMetadata
-from here.output.ownership import owned_job
+from here.output.ownership import owned_job, retain_for_job
 from here.output.session_writer import SessionArtifactPaths, read_session_metadata
 from here.recording.control import ControllableRecording
 from here.recording.models import CaptureFailed
@@ -271,6 +271,20 @@ class HereApplicationController:
     def _run_recording(self) -> None:
         request = self._request
         assert request is not None
+        capture_teardown_complete = False
+
+        def finish_capture() -> None:
+            if not capture_teardown_complete:
+                return
+            if (finished_identity := self._meeting_id) is not None:
+                self._memory_action(
+                    lambda: self._memory.finish_capture(
+                        finished_identity, discard=self._cancel_recording
+                    )
+                )
+
+        # Register first so native cleanup runs before the catalog owner is released.
+        retain_for_job(finish_capture)
         source_count = 2 if request.source_mode.value == "both" else 1
         try:
             if (
@@ -397,12 +411,7 @@ class HereApplicationController:
             with self._lock:
                 self._capture = None
                 self._live = None
-            if (finished_identity := self._meeting_id) is not None:
-                self._memory_action(
-                    lambda: self._memory.finish_capture(
-                        finished_identity, discard=self._cancel_recording
-                    )
-                )
+            capture_teardown_complete = True
 
     def _launch_worker(self, worker, *, release_audio=False):
         # The completion observer, never Qt, joins the actual worker after its finally.
