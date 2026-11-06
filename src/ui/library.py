@@ -195,9 +195,18 @@ class LibraryView(QWidget):
         layout.addWidget(self._detail_panel)
         self._more.hide()
         order = (
-            self._search, self._from, self._to, self._status, self._participant,
-            self._partial, self._results, self._transcript, self._title,
-            self._save, self._close, self._more,
+            self._search,
+            self._from,
+            self._to,
+            self._status,
+            self._participant,
+            self._partial,
+            self._results,
+            self._transcript,
+            self._title,
+            self._save,
+            self._close,
+            self._more,
         )
         for previous, following in zip(order, order[1:]):
             QWidget.setTabOrder(previous, following)
@@ -237,8 +246,9 @@ class LibraryView(QWidget):
             self._requests[kind] = (request, generation)
 
     def _load_participants(self):
-        self._submit("library-participants", self._controller.list_participants,
-                     self._participant_generation)
+        self._submit(
+            "library-participants", self._controller.list_participants, self._participant_generation
+        )
 
     def _query_changed(self, *_):
         if self._closed:
@@ -272,8 +282,14 @@ class LibraryView(QWidget):
         )
 
     def clear_filters(self):
-        controls = (self._search, self._from, self._to, self._status,
-                    self._participant, self._partial)
+        controls = (
+            self._search,
+            self._from,
+            self._to,
+            self._status,
+            self._participant,
+            self._partial,
+        )
         for control in controls:
             control.blockSignals(True)
         self._search.clear()
@@ -315,8 +331,10 @@ class LibraryView(QWidget):
         self._clear.hide()
         self._retry.hide()
         self._more.setEnabled(False)
-        operation = self._controller.search if isinstance(query, SearchQuery) else (
-            self._controller.list_meetings
+        operation = (
+            self._controller.search
+            if isinstance(query, SearchQuery)
+            else (self._controller.list_meetings)
         )
         self._submit("library-page", lambda: operation(query), self._generation)
 
@@ -344,8 +362,11 @@ class LibraryView(QWidget):
         elif kind == "library-page":
             self._loading = False
             if error is not None:
-                if (isinstance(error, InvalidInput) and error.reason == "corpus_changed"
-                        and self._cursor is not None):
+                if (
+                    isinstance(error, InvalidInput)
+                    and error.reason == "corpus_changed"
+                    and self._cursor is not None
+                ):
                     self._generation += 1
                     self._request_first()
                     return
@@ -383,31 +404,39 @@ class LibraryView(QWidget):
         for row, item in enumerate(self._items):
             if isinstance(item, SearchHit):
                 values = (
-                    f"{item.title}\n{item.snippet}\n{_timing(item)}", _date(item.started_at),
-                    "Duración desconocida", "", "Disponibilidad no consultada",
+                    f"{item.title}\n{item.snippet}\n{_timing(item)}",
+                    _date(item.started_at),
+                    "Duración desconocida",
+                    "",
+                    "Disponibilidad no consultada",
                     "Parcial" if item.partial else "Completa",
                 )
             else:
                 meeting = item.meeting
                 values = (
-                    meeting.title, _date(meeting.started_at), _duration(meeting.duration_ms),
+                    meeting.title,
+                    _date(meeting.started_at),
+                    _duration(meeting.duration_ms),
                     _STATUS_LABELS.get(meeting.status, meeting.status.value),
                     "Audio disponible" if item.audio_available else "Audio no disponible",
-                    "Sin transcripción" if meeting.active_revision_id is None else (
-                        "Parcial" if item.partial else "Completa"
-                    ),
+                    "Sin transcripción"
+                    if meeting.active_revision_id is None
+                    else ("Parcial" if item.partial else "Completa"),
                 )
             for column, text in enumerate(values):
                 self._results.setItem(row, column, QTableWidgetItem(text))
         self._results.resizeRowsToContents()
         self._more.setVisible(self._cursor is not None)
         self._more.setEnabled(True)
-        self._warning.setText("Búsqueda literal con capacidad limitada (sin FTS5)."
-                              if getattr(page, "degraded", False) else "")
+        self._warning.setText(
+            "Búsqueda literal con capacidad limitada (sin FTS5)."
+            if getattr(page, "degraded", False)
+            else ""
+        )
         filtered = self._query != MeetingQuery()
-        self._message.setText("" if self._items else (
-            "No hay coincidencias" if filtered else "Aún no hay reuniones"
-        ))
+        self._message.setText(
+            "" if self._items else ("No hay coincidencias" if filtered else "Aún no hay reuniones")
+        )
         self._record.setVisible(not self._items and not filtered)
         self._clear.setVisible(not self._items and filtered)
 
@@ -424,8 +453,11 @@ class LibraryView(QWidget):
         self._detail_message.setText("Cargando detalle…")
         self._title.setEnabled(False)
         self._save.setEnabled(False)
-        self._submit("library-detail", lambda: self._controller.get_meeting(identity),
-                     self._detail_generation)
+        self._submit(
+            "library-detail",
+            lambda: self._controller.get_meeting(identity),
+            self._detail_generation,
+        )
 
     def _render_detail(self, detail):
         self._detail = detail
@@ -437,7 +469,9 @@ class LibraryView(QWidget):
         self._detail_message.setText("\n".join(messages))
         names = {participant.id: participant.display_name for participant in detail.participants}
         self._participants.setText(
-            "Participantes: " + ", ".join(names.values()) if names else "Sin participantes registrados"
+            "Participantes: " + ", ".join(names.values())
+            if names
+            else "Sin participantes registrados"
         )
         self._speaker_names = {
             (assignment.revision_id, assignment.speaker_key): names[assignment.participant_id]
@@ -447,8 +481,10 @@ class LibraryView(QWidget):
         revisions = {revision.id: revision for revision in detail.revisions}
         for segment in detail.segments:
             revision = revisions.get(segment.revision_id)
-            context = "Actual" if segment.revision_id == detail.meeting.active_revision_id else (
-                "Histórica"
+            context = (
+                "Actual"
+                if segment.revision_id == detail.meeting.active_revision_id
+                else ("Histórica")
             )
             if revision is not None:
                 context += f" · revisión {revision.revision_number}"
@@ -466,13 +502,23 @@ class LibraryView(QWidget):
             return
         segment = item.data(Qt.ItemDataRole.UserRole)
         meeting = self._detail.meeting
-        self.segment_selected.emit(CitationTarget(
-            meeting_id=meeting.id, revision_id=segment.revision_id, segment_id=segment.id,
-            title=meeting.title, started_at=meeting.started_at, text=segment.text,
-            speaker=self._speaker_names.get((segment.revision_id, segment.speaker_key)),
-            start_ms=segment.start_ms, end_ms=segment.end_ms, timing_source=segment.timing_source,
-            status="current" if segment.revision_id == meeting.active_revision_id else "historical",
-        ))
+        self.segment_selected.emit(
+            CitationTarget(
+                meeting_id=meeting.id,
+                revision_id=segment.revision_id,
+                segment_id=segment.id,
+                title=meeting.title,
+                started_at=meeting.started_at,
+                text=segment.text,
+                speaker=self._speaker_names.get((segment.revision_id, segment.speaker_key)),
+                start_ms=segment.start_ms,
+                end_ms=segment.end_ms,
+                timing_source=segment.timing_source,
+                status="current"
+                if segment.revision_id == meeting.active_revision_id
+                else "historical",
+            )
+        )
 
     def _save_title(self):
         if self._detail is None or self._closed:
@@ -480,9 +526,11 @@ class LibraryView(QWidget):
         meeting = self._detail.meeting
         patch = MeetingPatch(title=self._title.text())
         self._save.setEnabled(False)
-        self._submit("library-title", lambda: self._controller.update_meeting(
-            meeting.id, patch, meeting.row_version
-        ), self._detail_generation)
+        self._submit(
+            "library-title",
+            lambda: self._controller.update_meeting(meeting.id, patch, meeting.row_version),
+            self._detail_generation,
+        )
 
     def close_detail(self):
         self._detail_generation += 1

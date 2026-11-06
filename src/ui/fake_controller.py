@@ -173,18 +173,28 @@ class FakeLibraryBackend:
         meeting_id = "00000000-0000-0000-0000-000000000101"
         revision_id = "00000000-0000-0000-0000-000000000102"
         self.meeting = Meeting(
-            id=meeting_id, title="Planificación · ejemplo sintético",
-            started_at="2026-11-05T12:00:00+00:00", duration_ms=60000,
-            status=MeetingStatus.COMPLETED, active_revision_id=revision_id,
+            id=meeting_id,
+            title="Planificación · ejemplo sintético",
+            started_at="2026-11-05T12:00:00+00:00",
+            duration_ms=60000,
+            status=MeetingStatus.COMPLETED,
+            active_revision_id=revision_id,
         )
         self.revision = TranscriptRevision(
-            id=revision_id, meeting_id=meeting_id, revision_number=1,
+            id=revision_id,
+            meeting_id=meeting_id,
+            revision_number=1,
             raw_text="Revisamos el plan y los próximos pasos del ejemplo.",
-            provider="synthetic", model="synthetic", origin="preview", content_hash="a" * 64,
+            provider="synthetic",
+            model="synthetic",
+            origin="preview",
+            content_hash="a" * 64,
         )
         self.segment = Segment(
-            id="00000000-0000-0000-0000-000000000103", revision_id=revision_id,
-            ordinal=0, text=self.revision.raw_text,
+            id="00000000-0000-0000-0000-000000000103",
+            revision_id=revision_id,
+            ordinal=0,
+            text=self.revision.raw_text,
         )
 
     def list_meetings(self, query):
@@ -197,11 +207,18 @@ class FakeLibraryBackend:
         text = f"{self.meeting.title} {self.segment.text}".casefold()
         if not all(token.casefold() in text for token in query.text.split()):
             return SearchPage()
-        return SearchPage(items=(SearchHit(
-            meeting_id=self.meeting.id, revision_id=self.revision.id,
-            segment_id=self.segment.id, snippet=self.segment.text,
-            title=self.meeting.title, started_at=self.meeting.started_at,
-        ),))
+        return SearchPage(
+            items=(
+                SearchHit(
+                    meeting_id=self.meeting.id,
+                    revision_id=self.revision.id,
+                    segment_id=self.segment.id,
+                    snippet=self.segment.text,
+                    title=self.meeting.title,
+                    started_at=self.meeting.started_at,
+                ),
+            )
+        )
 
     def get_meeting(self, meeting_id):
         if meeting_id != self.meeting.id:

@@ -298,7 +298,9 @@ class MainWindow(QMainWindow):
                 text += f" · {item.error_summary}"
             self._recovery_selector.addItem(text, item)
         self._recovery_label.setText(
-            str(error) if error is not None else (
+            str(error)
+            if error is not None
+            else (
                 "Sesiones recuperables"
                 if candidates
                 else "No hay sesiones pendientes de recuperación."

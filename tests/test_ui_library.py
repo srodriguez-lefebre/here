@@ -154,8 +154,7 @@ def _named(view, widget_type, pattern):
     matches = [
         widget
         for widget in view.findChildren(widget_type)
-        if widget.isVisibleTo(view)
-        and re.search(pattern, widget.accessibleName(), re.IGNORECASE)
+        if widget.isVisibleTo(view) and re.search(pattern, widget.accessibleName(), re.IGNORECASE)
     ]
     assert len(matches) == 1, f"Expected one accessible {widget_type.__name__}: {pattern}"
     return matches[0]
@@ -616,9 +615,7 @@ def test_library_controls_have_accessible_names_and_readable_contrast(library, d
             if isinstance(control, QPushButton)
             else control.backgroundRole()
         )
-        values = sorted(
-            (_luminance(actual.color(role)), _luminance(actual.color(background_role)))
-        )
+        values = sorted((_luminance(actual.color(role)), _luminance(actual.color(background_role))))
         assert (values[1] + 0.05) / (values[0] + 0.05) >= 4.5
 
 
@@ -836,9 +833,7 @@ def test_open_detail_controls_have_accessible_names_and_contrast(library, qtbot,
             if isinstance(control, QPushButton)
             else control.backgroundRole()
         )
-        values = sorted(
-            (_luminance(actual.color(role)), _luminance(actual.color(background_role)))
-        )
+        values = sorted((_luminance(actual.color(role)), _luminance(actual.color(background_role))))
         assert (values[1] + 0.05) / (values[0] + 0.05) >= 4.5
 
 
@@ -947,8 +942,7 @@ def test_no_matches_clear_action_resets_text_status_participant_and_restores_lis
     search.setText("missing")
     qtbot.waitUntil(
         lambda: any(
-            kind == "search" and query.text == "missing"
-            for kind, query, _ in controller.calls
+            kind == "search" and query.text == "missing" for kind, query, _ in controller.calls
         )
     )
     qtbot.waitUntil(lambda: not desktop.jobs.busy)
@@ -1113,7 +1107,8 @@ def test_real_r48_scoped_assignments_control_visible_speakers_and_passive_segmen
     assert [target.revision_id for target in targets] == [revision.id, revision.id]
     assert [target.segment_id for target in targets] == [segment.id for segment in segments]
     assert [target.text for target in targets] == [
-        "FIRST_REQUEST_ORIGINAL", "SECOND_REQUEST_ORIGINAL"
+        "FIRST_REQUEST_ORIGINAL",
+        "SECOND_REQUEST_ORIGINAL",
     ]
     assert [(target.start_ms, target.end_ms, target.timing_source) for target in targets] == [
         (0, 1000, "provider"),

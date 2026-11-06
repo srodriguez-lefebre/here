@@ -138,9 +138,7 @@ def test_library_tab_is_next_to_capture_without_removing_capture_actions(
     capture = desktop.main_window.findChild(object, "startButton")
     assert capture is not None
     capture_tab = [
-        index
-        for index in range(tabs[0].count())
-        if tabs[0].widget(index).isAncestorOf(capture)
+        index for index in range(tabs[0].count()) if tabs[0].widget(index).isAncestorOf(capture)
     ]
     assert len(capture_tab) == 1
     assert abs(capture_tab[0] - library[0]) == 1

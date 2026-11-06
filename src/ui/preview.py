@@ -16,8 +16,10 @@ def main() -> int:
     desktop = HereDesktop(
         application,
         ApplicationUiAdapter(
-            FakeApplicationController(), Path.cwd() / "transcriptions",
-            memory_service=library, search_service=library,
+            FakeApplicationController(),
+            Path.cwd() / "transcriptions",
+            memory_service=library,
+            search_service=library,
         ),
     )
     desktop.show()
