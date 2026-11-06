@@ -90,6 +90,16 @@ service annotation is `SearchPage | MeetingPage`. It never issues an empty `MATC
 or fabricates a hit or segment for a meeting without a revision. The UI continues
 to send empty text directly through `MeetingQuery`, retaining the existing
 complete/partial visibility and listing keyset continuity.
+Ruling 48 fixes the B4 read handoff consumed by the library: `get_meeting(id)`
+returns the canonical `MeetingDetail`, including trailing immutable `participants`,
+`participant_links` and `speaker_assignments` tuples;
+`list_participants(meeting_id=None)` returns canonical participant IDs and names for
+the selector. B owns the link and assignment DTOs and these backend reads. The
+application controller exposes the same injected `MemoryService` through a
+read-only `memory_service` property, so the UI adapter preserves custom data roots.
+These declared contracts still need their real accepted B implementation and R42
+integration; UI fakes do not accept the backend. Widgets never query SQL,
+reconstruct participant relations or infer human identity from speaker labels.
 Consume accepted A identities and nullable source dates without inventing missing
 dates or speakers. Ruling 31's ordered `revision_audio_assets` association remains
 the source for a revision's evidence audio; a cumulative meeting asset inventory

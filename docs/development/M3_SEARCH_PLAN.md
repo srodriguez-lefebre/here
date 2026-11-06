@@ -255,11 +255,18 @@ operations), `src/ui/fake_controller.py`, `src/ui/preview.py`; tests in
 
 **Interfaces:** `LibraryView(QWidget)` with signals `meeting_selected(meeting_id)`,
 `segment_selected(CitationTarget)`; `VisualController` gains `list_meetings`,
-`search`, `get_meeting`, `update_meeting`; `BackgroundJobs.submit` is reused with a
+`search`, `get_meeting`, `update_meeting`, `list_participants`;
+`BackgroundJobs.submit` is reused with a
 `request_id` and a `kind` per query type; the fake controller serves synthetic pages
 so the preview runs without a database.
 The real `update_meeting` adapter/title editor depends on accepted M2 B task 4;
 root reserves any common UI/contract file against B's concurrent GUI integration.
+Ruling 48 pins B4's `get_meeting`/`list_participants` read contracts, the canonical
+detail's participant/link/assignment tuples, and read-only
+`ApplicationController.memory_service` access to the same injected backend. Bind
+the real adapter to that accepted handoff; no UI SQL, competing detail DTO or
+inferred speaker identity. Unit widget fakes exercise rendering/request transport
+only and cannot close B4/B5 integration or suppression acceptance.
 
 - [ ] Write failing Qt tests: Biblioteca tab exists next to capture; typing five
   characters within 200 ms issues one query; an older delayed response is discarded;
