@@ -438,10 +438,31 @@ ran at7821,NOTlater08e15 or candidateaa3. See canonical capture report/measureme
 and immutable data bindings in JSON; no producer stream bulk is copied here.
 
 Candidateharness94e1+dataaa3/source04f3 is assembled only in SAMEGREEN,not primary.
-Candidate byte/digest/error/cursor equivalence NOT_RUN; format-only hygiene is
-preparation. SAME Task1 scoped review initiated,no verdict or completeTask1approval.
+At that capture/assembly stage candidate equivalence was NOT_RUN; hygiene was
+preparation and same Task1 scoped review had no verdict; later actual comparison
+and bounded approval follow below,without completeTask1approval.
 CapturePASS is measurement,not comparison,semanticRED or performance.34records
 preserve ALL33prior/preview3/types/criteria; historical902.413285>500 staysFAILED.
+
+### R61 measured-v2 comparison — bounded functional approval, p95 NOT_RUN
+
+Actual isolated GREEN2e69/source04f3/tests1ebd/config7143 passed source+harness
+Ruffcheck/format-check without writes,then9collected/1capture explicitly DESELECTED/
+8selected PASSED,0F/E/S,1.96s/XML8internal1.912,exit0. Seven complete measured-v2
+byte/digest/error/factory vectors and the eighth realoldcursor/freshconn/SECOND
+no-op/5IDs/namedlist-detail control pass against unchanged11E2 data. First equality
+pass is CONTROL,not RED;capture deselection is not a hidden skip or recapture.
+ALL84raw/Git+interpreter invariant,declared CRLF/LF harness differences preserved.
+GLOBAL RELEASE immediately after a82f31exit0 preceded all postchecks/analysis.
+See `r61-row-controls-1-report.md` and measured artifacts pinned in JSON.
+
+SAME Task1 FINALboundedSPEC/functional/control-quality APPROVED,noC/I/Minor or
+STOPfinding,at this isolatedmatrix;completeTask1/M3 NOTAPPROVED. Primaryb560/
+source12774 stayed clean;no R61 integration or combinedR58/R61 result. Original
+p95 package93A5/0295 is READY/NOT_RUN,no grant/hostreservation,unchanged5warmups/
+40samples/500ms. Historical902.413285>500 remains FAILED;no speedup or p95 pass.
+35pytestrecords preserve ALL34prior/preview/types/literalcriteria/tasks/Closing/M3B.
+R52 controls are preparation only,with handoff pending;no future result included.
 
 ## Intent
 
