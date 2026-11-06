@@ -54,7 +54,9 @@ ancestro; hoy contienen el trabajo detallado debajo. No recrearlos ni reiniciarl
 Proyecto `local-e307e59e09194b354122137b16ef6d77`, host `local`; raíz original
 `C:/Users/savar/Documents/proyects/here` preservada. Root orquesta desde
 `C:/Users/savar/.codex/worktrees/m2-catalog/here`, rama
-`codex/m2b-m3a-orchestration`, con base73d3cb3.
+`codex/m3-library-contracts`, con base de contratos73d3cb3 y mainc4d79b2 integrado.
+La rama anterior `codex/m2b-m3a-orchestration` preserva sus checkpoints hasta883e3cd.
+Esta rama prepara el PR documental de contratos de M3 B; no inicia su implementación.
 
 | Frente / responsable ejecutor | Chat ID | Rama | Worktree | Base |
 |---|---|---|---|---|
@@ -81,15 +83,23 @@ Hasta esa transferencia no hay otro writer. Processing continúa sin concesión.
 Cualquier handoff adicional se concede explícitamente. Migraciones/pyproject/uv.lock/versiones
 siguen seriales y requieren permiso de root. Global docs son root-only.
 
-Runtime del checkpoint: M3 posee ventana EXCLUSIVA para higiene del nuevo test,
-controles R55, regresión de query/guard/fachada/escala y, solo si todo pasa,
-query benchmark40 nuevo sobre fuente R55; no UIobserver todavía. B liberó full1
+Runtime del checkpoint: B posee ventana EXCLUSIVA para RED W1 (nuevo archivo4
+casos v1), tras el release completo M3. W2/W3 tienen briefs y autores RED nuevos
+en worktrees separados, solo preparación; publicar sus IDs/rutas al crearlos.
+M3 terminó10 controles R55 y240 de regresión, sin fallos; benchmark40 válido
+p95=902,413285ms FALLA500. Prepara perfil residual2 y observer sin ejecutarlos.
+B liberó full1
 con1F/310P/110,55s, detenido25% por -x: el override global TRANSCRIPTIONS_DIR del
 runner interfirió con test_config_paths. No editar producto/test para ese fallo;
 corregir runner después de conservar intento. Mypy fresco B4→624 válido/estable:
 65 módulos,79→79 errores/115→115 diagnósticos, multiset delta vacío, NO type-clean.
-Review Task5 además investiga reanudación de borrado v1 con WAV no estándar;
-informe/RED pendientes, sin sourcefix durante la corrida. El lote v2 sobre
+Review whole Task5 CHANGES REQUESTED, Critical0/Important3: W1/P2 pierde la prueba
+del WAV v1 durante purge; W2/P1 puede completar con staging publicado identificado
+todavía presente; W3/P2 discovery de journal nativo omite supresión antes de audio/
+candidato. Root leyó informe completo y acepta los tres como defectos del contrato
+existente. RED independientes primero; service.py conserva GREEN principal para
+W1/W2. Recovery.py podrá transferirse exclusivamente a otro GREEN tras RED W3,
+pero esa transferencia aún no está activada. El lote v2 sobre
 624be55 terminó sin fallos: native31P/4skips, CORECOMPAT-A98P/5skips,
 CORECOMPAT-B47P, SERVICE-FULL13P y guard/privacy20P. Son cinco corridas separadas,
 no un full agregado. R54-R1 ADDRESSED/SPEC y calidad APPROVED por la misma review
@@ -171,8 +181,8 @@ por dot/case no protegía el staging. Nuevo RED real4F/3,31s; el primer intento
 testsc0a23fdec146fdeb9eeb1eb6d5ffe6e1d1672d0b: GREEN9/5,49s/XML5,422, controles
 completos de bytes, owner, row/outcome y orphan genuino. Misma re-review acotada
 R54-R1 ADDRESSED/SPEC y calidad APPROVED, sin nuevos hallazgos; los cinco XML v2
-confirman el lote amplio anterior sin fallos/errores. Full/tipos frescos sobre este
-source no tienen un full verde. Review whole Task5/grupo y docs distintos en
+confirman el lote amplio anterior sin fallos/errores. Los tipos frescos no agregan
+diagnósticos; el full de esta fuente todavía no pasó. Review whole Task5/grupo y docs distintos en
 curso; hallazgo v1 y el fallo de runner se registran por separado.
 No transferir R52 ni cerrar Task5. Warning Ruff heredado queda para root/config
 serial. Cero writer UI B.
@@ -217,9 +227,12 @@ y límites. Perfil causal completado exit0/4,605s: control público1266,9802ms,
 perfil1878,714ms, generación1549,1202ms con199918 dumps; overhead material, no p95.
 DB/registro y79 archivos invariantes. R55 registra encoding completo por lotes256;
 fuente preparada e783255ca23b4da6288f3ac45bf61bc01f08085a, search.py14+/3-,
-src e198e954658eefa15222476adfdfc06db797b8a8, integrado en4cbc7f3, sin runtime/velocidad aprobada.
+src e198e954658eefa15222476adfdfc06db797b8a8, integrado en4cbc7f3, sin velocidad aprobada.
 Nuevo control público independiente99fb803, integrado enb9f16b02740fb436c9ff69d7db21e2b90fe70568,
-tests04249753f743b7835cfcdcfb2cfde072e90d3027 antes de higiene; no corrida aún.
+tests04249753f743b7835cfcdcfb2cfde072e90d3027 antes de higiene. Controles10P/4,79s y
+regresión240P/46,02s sobre R55; query nuevo40 muestras válidas falla p95
+902,413285ms, XML51,151s, setup11,5409553s separado. `guarded-query-perf-r55-1.xml`
+conserva todas las muestras; no es un pass por mejorar el resultado anterior.
 Mismos RED/reviewer cubren cambios públicos de corpus más allá del primer lote;
 sin test espejo de codec ni caché. Timeline Busy pendiente. No relajar budgets,
 corpus, guards o flujo. Todo sigue en evidencia automática
@@ -394,9 +407,9 @@ no provee selección meeting_ids ni OR del retrieval M4: handoff interno pendien
 sin asumir MemoryService.search, SQL directo de intelligence o filtro post-LIMIT.
 Root resolverá ese contrato; no es bloqueo humano ni aceptación de un adapter.
 
-No hay bloqueo humano actual. Próximo: clasificación/review/RED del hallazgo v1 B
-y runner full corregido; controles/regresión/p95 nuevo sobre M3 y timeline Busy
-antes de su corrección. Alternar host tras release confirmado.
+No hay bloqueo humano actual. Próximo: RED W1/W2/W3 y correcciones/re-review B;
+perfil residual R55 y timeline Busy M3 antes de otra optimización; PR documental
+de contratos M3 B antes de habilitar ese frente. Alternar host tras release confirmado.
 Consultar ledgers antes de rotar
 host o asignar archivos; los planes/fixtures/reviews ya preparados no se reinician.
 Reanudar desde estos IDs/reportes sin recrear los chats ni repetir el catálogo A.
