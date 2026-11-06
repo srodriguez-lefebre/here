@@ -1,8 +1,9 @@
 """M3 library behavior through the real desktop and real BackgroundJobs.
 
-Only the controller is synthetic. Canonical DTOs are resolved in fixtures so a
-missing feature produces an explanatory test failure, rather than aborting
-collection of unrelated lifecycle tests. These tests have NOT yet been run RED.
+Independent widget tests use synthetic controller operations; R48 consumer tests
+use real SQLite, services, controller and adapter. Canonical DTOs are resolved in
+fixtures so missing features fail meaningfully without aborting collection.
+Runtime evidence is recorded separately from this test preparation.
 """
 
 from __future__ import annotations
@@ -946,3 +947,164 @@ def test_no_matches_clear_action_resets_text_status_participant_and_restores_lis
     assert status.currentIndex() == default_status
     assert participant.currentIndex() == default_participant
     assert "No hay coincidencias" not in _text(view)
+
+
+@pytest.fixture
+def real_catalog_library(tmp_path, monkeypatch, qtbot, qapp):
+    """Real R48 reads over one disposable catalog; no service/adapter read doubles."""
+    library_type = _feature("here.ui.library", "LibraryView")
+    open_library = _feature("here.memory.database", "open_library")
+    migrate = _feature("here.memory.database", "migrate")
+    repository_type = _feature("here.memory.repository", "MemoryRepository")
+    revision_type = _feature("here.memory.models", "TranscriptRevision")
+    segment_type = _feature("here.memory.models", "Segment")
+    participant_type = _feature("here.memory.models", "Participant")
+    link_type = _feature("here.memory.models", "MeetingParticipant")
+    assignment_type = _feature("here.memory.models", "SpeakerAssignment")
+    custom_root, default_root = tmp_path / "injected-catalog", tmp_path / "unused-default"
+    default_root.mkdir()
+    monkeypatch.setenv("HERE_DATA_DIR", str(default_root))
+    meeting = _meeting(title="REAL_R48_CUSTOM_ROOT_MEETING")
+    revision = revision_type(
+        id="00000000-0000-0000-0000-000000000020",
+        meeting_id=meeting.id,
+        revision_number=1,
+        raw_text="FIRST_REQUEST_ORIGINAL\nSECOND_REQUEST_ORIGINAL",
+        provider="synthetic",
+        model="synthetic",
+        origin="synthetic-sql-fixture",
+        content_hash="e" * 64,
+    )
+    segments = (
+        segment_type(
+            id="00000000-0000-0000-0000-000000000021",
+            revision_id=revision.id,
+            ordinal=0,
+            text="FIRST_REQUEST_ORIGINAL",
+            start_ms=0,
+            end_ms=1000,
+            timing_source="provider",
+            speaker_key='["request:one", "speaker_0"]',
+        ),
+        segment_type(
+            id="00000000-0000-0000-0000-000000000022",
+            revision_id=revision.id,
+            ordinal=1,
+            text="SECOND_REQUEST_ORIGINAL",
+            timing_source="absent",
+            speaker_key='["request:two", "speaker_0"]',
+        ),
+    )
+    participants = (
+        participant_type("00000000-0000-0000-0000-000000000023", "Alice R48 Explicit"),
+        participant_type("00000000-0000-0000-0000-000000000024", "Bob R48 Roster Only"),
+    )
+    assignment = assignment_type(
+        meeting.id, revision.id, segments[0].speaker_key, participants[0].id
+    )
+    library = open_library(custom_root)
+    try:
+        migrate(library)
+        repository = repository_type(library)
+        with repository.transaction():
+            repository.insert_meeting(meeting)
+            repository.insert_revision(revision)
+            repository.insert_segments(segments)
+            repository.activate_revision(meeting.id, revision.id)
+            for participant in participants:
+                link = link_type(meeting.id, participant.id)
+                library.execute(
+                    "INSERT INTO participants(id,display_name) VALUES (?,?)",
+                    (participant.id, participant.display_name),
+                )
+                library.execute(
+                    "INSERT INTO meeting_participants(meeting_id,participant_id,role) "
+                    "VALUES (?,?,?)",
+                    (link.meeting_id, link.participant_id, link.role),
+                )
+            library.execute(
+                "INSERT INTO speaker_assignments"
+                "(meeting_id,revision_id,speaker_key,participant_id) VALUES (?,?,?,?)",
+                (
+                    assignment.meeting_id,
+                    assignment.revision_id,
+                    assignment.speaker_key,
+                    assignment.participant_id,
+                ),
+            )
+    finally:
+        library.close()
+    memory = _feature("here.memory.service", "MemoryService")(custom_root)
+    controller = _feature("here.application", "HereApplicationController")(memory_service=memory)
+    # No memory_service/search_service override: exercise the real same-instance
+    # getter and the adapter's own query/read routing from the injected controller.
+    adapter = ApplicationUiAdapter(controller, tmp_path / "empty-sessions")
+    settings = QSettings(str(tmp_path / "real-catalog.ini"), QSettings.Format.IniFormat)
+    desktop = HereDesktop(qapp, adapter, settings=settings)
+    desktop.show()
+    tabs = desktop.main_window.findChildren(QTabWidget)
+    assert len(tabs) == 1
+    indexes = [index for index in range(tabs[0].count()) if tabs[0].tabText(index) == "Biblioteca"]
+    assert len(indexes) == 1
+    tabs[0].setCurrentIndex(indexes[0])
+    view = desktop.main_window.findChild(library_type)
+    assert view is not None
+    qtbot.waitUntil(lambda: meeting.title in _text(view))
+    qtbot.waitUntil(lambda: not desktop.jobs.busy)
+    return desktop, view, meeting, revision, segments, participants, default_root
+
+
+def test_real_r48_custom_catalog_meeting_and_detail_participants_use_injected_backend(
+    real_catalog_library, qtbot
+):
+    desktop, view, meeting, _, segments, participants, default_root = real_catalog_library
+    assert meeting.title in _text(view)
+    selector = _named(view, QComboBox, r"participante")
+    _option_index(selector, r"Alice R48 Explicit")
+    _option_index(selector, r"Bob R48 Roster Only")
+    assert participants[1].display_name not in _text(view)
+    _select_first_meeting(view, qtbot)
+    qtbot.waitUntil(lambda: segments[0].text in _text(view))
+    qtbot.waitUntil(lambda: not desktop.jobs.busy)
+    assert participants[0].display_name in _text(view)
+    # Bob has no speaker assignment: his name proves detail participants are
+    # consumed, rather than passing through a mapped transcript speaker alone.
+    assert participants[1].display_name in _text(view)
+    assert not (default_root / "library.sqlite3").exists()
+
+
+def test_real_r48_scoped_assignments_control_visible_speakers_and_passive_segment_targets(
+    real_catalog_library, qtbot
+):
+    desktop, view, meeting, revision, segments, participants, default_root = real_catalog_library
+    target_type = _feature("here.memory.models", "CitationTarget")
+    targets = []
+    view.segment_selected.connect(targets.append)
+    _select_first_meeting(view, qtbot)
+    qtbot.waitUntil(lambda: segments[1].text in _text(view))
+    qtbot.waitUntil(lambda: not desktop.jobs.busy)
+    transcript = _transcript(view)
+    model = transcript.model()
+    assert model.rowCount() == 2
+    assert participants[0].display_name in str(model.index(0, 0).data())
+    assert participants[0].display_name not in str(model.index(1, 0).data())
+    for row in (0, 1):
+        transcript.setCurrentIndex(model.index(row, 0))
+        transcript.setFocus()
+        qtbot.keyClick(transcript, Qt.Key.Key_Return)
+        qtbot.waitUntil(lambda: len(targets) == row + 1)
+    assert all(isinstance(target, target_type) for target in targets)
+    assert targets[0].speaker == "Alice R48 Explicit"
+    assert targets[1].speaker != "Alice R48 Explicit"
+    assert [target.meeting_id for target in targets] == [meeting.id, meeting.id]
+    assert [target.revision_id for target in targets] == [revision.id, revision.id]
+    assert [target.segment_id for target in targets] == [segment.id for segment in segments]
+    assert [target.text for target in targets] == [
+        "FIRST_REQUEST_ORIGINAL", "SECOND_REQUEST_ORIGINAL"
+    ]
+    assert [(target.start_ms, target.end_ms, target.timing_source) for target in targets] == [
+        (0, 1000, "provider"),
+        (None, None, "absent"),
+    ]
+    assert all(target.audio_path is None and target.status == "current" for target in targets)
+    assert not (default_root / "library.sqlite3").exists()
