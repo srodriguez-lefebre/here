@@ -100,8 +100,10 @@ sourceC20E/test814BF580, runner17F5E82D/freeze84B926A2,4P/11,55s y XML11,520,
 0F/0E/0S;71 pins sin delta. Reporte actual confirma sesión28939 y dos hijos cerrados,
 GLOBAL RELEASE antes de análisis. Root concedió ahora W3 PARCIAL exclusivo:
 WTb5-w3-red/here, source5926/C234, siete casos originales; runnerCBABF69E/bindingA939943C,
-151hashes/149tracked verificados por coordinador. Ventana iniciándose, NOT_RESULT;
-SOURCE COMPLETE/R62 siguen abiertos. No trasladar4P deC20E a5926/C234/R62.
+151hashes/149tracked verificados por coordinador. Terminó7P/11,33s, XML11,266,
+0F/0E/0S; GLOBAL RELEASE10689, sin timeout y procesos/pipes cerrados. Review W3
+acotada pendiente; SOURCE COMPLETE/R62 siguen abiertos. Host libre, sin otro grant.
+No trasladar4P deC20E a5926/C234/R62.
 W1 terminó con release completo:
 RED3F/1P/16,63s → GREEN4P/19,91s y regresión delete79P/5symlink skips/182,92s.
 Fuente42a29fbfaef83c30b895ed6e75af95562313623a, src01400e51c9ac19d66309aaa6bf91976a95c91992;
@@ -184,7 +186,7 @@ candidato. Root leyó informe completo y acepta los tres como defectos del contr
 existente. Sus continuaciones acotadas cerraron W1/W2 y aceptaron solo el reader
 R59; W3/C5 y handoff writer R62 siguen abiertos.
 service.py conserva GREEN principal para W2/R59; recovery.py ya está transferido
-al consumidor distinto, con preparación sin pase de integración. El lote v2 sobre
+al consumidor distinto, con W3 parcial7P sobre5926/C234 y R62 aún abierto. El lote v2 sobre
 624be55 terminó sin fallos: native31P/4skips, CORECOMPAT-A98P/5skips,
 CORECOMPAT-B47P, SERVICE-FULL13P y guard/privacy20P. Son cinco corridas separadas,
 no un full agregado. R54-R1 ADDRESSED/SPEC y calidad APPROVED por la misma review
@@ -497,7 +499,7 @@ Root resolverá ese contrato; no es bloqueo humano ni aceptación de un adapter.
 No hay bloqueo humano actual. Próximo: recibo de controles R60, RED writer
 R62 y productor/consumidor reales; regresiones/finaltypes/full2 B. R58 conserva su
 handoff aprobado; R61 mantiene p95 FALLIDO848,6798ms y próxima propuesta solo texto.
-R52 UI espera handoff aceptado. Grant W3 parcial activo, sin resultado todavía;
+R52 UI espera handoff aceptado. W3 parcial7P liberó10689; review acotada pendiente;
 R57 sigue siendo diagnóstico, no aceptación.
 PR documental24 ya mergeado; M3 B todavía espera GO y handoffs reales.
 Alternar host tras release confirmado.

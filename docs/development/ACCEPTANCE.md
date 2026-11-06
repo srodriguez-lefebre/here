@@ -46,6 +46,7 @@ bytes del productor ejecutado. No se atribuye GREEN al test originalAC636.
 |---|---|---|
 | task-5-r59-producer-green-2 ·20261106 | 40 pasan/0F/0E/0S/13,85s; XML40/interno13,818s; exit0 | Archivo completo del reader/módulo/delegación, aliases/legacy, errores exactos del caller, Busy/recursos y contender real de exclusión; no consumidor W3 ni handoff writer |
 | task-5-r60-scope-controls-1 ·20261106 | 4 pasan/11,55s; XML4/0F/0E/0S/interno11,520s; exit0 | WTm2-native-owner-red, sourceC20E/test814BF580;71 pins/0mismatches y release28939. Foreign SQL, unknown sin SQL, complete+unknown nuevo y pre-barrier sin rechazo global; controles de primer pase, no RED inventado ni resultado sobre5926 |
+| task-5-r59-w3-partial-1 ·20261106 | 7 pasan/11,33s; XML7/0F/0E/0S/interno11,266s; exit0 | WT b5-w3-red, source5926/C234, siete casos originales W3/C5; GLOBAL RELEASE10689, sin timeout. Review acotada pendiente y writer R62 abierto; no SOURCE COMPLETE ni aceptación del consumidor completo |
 
 El apéndice vigente de `task-5-r59-producer-review-report.md` declara productor
 R59 SPEC/calidad APPROVED con GREEN2 y0 hallazgos nuevos; sucede a su encabezado
