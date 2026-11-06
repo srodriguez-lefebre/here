@@ -154,15 +154,29 @@ def test_held_owner_skips_status_and_prepared_operation_then_residual_file_allow
         report = memory.reconcile()
         assert _rows(root, "SELECT status FROM meetings") == [("processing",)]
         assert _rows(root, "SELECT phase FROM pending_operations") == [("prepared",)]
+        assert _rows(
+            root, "SELECT kind,phase FROM pending_operations WHERE id=?", (operation_id,)
+        ) == [("publish_revision", "prepared")]
         _outcome(report, "skipped", MEETING_ID)
     finally:
         lease.close()
     assert owner_path.is_file()  # An unlocked file is deliberately left behind.
     report = memory.reconcile()
     assert _rows(root, "SELECT status FROM meetings") == [("interrupted",)]
-    assert _rows(root, "SELECT phase FROM pending_operations") == [("complete",)]
+    assert _rows(root, "SELECT phase FROM pending_operations WHERE id=?", (operation_id,)) == [
+        ("complete",)
+    ]
     _outcome(report, "completed", operation_id)
     _outcome(report, "marked", MEETING_ID)
+    (state_operation,) = _rows(
+        root,
+        "SELECT id,phase FROM pending_operations WHERE meeting_id=? AND kind=?",
+        (MEETING_ID, "persist_state"),
+    )
+    state_operation_id, state_phase = state_operation
+    assert state_phase == "complete"
+    _outcome(report, "completed", state_operation_id)
+    assert _rows(root, "SELECT id FROM pending_operations WHERE phase=?", ("prepared",)) == []
 
 
 def test_unsafe_owner_path_is_skipped_without_treating_work_as_stale(tmp_path):
@@ -511,8 +525,7 @@ def test_r1_committed_terminal_state_repairs_snapshot_before_catalog_loss(
         "payload",
     )
     event_query = (
-        f"SELECT {','.join(event_columns)} FROM lifecycle_events "
-        "WHERE meeting_id=? ORDER BY id"
+        f"SELECT {','.join(event_columns)} FROM lifecycle_events WHERE meeting_id=? ORDER BY id"
     )
     meeting_query = (
         "SELECT status,row_version,active_revision_id,updated_at FROM meetings WHERE id=?"
@@ -585,7 +598,8 @@ def test_r1_committed_terminal_state_repairs_snapshot_before_catalog_loss(
             snapshot["meeting"]["row_version"],
             snapshot["meeting"]["active_revision_id"],
             snapshot["meeting"]["updated_at"],
-        ) == fault_snapshot["meeting"]
+        )
+        == fault_snapshot["meeting"]
     ]
     assert repaired_snapshots, (
         "Healthy reconciliation missed the committed terminal snapshot repair",
@@ -597,7 +611,8 @@ def test_r1_committed_terminal_state_repairs_snapshot_before_catalog_loss(
         sorted(
             tuple(event[column] for column in event_columns)
             for event in snapshot["lifecycle_events"]
-        ) == fault_snapshot["events"]
+        )
+        == fault_snapshot["events"]
         for snapshot in repaired_snapshots
     ), "Snapshot repair must preserve original event IDs, occurrence times and payloads"
     assert pending_before_repair and all(phase == "prepared" for _, phase in pending_before_repair)
@@ -673,15 +688,21 @@ def test_r1_status_only_processor_reports_committed_outcome_with_pending_snapsho
         marker = source.directory / "memory_pending.json"
         pending = read_pending_intent(source.directory, MEETING_ID)
         assert (pending.intent, pending.revision_of, pending.publication_id) == (
-            "status", parent_revision, publication_id,
+            "status",
+            parent_revision,
+            publication_id,
         )
         assert pending.source_kind == "session"
         event_columns = (
-            "id", "meeting_id", "kind", "occurred_at", "recorded_duration_ms", "payload"
+            "id",
+            "meeting_id",
+            "kind",
+            "occurred_at",
+            "recorded_duration_ms",
+            "payload",
         )
         event_query = (
-            f"SELECT {','.join(event_columns)} FROM lifecycle_events "
-            "WHERE meeting_id=? ORDER BY id"
+            f"SELECT {','.join(event_columns)} FROM lifecycle_events WHERE meeting_id=? ORDER BY id"
         )
         meeting_query = (
             "SELECT status,row_version,active_revision_id,updated_at FROM meetings WHERE id=?"
@@ -748,11 +769,13 @@ def test_r1_status_only_processor_reports_committed_outcome_with_pending_snapsho
             snapshot["meeting"]["row_version"],
             snapshot["meeting"]["active_revision_id"],
             snapshot["meeting"]["updated_at"],
-        ) == committed["meeting"]
+        )
+        == committed["meeting"]
         and sorted(
             tuple(event[column] for column in event_columns)
             for event in snapshot["lifecycle_events"]
-        ) == committed["events"]
+        )
+        == committed["events"]
         for snapshot in snapshots
     ), "Local journal recovery must retain the original committed outcome and exact event"
     memory.reconcile()
