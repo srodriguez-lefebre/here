@@ -418,12 +418,30 @@ pinned measurements/logs/XML/exits. Primary24fd/source12774 remains unchanged;
 these are not combined R58/R61 or primary invocations. R57marker/DB unchanged.
 
 These existing green contracts remain controls, not semantic RED or an oracle.
-Baseline v2 byte/digest/error/cursor goldens NOT_CAPTURED; candidate equivalence
-NOT_RUN. Genuine capture package is READY/NOT_RUN,static command/hash correction
+At that existing-control checkpoint goldens were NOT_CAPTURED; candidate
+equivalence NOT_RUN. Its genuine capture package was READY/NOT_RUN,static correction
 complete; its separate grant reserves no host. No R61 p95,
 byte compatibility,speedup,current full/types/UI or integration claim; historical
 valid40 p95902.413285>500 remains FAILED.33 separate pytest records preserve ALL31
 prior,entirepreview3/types and literal criteria/tasks/Closing/M3B unchanged.
+
+### R61 actual old-v2 capture — measured data, comparison still NOT_RUN
+
+Exactly one old-producer capture ran at7821/sourcee198/testsfd5c/config7143,
+harnessE78A:1P/1.78s,XML1/internal1.656s,0F/E/S,exit0. The record_property/xunit2
+warning remains. All83inputraw/Gitpins+interpreter invariant; soleNEWJSON measured
+388731bytes/raw11E2CF6B,Python3.13.15/SQLite3.53.1. Six actual producer streams+
+real digests and BLOBTypeError/prefixdigest,oldpubliccursor378chars/5IDs captured.
+GLOBAL RELEASE immediately preceded postchecks/analysis/Git. Root approved the
+measured data-only08e15freeze/blob657c;no regeneration/reformatting. The capture
+ran at7821,NOTlater08e15 or candidateaa3. See canonical capture report/measurements
+and immutable data bindings in JSON; no producer stream bulk is copied here.
+
+Candidateharness94e1+dataaa3/source04f3 is assembled only in SAMEGREEN,not primary.
+Candidate byte/digest/error/cursor equivalence NOT_RUN; format-only hygiene is
+preparation. SAME Task1 scoped review initiated,no verdict or completeTask1approval.
+CapturePASS is measurement,not comparison,semanticRED or performance.34records
+preserve ALL33prior/preview3/types/criteria; historical902.413285>500 staysFAILED.
 
 ## Intent
 

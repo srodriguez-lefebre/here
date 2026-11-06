@@ -995,6 +995,38 @@
       "report": "r61-existing-verification-report.md",
       "working_tree_changes": "NONE;exactisolatedworkerab837/source04f3/tests a2ac/config7143,all82raw/Gitbindings unchanged. NOTprimary24fd/source12774 or combinedR58/R61 invocation.",
       "scope": "Separateexisting240=140search+37fallback+51realguard+11facade+1scale PASS. No newequivalence node/benchmark/UI/full/mypy selected;historical902.413285>500 remainsFAILED. No combinedR58/R61 evidence."
+    },
+    {
+      "name": "M3A-R61-GENUINE-OLD-V2-ORACLE-CAPTURE",
+      "classification": "ACTUAL_OLD_V2_ORACLE_CAPTURE_ONLY_NOT_CANDIDATE_EQUIVALENCE",
+      "head": "7821d27a2831ec4686ce3db0f55540d962ecf99b",
+      "source_tree": "e198e954658eefa15222476adfdfc06db797b8a8",
+      "tests_tree": "fd5c5fd7cd077520b23928f9453bb1c0b5b264d5",
+      "config_blob": "7143d4deff5acb55e524baa5ee15c101bce9b3b5",
+      "workdir": "C:/Users/savar/.codex/worktrees/m3-search-red/here",
+      "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -m pytest -vv tests/test_memory_search_row_representation.py::test_capture_frozen_v2_oracles --junitxml=C:\\Users\\savar\\.codex\\worktrees\\2710\\here\\.superpowers\\sdd\\M3_SEARCH_PLAN/r61-baseline-capture-1.xml",
+      "exit_code": 0,
+      "collected": 1,
+      "selected": 1,
+      "passed": 1,
+      "failed": 0,
+      "setup_errors": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "duration_seconds": 1.78,
+      "xml_cases": 1,
+      "xml_internal_seconds": 1.656,
+      "log": "r61-baseline-capture-1.log",
+      "xml": "r61-baseline-capture-1.xml",
+      "bindings": "r61-baseline-capture-1-pre-bindings.json",
+      "post_bindings": "r61-baseline-capture-1-post-bindings.json",
+      "exits": "r61-baseline-capture-1-exit.json",
+      "log_sha256": "37430F1E95DD43904B30DF24629D3041B3E226C387C66013EB19B086EA5CC5B8",
+      "xml_sha256": "9A8D15851EF84F0ED20233BCABD4F5A66E05229344C31FE4608A54F2355776EE",
+      "report": "r61-baseline-capture-1-report.md",
+      "working_tree_changes": "ONLYexpectedNEWmeasuredoracleJSON output,all83inputs+interpreter/source/tests/config unchanged;actualold-v2HEAD7821,NOTlaterdatafreeze08e15/candidateaa3/primaryc951 invocation",
+      "warning": "record_property/xunit2warning retained,actualXMLproperties present;no configchange/rerun",
+      "scope": "Exactlyonegenuineproducer-streamcapture1P/0skip.6successfulstream+realdigest andactualBLOBTypeError/prefixdigest,oldpubliccursor378chars/5IDs measured. Capture is NOTcandidateequivalence,semanticRED,p95 or completeTask1 acceptance."
     }
   ],
   "lint_checkpoint": {
@@ -1053,7 +1085,7 @@
     "Real sole B reindex/page/partial/fallback/SECOND-noop evidence is complemented by actualR53 GREEN11 and bounded T1/T2 approvals atd8. Callback/composition checkpoint is approved; complete Task1/Task2/B5 and final integration/performance/type/full gates remain held.",
     "Accepted B496e8 producer integrated; actual current/stale title/version/evidence/FTS consumers and truthful UI types approved at D1/ed8. Historical44/no-new-mypy does not constitute fresh E3 or final B5-integrated acceptance.",
     "Implemented UI fixes, D1 types/title and bounded E3 display/preview checkpoints approved at their scopes. Final B5-integrated preview, broader layout/accessibility, complete Task2 and integrated verification/global/hosted gates remain pending.",
-    "Strict original8query50msgatePASS onlyauthor2b/source12774/context,SameT2boundedAPPROVED;page/page,title/read,crossview/externalowner remainoutside. Actual query valid40 p95902.413285ms FAILED versus unchanged <500ms budget;R61isolatedexistingcontrols10+regression240PASS,hygienePASS;bytecaptureNOT_CAPTURED/equivalenceNOT_RUN,notintegrated or performancepass/Bwait.",
+    "Strict original8query50msgatePASS onlyauthor2b/source12774/context,SameT2boundedAPPROVED;page/page,title/read,crossview/externalowner remainoutside. Actual query valid40 p95902.413285ms FAILED versus unchanged <500ms budget;R61isolatedexistingcontrols10+regression240PASS,hygienePASS;bytecaptureCAPTURED_REAL_APPROVED/equivalenceNOT_RUN,notintegrated or performancepass/Bwait.",
     "FreshR58UI44/heartbeat1 atworker2b andtwofilehygienePASS;source integrated38byGitblobequivalence,notfreshprimaryrun. Currentmypy/full/UIpreview/native/delete/global/hosted gatesremainheld;historicalR55/oldsourceproofs preserved.",
     "Complete same Task1 assessment and task docs/evidence; root global integration docs only when capacity ready; Task2 and later single global review.",
     "Received/responded current-head Copilot, exact-head Windows CI/package as required, PR and guarded root merge. No M3 hosted gate has started in this checkpoint."
@@ -1499,7 +1531,7 @@
     "query_blob": "f3033a16f83c093c2179bb3c3fb7d9cb0389fb37",
     "ui_contract_blob": "10b5665aeac6aad2da3731058dfe414f1b241c6b",
     "stage": "R58_BOUNDED_APPROVED_UI44_AND_STRICT50MS_PASS_QUERY_P95_FAILED",
-    "latest_source_evidence": "HistoricalR55functional/performance/observer/R57diagnostic bindings retained. Actualauthorclean2b/source12774/tests a2ac/config7143:UI44P16.36 thenoriginalUNINSTRUMENTED8query1P23.56,max8.9216ms/final50assertREACHED_PASS;SameT2FINALboundedAPPROVED/noCIM. Source mechanicallyintegrated38,ALL83Gitblobs equal,3declaredEOLrawdifferences,NOprimary38invocation/83rawidentity. Queryactualp95902FAILED;R61isolatedab837/source04f3hygiene+existing10/240PASS;bytecaptureNOT_CAPTURED/equivalenceNOT_RUN,notintegrated/combinedsourceorperformanceproof.",
+    "latest_source_evidence": "HistoricalR55functional/performance/observer/R57diagnostic bindings retained. Actualauthorclean2b/source12774/tests a2ac/config7143:UI44P16.36 thenoriginalUNINSTRUMENTED8query1P23.56,max8.9216ms/final50assertREACHED_PASS;SameT2FINALboundedAPPROVED/noCIM. Source mechanicallyintegrated38,ALL83Gitblobs equal,3declaredEOLrawdifferences,NOprimary38invocation/83rawidentity. Queryactualp95902FAILED;R61isolatedab837/source04f3hygiene+existing10/240PASS;bytecaptureCAPTURED_REAL_APPROVED/equivalenceNOT_RUN,notintegrated/combinedsourceorperformanceproof.",
     "task1_task2_group_milestone": "OPEN",
     "certified": false,
     "current_parent_test_only_head": "38cff90dba7bd2914e44491ec60e8cf58771a2f4",
@@ -2041,8 +2073,8 @@
     "report": "guarded-generation-r55-docs-checkpoint-report.md",
     "runtime": "NONE; root/B owns host",
     "no_M3B_regeneration": "Existing root M3B SPEC03207dd/PLAN9c177e5 remains owned by root; no duplicate preparation or start",
-    "recording_cutoff": "33pytestrecords=ALL31priorunchanged+isolatedR61existing10P+240P. Entirepreview3/types/criteriaretained; no oraclecapture/byteeq/p95/combinedprimarysource claim.",
-    "future_preparation": "Genuineold-v2producerstreamoraclecapturepackage READY/NOT_RUN,request476804/prepared83bindings5AAAF;baselinebytes/digest/error/cursorNOT_CAPTURED,candidateequivalenceNOT_RUN. R61notintegrated,no hostreservation/Bwait;staticcommand/hashcorrectioncomplete."
+    "recording_cutoff": "34pytestrecords=ALL33priorunchanged+oneactualold-v2oraclecapture1P1.78/XML1.656/0skip. Entirepreview3/types/criteria unchanged. CandidatebyteeqNOT_RUN,sourceR61notprimaryintegrated.",
+    "future_preparation": "Old-v2goldensCAPTURED_REAL/root-approved08e15datafreeze;SAMEGREENharness/dataassemblyaa3/source04f3comparisonNOT_RUN. Format-onlyhygienepreparation/scopedT1reviewongoing,not runtime/verdict. No futurecapture/comparison/p95result included."
   },
   "R53_facade_checkpoint": {
     "status": "BOUNDED_SPEC_QUALITY_APPROVED_WITH_ACTUAL_GREEN_AND_CURRENT_REGRESSION",
@@ -2399,7 +2431,7 @@
     "hygiene": "ONLYnewtestI001/formatinitialfindings retained; safeimportsort/layout finalcheck+formatPASS. SourceRuff/mypy/full/UI NOTRUN inthisgrant.",
     "release": "GLOBALRELEASEimmediatelyafterlastbenchmarkprocessBEFOREXML/metrics/analysis/reports/review/commit;all80raw/treeunchanged",
     "UI": "Later actual observer526 at cleanf9/e198/a2ac executed once1F,observational diagnostic only; uninstrumented heartbeat NOT_RUN. Old0beaBusyINCOMPLETE retained without retrocause.",
-    "next": "R55/R58anddiagnosticproofsretain separate scopes. R61isolatedab837 existing10+240+hygienePASS;bytecaptureNOT_CAPTURED/equivalenceNOT_RUN/notintegrated. No performance500 or combinedsourceacceptance."
+    "next": "R55/R58anddiagnosticproofsretain separate scopes. R61isolatedab837 existing10+240+hygienePASS;bytecaptureCAPTURED_REAL_APPROVED/equivalenceNOT_RUN/notintegrated. No performance500 or combinedsourceacceptance."
   },
   "guarded_query_cost_diagnostic": {
     "report": "guarded-query-cost-profile-report.md",
@@ -2521,19 +2553,19 @@
     "primary_integration": "Root-approved mechanical handback38cff90dba7bd2914e44491ec60e8cf58771a2f4,ONLYlibrary/bridge62additions,source12774/tests a2ac/config7143. ALL83Gitblobs match actualexecuted2b;primary/worker rawEOL-only differences models,library,search_fixtures declared/normalizedidentical. NO83rawidentity or invocationat38 claimed.",
     "independent_review": "SAME Task2 FINALboundedR58APPROVED at frozen2b,no confirmedCritical/Important/Minor; r58-ui-review-report.md. CompleteTask2/group/M3 remainopen,no priorreviewrestart.",
     "limits": "Bounded auxiliary(participants/detail)↔page only. Page↔page/title↔read/crossview/externalownership outside; genuine Busy/Retry intact. Strict50msgate passonlyTHISsource/context,no p95500/full/types/hardware/task/group approval.",
-    "query": "Historicalvalid40p95902.413285>500 remainsFAILED. IsolatedR61ab837 nowhygiene+existing10/240verified,byteoracleNOT_CAPTURED/equivalenceNOT_RUN/notintegrated;no combinedR58/R61 or optimized500claim.",
+    "query": "Historicalvalid40p95902.413285>500 remainsFAILED. IsolatedR61ab837 nowhygiene+existing10/240verified,byteoracleCAPTURED_REAL_APPROVED/equivalenceNOT_RUN/notintegrated;no combinedR58/R61 or optimized500claim.",
     "integration_bindings": "r58-ui-primary-integration-bindings.json",
     "integration_bindings_sha256": "D6FAED180A48BCD26B647FE41878BAFF915860FBD024CB4582E342AD25396127"
   },
   "R61_source_preparation": {
-    "status": "ISOLATED_SOURCE_EXISTING_CONTROLS_AND_REGRESSION_VERIFIED_BYTEEQ_NOT_RUN_NOT_INTEGRATED",
+    "status": "ISOLATED_EXISTING_CONTROLS_VERIFIED_BASELINE_CAPTURED_APPROVED_BYTEEQ_NOT_RUN",
     "commit": "ab837b987ff9ba759e8aae3dea14a1d89daaef33",
     "worktree": "C:/Users/savar/.codex/worktrees/m3-search-green/here",
     "source_tree": "04f3fd9802b378efc588df393d92e238915f203f",
     "query_blob": "9e7d8e0fb626fab8773f424e55544693bd3b7cb5",
     "report": "guarded-generation-optimization-proposal.md,R61sourcecheckpoint",
     "proposal_sha256": "A315A1CA0619C14463392D2B53F0CADB3F5B8DFDFA1836726465D59D46EA248C",
-    "scope": "Root-authorized two_generationedits only,2additions/1deletion;unchangedSQL/inputs/batch256/v2framing/snapshot. InitialsourcepreparationNOT_RUN was historical. Laterisolatedab837check+formatPASS/noedits;10existingcontrols+240regressionPASS. Baselinebyte/digest/error/cursorgoldensNOT_CAPTURED;candidateequivalence/performance/currentfull/typesNOT_RUN. No primaryintegration/combinedR58/R61/optimized500claim.",
+    "scope": "IsolatedR61source04f3existing10+240/hygieneverified. Genuineold-v2producerstreamoracleCAPTURED,root-approveddata-onlyfreeze08e15;candidateharness/dataassembledaa3/source04f3 butcomparisonNOT_RUN. No primaryintegration/combinedR58-R61/speedup/500/fullTask1approval.",
     "existing_verification": {
       "report": "r61-existing-verification-report.md",
       "report_sha256": "4328ABA3568EE9C464F2E6F7F366141C83E8939CF8EAAD4708F47613A37D4E47",
@@ -2546,12 +2578,36 @@
       "primary": "24fd/source12774unchangedCLEAN,notexecutioncontext",
       "R57": "READYmarker87796A/DB23A878 unchanged, no query/rebuild",
       "release": "Immediately after session20047 exit0, before analysis/postchecks/Git/docs",
-      "capture": "Genuinepinnedold-v2producerstreamoraclepackage READY/NOT_RUN;goldensNOT_CAPTURED,candidateequivalenceNOT_RUN. Command/hashstaticcorrectioncomplete,notbeingcorrected. Separate rootgrant required,nohostreservation.",
+      "capture": "Historical existing-run stage had NOT_CAPTURED goldens. Later actualold-v2capture1P produced root-approved measured data,see baseline_capture. CandidateequivalenceNOT_RUN;capture is not comparison or performance.",
       "runtime_scope": "ONLYfourgrantedcommands,no p95/UI/R57/mypy/full/build/uv",
       "capture_request": "r61-baseline-capture-request.md",
       "capture_request_sha256": "476804C3CA07A34DCAA6FB2B9CF3F454DCA1AB08BD7BA8B45A7483BC04AD22F6",
       "capture_prepared_bindings": "r61-baseline-capture-prepared-bindings.json",
       "capture_prepared_bindings_sha256": "5AAAFEA2473D704A80F0D2782732462018763101B81EC57431EF0001659B2545"
+    },
+    "baseline_capture": {
+      "status": "CAPTURED_REAL_ROOT_APPROVED_DATA_FROZEN_CANDIDATE_EQUIVALENCE_NOT_RUN",
+      "report": "r61-baseline-capture-1-report.md",
+      "measurements": "r61-baseline-capture-1-measurements.json",
+      "measurements_sha256": "4DEABF0FF80FB955867E420B95F20444E1F365EE583FC366117F6B3EC6D557E1",
+      "actual_head": "7821d27a2831ec4686ce3db0f55540d962ecf99b",
+      "actual_source": "e198e954658eefa15222476adfdfc06db797b8a8",
+      "actual_tests": "fd5c5fd7cd077520b23928f9453bb1c0b5b264d5",
+      "config": "7143d4deff5acb55e524baa5ee15c101bce9b3b5",
+      "harness_raw_sha256": "E78A9BF42485700F28D34F92001EAB8296D2E0EE003F6E3DD03AFCD848DC43CA",
+      "oracle_file": "tests/search_generation_v2_oracles.json",
+      "oracle_bytes": 388731,
+      "oracle_raw_sha256": "11E2CF6B75992CE2863FDC9E0F485A48BB1142FFE3C57707C89CFC046F671718",
+      "data_only_freeze": "08e15cd1345bf32844f1c1289b3ab4a9ed0d8cc0",
+      "oracle_blob": "657c7a5a42727d81efa24ea278ba71c152bcb967",
+      "runtime_provenance": "Python3.13.15/SQLite3.53.1,6successstreams/digests+BLOBTypeError/prefixdigest,actualoldcursor378chars/5IDs. All7streams nativeSHA rehashmatches;not copiedcodec/inventedgoldens.",
+      "input_invariance": "ALL83raw/Gitpins+interpreter unchanged;onlyexpectednewJSON,notregenerated/reformatted",
+      "release": "GLOBAL RELEASE immediately after command exit0 before this postcheck/analysis",
+      "candidate_assembly": "Harness mechanical94e1d6c plus dataaa3eb977ad7468c8d87c1e8b4b683f6978498105 in SAMEGREEN/source04f3/tests343d873653c3b4e8d9c5770c794569096de8fa06/config7143;NOT_RUN/notprimaryintegrated. SAME RED format-only hygiene preparation,not execution.",
+      "review": "Root inspected/approved measureddata. SAME Task1 scopedstable-sourcereview initiated,no verdict/wholeTask1approval inferred.",
+      "limits": "Actualinvocation7821,NOT08e15or aa3. Capture≠candidateequivalence/RED/performance. Historical902.413285>500 FAILED,broadergatesheld.",
+      "report_final_sha256": "2635F266AA8F1D4947AD34265BD71F6126BF49AED39C08C253B78C90CDBAB3F0",
+      "prior_docs_integration_binding": "r61-existing-docs-integration-bindings.json, SHA256D56A9F221B1CAB61C06C43C563352869E2F999B7FB0CBE235217E1E0BD6B8AB9 confirms precedingc951/33recordcutoff"
     }
   }
 }
