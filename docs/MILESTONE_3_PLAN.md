@@ -1,33 +1,52 @@
 # Hito 3 — Memoria navegable
 
-Estado: plan preparado el 2026-11-05. **No está en ejecución** (ruling 15). Arranca
-solo con una instrucción explícita del usuario, después de que M2 esté cerrado y
-mergeado. El diseño detallado está en
+Estado: autorizado por la instrucción explícita de ejecución M2–M5 (ruling 20),
+todavía sin iniciar. El ruling 35 permite M3 A en paralelo con M2 B después de
+cerrar y mergear M2 A y completar los PRs de contratos necesarios. Root crea
+entonces los dos chats con ramas/worktrees propios y registra la base real en
+STATUS; no se toma una revisión candidata como SHA de merge. El diseño está en
 [`development/PRODUCT_DESIGN.md`](development/PRODUCT_DESIGN.md), secciones 2, 3 y 5,
 que es decisión tomada (ruling 3). Este plan no lo repite: fija alcance, orden,
 criterios verificables y lo que queda fuera.
+
+Base de catálogo aceptada: M2 A, PR #21 mergeado en
+`53712c5beedafc2d40e2abf10c13362a1c3c9f78`, con Copilot recibido/respondido y
+CI Windows completo verde sobre su head revisado `8a498e2`. Este ajuste de
+contratos todavía debe pasar su propio PR y merge antes de crear los dos frentes.
+La evidencia de A es automática con datos sintéticos; no certifica M3 ni sus
+acciones que dependen de M2 B.
 
 ## Propósito
 
 Que una persona encuentre una reunión y el momento exacto que busca sin saber cómo
 está guardado nada. Listar, filtrar y buscar sobre la memoria de M2, abrir el detalle
 por segmentos, y volver al audio original en el instante correcto cuando el tiempo
-existe, o al texto cuando no. M3 se mide por si se encuentra lo que se busca; M2 ya se
-midió por integridad.
+existe, o al texto cuando no. M3 se mide por si se encuentra lo que se busca; M2 se
+mide por integridad.
 
 ## Qué deja M2 y qué falta
 
-Lo que M2 ya entrega y M3 consume tal cual:
+Lo que el catálogo de M2 A entrega y M3 consume después de su merge:
 
 - `library.sqlite3` con `meetings`, `transcript_revisions`, `segments` (con
   `start_ms`/`end_ms` nulos permitidos, `ordinal`, `timing_source`, `speaker_key`),
-  `participants`, `speaker_assignments`, `audio_assets` con hash y estado.
+  `participants`, `speaker_assignments`, `audio_assets` con hash y relación explícita
+  `revision_audio_assets` (schema 2). Las fechas de captura desconocidas siguen NULL.
 - El índice FTS5 sobre las revisiones activas completas, creado en el grupo A de M2,
-  sincronizado dentro de la transacción de publicación y purgado en el borrado.
-- `MemoryService.ingest_session`, `reconcile`, `delete_meeting`, `assign_speaker`,
-  `update_meeting` con `row_version`, y la CLI `here memory …`.
+  sincronizado dentro de la transacción de publicación. M2 B añade su mantenimiento
+  en edición, reindexado y borrado, sin un segundo escritor de índice en M3.
+- `MemoryService.ingest_session`, `show` y `reconcile`, con la CLI de catálogo
+  `here memory ingest|show|reconcile`.
 - Revisiones históricas legibles e identificadas como tales.
 - Todo operando sin `OPENAI_API_KEY`.
+
+Contratos que M2 B todavía debe implementar y aceptar antes de integrar sus
+acciones reales en M3: participantes/assignments y `update_meeting` con
+`row_version` (tarea 4), y `delete_meeting`/`reindex` y su CLI (tarea 5). La búsqueda
+de M3 A puede avanzar con el catálogo A mientras esos contratos se estabilizan;
+los fakes no cierran la integración de título o reindexado. Root serializa las
+ediciones compartidas en models/repository/database/service y los adaptadores,
+con un escritor por archivo y migraciones/versión en serie.
 
 Lo que falta y M3 construye:
 
@@ -87,7 +106,9 @@ Las cuatro tareas de `PRODUCT_DESIGN.md` §5 se reparten así:
 | B. Biblioteca, reproductor y CLI | 3 reproductor y salto a evidencia con target común · 4 comandos CLI y JSON estables | `M3_LIBRARY_SPEC.md`, `M3_LIBRARY_PLAN.md` | plan escrito, sin ejecutar |
 
 Orden obligatorio: A antes que B. B depende del target de cita y de los DTOs de
-búsqueda que A define.
+búsqueda que A define. El solapamiento autorizado con M2 B no cambia los criterios
+de aceptación de M3 ni permite cerrar M3 sin sus dependencias reales. R39 fija
+desempates y cursores con fechas NULL explícitas, sin inventar timestamps.
 
 ## Decisiones acordadas
 

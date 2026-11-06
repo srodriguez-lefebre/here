@@ -24,25 +24,20 @@ a warning. Invalid receipt envelopes no longer prevent valid neighbors rebuildin
 capture-failure cancellation is sealed before its first catalog publication while
 retaining the original error and audio.
 
-Integrated source `7bfd0cb` uses final pending markers version 3 with readers for
-versions 1/2; receipts remain version 3, compatible with version 2, and the DB
-stays at schema 2. The final group/recovery focus passes 26 tests; the earlier
-940-pass/seven-skip full is historical evidence for `8087e25`. Full 3 at `7bfd0cb`
-has eight failures/945 passes/seven skips from two capture-recovery test wrappers
-rejecting the additive precommit callback; both wheel smokes pass. The narrow
-fixture correction is integrated at `ef70f78`, preserving all crash assertions.
-Its 13-case focus passes; full 4 passes **953 tests/seven skips in 358.94s** with
-both wheel smokes, using the unchanged product wheel. Final scoped independent
-review APPROVED source, fixture and docs `8845877`; GR1–GR3/GD1/GD2 are addressed.
-Hosted gates remain pending. M2 is unreleased; version 0.2.0 stays current.
+The catalog group M2 A is now merged in PR21. Ordinary precommit callback errors
+restore earlier evidence, the controller/default processor share one catalog,
+and blocked completed publications stay visible without offering another
+transcription. Malformed pending markers and unavailable legacy ownership mappings
+also leave a bounded nonretryable warning while retaining original data and strict
+owner/path guards.
 
-PR #21 Copilot corrections now restore earlier evidence after ordinary precommit
-callback rejection, keep the controller/default processor on one catalog, and
-show blocked completed publication through the existing recovery warning without
-offering another transcription. Source `c3cdf08` passes eight new cases and the
-325-case affected focus (one symlink skip). Full 5 passes 961/seven skips in
-371.80s with both wheel smokes. Independent final scoped review remains pending;
-the full4/approval above retain their previous-source scope.
+Independent reviews and all five Copilot observation threads are complete.
+The final exact-head Windows suite passes980 tests/two wheel skips; the fresh
+installed wheel separately passes all four distribution checks, including both
+installed entry points. These are automatic synthetic checks, with no new
+hardware/provider/clean-install certification. M2 remains unreleased pending
+lifecycle/deletion and milestone acceptance; version0.2.0 stays current. Detailed
+runs, source hashes and historical failures remain in ACCEPTANCE/DELIVERY.
 
 ## 0.2.0 — Windows M1 delivery
 

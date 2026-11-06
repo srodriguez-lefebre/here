@@ -1,12 +1,14 @@
 # Hito 2 — Memoria estructurada
 
-Estado: **en ejecución desde el 2026-11-05**, por instrucción explícita del usuario
-(ruling 20, reemplaza ruling 15). Grupo actual A; el hito no está cerrado.
-Checkpoint actual de PR #21: fuente c3cdf08 integra correcciones R40/C1–C3 tras
-Copilot sobre 3394149. Ocho casos nuevos y foco 325/1skip pasan; full 5 pasa 961/7/
-371,80 s, ambos smokes wheel. Review independiente final del diff pendiente.
-La aprobación/full4/CI anteriores son históricos
-de la fuente previa; respuestas/nueva review Copilot/CI exacto/merge pendientes.
+Estado: **en ejecución desde el2026-11-05**, ruling20 reemplaza ruling15.
+Grupo A **cerrado y mergeado** por PR21, merge53712c5beedafc2d40e2abf10c13362a1c3c9f78
+el2026-11-06T03:22:06Z; M2 sigue abierto hasta B/cierre del hito. Nivel: implementado
+y verificado automáticamente, sin certificación nueva de hardware/proveedor/instalación.
+Head8a498e207812592ff84a0acc5ba4e9f392e02373: review independiente APPROVED;
+Copilot5795325438 recibido sin issues abiertos/cinco hilos respondidos y resueltos;
+suite Windows980/2 skips wheel/307,46 s (run42155415514) y package42155415501 success.
+Merge guardado y ledger en DELIVERY. Wheel fresco exacto cubre aparte distribución4/
+7,51 s, incluidos los dos smokes omitidos en CI. Versión0.2.0;0.3.0 al cerrar B/M2.
 El diseño detallado está en
 [`development/PRODUCT_DESIGN.md`](development/PRODUCT_DESIGN.md), secciones 2, 3 y 4,
 que es decisión tomada (ruling 3). Este plan no lo repite: fija alcance, orden, criterios
@@ -43,7 +45,7 @@ Lo que falta y M2 construye:
   controlador y de los cuatro literales de `session.json`.
 - Integración del catálogo con la vía de persistencia de aplicación. La tarea 2
   movió las escrituras directas de CLI a `SessionProcessor`; la tarea 3 agrega
-  publicación y replay local, todavía sin aceptación final del grupo.
+  publicación y replay local, aceptados en A por reviews y CI exacto; B sigue pendiente.
 - Borrado íntegro: FTS, revisiones, archivos propios, backups administrados y, más
   adelante, respuestas de M4 que citen la reunión.
 
@@ -86,8 +88,8 @@ siete. Valen las cinco del diseño.
 
 | Grupo | Tareas del diseño | Documentos | Estado |
 |---|---|---|---|
-| A. Catálogo inmutable | 1 modelos, migraciones y repositorio · 2 segmentos y raw text en todos los recorridos · 3 ingestión, identidad y revisiones | `M2_CATALOG_SPEC.md`, `M2_CATALOG_PLAN.md` | C1–C3 corregidos en c3cdf08, foco 8/afectado 325+1skip pasan; full 5 verde 961/7/371,80 s; review final pendiente; aprobación/full4/CI339 históricos, gates del nuevo head/merge pendientes |
-| B. Ciclo de vida y borrado | 4 participantes, edición con `row_version`, reconciliación · 5 borrado transaccional y FTS | `M2_LIFECYCLE_SPEC.md`, `M2_LIFECYCLE_PLAN.md` | plan escrito, sin ejecutar |
+| A. Catálogo inmutable | 1 modelos, migraciones y repositorio · 2 segmentos y raw text en todos los recorridos · 3 ingestión, identidad y revisiones | `M2_CATALOG_SPEC.md`, `M2_CATALOG_PLAN.md` | Cerrado/mergeado PR21/53712c5; verificado automáticamente con CI980/2/307,46 s, package y reviews exact-head; sin certificación nueva |
+| B. Ciclo de vida y borrado | 4 participantes, edición con `row_version`, reconciliación · 5 borrado transaccional y FTS | `M2_LIFECYCLE_SPEC.md`, `M2_LIFECYCLE_PLAN.md` | contratos ajustándose al merge A en PR de documentación, implementación pendiente |
 
 Orden obligatorio: A antes que B. Si al mergear A cambió la forma de
 `pending_operations` o de los contratos del catálogo, el PLAN de B se ajusta en su
@@ -164,7 +166,7 @@ El hito se considera terminado cuando se cumplen conjuntamente:
     reflejan lo implementado; las filas M2 de `ACCEPTANCE.md` nombran la corrida que
     las cierra.
 
-### Evidencia parcial de ejecución — 2026-11-05
+### Evidencia de A y checkpoints históricos — 2026-11-06
 
 La tarea 1 de A aporta modelos inmutables, las doce tablas, migraciones numeradas,
 backups por API de SQLite y repositorio transaccional. RED inicial de 27 fallos;
@@ -177,14 +179,16 @@ no editable pasaron. Límites y comandos en `development/ACCEPTANCE.md`.
 
 | Criterio | Estado de evidencia |
 |---|---|
-| 1–5. Productores, identidad y revisiones | Implementados y verificados localmente con full4 953/7/358,94 s; review técnica final APPROVED, GR1–GR3 ADDRESSED; CI/merge pendientes |
-| 6–7. Segmentos y pausa | Verificados automáticamente en local y aceptados por review técnica; CI pendiente, sin certificación hardware/proveedor |
-| 8. Migración, backup y esquema futuro | Verificación automática local de la base de catálogo; falta CI de Windows en el head del grupo |
-| 14. DB ocupada y transacciones cortas | Verificación local y review técnica aceptadas; CI pendiente |
-| 15. Suite en CI de Windows | Pendiente; una suite local no cierra este criterio |
-| 9–10, 13. Crash, catálogo pendiente y rutas | Guards/NB1/NB2/GR1–GR3 ADDRESSED por review técnica final; full4 local verde; gates hospedados/merge pendientes |
+| 1–5. Productores, identidad y revisiones | Implementados y verificados automáticamente por focos/reviews y CI final A980/2/307,46 s, merge53712c5 |
+| 6–7. Segmentos y pausa | Verificados automáticamente en focos y CI final A980/2/307,46 s; sin certificación hardware/proveedor |
+| 8. Migración, backup y esquema futuro | Verificación automática local de catálogo y CI final Windows8a980/2/307,46 s |
+| 14. DB ocupada y transacciones cortas | Verificación local, review técnica y CI final A980/2/307,46 s aceptados |
+| 15. Suite en CI de Windows | Verificado automáticamente para A por M2A-CI-FINAL-8a498e2-20261106, run42155415514; cierre de M2 requiere revalidar B |
+| 9–10, 13. Crash, catálogo pendiente y rutas | Guards/NB1/NB2/GR1–GR3 y C1–C5 ADDRESSED, reviews/CI final A aceptados y merge53712c5 |
 | 11–12. Borrado sin resurrección | Grupo B pendiente; no lo cierra la limpieza de staging de tarea 3 |
-| 16. Docs y evidencia de cierre | Checkpoints locales documentados; cierre de grupo/hito pendiente |
+| 16. Docs y evidencia de cierre | A documentado/cerrado con corridas reales; docs y matriz de cierre M2 siguen pendientes de B |
+
+#### Historia de implementación previa al merge A
 
 La tarea 2 (`037fc03`, integrada como `1cdaadb`) preserva `raw_transcript.txt`
 separado del texto limpio y `segments.json` en vivo, offline, fallback, archivo y
@@ -239,7 +243,7 @@ aislado y en foco final; no se probó causa ni modificó deadline alguno.
 No hay certificación nueva de hardware, proveedor o instalación limpia, ni cierre
 del grupo A o de M2. La versión sigue en 0.2.0 hasta el cierre de hito previsto.
 
-Checkpoint vigente: root `7bfd0cb` integra Green `ec55b95`, con source/tests iguales.
+Checkpoint histórico: root `7bfd0cb` integra Green `ec55b95`, con source/tests iguales.
 La review global única terminó changes requested para GR1–GR3; GD1/GD2 Minor se
 corrigieron en `7be93af`. R38 implementado sella hashes exactos de manifiesto
 prospectivo y artefactos con roles validados en marker 3 antes del replace final.

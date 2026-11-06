@@ -501,6 +501,31 @@ Los rulings nuevos se escriben en español por el ruling 6.
     antes del merge. **Cost if wrong:** ajustar clasificación/advertencia y sus
     lectores, conservando evidencia incierta y bloqueo de toda acción sin ownership.
 
+45. **Ruling:** se corrige la observación `4488791517` de Copilot `5795454802`
+    sobre el PR de contratos #22. Los cursores de `search` atan las claves R39 a
+    una generación lógica reproducible del corpus, calculada en el mismo snapshot
+    de lectura que la página y con el guard R42 coherente. Incluye todo el corpus
+    que afecta BM25, aunque una fila no coincida, un filtro la excluya o ya esté
+    suprimida pero siga en FTS, y los
+    metadatos/relaciones que afectan visibilidad; no solo los hits de la consulta.
+    El default es un digest de metadatos existentes, identidades de revisiones
+    inmutables, títulos y supresión validada, solo donde prueban equivalencia con
+    el corpus FTS real; mantenimiento del índice no cambia el rank sin invalidar
+    ese token. Orden/encoding canónicos y transacción de lectura explícita hasta
+    terminar de obtener la página, sin migración ni caché persistente.
+    No se compara `PRAGMA data_version` entre conexiones distintas. Si cambió la
+    generación, se rechaza el cursor antes de usar su rank con `InvalidInput` y
+    razón estructurada `corpus_changed`; la UI reinicia la consulta desde la
+    primera página mediante sus requests existentes, sin anexar una página vieja.
+    El listado `MeetingQuery` conserva su keyset fecha/ID y su contrato original
+    frente a inserciones: no se invalida por esta regla de búsqueda. Se prueban
+    mutaciones desde otra conexión, incluidas inserciones no coincidentes, y la
+    continuidad entre conexiones con corpus estable. No cambian criterios del
+    hito, flujos públicos, retención, índice persistente, dependencias ni umbrales
+    p95/heartbeat. **Cost if wrong:** ajustar fingerprint/cursor y su recuperación
+    interna antes de cerrar M3, conservando resultados completos, guards de borrado
+    y la paginación de listado ya definida.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
@@ -1651,3 +1676,85 @@ This routine verdict ledger changes no source/tests or acceptance definition.
 Root must still publish/reply C5, receive new Copilot and complete exact-head
 Windows suite/package success before guarded merge. No group/milestone closure
 or real certification follows from technical approval alone.
+
+## 2026-11-06 — M2 A closed and PR #21 merged with every gate
+
+The catalog group is implemented and automatically verified, then merged; M2 as a
+milestone remains OPEN pending group B/lifecycle/deletion and its closure criteria.
+No new hardware/provider/clean-install certification or version bump:0.2.0 remains
+current. Two-hour acceptance remains **omitida por ruling 5**, never passed.
+
+The CLAUDE §7 procedure was completed in this exact order:
+
+1. Non-draft PR [#21](https://github.com/srodriguez-lefebre/here/pull/21) targeted
+   main with task/whole-group evidence and independent source/docs review in its
+   description. Final scoped C5 approval covers sourcec59ae33 and committed docs
+   3fdbd05 in `copilot-3-review-report.md`; earlier accepted findings remain scoped
+   history, with no open technical finding.
+2. Copilot requested on published head8a498e207812592ff84a0acc5ba4e9f392e02373 at
+   2026-11-06T03:15:54Z and received as actual bot review5795325438 COMMENTED at
+   03:20:34Z on that exact head: no open issues, C5 resolved, zero new inline
+   observations. C1/C2/C3 replies4488243766/4488243915/4488244052; C4 reply4488439090;
+   C5 reply4488660276 at03:15:37Z references reachable correctionc59ae33. All five
+   threads are resolved; C5 threadPRRT_kwDORsQx4M60W6_- is included. Each substantive
+   correction received a new review; no silence bypass was used. The bot's review
+   text predated final test completion and did not replace the subsequent CI gate.
+3. Exact-head Windows checks passed: complete test run
+   [42155415514](https://github.com/srodriguez-lefebre/here/actions/runs/42155415514),
+   **980 passed/2 skipped in307.46s**, completed03:21:08Z; package/installer run
+   [42155415501](https://github.com/srodriguez-lefebre/here/actions/runs/42155415501),
+   success completed03:18:48Z. Both head_sha values equal8a498e2. The two skips
+   are installed-wheel acceptance cases without HERE_WHEEL_PYTHON, not passing
+   cases; separate fresh exact-source distribution4/7.51s covers both installed
+   entries. Copilot checkrun42155492338 also succeeded.
+4. Root executed `gh pr merge 21 --merge --admin --match-head-commit
+   8a498e207812592ff84a0acc5ba4e9f392e02373` only after those guards. GitHub merged
+   at2026-11-06T03:22:06Z with merge commit
+   **53712c5beedafc2d40e2abf10c13362a1c3c9f78**. Local Git verifies parents763a891
+   and8a498e2; this is a merge commit preserving the group history, not a squash.
+5. This DELIVERY entry records PR, exact reviewed head, bot review, per-observation
+   dispositions, Windows runs and merge. No gate or acceptance definition changed.
+
+Final sourcec59ae331ebf124400ef3e476e5f0fcc029e83999 and merged head have identical
+src tree5c66169c0a93a8f0606a011bd9570bbdd9137903 and tests tree
+fb958d021eaf7d149c00a3a1be174e36fbef2a1c. Named acceptance run:
+M2A-CI-FINAL-8a498e2-20261106. Actual complete log retained in
+`.superpowers/m2a-ci-42155415514.log`; docs read its actual980/2/307.46 summary and
+skip reasons, final raw bot review/checks/thread JSON and the final independent
+report. Docs executed no tests/build/mypy/GitHub actions and makes no new run claim.
+R43/R44's complete CI route is now satisfied for A; no duplicate localfull7 ran.
+Fresh wheel probe/distribution evidence remains sourcec59ae33, not a second CI run.
+All historical failed suites/diagnostics/timeouts and source-specific passes remain.
+
+Next action is a documentation maintenance PR from actual A merge53712c5 on
+`codex/m2b-m3a-contracts`, same primary orchestration worktree. It adjusts the
+existing M2B/M3A SPEC/PLAN contracts and M3 schedule before either implementation.
+PR number/final review/merge still pending at this checkpoint. R35's two user-visible
+project chats have not been created; their branch/worktree/executor/contract-base
+IDs stay pending. Root remains sole orchestrator/contract/lease/integration/merge
+owner; later M5B starts only after M2B and leaves claims integration until M4B.
+
+## 2026-11-06 — Contract PR #22, BM25 continuation correction
+
+Prepared-contract review PC1–PC3 finalized APPROVED on1fd228f, after A-closure
+commitd8ebe3b. PR #22 opened non-draft with that independent result and evidence;
+Copilot requested on exact1fd at03:36:31Z. Review5795454802 COMMENTED03:41:49Z
+opens inline4488791517: corpus-wide BM25 changes can invalidate a saved-rank
+cursor even after a nonmatching insert. Official SQLite BM25/data_version docs
+confirm the rank inputs and connection-local version limitation.
+
+R45 corrects the planned search contract: canonical complete-corpus generation,
+one explicit read transaction plus coherent suppression, typed stale-cursor
+rejection before old-rank use and restart through existing request handling.
+Date/ID listing keeps its original insertion behavior. This changes no product
+implementation, schema, retention, public flow or milestone acceptance clause.
+Static checks retain all13/12 original SPEC clauses, prepared acceptance sections,
+12/14 unchecked step lines and the full M3 numbered criteria section. The added
+mutation tests are planned, not executed search evidence. Scoped independent
+review of this committed correction remains pending.
+
+Historical exact1fd CI passed980/two wheel skips/294.91s in42157559503 and package
+42157559427 passed; root retained/read `.superpowers/contracts-ci-42157559503.log`.
+These are not the corrected-head gates. Reply4488791517 with the reachable fix,
+request/receive new Copilot and get complete exact-head Windows tests/package
+green before guarded merge. No future chat or implementation has started.
