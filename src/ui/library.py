@@ -132,6 +132,11 @@ class LibraryView(QWidget):
 
         self._message = _label()
         self._warning = _label()
+        self._participant_warning = _label()
+        self._participant_retry = QPushButton("Reintentar participantes")
+        self._participant_retry.setAccessibleName("Reintentar carga de participantes")
+        self._participant_retry.clicked.connect(self._load_participants)
+        self._participant_retry.hide()
         self._record = QPushButton("Iniciar grabación")
         self._record.setAccessibleName("Iniciar grabación")
         self._record.clicked.connect(self.recording_requested)
@@ -186,6 +191,8 @@ class LibraryView(QWidget):
         layout.addLayout(filters)
         layout.addWidget(self._partial)
         layout.addWidget(self._warning)
+        layout.addWidget(self._participant_warning)
+        layout.addWidget(self._participant_retry)
         layout.addWidget(self._message)
         for control in (self._record, self._clear, self._retry):
             layout.addWidget(control)
@@ -246,6 +253,10 @@ class LibraryView(QWidget):
             self._requests[kind] = (request, generation)
 
     def _load_participants(self):
+        if self._closed:
+            return
+        self._participant_generation += 1
+        self._participant_retry.setEnabled(False)
         self._submit(
             "library-participants", self._controller.list_participants, self._participant_generation
         )
@@ -352,13 +363,25 @@ class LibraryView(QWidget):
             return
         del self._requests[kind]
         if kind == "library-participants":
+            self._participant_retry.setEnabled(True)
             if error is not None:
-                self._warning.setText(str(error))
+                self._participant_warning.setText(str(error))
+                self._participant_retry.show()
             else:
+                self._participant_warning.clear()
+                self._participant_retry.hide()
+                selected = self._participant.currentData()
+                options = {participant.id: participant.display_name for participant in value}
                 self._participant.blockSignals(True)
-                for participant in value:
-                    self._participant.addItem(participant.display_name, participant.id)
+                self._participant.clear()
+                self._participant.addItem("Todos los participantes", None)
+                for identity, name in options.items():
+                    self._participant.addItem(name, identity)
+                index = self._participant.findData(selected)
+                self._participant.setCurrentIndex(index if index >= 0 else 0)
                 self._participant.blockSignals(False)
+                if self._participant.currentData() != selected:
+                    self._query_changed()
         elif kind == "library-page":
             self._loading = False
             if error is not None:
@@ -543,8 +566,10 @@ class LibraryView(QWidget):
         self._detail_panel.hide()
 
     def invalidate_catalog(self):
-        """Root's future B5 notification seam; no deletion authority is inferred here."""
-        self.refresh()
+        """Refresh accepted catalog changes; no deletion authority is inferred here."""
+        if self._started and not self._closed:
+            self._load_participants()
+            self.refresh()
 
     def shutdown(self):
         self._closed = True

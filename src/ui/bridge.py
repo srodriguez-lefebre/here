@@ -52,6 +52,7 @@ class BackgroundJobs(QObject):
     """Retain jobs until actual thread exit; all Qt delivery stays on the Qt thread."""
 
     finished = Signal(int, str, object, object)
+    busyChanged = Signal(bool)
     idleChanged = Signal()
 
     def __init__(self):
@@ -59,6 +60,7 @@ class BackgroundJobs(QObject):
         self._serial = 0
         self._pending = {}
         self._closed = False
+        self._reported_busy = False
         self._poll = QTimer(self)
         self._poll.setInterval(10)
         self._poll.timeout.connect(self._collect_finished)
@@ -85,7 +87,14 @@ class BackgroundJobs(QObject):
         self._pending[request_id] = (worker, kind, outcome)
         worker.start()
         self._poll.start()
+        self._notify_busy()
         return request_id
+
+    def _notify_busy(self):
+        busy = self.busy
+        if busy != self._reported_busy:
+            self._reported_busy = busy
+            self.busyChanged.emit(busy)
 
     @Slot()
     def _collect_finished(self):
@@ -98,6 +107,9 @@ class BackgroundJobs(QObject):
             if not self._closed:
                 self.finished.emit(request_id, kind, *outcome)
             self.idleChanged.emit()
+            # Completion callbacks may submit replacement work. Publish the
+            # resulting shared state after those callbacks, not a transient idle.
+            self._notify_busy()
         if not self._pending:
             self._poll.stop()
 

@@ -52,6 +52,7 @@ class HereDesktop:
         self.main_window.recoveryRequested.connect(self._recover)
         self.jobs.finished.connect(self._job_finished)
         self.jobs.idleChanged.connect(self._jobs_changed)
+        self.jobs.busyChanged.connect(self._jobs_changed)
         self.bridge.snapshotChanged.connect(self._snapshot_changed)
         self.bridge.applicationEvent.connect(self._application_event)
         self.application.aboutToQuit.connect(self.bridge.close)
@@ -108,7 +109,7 @@ class HereDesktop:
         elif error:
             self.main_window.set_recovery_error(error)
 
-    def _jobs_changed(self):
+    def _jobs_changed(self, _busy=None):
         if self._refresh_pending and not self.jobs.busy and not self._exit_intent:
             self._discover()
         self.main_window.set_background_busy(self.jobs.busy, exiting=self._exit_intent)
@@ -122,7 +123,11 @@ class HereDesktop:
         self._check_exit()
 
     def _application_event(self, event):
-        if event.kind is EventKind.WORKER_COMPLETED and not self._exit_intent:
+        if self._exit_intent:
+            return
+        if event.kind is EventKind.MEMORY_INGESTED:
+            self.main_window.library.invalidate_catalog()
+        elif event.kind is EventKind.WORKER_COMPLETED:
             self._discover()
         elif event.kind is EventKind.STATE_CHANGED and event.state is ApplicationState.PREPARING:
             # Immutable events retain fast lifecycle transitions even if queued snapshot
