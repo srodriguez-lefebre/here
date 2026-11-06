@@ -1468,7 +1468,7 @@ Root may open the M2 A PR; Copilot received/responded, exact-head Windows CI,
 guarded merge and ledger remain pending. Group A/M2 are not closed or certified;
 version0.2.0 and R35 future-chat/contract-doc gates remain unchanged. No new ruling.
 
-## 2026-11-06 — PR #21 Copilot correction wave 1 integrated; full5 in progress
+## 2026-11-06 — PR #21 Copilot correction wave 1 integrated; full5 passed
 
 Copilot review5794475912 COMMENTED on published3394149 at01:21:05Z confirmed
 C1 rollback (inline4488007346), C2 shared default catalog (4488007374) and C3
@@ -1511,3 +1511,14 @@ and receive Copilot on corrected head and get exact-head Windows CI before guard
 merge. No A/M2 close/certification/version change or future-chat creation. Two-hour
 acceptance remains omitted by ruling5. R35 ordering and all historical failed
 full1/full3/diagnostics/timeout plus full2/full4 scope remain unchanged.
+
+Final Copilot-wave1 independent verdict: APPROVED, source/tests c3cdf08 plus
+committed documentation f06b33b. C1/C2/C3 all ADDRESSED; no Critical/Important or
+new actionable source defect. Reviewer directly verified full5 961/7/371.80s,
+968 XML cases/zero failures/errors and both wheel smokes, with scope limits in
+copilot-1-review-report.md. CD1 stale full5 heading/publication wording corrected
+in this normal ledger update. Source/tests unchanged; no further runtime/review
+requested. Root may publish, reply separately to inline4488007346/7374/7407 with
+c3cdf08, and request/receive Copilot on the actual corrected head. Windows CI on
+that head and guarded merge remain pending; no group/milestone closure or real
+certification is inferred from this technical acceptance.

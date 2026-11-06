@@ -8,7 +8,7 @@
   "task_2_commit": "037fc036ef43467136bcf7b8e95c6f8395d1aa5e",
   "task_2_base_commit": "878e7d4b531d0b07599b373261279fbb6b440030",
   "task_2_integration_commit": "1cdaadb72f2ebee53ce3a7be2680a01d18de6ad2",
-  "evidence_level": "copilot1_fixes_implemented_local_full5_passed_final_current_scoped_review_pending",
+  "evidence_level": "copilot1_fixes_implemented_local_full5_passed_independent_scoped_review_approved_hosted_gates_pending",
   "certified": false,
   "data_policy": "Temporary SQLite roots, authored synthetic PCM and transcripts, synthetic key; no private sessions or real .env.",
   "runs": [
@@ -195,7 +195,7 @@
     "handled_raw_io_rollback": "Restore previous bytes or remove fresh unpublished raw after metadata replace failure"
   },
   "task_3_progress": {
-    "state": "copilot1_fixes_integrated_full5_passed_final_current_scoped_review_pending",
+    "state": "copilot1_fixes_integrated_full5_passed_independent_scoped_review_approved_hosted_gates_pending",
     "candidate_suite_green": true,
     "task_accepted": false,
     "fix_round": 3,
@@ -297,7 +297,7 @@
     "current_tests_tree": "293bc5038bae501dee07631704899e5f385e9025"
   },
   "task_3_protocol": {
-    "source_state": "copilot1_fixes_integrated_full5_passed_final_current_scoped_review_pending",
+    "source_state": "copilot1_fixes_integrated_full5_passed_independent_scoped_review_approved_hosted_gates_pending",
     "rulings": [
       22,
       23,
@@ -1491,21 +1491,21 @@
         "id": "C1",
         "inline": "4488007346",
         "contract": "Ordinary callback exception rollback",
-        "state": "implemented_pending_independent_scoped_verdict",
+        "state": "independently_addressed_pending_thread_reply_and_new_hosted_review",
         "reply": "pending"
       },
       {
         "id": "C2",
         "inline": "4488007374",
         "contract": "Default processor shares injected controller catalog",
-        "state": "implemented_pending_independent_scoped_verdict",
+        "state": "independently_addressed_pending_thread_reply_and_new_hosted_review",
         "reply": "pending"
       },
       {
         "id": "C3",
         "inline": "4488007407",
         "contract": "Blocked completed publication warning without provider retry",
-        "state": "implemented_pending_independent_scoped_verdict",
+        "state": "independently_addressed_pending_thread_reply_and_new_hosted_review",
         "reply": "pending"
       }
     ],
@@ -1543,7 +1543,10 @@
       "globally_clean_claimed": false
     },
     "report": "copilot-1-implementation-report.md",
-    "independent_review": "Source-only provisional C1-C3 addressed/no new defects; final verdict awaits committed docs supplement and actual full5 evidence",
+    "independent_review": "APPROVED: C1-C3 ADDRESSED, no Critical/Important or new actionable source defect; final source/tests c3cdf08 and committed docs f06b33b reviewed with actual full5/probe evidence",
+    "independent_technical_review_approved": true,
+    "independent_review_report": "copilot-1-review-report.md",
+    "reviewed_documentation_head": "f06b33b4d974158ca1236eb446c80a0120c8b48e",
     "new_copilot": "pending_request_and_receipt_after_corrections",
     "exact_corrected_head_ci": "pending",
     "group_accepted": false,

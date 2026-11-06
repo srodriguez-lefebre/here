@@ -176,16 +176,18 @@ run 42142394863; package 42142395026 pasa solo sobre 339, no sobre el head corre
    2026-11-06T01:21:05Z. Tres observaciones confirmadas: rollback de excepción
    del callback (`4488007346`), catálogo del procesador por defecto (`4488007374`)
    y aviso de replay completed rechazado (`4488007407`). Correcciones integradas
-   c3cdf08, full 5 verde; pendientes de review final y respuestas en hilos.
+   c3cdf08, full 5 verde y review independiente final APPROVED para fuente/tests
+   más docs f06b33b (`copilot-1-review-report.md`). C1–C3 ADDRESSED; faltan las
+   respuestas en hilos y la nueva recepción de Copilot sobre el head corregido.
    No abrir un PR duplicado ni repetir la review/suite local ya aprobadas.
-3. Tras la aceptación del diff, responder cada hilo con el commit y pedir/recibir
+3. Diff aceptado: responder cada hilo con el commit y pedir/recibir
    Copilot en el nuevo head corregido.
    Los tests Windows `42142394863` pasan 958/2 skips de wheel en 250,79 s y el
    bundle `42142395026` pasa sobre 3394149; no sustituyen CI en un head corregido.
    Luego verificar CI Windows verde en ese head exacto, merge guardado y ledger.
    Gate Copilot/CI/merge de A pendientes; no están aprobados por evidencia local.
-   Este estado operativo local se incorpora al próximo PR de documentación tras
-   el merge, sin cambiar el head publicado durante su review.
+   Se publica el head de correcciones/evidencia antes de pedir otra review de
+   Copilot; las corridas sobre 3394149 quedan históricas y no cierran el nuevo gate.
 4. Después del merge A y de los PRs de docs de contratos necesarios, root crea
    dos chats de proyecto separados para M2 B y M3 A, con briefs completos y leases.
    No usar `8087e25` como base de merge futura: la SHA real aún es desconocida.
