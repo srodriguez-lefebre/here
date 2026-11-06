@@ -4,14 +4,13 @@ from __future__ import annotations
 
 import threading
 
-from PySide6.QtCore import QObject, QTimer, Signal, Slot
-
-from .contract import (
+from here.ui.contract import (
     ApplicationEvent,
     ApplicationSnapshot,
     EventKind,
     VisualController,
 )
+from PySide6.QtCore import QObject, QTimer, Signal, Slot
 
 
 class ApplicationEventBridge(QObject):
@@ -79,7 +78,7 @@ class BackgroundJobs(QObject):
             try:
                 outcome[0] = operation()
             except Exception as exc:
-                outcome[1] = str(exc) or type(exc).__name__
+                outcome[1] = exc
 
         worker = threading.Thread(target=work, name=f"here-ui-{kind}", daemon=True)
 
