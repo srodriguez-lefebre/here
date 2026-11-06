@@ -775,6 +775,27 @@ Los rulings nuevos se escriben en español por el ruling 6.
     conservando la exclusión de publicación y retención de roles desconocidos;
     ninguna ampliación a fuentes nativas o datos comprometidos queda autorizada.
 
+55. **Ruling:** el perfil real de M3 identifica la generación completa y sus
+    serializaciones por fila como coste dominante; se admite agrupar su encoding
+    canónico en lotes internos fijos de256 filas. Se conservan TODOS los SELECT,
+    campos, órdenes, documentos FTS reales, esquema, elegibilidad, relaciones,
+    evidencia activa completa/parcial y fingerprint R50, en la misma instantánea
+    hasta obtener la página. No hay caché, corpus reducido, segundo índice,
+    conexión adicional, dependencia ni relajación de500ms/50ms. Cada lote JSON
+    conserva los valores exactos y lleva longitud; cada fuente tiene terminador
+    inequívoco. El dominio privado `here-search-corpus-v2/batch256` explicita el
+    cambio de framing. Un cursor de búsqueda anterior se rechaza por el camino
+    existente `InvalidInput(reason="corpus_changed")` antes de usar su rank; el
+    keyset de listado y los campos opacos del cursor no cambian. La memoria queda
+    acotada en cantidad de filas por lote, no en bytes: no se trunca texto ni se
+    promete un límite ante valores individuales enormes. Es decisión interna,
+    no aceptación de rendimiento: requiere controles públicos de cambios del
+    corpus más allá del primer lote, regresión, review independiente y nueva
+    medición real con todas las muestras. El p95 anterior1303,482595ms sigue
+    fallado y la UI Busy sigue incompleta. **Cost if wrong:** ajustar framing o
+    tamaño del lote y repetir sus controles/mediciones, manteniendo cobertura
+    completa del corpus, invalidación segura y los presupuestos originales.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
