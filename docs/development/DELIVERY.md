@@ -951,6 +951,25 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Costo si falla:** conservar intent y bytes, corregir el handoff y repetir
     sus controles; nunca aceptar un rechazo SQL tardío como exclusión previa.
 
+63. **2026-11-06 — Generación puede reutilizar un encoder local y omitir chequeos
+    de ciclos imposibles en el dominio SQLite canónico.** Se permite un
+    JSONEncoder por operación, con los mismos parámetros de formato/error, y
+    `check_circular=False` solo para batches de tuples del cursor nativo R61:
+    open_library no habilita conversores detect_types, conserva text_factory str
+    y no hay serializer default personalizado. Las celdas nativas son escalares
+    None/int/float/str/bytes; no pueden referir al batch o a sus filas. No se
+    extiende esta prueba a fábricas/conversores que produzcan contenedores.
+    El encoder retiene configuración, nunca resultados/corpus/digests, y no se
+    comparte entre operaciones. Se conservan SQL, fuentes completas, guard/snapshot,
+    orden/batch256, bytes/framing v2, errores de BLOB/no finitos y memoria acotada
+    por filas. Review independiente verifica esa premisa y los controles reales
+    contra el oráculo v2; el RED de presupuesto vigente es p95 848,67978 ms fallido.
+    No se promete ahorro, C encoder reutilizado ni alcanzar 500 ms. No nuevo codec,
+    SQL packing/JSON/UDF, cache, índice, dependencia o menor corpus. Runtime y nueva
+    medición requieren sus ventanas concretas; no se repite fuente sin cambios.
+    **Costo si falla:** conservar chequeo de ciclos/corregir reutilización y repetir
+    equivalencia/regresiones, sin relajar inputs, errores ni presupuesto.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
