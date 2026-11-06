@@ -402,6 +402,37 @@ Los rulings nuevos se escriben en español por el ruling 6.
     su compatibilidad y el handoff de cutover, conservando evidencia incierta y
     las precondiciones de revisión, sin aceptar como final un intento incompleto.
 
+39. **Ruling:** para las fechas de captura desconocidas de R37, M3 lista por
+    `started_at DESC NULLS LAST, meeting_id ASC`. La búsqueda ordena por rank
+    ascendente y luego la misma fecha/ID, con `segment_id ASC` como desempate
+    final. La paginación usa cursor opaco versionado, vinculado a sus filtros,
+    y representa NULL explícitamente en su tupla; nunca usa una fecha ficticia
+    ni el timestamp de procesamiento como sustituto. Sin límites de fecha se
+    incluyen reuniones sin fecha; un filtro `from` inclusivo o `to` exclusivo
+    las excluye mediante la semántica SQL de NULL. La UI conserva la fecha como
+    desconocida. El fallback conserva estos desempates para su ranking propio.
+    Es precisión interna de los defaults de paginación del SPEC, sin nueva
+    pantalla, dependencia, retención ni criterio de terminado. Queda preparado
+    para el PR de contratos posterior al merge de A; no inicia M3 ni modifica
+    el head publicado de PR #21. **Cost if wrong:** ajustar cursores/ordenación
+    y sus tests antes de publicar M3, manteniendo determinismo y fechas NULL.
+
+40. **Ruling:** se corrigen las tres observaciones de Copilot recibidas en PR #21
+    sobre `3394149` sin cambiar producto ni terminado. El callback previo al commit
+    forma parte de la publicación atómica: toda excepción ordinaria suya ejecuta
+    el rollback de evidencia antes de propagarse; una terminación de proceso no
+    se convierte en éxito ni se oculta. El procesador por defecto comparte el
+    `MemoryService` del controlador, incluida una raíz inyectada, conservando los
+    procesadores explícitos del caller. El replay local rechazado de una sesión
+    completed queda visible por el mecanismo de advertencia existente, con
+    candidato no reintentable (`can_retry=False`) si se usa la lista de recovery;
+    nunca ofrece otra transcripción al proveedor, modifica el resultado final
+    ni borra su marcador incierto. Cada corrección exige RED independiente,
+    GREEN, review independiente del diff, nueva solicitud/recepción de Copilot y
+    CI verde en el head nuevo. Las corridas previas siguen siendo históricas.
+    **Cost if wrong:** ajustar rollback, composición e informe de recovery con
+    los mismos datos/contratos; preservar audio, evidencia anterior y avisos reales.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
