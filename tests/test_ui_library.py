@@ -112,6 +112,15 @@ class LibraryController(ApplicationUiAdapter):
         self.list_handler = lambda query: _page(dto)
         self.search_handler = lambda query: dto["SearchPage"](items=(), next_cursor=None)
         self.detail_handler = lambda meeting_id: None
+        participant_type = _feature("here.memory.models", "Participant")
+        self.participant_options = (
+            participant_type(
+                id="00000000-0000-0000-0000-000000000010", display_name="Alice Synthetic"
+            ),
+            participant_type(
+                id="00000000-0000-0000-0000-000000000011", display_name="Bob Synthetic"
+            ),
+        )
 
     def discover_recovery(self):
         return ()
@@ -129,6 +138,11 @@ class LibraryController(ApplicationUiAdapter):
     def get_meeting(self, meeting_id):
         self.calls.append(("detail", meeting_id, threading.get_ident()))
         return self.detail_handler(meeting_id)
+
+    def list_participants(self, meeting_id=None):
+        # Explicit R48 read contract. This does not model persistence/relations.
+        self.calls.append(("participants", meeting_id, threading.get_ident()))
+        return self.participant_options
 
     def update_meeting(self, meeting_id, patch, expected_version):
         raise AssertionError("Real title-edit acceptance waits for the accepted B4 adapter")
@@ -846,3 +860,89 @@ def test_status_filter_transports_canonical_status_and_changes_visible_listing(l
     status.setCurrentIndex(failed_options[0])
     qtbot.waitUntil(lambda: "Completed visible meeting" not in _text(view))
     assert "Failed visible meeting" in _text(view)
+
+
+def _option_index(selector, pattern):
+    matches = [
+        index
+        for index in range(selector.count())
+        if re.search(pattern, selector.itemText(index), re.IGNORECASE)
+    ]
+    assert len(matches) == 1, f"Expected one visible filter option: {pattern}"
+    return matches[0]
+
+
+def test_participant_choices_load_off_thread_and_id_selection_changes_visible_listing(
+    library, qtbot
+):
+    _, controller, view = library
+    selected = _meeting(title="Alice assigned meeting")
+    other = _meeting(
+        title="Other participant meeting",
+        meeting_id="00000000-0000-0000-0000-000000000012",
+    )
+    _load_listing(controller, view, qtbot, selected, other)
+    selector = _named(view, QComboBox, r"participante")
+    alice_index = _option_index(selector, r"Alice Synthetic")
+    _option_index(selector, r"Bob Synthetic")
+    loads = [call for call in controller.calls if call[0] == "participants"]
+    assert loads, "Participant names must be loaded through the declared read contract"
+    assert all(meeting_id is None for _, meeting_id, _ in loads)
+    assert all(thread_id != threading.get_ident() for _, _, thread_id in loads)
+
+    def filtered_page(query):
+        if query.participant_id == "00000000-0000-0000-0000-000000000010":
+            return _page(controller.dto, selected)
+        return _page(controller.dto, selected, other)
+
+    controller.list_handler = filtered_page
+    selector.setCurrentIndex(alice_index)
+    qtbot.waitUntil(lambda: "Other participant meeting" not in _text(view))
+    assert "Alice assigned meeting" in _text(view)
+
+
+def test_no_matches_clear_action_resets_text_status_participant_and_restores_listing(
+    library, qtbot
+):
+    desktop, controller, view = library
+    restored = _meeting(title="Unfiltered library restored")
+
+    def unfiltered_page(query):
+        if (
+            query.text == ""
+            and query.statuses == ()
+            and query.participant_id is None
+            and query.from_utc is None
+            and query.to_utc is None
+        ):
+            return _page(controller.dto, restored)
+        return _page(controller.dto)
+
+    controller.list_handler = unfiltered_page
+    search = _named(view, QLineEdit, r"busca")
+    status = _named(view, QComboBox, r"estado")
+    participant = _named(view, QComboBox, r"participante")
+    default_status, default_participant = status.currentIndex(), participant.currentIndex()
+    search.setText("prime")
+    qtbot.waitUntil(lambda: "No hay coincidencias" in _text(view))
+    search.clear()
+    qtbot.waitUntil(lambda: "Unfiltered library restored" in _text(view))
+
+    status.setCurrentIndex(_option_index(status, r"(fall|error)"))
+    participant.setCurrentIndex(_option_index(participant, r"Alice Synthetic"))
+    search.setText("missing")
+    qtbot.waitUntil(
+        lambda: any(
+            kind == "search" and query.text == "missing"
+            for kind, query, _ in controller.calls
+        )
+    )
+    qtbot.waitUntil(lambda: not desktop.jobs.busy)
+    assert "No hay coincidencias" in _text(view)
+    assert "Unfiltered library restored" not in _text(view)
+    qtbot.mouseClick(_named(view, QPushButton, r"limpiar"), Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: "Unfiltered library restored" in _text(view))
+    assert search.text() == ""
+    assert status.currentIndex() == default_status
+    assert participant.currentIndex() == default_participant
+    assert "No hay coincidencias" not in _text(view)
