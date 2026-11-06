@@ -841,6 +841,40 @@
       "content_equivalent_subsequent_commit": "1cb2442a69d47a14afc92662288ab579958ab00c",
       "executed_tree": "e59253d05f38716118a2d543bddd663e89987106",
       "scope": "VALID setup5warmups+40 correct publicqueries on unchanged1k/100k/98901FTS/220records/221IDs/44hits/include_partial/limit10. p95902.4132849997841ms FAILS unchanged<500. setup11.5409553s outside warm intervals; no causal speedup claim. Not a later1cbHEAD invocation."
+    },
+    {
+      "name": "M3A-R55-UI-WORKER-OBSERVED-INVOCATION",
+      "classification": "OBSERVATIONAL_ONLY_NOT_PERFORMANCE_ACCEPTANCE",
+      "head": "f9b7016da75fe25aff9117b363f988cfcf54c0c4",
+      "source_tree": "e198e954658eefa15222476adfdfc06db797b8a8",
+      "tests_tree": "a2acb894f96523dae6e871fc65a9e13d6c7eb4e5",
+      "config_blob": "7143d4deff5acb55e524baa5ee15c101bce9b3b5",
+      "executed_tree": "808225a5c94355f9a60d5cb9e0c58128551947a8",
+      "workdir": "C:/Users/savar/.codex/worktrees/2710/here",
+      "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' 'C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN/guarded-ui-worker-observer-r55.py' --expected-driver-sha256 526CD327FF6E25DEB1C0311D4C419500AE051F4036A48CFAFC5B1ECE869D3F3E",
+      "exit_code": 1,
+      "collected": 1,
+      "selected": 1,
+      "passed": 0,
+      "failed": 1,
+      "setup_errors": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "duration_seconds": 41.36,
+      "xml_cases": 1,
+      "xml_internal_seconds": 41.29,
+      "log": "guarded-ui-worker-observer-r55-1.log",
+      "xml": "guarded-ui-worker-observer-r55-1.xml",
+      "bindings": "guarded-ui-worker-observer-r55-1-pre-bindings.json",
+      "post_bindings": "guarded-ui-worker-observer-r55-1-post-bindings.json",
+      "exits": "guarded-ui-worker-observer-r55-1-exit.json",
+      "log_sha256": "6A98638927E6E3C6EBE7E3C396B5B972F996B00B608ECDC85BBBBA19DC5F3483",
+      "xml_sha256": "F7EED390447706E1EE7A639ECDC4D357F1FB9FF44194E56A451A24709C5AE045",
+      "report": "guarded-ui-worker-observer-preparation.md, final actual R55 addendum",
+      "summary": "guarded-ui-worker-observer-r55-1-causal-summary.json",
+      "summary_sha256": "C5E672285737C2B06B3793A2B7254CFC5375F151A5DABD5BE7A46B32BFC6B812",
+      "working_tree_changes": "NONE, clean docs-only HEADf9; wrapped observer526/manifest10123 invokes original test internally, not direct -m pytest",
+      "scope": "Observed/instrumented fresh fixture209: participants request2 owns lock; obsolete initialMeetingQuery3 Busy ignored by view but all-errors collector aborts; currentSearchQuery4 Busy accepted duringfinally,visible Busy/Retry/0rows.0SearchPage/0completed of8;359ticks/1818.0331ms/max27.155ms PARTIALdiagnosticONLY,final50msassertUNREACHED. Workersdrained; no uninstrumented heartbeat pass or retroactive0bea cause."
     }
   ],
   "lint_checkpoint": {
@@ -899,7 +933,7 @@
     "Real sole B reindex/page/partial/fallback/SECOND-noop evidence is complemented by actualR53 GREEN11 and bounded T1/T2 approvals atd8. Callback/composition checkpoint is approved; complete Task1/Task2/B5 and final integration/performance/type/full gates remain held.",
     "Accepted B496e8 producer integrated; actual current/stale title/version/evidence/FTS consumers and truthful UI types approved at D1/ed8. Historical44/no-new-mypy does not constitute fresh E3 or final B5-integrated acceptance.",
     "Implemented UI fixes, D1 types/title and bounded E3 display/preview checkpoints approved at their scopes. Final B5-integrated preview, broader layout/accessibility, complete Task2 and integrated verification/global/hosted gates remain pending.",
-    "Latest R55 valid40 p95902.413285ms FAILED unchanged<500; historical0bea1303.482595 retained. R55UIobserver/heartbeat NOT_RUN,old0beaBusyINCOMPLETE not transferred. Diagnostic2 completed diagnostically/no acceptance; no further source fix or B transfer authorized.",
+    "R55 valid40 p95 902.413285ms remains FAILED against unchanged <500ms criterion. R55observer diagnostic executedFAILED1F; uninstrumented heartbeat acceptance NOT_RUN. Historical0beaBusyINCOMPLETE not retroexplained. Diagnostic2 complete; R57preparedonly/no materialization/no sourcefix/Btransfer.",
     "FreshR55newcontrols10 and separateexisting240 pass; previous0bea/d8 runs retain history. R55sourceRuff/current no-new-mypy/finalfull/UI/preview remainpending; test-onlyhygiene is not sourcehygiene.",
     "Complete same Task1 assessment and task docs/evidence; root global integration docs only when capacity ready; Task2 and later single global review.",
     "Received/responded current-head Copilot, exact-head Windows CI/package as required, PR and guarded root merge. No M3 hosted gate has started in this checkpoint."
@@ -907,7 +941,7 @@
   "not_run": {
     "large_corpus_benchmark": "EXECUTED FAILED on both separately bound0bea andR55sources. Latest R55valid5+40 p95902.413285>500; old0bea1303.482595 preserved. R55 UI notrun; default skips unchanged.",
     "guarded_p95": "FAILED latestR55:valid40 p95902.4132849997841ms vs unchanged<500,actualb9+stagednewteststyle/e198/a2ac/7143; historical0bea1303.482595failure unchanged.",
-    "qt_heartbeat": "R55 heartbeat/observer NOT_RUN,needs new execution grant. Historical0bea UI Busy3/4/zero completed queries remains INCOMPLETE; partial115ticks/11.2069ms never a heartbeat pass or R55 result.",
+    "qt_heartbeat": "UNINSTRUMENTED R55 heartbeat acceptance NOT_RUN. Instrumented observer executed1F/observational diagnostic:0SearchPages/0completed8,partial359ticks/max27.155ms NOTpass,final50msassertUNREACHED. Old0bea evidence unchanged.",
     "real_B4_R48_B5_integration": "Historical B4/R48 consumers retain their source scope. R50 actual guard/real-B-reindex checkpoint is bounded-approved at D6; R53 facade/composition and R50 interaction are bounded-approved at d8 with actual 11 passes and a separate 228-pass/1-benchmark-skip regression. Complete B5/UI delete ACK/native/R52/current full/types remain PENDING; no complete task/group approval.",
     "ui_source_green": "Historical UI42 and D1 UI44, E3 bounded7/Ruff and bounded synthetic preview evidence only; no full latest-source UI44 repeat or final B5 integration.",
     "full_suite": "NOT_RUN",
@@ -1344,8 +1378,8 @@
     "config_blob": "7143d4deff5acb55e524baa5ee15c101bce9b3b5",
     "query_blob": "f3033a16f83c093c2179bb3c3fb7d9cb0389fb37",
     "ui_contract_blob": "10b5665aeac6aad2da3731058dfe414f1b241c6b",
-    "stage": "R55_BOUNDED_FUNCTIONAL_APPROVED_P95_STILL_FAILED_UI_NOT_RUN_ON_R55",
-    "latest_source_evidence": "Actual HEADb9f16b+ONLY staged newtest safe style/sourcee198/tests a2ac/config7143:separate10Pcontrols,240Pexistingregression,then1Fvalid40 queryp95902.4132849997841>500. Postrelease1cb entiretree=e592,NOT invocation1cbHEAD. SAME Task1 R55 bounded SPEC/functional-quality APPROVED,noC/I/Minor; completeTask1 NOTapproved. R55 source Ruff/mypy/full/UI observer/heartbeat NOT_RUN; old0bea p951303.482595/UIBusyINCOMPLETE remain historical.",
+    "stage": "R55_BOUNDED_FUNCTIONAL_APPROVED_P95_FAILED_UI_DIAGNOSTIC_FAILED_HEARTBEAT_ACCEPTANCE_NOT_RUN",
+    "latest_source_evidence": "Actual HEADb9f16b+ONLY staged newtest safe style/sourcee198/tests a2ac/config7143:separate10Pcontrols,240Pexistingregression,then1Fvalid40 queryp95902.4132849997841>500. Postrelease1cb entiretree=e592,NOT invocation1cbHEAD. SAME Task1 R55 bounded SPEC/functional-quality APPROVED,noC/I/Minor; completeTask1 NOTapproved. At that freeze R55 source Ruff/mypy/full/UI observer/heartbeat were NOT_RUN; old0bea p951303.482595/UIBusyINCOMPLETE remain historical. Later clean docs-only HEADf9/sourcee198/tests a2ac observer526 executed once1F as OBSERVATIONAL_ONLY_NOT_PERFORMANCE_ACCEPTANCE; summary records obsolete3 and current4 Busy with participant2 lock. Uninstrumented heartbeat remains NOT_RUN; no new p95/full/types acceptance.",
     "task1_task2_group_milestone": "OPEN",
     "certified": false,
     "current_parent_test_only_head": "1cb2442a69d47a14afc92662288ab579958ab00c",
@@ -1887,8 +1921,8 @@
     "report": "guarded-generation-r55-docs-checkpoint-report.md",
     "runtime": "NONE; root/B owns host",
     "no_M3B_regeneration": "Existing root M3B SPEC03207dd/PLAN9c177e5 remains owned by root; no duplicate preparation or start",
-    "recording_cutoff": "28separatepytestrecords=25priorunchanged+R55controls10P+existingregression240P+valid40query1F. Entirepreview3 unchanged. BoundedR55SPEC/functionalqualityAPPROVED,noC/I/Minor; p95FAILED,completeTask1notapproved.",
-    "future_preparation": "After frozen28-record checkpoint, separately granted diagnostic2 executed on R55/known205,exit0,NOT acceptance; no new pytest records. Passive UI observer remains PREPARED/NOT_RUN and needs execution; no source fix/B transfer authorized."
+    "recording_cutoff": "29 separate pytest records=ALL28previous unchanged plus one wrapped instrumented observer1F,OBSERVATIONAL_ONLY_NOT_PERFORMANCE_ACCEPTANCE. Entirepreview3 preserved; R55p95902.413285FAILED,completeTask1notapproved.",
+    "future_preparation": "Observer R55 executed diagnostically; uninstrumented heartbeat acceptance NOT_RUN. R57 materializer31F/warmC4 scripts PREPARED ONLY,base absent/no actual new DB or fingerprint; needs new root grant. No sourcefix/Btransfer."
   },
   "R53_facade_checkpoint": {
     "status": "BOUNDED_SPEC_QUALITY_APPROVED_WITH_ACTUAL_GREEN_AND_CURRENT_REGRESSION",
@@ -2244,8 +2278,8 @@
     "metrics_sha256": "E93EF08F17AA2423AC1610F6AB0BD46B6F00887EE3E08F251360350B4012D52D",
     "hygiene": "ONLYnewtestI001/formatinitialfindings retained; safeimportsort/layout finalcheck+formatPASS. SourceRuff/mypy/full/UI NOTRUN inthisgrant.",
     "release": "GLOBALRELEASEimmediatelyafterlastbenchmarkprocessBEFOREXML/metrics/analysis/reports/review/commit;all80raw/treeunchanged",
-    "UI": "R55observer/heartbeatNOT_RUN. Old0beaBusyINCOMPLETEhistoryonly,notR55result.",
-    "next": "Diagnostic2 completed after a separate new root grant:actualHEAD1cb/sourcee198/tests a2ac/input205,one control+one cProfile call,exit0; diagnostic only. Passive UI observer remains NOT_RUN; no second optimization or B transfer authorized."
+    "UI": "Later actual observer526 at cleanf9/e198/a2ac executed once1F,observational diagnostic only; uninstrumented heartbeat NOT_RUN. Old0beaBusyINCOMPLETE retained without retrocause.",
+    "next": "Diagnostic2 and observer completed separately as diagnostics only. R57prepared materializer31F/warmC4 has no materialization yet; no secondoptimization/Btransfer authorized."
   },
   "guarded_query_cost_diagnostic": {
     "report": "guarded-query-cost-profile-report.md",
@@ -2272,11 +2306,40 @@
     "profiled_public_wall_ms": 2744.1124000033597,
     "validation_ms_outside_calls": 1613.3980999948108,
     "profile": "Generation1683.1486ms inclusive/self132.6825;788fetchmany724.7501ms,784direct dumps approx473ms,5direct SQL approx298ms. Bregistry1008.0762ms includes220pathvalidations approx869ms. Nested inclusive values MUST NOT be added.",
-    "limits": "Two unequal single-call timings do not establish warm p95,causal speedup,host-load cause or measurement invalidity. Existing valid40 p95902.413285>500 remains FAILED; UIobserver NOT_RUN. No source fix/B transfer or full acceptance.",
+    "limits": "Two unequal calls establish no p95,causal speedup,hostload cause or measurement invalidity. Valid40p95902.413285>500FAILED; laterobserver is diagnosticFAILED,uninstrumentedheartbeatNOT_RUN. No sourcefix/Btransfer.",
     "preservation": "PASS80 raw files/head/source/tests/config/DB/220 registry records before=after",
     "release": "Immediately after process15731 exit, before postchecks/analysis",
     "silent_log": "No stdout/stderr emitted; Tee-Object produced no file, zero-byte log materialized after release to record the observed empty stream",
     "artifacts_prefix": "guarded-query-cost-profile-r55-1",
     "record_accounting": "Separate diagnostic after28-record docs freeze; ALL28 pytest and entirepreview3 unchanged."
+  },
+  "R55_UI_observer_checkpoint": {
+    "status": "EXECUTED_DIAGNOSTIC_FAILED_NOT_PERFORMANCE_ACCEPTANCE",
+    "actual_head": "f9b7016da75fe25aff9117b363f988cfcf54c0c4",
+    "source": "e198e954658eefa15222476adfdfc06db797b8a8",
+    "tests": "a2acb894f96523dae6e871fc65a9e13d6c7eb4e5",
+    "config": "7143d4deff5acb55e524baa5ee15c101bce9b3b5",
+    "driver_sha256": "526CD327FF6E25DEB1C0311D4C419500AE051F4036A48CFAFC5B1ECE869D3F3E",
+    "manifest_sha256": "10123B134266223018C966BEEFBDB0282DC55DEEF218A1E01439EF3F6B1562C3",
+    "summary": "guarded-ui-worker-observer-r55-1-causal-summary.json",
+    "summary_sha256": "C5E672285737C2B06B3793A2B7254CFC5375F151A5DABD5BE7A46B32BFC6B812",
+    "report": "guarded-ui-worker-observer-preparation.md, final actual R55 addendum",
+    "finding": "This instrumented run has BOTH obsolete request3 collector abort and genuine current request4 visible Busy/Retry/zero rows; participant request2 owns same lock.93-event trace retained only in canonical artifacts.",
+    "limits": "0SearchPages/0completed8;partial359ticks/1818.0331ms/max27.155ms NOTheartbeatpass,final50msassertUNREACHED;workersdrained. No retroactive0bea explanation,uninstrumented duration or sourcefix authorization.",
+    "release": "GLOBAL RELEASE after process30131 exited, before analysis",
+    "input_invariance": "79 raw inputs unchanged, post-bindings PASS"
+  },
+  "R57_diagnostic_preparation": {
+    "status": "PREPARED_ONLY_NOT_RUN_NO_MATERIALIZATION",
+    "report": "guarded-query-r57-parent-static-review.json",
+    "bindings": "guarded-query-r57-bindings-prepared.json",
+    "materializer_sha256": "31F081C07B434C91C7EEFBA05C322EBACDE03DF72A61606978A996D818ECEE3B",
+    "warm_sha256": "C4A828F38B5008FA7C90ACA40CC536FC44D19EA12525878D24818230BDD166E2",
+    "source": "e198e954658eefa15222476adfdfc06db797b8a8",
+    "tests": "a2acb894f96523dae6e871fc65a9e13d6c7eb4e5",
+    "config": "7143d4deff5acb55e524baa5ee15c101bce9b3b5",
+    "inputs": "Historicalraw80 unchanged plus separately declared memory_fixtures supplement81; original helpers untouched",
+    "actual_database_and_fingerprint": "PENDING_REAL_MATERIALIZATION;dedicatedBASEabsent at static preparation,no new DB/registry/fingerprint values or equality with205 claimed",
+    "authorization": "Parent static review complete;root reads before separate grant. No runtime/sourcefix/performance acceptance."
   }
 }

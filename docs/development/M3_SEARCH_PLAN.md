@@ -5,7 +5,7 @@
 > only after current-head received/responded Copilot, Windows CI and independent
 > review. Steps use checkbox syntax. **Status: in progress — query-core checkpoint,
 > 2026-11-06; UI attempts recorded, complete tasks/group/milestone acceptance pending.**
-> R55 functional checkpoint approved/p95 FAILED, UI NOT_RUN; complete tasks/group/milestone remain open.
+> R55 functional checkpoint approved/p95 FAILED, UI diagnostic FAILED; complete tasks/group/milestone remain open.
 > Root issued GO
 > after M2 A merge `53712c5beedafc2d40e2abf10c13362a1c3c9f78` and contracts merge
 > `73d3cb384bd422de6899d8c7b761f3f3159ea3f1`. M3 front: `codex/m3-search`,
@@ -325,9 +325,9 @@ preserved; a lower new measurement is not causal speedup certification.
 SAME Task1 FINAL bounded R55 SPEC/functional-quality review is APPROVED, no
 confirmed Critical/Important/Minor finding; complete Task1 NOT APPROVED and
 performance FAILED. Only new-test hygiene passed after retained I001/format
-findings; source Ruff/current mypy/full remain unrun. R55 UI observer/heartbeat
-NOT_RUN; old0bea Busy/INCOMPLETE is not transferred to this source. Diagnostic2 was PREPARED ONLY at this freeze; its later executed diagnostic is
-recorded below. Passive UI observer still needs execution; no second source
+findings; source Ruff/current mypy/full remain unrun. At that freeze R55 UI observer/heartbeat were
+NOT_RUN; their later observed invocation is recorded below, without old0bea transfer. Diagnostic2 was PREPARED ONLY at this freeze; its later executed diagnostic is
+recorded below. At that stage passive UI observer still needed execution; no second source
 optimization is authorized.
 
 28 separate pytest records preserve all25 prior and the entire preview3. GLOBAL
@@ -343,9 +343,25 @@ Nested inclusive timings are not added. Two unequal calls establish no warm p95,
 causal speedup,host-load cause or measurement invalidity. GLOBAL RELEASE preceded
 analysis; raw80/DB/registry/source/tests/config unchanged. See the final addendum
 of `guarded-query-cost-diagnosis-preparation.md` and its pinned summary in JSON.
-This is diagnostic evidence, no new pytest case or acceptance. UI observer remains
-NOT_RUN; valid40 p95902.413285>500 remains FAILED, with no new source/B fix authority.
+This is diagnostic evidence, no new pytest case or acceptance. At that diagnostic2 checkpoint UI observer was
+NOT_RUN; later observation follows. Valid40 p95902.413285>500 remains FAILED, with no new source/B fix authority.
 
+After a separate observer-only grant, actual clean HEADf9/sourcee198/tests a2ac/
+config7143 ran the wrapped observer526/manifest10123 once:1F/41.36s,
+XML1/internal41.290s, exit1. This is OBSERVATIONAL_ONLY_NOT_PERFORMANCE_ACCEPTANCE.
+The canonical causal summary records participant request2 owning the lock, obsolete
+initial MeetingQuery3 Busy ignored by the view but aborting the all-errors collector,
+and current SearchQuery4 Busy accepted during finally, leaving Busy/Retry and0rows.
+Zero SearchPages/zero completed of8; partial359ticks/1818.0331ms/max27.155ms is NOT
+a heartbeat pass and final50ms assertion was unreached; workers drained. See
+`guarded-ui-worker-observer-r55-1-causal-summary.json` and the final addendum of
+`guarded-ui-worker-observer-preparation.md`; no93-event table is duplicated here.
+GLOBAL RELEASE preceded analysis,raw79/Git unchanged. No retroactive0bea cause or
+uninstrumented timing inference; uninstrumented heartbeat acceptance NOT_RUN.
+The ledger now retains all28 prior records plus this separate observed invocation.
+R57 materializer31F/warmC4 scripts are PREPARED ONLY: dedicatedBASE absent, no new
+materialization/DB/fingerprint result; raw80 plus declared supplement81 preserved.
+Existing p95902.413285>500 remains FAILED; no source fix/B transfer is authorized.
 ## Dependencies and handoff during execution
 
 Accepted A and contract-documentation merges permit task 1's independent
