@@ -75,8 +75,10 @@ Runtime ACTUAL: M3 liberó tras UI final38P/12,57s y Ruff/format nueve archivos,
 sin procesos. B posee ventana para mypy comparativo y UN full R49 corregido sobre
 4e1b2cead486563516b69e09fb45543ee85b53aa, clean y congelado, src4ca55bbe7e88ff59f79dee47e8740fef2253718e/
 testsbf4f471a87ad84df8ac41f8da375f8fd1025f42e; no build/uv ni mutación durante full.
-Mismo reviewer B4 en re-review R1 acotada, lectura paralela. UI congela/revisa/docs
-sin runtime; handoff B4 completo espera review/full/docs. Suplemento outcome RED2
+Mismo reviewer B4 aprobó R1 ADDRESSED/SPEC/quality, cero hallazgos; mypy actual79→79,
+multiset sin delta nuevo. FULL2 running sesión12192, sin resultado aún. UI sin
+runtime; review825f3e6 encontró refresh pendiente al volver de grabar a Biblioteca,
+mismo RED prepara esa regresión sin fix previo. Handoff B4 completo espera full/docs. Suplemento outcome RED2
 falló2/0E/3,05s; GREEN R1 pasó7/7/5,24s. RED R1 previo5F/0E/4,10s en87f9a302
 y ambos focos UI conservan sus fuentes/logs; R48 consumer asserts aún pendientes.
 No repetir full previo. Sin build/benchmark todavía. Cada coordinador libera la ventana
@@ -187,11 +189,13 @@ Core permite avanzar tras merge real M2 B, PR docs/handoff B5 y GO;
 claims/answers esperan M4 B y adapters sus contratos reales. Sin código/runtime
 portabilidad; reporte `m5-portability-contract-preparation-report.md` en ese worktree.
 
-M3 B preparación SPEC/PLAN lista en `m2-segments`, blobs11c2cf4/0e0a44f.
-Preflight independiente READY FOR PREPARATION, cero hallazgos,11 cláusulas/14
-bloques completos de tareas preservados. Reporte `m3-library-preparation-review-report.md`;
-bind final a Citation/offsets R46, empty return R47 y adaptadores reales B4/B5/UI
-todavía pendiente. B puede arrancar sobre A revisado con PR abierto, tras contratos
+M3 B preparación SPEC/PLAN lista en `m2-segments`, blobsb47056b/dc8c440 tras delta
+aditivo49 líneas a11c2cf4/0e0a44f. Preflight y scoped delta-review independientes READY
+FOR PREPARATION, cero hallazgos,11 cláusulas/14 bloques completos preservados.
+Reportes `m3-library-preparation-review-report.md` y
+`m3-library-binding-delta-review-report.md`; R46 Citation/offsets/fuente Unicode,
+R47 empty MeetingPage/InvalidInput.reason y R50 guard futuro fijados, adaptadores
+reales B5/UI y PR docs final todavía pendientes. B puede arrancar sobre A revisado con PR abierto, tras contratos
 necesarios, y rebasear tras merge A: no agregar un bloqueo de merge más estricto.
 
 Fixture real de actualización 0.2.0 ya descargado una vez desde el workflow M1
