@@ -583,6 +583,21 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Cost if wrong:** adaptar DTOs/adaptadores de lectura y sus callers antes de
     aceptar B/M3, conservando una sola autoridad y la supresión de datos borrados.
 
+49. **Ruling:** se corrige B4-R1 de la review independiente, dentro del mecanismo
+    persist_state ya previsto en B4. La transición durable de estado y su evento
+    dejan en la misma transacción el trabajo local necesario para publicar su
+    snapshot. Si falla el write posterior al commit, una reconciliación posterior
+    con DB sana debe reintentarlo aun cuando la reunión ya sea terminal; luego un
+    rebuild conserva estado, ID y occurred_at originales del evento, sin crear
+    otro evento para simular recuperación. Se reutiliza el journal y su protocolo
+    idempotente; no hay segunda recuperación, proveedor, migración ni cambio de
+    comportamiento de captura. RED independiente cubre el fallo transitorio en
+    stale→interrupted y los terminales afectados antes del fix y re-review acotada.
+    El full congelado en curso conserva su fuente/resultado histórico, no se
+    modifica código ni tests durante esa corrida. **Cost if wrong:** ajustar el
+    encolado/replay de snapshots y sus warnings, manteniendo el outcome realmente
+    commiteado y toda la evidencia de origen.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings

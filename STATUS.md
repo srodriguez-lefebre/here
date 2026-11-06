@@ -71,9 +71,9 @@ parcial. B todavía no tiene writer UI. Processing continúa sin concesión.
 Cualquier handoff adicional se concede explícitamente. Migraciones/pyproject/uv.lock/versiones
 siguen seriales y requieren permiso de root. Global docs son root-only.
 
-Runtime ACTUAL: M3 UI RED post-DTO y primer foco GREEN Task1 concedidos después
-de ACK global B sin procesos. B escribe R48 sin tests/lint/mypy/build hasta nueva
-concesión. Sin full/build/benchmark todavía. Cada coordinador libera la ventana
+Runtime ACTUAL: B4-R1 RED acotado concedido después del full/release B y de M3.
+M3 escribe UI sin tests/lint/mypy/build hasta nueva concesión. B GREEN R1 espera
+RED real; no repetir full previo. Sin build/benchmark todavía. Cada coordinador libera la ventana
 con evidencia real; root la asigna al otro
 frente. Nunca dos tests/builds/mypy pesados en el host. Leer/escribir archivos
 autorizados y preparación documental sí puede seguir en paralelo.
@@ -91,11 +91,20 @@ RED observados, sin aceptación nueva de tareas:
 
 Checkpoints posteriores: B4 selección111/111 GREEN76,83s, foco afectado294 pasan/
 4 deselected/162,35s y mypy79→79 sin delta (previos al suplemento R48).
-R48 RED observado11F/39deselected/5,26s, commit1f4d22d; lecturas/DTOs/getter nuevos
-en candidato122 líneas aún sin verificar. M3 SearchService integradoeef3dcb,
-480 líneas, foco listo con los66 controles de codec adaptados sin cambiar sus
-assertions; todavía sin GREEN observado. R48 completa lectura real de participantes
-y assignments; M3 espera backend aceptado, no crea otra autoridad de datos.
+R48 RED11F/39deselected/5,26s, commit1f4d22d; GREEN122P/78,72s y probe aislado
+verificados. Handoff e0d083ae2aebb0ef1b1d428f6b3beba42ac9030f,125 líneas en tres
+archivos, autorizado a M3 preservando sus DTOs. API real ya disponible técnicamente,
+sin aceptación global B4. M3 core e4d2469:177P/1benchmarkskip/26,79s, los66 controles
+estructurales ejecutados; review APPROVED CORE con B5/performance/full pendientes.
+UI post-DTO:2F/8P/26 errores por LibraryView ausente en el baseline; asserts de
+widgets todavía no alcanzados, no verificación de R48 ni GREEN UI.
+
+B4 FULL1 en9e10c9cb1e0d385feea8cd73c8912b9ebd8a3929 pasó1036/9skips/391,45s
+(1045 casos,0F/E;2wheel ausente+7privilegios symlink). REVIEW necesita fixes por
+B4-R1 Important: snapshot postcommit de transición/evento no queda journalizado
+si falla el write, próximo reconcile no lo repara. R49 y una sola tanda RED/fix/
+re-review por los mismos roles; Task4 y B5 siguen abiertos pese al full verde.
+Fuente full congelada src284c24aa/tests01db3dd; logs/review en ledger B4.
 
 Leér reportes de progreso canónicos para pedidos de lease y resultados (además
 de wait_threads): `faab/here/.superpowers/sdd/M2_LIFECYCLE_PLAN/progress.md` y
@@ -175,6 +184,6 @@ No se leyó el `.env` real ni audio/biblioteca privados. Smokes opt-in futuros u
 solo HERE_PROVIDER_SMOKE_KEY y texto/audio sintéticos según ruling19, sin imprimir
 ni persistir la credencial. Máquina Windows limpia: pedir al necesitar la fila,
 con protocolo escrito. Prueba de dos horas: **omitida por ruling 5**, nunca aprobada.
-No hay bloqueo humano actual. Próxima acción: recoger RED UI/foco M3 y su release,
-devolver runtime para GREEN R48 B4 y validar su handoff antes de review/B5.
+No hay bloqueo humano actual. Próxima acción: recoger RED R1 B4, ceder UI M3 si
+está lista mientras B escribe el fix; después focos/re-review y full corregido.
 Reanudar desde estos IDs/reportes sin recrear los chats ni repetir el catálogo A.
