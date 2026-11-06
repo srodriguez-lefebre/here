@@ -1900,3 +1900,44 @@ or binary was executed; this is fixture preparation, not upgrade certification.
 Report `.superpowers/m5-upgrade-baseline-preparation-report.md` preserves actual
 installer/portable hashes and provenance, separately from the artifact archive
 digest. M2 remains open/version0.2.0; two hours remains omitted under ruling5.
+
+## 2026-11-06 — M2 B task4 accepted locally; independent fronts continue
+
+Task4 SOURCE4e1b2cead486563516b69e09fb45543ee85b53aa is implemented and
+automatically verified locally with synthetic data. Distinct docs author committed
+96e8aed255a442acb14bbdff5c32877ec201c628 (B SPEC/PLAN/EVIDENCE only), preserving
+src4ca55bbe7e88ff59f79dee47e8740fef2253718e and
+testsbf4f471a87ad84df8ac41f8da375f8fd1025f42e. Root read the actual full log/XML,
+same-reviewer scoped verdict and distinct docs report before accepting this handoff.
+
+Named run M2B-T4-R1-FULL-4e1b2ce-20261106 passed1043/skipped9/390.03s, exit0;
+JUnit1052/0failures/0errors/9skips/internal389.952s. Two installed-wheel environment
+skips and seven unavailable-symlink-privilege skips remain omissions. Current
+comparative mypy9e10c9c→4e1b2ce is79→79 inherited diagnostics with empty normalized
+file/message multiset delta, same config; this is not a type-clean baseline.
+Original independent review's B4-R1 is ADDRESSED, scoped SPEC/R49 and quality
+APPROVED, no new findings. R49 reuses persist_state in the state/event transaction;
+postcommit repair preserves actual IDs/occurred_at/outcomes without duplicate events.
+
+Detailed commands/hashes/history are in M2_LIFECYCLE_EVIDENCE.json. Initial RED,
+R48 supplement, old full1036/9 while R1 was open, R1 RED5, real-wrapper RED2,
+GREEN7, compatibility128P/1F, callers40P and the separate corrected owner1P are
+retained with their exact sources. The last two results are not a fresh129-pass
+run. The owner test retains the original publication identity and adds complete
+state-journal/no-prepared assertions. No failed result or withdrawn unexecuted
+guard draft is relabeled as a pass. Linked attribution has state2 reconstruction;
+unlinked global participants remain SQL-durable only.
+
+Root authorized M3 to consume ONLY frozen96e8aed for real title/version/FTS
+integration, preserving its R46 DTOs and canonical errors; no new core writer lease
+was granted. B begins task5 RED in write-only mode after task4 acceptance, retaining
+all nine R42 boundaries and R50. No B5 guard/reindex/purge or M3 performance result
+is implied. The UI's separate42-pass checkpoint and scoped R1–R3 review remain
+synthetic local evidence; actual B4/B5 consumer integration and whole-group gates
+are still pending. Root keeps global docs, runtime rotation and all merges.
+
+Group B/M2 remain open at0.2.0. Fresh wheel/package/build smokes, exact-head Windows
+CI, received/responded current-head Copilot and guarded merge remain mandatory.
+No new hardware/provider/clean-install certification is claimed. Two hours remains
+**omitida por ruling 5**, never passed. STATUS records actual chat/branch/worktree
+IDs and the current writer/runtime leases; completed A is not restarted.
