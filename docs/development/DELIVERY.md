@@ -745,6 +745,34 @@ Los rulings nuevos se escriben en español por el ruling 6.
     o UX. **Cost if wrong:** corregir el adapter antes de aceptar M3, conservando
     una sola autoridad de escritura y los callers de lectura existentes.
 
+54. **Ruling:** R52 no revoca la autoridad de staging propio que A ya estableció
+    en R23/R30 ni cambia su retención. Manteniendo la misma `.memory.lock` que
+    serializa toda preparación/publicación/reconcile, un orphan pre-journal bajo
+    `<data_dir>/.staging/<operation_uuid>` conserva la limpieza de su registro
+    `.publication.json` y copias descartables del protocolo mediante los guards A.
+    Debe ser un path/UUID/rol válido y no estar protegido por una operación prepared;
+    el plan propio versión1, operation_id coincidente e inventario admitido se
+    validan junto con TODOS los hijos/roles/paths antes de unlink. Unknowns, links,
+    subdirectorios, plan ausente/inválido o referencia de journal inconsistente se
+    retienen/reportan; un nombre UUID o una lista de hashes solos no dan autoridad.
+    Los hashes son inventario de copia, no prueba criptográfica de commit/ownership;
+    no se inventa re-hash de una copia que pudo interrumpirse. Esta rama interna
+    sin journal no requiere meeting_id ni contexto nativo porque solo descarta
+    staging privado no comprometido: no toca fuente original, captura, destino/
+    revisión comprometidos, estado, backups o memoria de otra operación. No se
+    equipara operation_id con meeting_id ni se deducen raíces de origen/manifest.
+    Paths con journal/identidad y cleanup meeting-owned/native conservan R52 y sus
+    leases; no están exentos por esta aclaración. Errores de unlink se reportan con
+    sus restos, sin fingir una transacción multi-file. El análisis independiente
+    `r52-owned-staging-contract-analysis.md` verificó lock/plan/roles y el intervalo
+    real entre plan y journal en96e8aed/edf7d48. El caso A before-stage mantiene
+    exit73 y TODAS sus assertions, incluida ausencia final de staging; la revisión
+    estática no es su corrida. El fix requiere primero ese RED real sobre el
+    candidato R52, luego GREEN y review independiente acotada, sin omitir el caso
+    ni tocar la definición de terminado. **Cost if wrong:** corregir ese límite
+    conservando la exclusión de publicación y retención de roles desconocidos;
+    ninguna ampliación a fuentes nativas o datos comprometidos queda autorizada.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
