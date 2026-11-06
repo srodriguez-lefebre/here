@@ -638,3 +638,129 @@ def test_r1_committed_terminal_state_repairs_snapshot_before_catalog_loss(
         assert sorted(rebuilt[key], key=lambda value: str(value)) == sorted(
             evidence_before[key], key=lambda value: str(value)
         )
+
+
+@pytest.mark.parametrize("terminal_status", ["failed", "cancelled"])
+def test_r1_status_only_processor_reports_committed_outcome_with_pending_snapshot_warning(
+    tmp_path, monkeypatch, terminal_status
+):
+    from here.application.processing import SessionProcessor
+    from here.memory.artifacts import read_meeting_snapshot, read_pending_intent
+
+    root = tmp_path / "data"
+    memory = MemoryService(root)
+    source = make_session(tmp_path / "r1-outcome-source", meeting_id=MEETING_ID)
+    assert memory.ingest_session(source.directory).status == "inserted"
+    audio_before = source.audio.read_bytes()
+    memory.begin_processing(MEETING_ID)
+    try:
+        evidence_before = memory.show(MEETING_ID)
+        parent_revision = evidence_before["meeting"]["active_revision_id"]
+        before_version = evidence_before["meeting"]["row_version"]
+        metadata = json.loads(source.metadata.read_text(encoding="utf-8"))
+        metadata["status"] = terminal_status
+        write_json(source.metadata, metadata)
+        processor = SessionProcessor(memory_service=memory)
+        publication_id = str(uuid4())
+        processor._write_publication_intent(
+            source.directory,
+            MEETING_ID,
+            parent_revision,
+            publication_id,
+            "session",
+            status_only=True,
+        )
+        marker = source.directory / "memory_pending.json"
+        pending = read_pending_intent(source.directory, MEETING_ID)
+        assert (pending.intent, pending.revision_of, pending.publication_id) == (
+            "status", parent_revision, publication_id,
+        )
+        assert pending.source_kind == "session"
+        event_columns = (
+            "id", "meeting_id", "kind", "occurred_at", "recorded_duration_ms", "payload"
+        )
+        event_query = (
+            f"SELECT {','.join(event_columns)} FROM lifecycle_events "
+            "WHERE meeting_id=? ORDER BY id"
+        )
+        meeting_query = (
+            "SELECT status,row_version,active_revision_id,updated_at FROM meetings WHERE id=?"
+        )
+        before_ids = {event[0] for event in _rows(root, event_query, (MEETING_ID,))}
+        committed = {}
+        write_state = MemoryService._write_state
+
+        def fail_snapshot_after_committed_outcome(self, repo, identity):
+            row = _rows(root, meeting_query, (MEETING_ID,))[0]
+            if identity == MEETING_ID and row[0] == terminal_status and not committed:
+                events = _rows(root, event_query, (MEETING_ID,))
+                (event,) = [entry for entry in events if entry[0] not in before_ids]
+                assert row[1:3] == (before_version + 1, parent_revision)
+                assert event[1] == MEETING_ID and event[2] == "status_changed"
+                assert event[3] and event[4] == 2000
+                assert json.loads(event[5]) == {"from": "processing", "to": terminal_status}
+                committed.update(meeting=row, events=events, event=event)
+                raise OSError("Synthetic one-shot state-only postcommit snapshot failure")
+            return write_state(self, repo, identity)
+
+        with monkeypatch.context() as patch:
+            patch.setattr(MemoryService, "_write_state", fail_snapshot_after_committed_outcome)
+            result = processor.publish_memory(
+                source.directory, revision_of=parent_revision, status_only=True
+            )
+    finally:
+        memory.finish_capture(MEETING_ID)
+
+    assert committed, "The real processor must reach snapshot I/O after the actual SQL commit"
+    assert _rows(root, meeting_query, (MEETING_ID,)) == [committed["meeting"]]
+    assert _rows(root, event_query, (MEETING_ID,)) == committed["events"]
+    assert result.status == "unchanged", (
+        "State-only publication reported rejection after its terminal state/event committed",
+        terminal_status,
+        result,
+        committed["meeting"],
+    )
+    assert result.meeting_id == MEETING_ID and result.warnings
+    # The accepted A wrapper removes a successful local marker. Remaining local
+    # snapshot work belongs to the existing catalog journal, not provider retry.
+    assert not marker.exists()
+    pending_operations = _rows(
+        root,
+        "SELECT id,phase FROM pending_operations "
+        "WHERE meeting_id=? AND kind='persist_state' ORDER BY id",
+        (MEETING_ID,),
+    )
+    assert pending_operations and all(phase == "prepared" for _, phase in pending_operations)
+    repaired = memory.reconcile()
+    for operation_id, _phase in pending_operations:
+        assert _rows(root, "SELECT phase FROM pending_operations WHERE id=?", (operation_id,)) == [
+            ("complete",)
+        ]
+        _outcome(repaired, "completed", operation_id)
+    state_directory = root / "meetings" / MEETING_ID / "states"
+    snapshots = [
+        read_meeting_snapshot(state_directory, path.name, MEETING_ID)
+        for path in state_directory.glob("*.json")
+    ]
+    assert any(
+        (
+            snapshot["meeting"]["status"],
+            snapshot["meeting"]["row_version"],
+            snapshot["meeting"]["active_revision_id"],
+            snapshot["meeting"]["updated_at"],
+        ) == committed["meeting"]
+        and sorted(
+            tuple(event[column] for column in event_columns)
+            for event in snapshot["lifecycle_events"]
+        ) == committed["events"]
+        for snapshot in snapshots
+    ), "Local journal recovery must retain the original committed outcome and exact event"
+    memory.reconcile()
+    assert _rows(root, meeting_query, (MEETING_ID,)) == [committed["meeting"]]
+    assert _rows(root, event_query, (MEETING_ID,)) == committed["events"]
+    assert not marker.exists() and source.audio.read_bytes() == audio_before
+    after = memory.show(MEETING_ID)
+    for key in ("revisions", "segments", "audio_assets", "revision_audio_assets"):
+        assert sorted(after[key], key=lambda value: str(value)) == sorted(
+            evidence_before[key], key=lambda value: str(value)
+        )
