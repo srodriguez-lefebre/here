@@ -81,7 +81,9 @@ trabajo previo ni duplicar fixtures. Monitorear los dos chats con wait_threads;
 pedidos de leases/handoffs se registran en su progreso/reporte local.
 
 Leases actuales: B posee models/repository/database/service, artifacts solo para
-estado2/compatibilidad1, recovery y CLI. DTOs R46/errores canónicos y B4 completos
+estado2/compatibilidad1 y CLI. El principal conserva service.py para W2/R59;
+recovery.py fue liberado en todos sus WTs y transferido al consumidor distinto
+en `b5-w3-red/here`, rama `codex/m2-b5-w3-green`. DTOs R46/errores canónicos y B4 completos
 ya se integraron en M3; esto no concede un escritor libre de core al chat M3.
 M3 posee search.py/tests y UI enumerada. B no tiene writer UI; la futura línea
 app.py R52 espera API B verificada y RED consumidor, en la misma instancia/customroot.
@@ -92,23 +94,48 @@ Hasta esa transferencia no hay otro writer. Processing continúa sin concesión.
 Cualquier handoff adicional se concede explícitamente. Migraciones/pyproject/uv.lock/versiones
 siguen seriales y requieren permiso de root. Global docs son root-only.
 
-Runtime del checkpoint: B posee ventana EXCLUSIVA para RED W2 y después W3,
-secuenciales en sus fuentes624 originales. W1 terminó con release completo:
+Runtime del checkpoint: W2 GREEN terminó y B confirmó GLOBAL RELEASE de todos
+los procesos/hijos antes de reportar. Root concedió ahora R58 UI EXCLUSIVO:
+83 pins/higiene → foco → gate original de ocho consultas/heartbeat condicional.
+Los comandos se iniciaron; todavía sin resultado. B queda en fuente/review-only;
+la próxima ventana RED59 depende de readiness y concesión concreta. Consultar
+ambos ledgers antes de rotar el host; este checkpoint no autoriza otro runtime.
+W1 terminó con release completo:
 RED3F/1P/16,63s → GREEN4P/19,91s y regresión delete79P/5symlink skips/182,92s.
 Fuente42a29fbfaef83c30b895ed6e75af95562313623a, src01400e51c9ac19d66309aaa6bf91976a95c91992;
 misma re-review W1 ADDRESSED/SPEC y calidad del alcance APPROVED, sin nuevos C/I.
-W2/W3 permanecen abiertos y sin fix. Tienen briefs y autores RED distintos,
-solo preparación en worktrees separados sobre624be55: b5_w2_red en
+Los RED W2/W3 se ejecutaron separadamente sobre624be55; sus fallos conservan esa
+base y no se atribuyen al fix posterior. Briefs y autores RED distintos:
+b5_w2_red en
 `C:/Users/savar/.codex/worktrees/b5-w2-red/here` (detached624 al crear),
 b5_w3_red en `C:/Users/savar/.codex/worktrees/b5-w3-red/here`, rama
 `codex/m2-b5-w3-red`. El ledger B registra bindings y ramas posteriores.
+W2/R60 pasó5P/0F/0E/0S/35,41s, XML35,359 sobre service DIRTY
+`C20E1FA450E33B940713F876383954BFC59F552CDDC22159EEAC60E94D00C38F`, patch
+`27F620F6664F3AF98300263EE24856BDF3A660A383982AB03DFFDF0E6872D53F`.
+HEADd480317988a8f355f64034a782637a63f97f1ae4 es test-only sobre42a; no es un commit
+del source ejecutado. La review posterior `task-5-whole-w2-re-review-report.md`
+declara W2 ADDRESSED/SPEC-R60 y calidad APPROVED solo para C20E/27F, sin nuevos
+hallazgos. Regresiones/finaltypes/full2 y Task5/grupo B/M2 siguen abiertos.
+R59 tiene paquete independiente READY40/NOT_RUN, no RED observado ni colección
+verificada. Productor service en faab y consumidor recovery en su WT separado;
+ambos conservan writers distintos. Runtime del consumidor espera productor real
+verificado y handoff; no stub, parser duplicado ni instancia default nueva.
+
 M3 terminó10 controles R55 y240 de regresión, sin fallos; benchmark40 válido
 p95=902,413285ms FALLA500. Perfil residual2 exit0 liberado: control5207ms/perfil2744ms,
-diagnóstico frío no comparable al gate warm. Observer R55 ya revisado/preparado,
-sin ejecución. Pytest eliminó su catálogo temporal205; R57 permite un input
-sintético dedicado fuera de esa limpieza, mediante el helper aceptado intacto,
-con nueva procedencia y sin afirmar igualdad binaria. Builder/diagnóstico warm
-están en preparación sin materialización/imports/runtime mientras B tiene host.
+diagnóstico frío no comparable al gate warm. Observer R55 aporta diagnóstico de
+contención, sin aceptación UI nueva. Pytest eliminó su catálogo temporal205; R57 materializó
+un input sintético dedicado con el helper aceptado intacto, nueva procedencia y
+sin afirmar igualdad binaria. Fixture READY y diagnóstico CPU terminaron exit0:
+cinco warmups y dos llamadas públicas, estado DIAGNOSTIC_COMPLETED_NOT_BENCHMARK;
+no pytest ni p95 nuevo, no causa general del host inferida. Fuentee198/tests a2ac/
+config7143 invariantes en la corrida9406c72; docs posteriores31e9 no son su HEAD.
+R58 está SOURCE PREPARED en WT propio, commit2b66246198965eaca7a3df5d326837f4851b8942,
+src12774a1e6702ab943934280d05d0de6897e8378d: solo library.py/bridge.py, sin integración
+en primary. Validación iniciada, sin resultado de tests/benchmark. Coordina auxiliares con páginas; page/page,
+título/crossview/externos siguen fuera del alcance resuelto. No aprobación50ms/500ms
+ni Task2. Packet de validación83pins ahora bajo grant activo; ningún resultado aún.
 B liberó full1
 con1F/310P/110,55s, detenido25% por -x: el override global TRANSCRIPTIONS_DIR del
 runner interfirió con test_config_paths. No editar producto/test para ese fallo;
@@ -118,14 +145,13 @@ Review whole Task5 original CHANGES REQUESTED, Critical0/Important3: W1/P2 pierd
 del WAV v1 durante purge; W2/P1 puede completar con staging publicado identificado
 todavía presente; W3/P2 discovery de journal nativo omite supresión antes de audio/
 candidato. Root leyó informe completo y acepta los tres como defectos del contrato
-existente. Su continuación cerró W1; W2/W3 aún no. RED independientes primero;
-service.py conserva GREEN principal para
-W1/W2. Recovery.py podrá transferirse exclusivamente a otro GREEN tras RED W3,
-pero esa transferencia aún no está activada. El lote v2 sobre
+existente. Sus continuaciones acotadas cerraron W1 y W2; W3/C5/R59 siguen abiertos.
+service.py conserva GREEN principal para W2/R59; recovery.py ya está transferido
+al consumidor distinto, con preparación sin pase de integración. El lote v2 sobre
 624be55 terminó sin fallos: native31P/4skips, CORECOMPAT-A98P/5skips,
 CORECOMPAT-B47P, SERVICE-FULL13P y guard/privacy20P. Son cinco corridas separadas,
 no un full agregado. R54-R1 ADDRESSED/SPEC y calidad APPROVED por la misma review
-independiente. M3 prepara controles de la optimización y timeline UI sin runtime.
+independiente. M3 conserva R57 READY; R58 inició validación autorizada, sin resultado aún.
 Sin full/build/uv/mypy/benchmark concurrente. Consultar SIEMPRE
 los dos ledgers antes de reasignar: este owner es snapshot, no permiso permanente.
 READERS7 terminó7P/5,10s, incluido primer uso con raíz vacía. M3 verificó44P/14,42s
@@ -205,7 +231,8 @@ completos de bytes, owner, row/outcome y orphan genuino. Misma re-review acotada
 R54-R1 ADDRESSED/SPEC y calidad APPROVED, sin nuevos hallazgos; los cinco XML v2
 confirman el lote amplio anterior sin fallos/errores. Los tipos frescos no agregan
 diagnósticos; el full de esta fuente todavía no pasó. Review whole Task5/grupo y docs distintos en
-curso; W1 corregido/revisado, W2/W3 abiertos y fallo de runner se registran separados.
+curso; W1 y W2 corregidos/revisados en sus bindings propios, W3/R59 abiertos y
+fallo de runner se registran separados.
 No transferir R52 ni cerrar Task5. Warning Ruff heredado queda para root/config
 serial. Cero writer UI B.
 
@@ -430,8 +457,9 @@ no provee selección meeting_ids ni OR del retrieval M4: handoff interno pendien
 sin asumir MemoryService.search, SQL directo de intelligence o filtro post-LIMIT.
 Root resolverá ese contrato; no es bloqueo humano ni aceptación de un adapter.
 
-No hay bloqueo humano actual. Próximo: RED W2/W3 y correcciones/re-review B;
-input dedicado/diagnóstico warm R55 y timeline Busy M3 antes de otra optimización.
+No hay bloqueo humano actual. Próximo: bind/grant del RED R59 y productor/consumidor
+reales, regresiones/finaltypes/full2 B; esperar resultado y release del grant activo
+R58 antes de rotar al RED59 si está listo. R55 conserva p95 FALLIDO; R57 es diagnóstico.
 PR documental24 ya mergeado; M3 B todavía espera GO y handoffs reales.
 Alternar host tras release confirmado.
 Consultar ledgers antes de rotar

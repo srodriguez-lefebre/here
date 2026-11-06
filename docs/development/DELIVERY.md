@@ -860,6 +860,15 @@ Los rulings nuevos se escriben en español por el ruling 6.
     adquirió un owner-file ausente. No escapa un booleano desprotegido. Resolución
     preliminar no autoriza audio. Se factoriza un primitivo privado ya locked,
     sin nested public read view, segundo lock/BEGIN, parser o MemoryService.
+    Discovery sin catálogo no instancia MemoryService solo para consultar el
+    guard: su constructor normal inicializa SQL. Se conserva ese constructor y
+    se comparte un único primitivo de módulo `recovery_read_view(data_dir,
+    directory, declared_identity)`, con data_dir explícito y sin inicialización/
+    migración SQL innecesaria; el método de la instancia es una delegación al
+    mismo primitivo. Recovery usa la instancia ya inyectada cuando existe o ese
+    primitivo con su root de composición actual, nunca otra instancia por defecto.
+    La resolución/inspección read-only no introduce un SQLite nuevo; los writers
+    conservan su inicialización y semántica de padre/revisión reales.
     Read scope no envuelve publish_memory/reconcile/provider ni otro writer;
     su handoff usa leases reales retenidas y revalidación del writer existente.
     Además catalog_read_view traduce fallos de SU setup, pero propaga intactos
