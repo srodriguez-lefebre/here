@@ -130,11 +130,23 @@ class RecoveryService:
                 if metadata is None:
                     continue
                 catalog_warning = None
+                invalid_marker = False
                 with self._ownership(metadata.meeting_id, directory=directory) as claim:
                     marker = session_artifact_path(directory, "memory_pending.json")
                     if marker.exists():
-                        pending = read_pending_intent(directory, metadata.meeting_id)
-                        if metadata.status != "pending":
+                        try:
+                            pending = read_pending_intent(directory, metadata.meeting_id)
+                        except UnsafeSessionPath:
+                            raise
+                        except ValueError:
+                            # Invalid data grants no replay or provider authority.
+                            # Do not echo untrusted contents or inspect its audio.
+                            pending = None
+                            invalid_marker = True
+                            catalog_warning = (
+                                "Invalid pending catalog marker; local recovery required"
+                            )
+                        if pending is not None and metadata.status != "pending":
                             claim()
                             result = SessionProcessor().publish_memory(
                                 directory,
@@ -149,7 +161,7 @@ class RecoveryService:
                                 catalog_warning = "Library publication pending local recovery"
                                 if details:
                                     catalog_warning += f": {details}"
-                        elif pending.hashes is not None:
+                        elif pending is not None and pending.hashes is not None:
                             # A final seal cannot make an uncommitted manifest final.
                             # Preserve both pieces of evidence without acquiring a
                             # writer lease or adopting the previous transcript.
@@ -158,9 +170,9 @@ class RecoveryService:
                             )
                 # A copied manifest does not own other directories with the same ID.
                 key = (metadata.meeting_id or directory.name, directory)
-                if metadata.status == "completed":
+                if metadata.status == "completed" or invalid_marker:
                     if catalog_warning:
-                        # Completed evidence needs local catalog recovery only.
+                        # This warning needs local catalog recovery only.
                         # Do not inspect retry audio or offer another provider call.
                         candidates[key] = RecoveryCandidate(
                             directory,
