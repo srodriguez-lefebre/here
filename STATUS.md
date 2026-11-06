@@ -173,8 +173,9 @@ run 42142394863; package 42142395026 pasa solo sobre 339, no sobre el head corre
 
 ## Próxima acción obligatoria
 
-1. C4 integrado 56af525, focos/local package pasan; finalizar review independiente
-   acotada de fuente/docs. No local full6: R43 exige suite Windows completa en el
+1. C4 integrado 56af525; review independiente final APPROVED para fuente/docs
+   58176ce (`copilot-2-review-report.md`), sin defectos importantes abiertos.
+   Focos/package locales pasan. No local full6: R43 exige suite Windows completa en el
    head exacto corregido antes del merge, además de packageCI.
 2. PR #21 sigue abierto/publicado en d23b83d70b1a3da7fe0a3c579f1f34b109e2d5a3.
    Copilot 5794829768 COMMENTED2026-11-06T02:09:04Z resolvió C1–C3 y abrió C4

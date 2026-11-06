@@ -1568,3 +1568,13 @@ Published PR21 stillD23; C4 unanswered/unpublished. C1–C3 replies4488243766/
 request/receive new Copilot, obtain exact-head complete-suite/package CI green,
 then guarded merge. No group/M2 close, certification, version bump or future chats.
 R39–R43 and all historical failures/timeouts retain their scope; no new ruling here.
+
+C4 final independent verdict: APPROVED for source56af525 and committed six-doc
+supplement58176ce; C4 ADDRESSED, no Critical/Important or new actionable source
+defect. Reviewer checked actual focus reports, fresh65-file byte-equal wheel/probe
+and distribution log/XML4 passed/7.44s, including both installed-wheel entries.
+CD2 carried-forward CDF/current-pending note is marked historical in the normal
+verdict update. No further local runtime/review requested. R43 still requires the
+COMPLETE Windows suite/package on the actual corrected published head before
+merge, plus newly received/responded Copilot. No localfull6, group/milestone close
+or real certification is asserted by this scoped technical approval.

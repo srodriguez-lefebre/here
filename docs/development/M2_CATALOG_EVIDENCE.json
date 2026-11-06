@@ -8,7 +8,7 @@
   "task_2_commit": "037fc036ef43467136bcf7b8e95c6f8395d1aa5e",
   "task_2_base_commit": "878e7d4b531d0b07599b373261279fbb6b440030",
   "task_2_integration_commit": "1cdaadb72f2ebee53ce3a7be2680a01d18de6ad2",
-  "evidence_level": "copilot2_C4_implemented_local_focus_and_installed_wheel_verified_final_scoped_review_and_exact_head_complete_Windows_CI_pending",
+  "evidence_level": "copilot2_C4_independently_approved_local_focus_and_installed_wheel_verified_exact_head_complete_Windows_CI_pending",
   "certified": false,
   "data_policy": "Temporary SQLite roots, authored synthetic PCM and transcripts, synthetic key; no private sessions or real .env.",
   "runs": [
@@ -234,7 +234,7 @@
       "historical": true,
       "source_commit": "6c422f0b8671d2f736645abb6835d351783cbcc7"
     },
-    "independent_task_review": "Previous approvals remain source-scoped historical; current C4 scoped final verdict pending committed supplement",
+    "independent_task_review": "C4 final scoped review APPROVED for source56af525 and committed docs58176ce; complete exact-head Windows CI remains mandatory pending",
     "independent_whole_branch_review": "original_group_review_plus_single_scoped_re_review_final_approved_GR1_GR2_GR3_GD1_GD2_addressed",
     "hosted_ci": "D23 Windows966passed/2wheel skips/package passed historically; mandatory corrected exact-head complete suite/package pending under R43",
     "copilot": "5794829768 COMMENTED D23 resolves C1-C3; C4 inline4488285573 unanswered, corrected published head/new received review pending",
@@ -736,7 +736,7 @@
     "superseded_by": "task_3_fix_round_1_review"
   },
   "evidence_levels": {
-    "implemented": "C4 integrated56af525 with local8-case GREEN and affected124 passing; final scoped verdict pending. Earlier C1-C3 resolved by received Copilot onD23",
+    "implemented": "C4 integrated56af525 with local8-case GREEN and affected124 passing; final scoped technical review APPROVED. Earlier C1-C3 resolved by received Copilot onD23",
     "verified_automatically": "C4 RED6/2controls, GREEN8, affected124, no new typing, fresh65-file noneditable wheel/probe and4 distribution cases including both installed smokes pass. Mandatory exact-head complete Windows CI suite/package still pending under R43; no duplicate localfull6",
     "certified": "No new hardware/provider/clean-install certification; wheel and synthetic checks are automatic local evidence; two-hour acceptance omitted by ruling5"
   },
@@ -783,8 +783,8 @@
     "PR/current-head Copilot received/responded/Windows CI/guarded merge pending; no M2A acceptance or closure.",
     "R35 future chats/branches/worktrees/executors/real merged-A bases pending, none created; contract-doc PR merges required after A before dispatch.",
     "No new process/protocol/deadline/dependency/version/DoD;0.2.0 current,0.3.0 at B/M2 close, final1.0.0 unchanged; two-hour acceptance omitted by ruling5.",
-    "Copilot5794475912 on339 confirmed C1-C3; current sourcec3cdf08 full5 passes961/7/371.80s but final scoped verdict pending. Prior approval/full4/hosted CI339 do not approve or verify current fixes. Replies, new received Copilot and exact-head CI required before merge.",
-    "C4 source56af525 has local focus/installed-wheel evidence; current complete-suite gate remains mandatory and pending on exact-head Windows CI under R43, no localfull6 and no relabeling oldfull5/CI_D23. Final scoped verdict/reply/new received Copilot/exacthead CI/guarded merge pending."
+    "Historical Copilot5794475912 on339 confirmed C1-C3; sourcec3cdf08 full5 passed961/7/371.80s and independent final review APPROVED with docsf06b33b. Replies resolved and Copilot5794829768 onD23 confirmed all three resolved; its new C4 is tracked separately.",
+    "C4 source56af525 has local focus/installed-wheel evidence; current complete-suite gate remains mandatory and pending on exact-head Windows CI under R43, no localfull6 and no relabeling oldfull5/CI_D23. Independent scoped C4 verdict APPROVED; reply/new received Copilot/exacthead CI/guarded merge remain pending."
   ],
   "pr20": {
     "url": "https://github.com/srodriguez-lefebre/here/pull/20",
@@ -1674,7 +1674,9 @@
       "globally_clean": false
     },
     "implementation_report": "copilot-2-implementation-report.md",
-    "independent_final_verdict": "pending_committed_docs_supplement",
+    "independent_final_verdict": "APPROVED_source56af525_docs58176ce_C4_ADDRESSED",
+    "independent_review_report": "copilot-2-review-report.md",
+    "reviewed_documentation_head": "58176ce0358c4a2787c2393031bd4d42f7806f61",
     "published": false,
     "reply": "pending_reachable_correcting_SHA",
     "new_received_copilot": "pending",
