@@ -57,40 +57,52 @@ mutations/snapshots. Parent/UI models agree at blob
 `7ac51f614e272d57479823fbcbb056844a924ca6`; the parent's query source is unchanged
 from reviewed e4d. This supplement does not extend e4d's runs/review to the new
 integration. Root reports an isolated probe and XML122 without failures. At that
-handoff checkpoint M3 consumer runtime was NOT_RUN; later UI attempts below do not
-establish R48 consumer acceptance. No new UI lint result is recorded.
-B4 update/version/title-index behavior, real R48 consumer acceptance, B5's coherent
-R42 guard and sole reindex/before-after/no-op equivalence remain pending. No
+handoff checkpoint M3 consumer runtime was NOT_RUN; later focus5/6 below establish
+focused synthetic R48 read-consumer evidence, with the UI review requesting fixes.
+This is not complete B4 acceptance. B4 update/version/title-index behavior and
+B5's coherent R42 guard and sole reindex/before-after/no-op equivalence remain pending. No
 alternate parser, authority or rebuild is added.
 
-Historical UI RED retains two failures/eight passes, then two failures/eight
-passes/26 absent-LibraryView setup errors. Later worker focus1 at exact
-`544b6e5f5b62942e0e103fa67359a66a74c0d566` ran 38 cases: 13 failed/25 passed,
-zero errors/skips, 64.47s (XML internal 63.142s). Focus2 at exact
-`3957a7ce9754c76388bd42c1a1580334015a107d` ran 38 cases: nine failed/29 passed,
-zero errors/skips, 22.52s (XML internal 18.005s). All old 26 widget cases now reach
-assertions. Both real R48 cases stop before roster/speaker/target assertions:
-first while waiting for transcript, then at the list-model text helper exception.
-Eight focus2 failures expose that helper's missing QModelIndex; the remaining
-status-filter positive wait times out. These are failed attempts, no UI GREEN or
-R48 consumer acceptance. Ten lifecycle cases pass in both runs.
+Historical UI RED/setup errors and focus1/2 failures remain at their original heads.
+Focus3 exact `2389a7f` ran nine failures/29 passes in 18.14s; status probing
+confirmed Qt transported the stored StrEnum as str. Canonical enum reconstruction
+and a public QListWidget text-reading helper preceded focus4 at `39a2767`: three
+failures/35 passes in 13.16s. This first reached real R48 semantic RED: missing
+roster/scoped speaker names and keyboard traversal. No earlier harness failure is
+relabeled as a semantic result. The keyboard probe confirmed table Tab navigation
+cycled columns; disabling it allowed traversal to detail/editor.
 
-The short synthetic event/focus probe exited zero in 3.33s with jobs idle; it
-observed incomplete bare-double-click delivery and unset-date Tab trapping, not
-large-corpus responsiveness. RED added only two positive-result waits for focus2,
-then corrected the model helper and valid click sequence. GREEN temporarily
-routed double clicks and fixed date traversal, then removed the double-click
-workaround while preserving the date fix. Latest prepared worker
-`2389a7f191bd41baf1fc173b8d87c2ea26dacb1f` is NOT_RUN; source/test bindings and
-exact correction commits are in the evidence JSON. Historical failures remain.
+Canonical roster/exact revision-and-speaker assignment rendering and Tab handling
+in `887f2152ae918d9b12e35e813c3150e7e222703a` passed all 38 focused cases in
+12.49s (XML internal 12.434s). Focus6 ran that HEAD plus ONLY the mechanical
+formatter diff: 38 passed/zero failures/errors/skips in 12.57s (XML 12.523s).
+It did not run at subsequent `825f3e64570fdd1504050b4259a708376cfb88f6` HEAD.
+All nine pre-run Git blob bindings were unchanged after the run and match that
+post-release style commit, including source/tests trees recorded in the evidence
+JSON. Final limited nine-file Ruff check/format passed; initial one-E501/six-file
+format findings and all earlier failed runs are retained. No assertions/scenarios
+were weakened by formatting.
 
-The coordinator explicitly released the UI runtime window and root acknowledged
-rotation to B; docs preparation has no runtime grant. R50 integration preparation
-exists only as the assigned report: no dependent product source or actual B5
-handoff acceptance. UI GREEN/review, real B4/B5 adapters/deletion invalidation,
-guarded 1,000/100,000 p95 and Qt heartbeat, full suite, mypy delta, final task/group
-review and M3 hosted gates remain pending. The core benchmark skip supplies no
-large-corpus or performance result; small synthetic Qt cases do not close it.
+Both real temporary-catalog R48 consumers now complete roster, exact request-scoped
+human mapping, passive Enter target identity/raw text, measured zero versus absent
+timing, audio_path=None and custom-root/no-default-DB assertions. This is focused
+automatic read-consumer evidence, not B4 mutations or B5 acceptance.
+
+Independent `/root/task2_review` on frozen `825f3e6` returns **CHANGES REQUESTED**:
+T2-R1 Important, stale library after successful recording/catalog publication;
+T2-R2 Important, participant-load failure lacks durable feedback/retry; T2-R3 Minor,
+shared jobs' busy transition is not reflected when library work starts. Parent
+verified/accepted all three. The same RED role is preparing four targeted tests;
+no regression RED or corresponding source fix has run yet. Complete Task 2/group
+acceptance remains pending, and this same review continues after actual fixes.
+
+Coordinator explicitly released runtime immediately after focus6 commands, BEFORE
+reports/commit/review; root ACKed B's exclusive full/mypy window. This docs role
+has no runtime/import/lint grant. R50 remains preparation without dependent product
+source/real B5 acceptance. Real B4 mutations, B5 guard/reindex/delete notification,
+guarded 1,000/100,000 p95/heartbeat, full suite, mypy delta and final task/group/
+hosted gates remain open. Small synthetic UI cases supply no large-corpus budget
+or new certification. Query-core e4d proof/review above remains unchanged.
 Commands, exact heads, artifacts and limits are recorded in
 `M3_SEARCH_EVIDENCE.json`; acceptance criteria below are unchanged. This is focused
 automatic evidence, no certification or task/group/milestone closure; no 0.4.0 bump.

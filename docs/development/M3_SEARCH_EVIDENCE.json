@@ -261,6 +261,102 @@
       "xml": "task-2-focus-2.xml",
       "report": "task-2-focused-green-report.md",
       "scope": "Eight failures are missing QModelIndex argument in list-model text helper; one status-filter positive wait times out. Both actual R48 cases stop at helper exception before roster/speaker/target assertions. Ten lifecycle cases pass; no semantic R48/UI acceptance."
+    },
+    {
+      "name": "M3A-T2-UI-FOCUS3",
+      "head": "2389a7f191bd41baf1fc173b8d87c2ea26dacb1f",
+      "source_tree": "74d5d07cf67446487e6503ea6b836ea8e54438e4",
+      "tests_tree": "02995c7fb8150e46f5205bdab4e585986c99694a",
+      "workdir": "C:/Users/savar/.codex/worktrees/m3-ui-implementation/here",
+      "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -m pytest -vv tests/test_ui_library.py tests/test_ui_lifecycle.py --junitxml=C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN/task-2-focus-3.xml",
+      "exit_code": 1,
+      "collected": 38,
+      "selected": 38,
+      "passed": 29,
+      "failed": 9,
+      "setup_errors": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "duration_seconds": 18.14,
+      "xml_cases": 38,
+      "xml_internal_seconds": 18.058,
+      "log": "task-2-focus-3.log",
+      "xml": "task-2-focus-3.xml",
+      "report": "task-2-focused-green-report.md",
+      "scope": "Eight private QListWidget-model helper exceptions and observed status enum transport failure; real R48 semantic assertions still blocked. Historical prepared2389 was subsequently executed here."
+    },
+    {
+      "name": "M3A-T2-UI-FOCUS4",
+      "head": "39a2767140d90bf7a1d102b704027a252e1db5eb",
+      "source_tree": "022ddac6dd9f7915a931ed24616e2067fbd38e91",
+      "tests_tree": "ed5d62b74fde76ee2f269e826d929f95ad67cfa7",
+      "workdir": "C:/Users/savar/.codex/worktrees/m3-ui-implementation/here",
+      "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -m pytest -vv tests/test_ui_library.py tests/test_ui_lifecycle.py --junitxml=C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN/task-2-focus-4.xml",
+      "exit_code": 1,
+      "collected": 38,
+      "selected": 38,
+      "passed": 35,
+      "failed": 3,
+      "setup_errors": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "duration_seconds": 13.16,
+      "xml_cases": 38,
+      "xml_internal_seconds": 12.909,
+      "log": "task-2-focus-4.log",
+      "xml": "task-2-focus-4.xml",
+      "report": "task-2-focused-green-report.md",
+      "scope": "FIRST real R48 semantic RED reached: missing participant roster and exact scoped speaker mapping; third failure Tab navigation. Public text helper clears harness exceptions and canonical status now passes."
+    },
+    {
+      "name": "M3A-T2-UI-FOCUS5",
+      "head": "887f2152ae918d9b12e35e813c3150e7e222703a",
+      "source_tree": "b319d3950993881162e6196bdefe4487aa439f5a",
+      "tests_tree": "ed5d62b74fde76ee2f269e826d929f95ad67cfa7",
+      "workdir": "C:/Users/savar/.codex/worktrees/m3-ui-implementation/here",
+      "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -m pytest -vv tests/test_ui_library.py tests/test_ui_lifecycle.py --junitxml=C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN/task-2-focus-5.xml",
+      "exit_code": 0,
+      "collected": 38,
+      "selected": 38,
+      "passed": 38,
+      "failed": 0,
+      "setup_errors": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "duration_seconds": 12.49,
+      "xml_cases": 38,
+      "xml_internal_seconds": 12.434,
+      "log": "task-2-focus-5.log",
+      "xml": "task-2-focus-5.xml",
+      "report": "task-2-focused-green-report.md",
+      "scope": "Focused automatic UI/R48 read-consumer GREEN; all real roster/scoped-speaker/passive-target/custom-root assertions complete. No B4 mutations/B5/full/performance/task acceptance."
+    },
+    {
+      "name": "M3A-T2-UI-FOCUS6",
+      "head": "887f2152ae918d9b12e35e813c3150e7e222703a",
+      "source_tree": "15b4872ee5bb3f8d69c4db8f7373103f74bf903d",
+      "tests_tree": "60430875b7dc44d1b5c012a94d1dc7c86a197f3f",
+      "workdir": "C:/Users/savar/.codex/worktrees/m3-ui-implementation/here",
+      "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -m pytest -vv tests/test_ui_library.py tests/test_ui_lifecycle.py --junitxml=C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN/task-2-focus-6.xml",
+      "exit_code": 0,
+      "collected": 38,
+      "selected": 38,
+      "passed": 38,
+      "failed": 0,
+      "setup_errors": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "duration_seconds": 12.57,
+      "xml_cases": 38,
+      "xml_internal_seconds": 12.523,
+      "log": "task-2-focus-6.log",
+      "xml": "task-2-focus-6.xml",
+      "report": "task-2-focused-green-report.md",
+      "scope": "Ran HEAD887 plus ONLY mechanical formatter diff, NOT subsequent825 HEAD. Nine pre-run Git blobs unchanged after run and identical to post-release committed825 content. Focused automatic UI/R48 read-consumer evidence only.",
+      "working_tree_changes": "ONLY formatter diff in six of the nine assigned UI source/test files; no assertions/scenarios changed.",
+      "tree_binding": "Executed content proven against subsequent committed trees by all nine pre-run blobs and unchanged post-run bindings; these are not the invocation HEAD887 trees.",
+      "content_equivalent_subsequent_commit": "825f3e64570fdd1504050b4259a708376cfb88f6",
+      "bindings_artifact": "task-2-focus-6-bindings.json"
     }
   ],
   "lint_checkpoint": {
@@ -311,14 +407,14 @@
     "runtime_count": 0,
     "parent_integrated": false,
     "report": "task-2-green-source-report.md",
-    "limits": "Original source stage had runtime zero. Subsequent focus1/focus2 reached all old 26 widget assertions with failures retained; no UI GREEN or real B4/R48/B5 acceptance. Latest prepared worker is separately NOT_RUN.",
+    "limits": "Historical source-only stage had runtime zero. Later focus1..4 retain failures; focus5/6 pass38 including actual R48 read consumers. Independent825 review requests changes; no Task2/B4/B5/group acceptance.",
     "stage_scope": "Historical initial source-preparation report only, before later UI attempts; see ui_execution_checkpoint."
   },
   "remaining_gates": [
     "Accepted sole B5 R42 coherent suppression snapshot in reads and R45 generation; typed fail-closed invalid/inaccessible registry; suppression in SQL before cursor/LIMIT, including pending barrier when SQL hide failed and surviving receipts after DB loss/rebuild.",
     "Accepted sole B5 reindex facade, missing-FTS reporting, complete-only/include_partial before-after equivalence, actual no-op generation equivalence and changed-input cursor rejection.",
-    "Actual B4 update_meeting optimistic row_version/title-index consistency and real M3 R48 UI/backend consumer verification remain pending. Isolated coherent get_meeting/list_participants and shared injected-controller getter handoff is technically available in the separate supplement; root-reported probe does not establish consumer acceptance.",
-    "Real UI adapters, current-only request/corpus_changed restart, debounce/close-detail/conflict behavior, queued pre-delete callback invalidation and accessibility/themes; focused UI GREEN and independent review.",
+    "Actual B4 update_meeting optimistic row_version/title-index consistency remains pending. R48 temporary-catalog read consumers now complete all focused assertions, but this does not accept complete B4 or guarded B5/full integration.",
+    "Fix accepted independent UI findings T2-R1 stale post-ingest library, T2-R2 participant failure feedback/retry and T2-R3 shared-busy feedback after actual targeted RED; same-reviewer reassessment. Real B5 deletion notification/invalidation and complete Task2/group acceptance remain pending.",
     "Guarded 1,000/100,000 warm p95 below 500ms including final digest/guard work; actual Qt heartbeat no event-loop block above 50ms, under root exclusive runtime grant.",
     "Full offscreen suite and mypy baseline comparison/no new touched-file errors at eventual integrated head; appropriate checks for later relevant edits.",
     "Complete same Task1 assessment and task docs/evidence; root global integration docs only when capacity ready; Task2 and later single global review.",
@@ -328,8 +424,8 @@
     "large_corpus_benchmark": "NOT_RUN (SKIPPED by default in focused runs)",
     "guarded_p95": "NOT_RUN",
     "qt_heartbeat": "Guarded 1,000/100,000 corpus heartbeat NOT_RUN; small synthetic UI cases/probe do not establish this budget.",
-    "real_B4_R48_B5_integration": "PENDING: R48 real UI consumer cases attempted but blocked before semantic assertions; B4 mutation/title-index and B5 guard/reindex integration NOT_RUN.",
-    "ui_source_green": "ATTEMPTED_NOT_GREEN: focus1 13F/25P, focus2 9F/29P; latest prepared worker 2389a7f NOT_RUN.",
+    "real_B4_R48_B5_integration": "R48 real read consumers FOCUSED_AUTOMATIC_VERIFIED at focus5/6; B4 mutation/title-index and B5 guard/reindex/deletion integration NOT_RUN/PENDING.",
+    "ui_source_green": "FOCUSED_AUTOMATIC_GREEN_ONLY: focus5/6 pass38, independent825 review CHANGES_REQUESTED; targeted regression RED and fixes NOT_RUN.",
     "full_suite": "NOT_RUN",
     "mypy_delta": "NOT_RUN",
     "build_install": "NOT_RUN",
@@ -339,7 +435,7 @@
     "certification": "NOT_RUN",
     "two_hour_recording": "OMITTED under ruling 5, never approved"
   },
-  "runtime_coordination": "M3 coordinator explicitly RELEASED UI runtime window after focus2 process exited; root ACKed rotation to B. No M3 test/probe process remains from that window. No tests/probes/lint/full/mypy/build/benchmark/uv in this documentation stage.",
+  "runtime_coordination": "Coordinator explicitly RELEASED runtime immediately after focus6 commands BEFORE reports/commit/review; root ACKed B exclusive full/mypy window. No M3 test/probe/Ruff process remains from that window; docs role executes no imports/tests/probes/lint/Python/runtime.",
   "invariants": "No acceptance/DoD, product flow, dependency, schema, privacy or retention changes. No new hardware/provider/clean-install certification, no milestone closure or 0.4.0 bump.",
   "technical_supplements": [
     {
@@ -379,7 +475,7 @@
   ],
   "ui_execution_checkpoint": {
     "recorded_on": "2026-11-06",
-    "status": "IN_PROGRESS_NOT_GREEN",
+    "status": "FOCUSED_AUTOMATIC_GREEN_REVIEW_CHANGES_REQUESTED",
     "report": "task-2-focused-green-report.md",
     "source_worker": "C:/Users/savar/.codex/worktrees/m3-ui-implementation/here",
     "branch": "codex/m3-ui-green",
@@ -387,9 +483,9 @@
     "real_R48_consumer_tests": {
       "original_commit": "2b504c8e411c26685c2e805264f56d3a4a9c0879",
       "worker_integration_commit": "544b6e5f5b62942e0e103fa67359a66a74c0d566",
-      "status": "ATTEMPTED_BLOCKED_BEFORE_ROSTER_SPEAKER_TARGET_ASSERTIONS",
-      "acceptance": "PENDING",
-      "scope": "Actual temporary SQLite, injected custom-root MemoryService/controller/UI adapter. No B4 mutation or B5 behavior accepted."
+      "status": "FOCUSED_AUTOMATIC_READ_CONSUMER_VERIFIED",
+      "acceptance": "All focused assertions pass; complete Task2/B4/B5/group acceptance remains PENDING.",
+      "scope": "Actual temporary SQLite and injected custom-root MemoryService/controller/UI adapter: Alice/Bob roster, exact revision+request-scoped assigned human names only, Enter passive targets preserving IDs/raw text/current status/measured0 versus absent timing/audio_path=None; no default DB. No B4 mutation or B5 acceptance."
     },
     "probe": {
       "script": "task-2-event-probe.py",
@@ -426,9 +522,31 @@
         "worker_integration_commit": "2389a7f191bd41baf1fc173b8d87c2ea26dacb1f",
         "scope": "Explicit QModelIndex in list-model helper and valid initial press/release before QTest double-click; scenarios/semantic assertions retained.",
         "runtime": "NOT_RUN"
+      },
+      {
+        "role": "GREEN source",
+        "commit": "21ee889ce0edbcdfb310a4a8e9b697e73e4fbec1",
+        "scope": "Reconstruct canonical MeetingStatus at selector transport boundary after observed enum-to-str probe/focus3."
+      },
+      {
+        "role": "Independent RED tests",
+        "original_commit": "a9e022ea46c9c66108b024d35c9c817d234c8a18",
+        "worker_integration_commit": "39a2767140d90bf7a1d102b704027a252e1db5eb",
+        "scope": "Public QListWidget count/item.text branch before generic model reading; all assertions/scenarios/event sequence preserved."
+      },
+      {
+        "role": "GREEN source",
+        "commit": "887f2152ae918d9b12e35e813c3150e7e222703a",
+        "scope": "After actual focus4 semantic RED: canonical participant roster and exact meeting/revision/speaker-key assignment mapping, same passive target speaker mapping, clear detail state and disable internal table Tab cycling."
+      },
+      {
+        "role": "Mechanical style",
+        "commit": "825f3e64570fdd1504050b4259a708376cfb88f6",
+        "scope": "Post-release commit of formatter-only six-file diff after focus6; all nine executed blobs match. No test assertions/scenarios changed."
       }
     ],
-    "latest_prepared_worker": {
+    "limits": "Focused38 GREEN and actual R48 read assertions are automatic synthetic evidence. Independent825 UI review CHANGES_REQUESTED; R1/R2/R3 regressions/fixes/reassessment remain. Complete B4/B5/full/mypy/guarded performance/hosted/group/certification gates remain open; e4d query-core proof unchanged.",
+    "historical_prepared_worker": {
       "head": "2389a7f191bd41baf1fc173b8d87c2ea26dacb1f",
       "status": "SOURCE_AND_TEST_PREPARED_NOT_RUN",
       "source_tree": "74d5d07cf67446487e6503ea6b836ea8e54438e4",
@@ -437,9 +555,78 @@
       "library_test_blob": "0627e0f7cd451c3d9e1a4c09c22bbab153ffd9b5",
       "runtime": "NOT_RUN",
       "lint": "NOT_RUN",
-      "acceptance": "PENDING; no prior run result attributed to this head"
+      "acceptance": "PENDING; no prior run result attributed to this head",
+      "stage_scope": "Historical preparation before focus3, later executed as focus3; NOT_RUN describes that earlier stage only."
     },
-    "limits": "Historical setup errors remain historical; all prior 26 widget cases now reach assertions. Focus1/focus2 failures retained. Real R48 semantic consumers, UI GREEN/review, real B4/B5 integration, guarded p95/heartbeat, full/mypy and hosted/group gates remain pending."
+    "additional_probes": [
+      {
+        "script": "task-2-status-probe.py",
+        "log": "task-2-status-probe.log",
+        "exit_code": 0,
+        "duration_seconds": 2.973,
+        "jobs_busy_at_end": false,
+        "observations": "Stored MeetingStatus emerges from Qt currentData as str; query transports str and actual worker rejects noncanonical status. Cause observed before GREEN21ee889."
+      },
+      {
+        "script": "task-2-keyboard-probe.py",
+        "log": "task-2-keyboard-probe.log",
+        "exit_code": 0,
+        "duration_seconds": 2.84,
+        "jobs_busy_at_end": false,
+        "observations": "Default table tabKeyNavigation=True cycles columns0..5; False reaches transcript/title/save/close. No large-corpus heartbeat/performance result."
+      }
+    ],
+    "reviewed_checkpoint": {
+      "head": "825f3e64570fdd1504050b4259a708376cfb88f6",
+      "status": "FROZEN_FOCUSED_AUTOMATIC_VERIFIED_REVIEW_CHANGES_REQUESTED",
+      "source_tree": "15b4872ee5bb3f8d69c4db8f7373103f74bf903d",
+      "tests_tree": "60430875b7dc44d1b5c012a94d1dc7c86a197f3f",
+      "library_source_blob": "b00cecd679d514275e70c1fee826910495a689b5",
+      "library_test_blob": "5e43627f5a82f7812fa050244d188eaaec0886e3",
+      "parent_integrated": false,
+      "focus6_invocation_head": "887f2152ae918d9b12e35e813c3150e7e222703a",
+      "focus6_worktree": "HEAD887 plus ONLY formatter diff, not825 HEAD",
+      "bindings_artifact": "task-2-focus-6-bindings.json",
+      "executed_blobs": [
+        {
+          "path": "src/ui/library.py",
+          "blob": "b00cecd679d514275e70c1fee826910495a689b5"
+        },
+        {
+          "path": "src/ui/main_window.py",
+          "blob": "895cf73ae403bdfdca252e22a660207effb60d16"
+        },
+        {
+          "path": "src/ui/app.py",
+          "blob": "0c5882b56805853b62aea4d1605be29a518b459e"
+        },
+        {
+          "path": "src/ui/bridge.py",
+          "blob": "a46768eeb102d78a6eb09ffef05847f5cc1defaa"
+        },
+        {
+          "path": "src/ui/contract.py",
+          "blob": "29f0252b7e9a013b66b981d1537b20b05485caee"
+        },
+        {
+          "path": "src/ui/fake_controller.py",
+          "blob": "4473979679fb9a74bef61a625739a73f35618ae5"
+        },
+        {
+          "path": "src/ui/preview.py",
+          "blob": "1c40ffd7eb80c78cd05ae96e233ceaf4d662a069"
+        },
+        {
+          "path": "tests/test_ui_library.py",
+          "blob": "5e43627f5a82f7812fa050244d188eaaec0886e3"
+        },
+        {
+          "path": "tests/test_ui_lifecycle.py",
+          "blob": "ffa86023a5813fbf6191471954b263503ba9c64c"
+        }
+      ],
+      "binding_verification": "All nine saved before focus6; unchanged after run, then exact match to post-release825 commit. No test result invented at subsequent HEAD."
+    }
   },
   "R50_preparation": {
     "status": "PREPARATION_ONLY",
@@ -449,5 +636,74 @@
     "dependent_product_source_written": false,
     "runtime": "NOT_RUN",
     "acceptance": "PENDING; contract/static preparation does not establish B5 implementation or M3 integration"
+  },
+  "ui_lint_checkpoint": {
+    "execution_state": "HEAD887 plus formatter diff, before focus6 and before post-release825 commit",
+    "files": [
+      "src/ui/library.py",
+      "src/ui/main_window.py",
+      "src/ui/app.py",
+      "src/ui/bridge.py",
+      "src/ui/contract.py",
+      "src/ui/fake_controller.py",
+      "src/ui/preview.py",
+      "tests/test_ui_library.py",
+      "tests/test_ui_lifecycle.py"
+    ],
+    "command_modules": [
+      "-m ruff check",
+      "-m ruff format --check"
+    ],
+    "interpreter": "C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe",
+    "initial_result": "One E501 and six files needing format; original artifacts preserved",
+    "final_result": "PASS: All checks passed; 9 files already formatted",
+    "logs": [
+      "task-2-ruff-check-1.log",
+      "task-2-ruff-format-check-1.log",
+      "task-2-ruff-format-apply.log",
+      "task-2-ruff-check-2.log",
+      "task-2-ruff-format-check-2.log"
+    ],
+    "change_scope": "Formatter-only diff in six of nine files; no semantic/assertion/scenario change.",
+    "warning": "Inherited root-only pyproject top-level select deprecation retained; no metadata change."
+  },
+  "ui_independent_review": {
+    "reviewer": "/root/task2_review",
+    "base": "73d3cb384bd422de6899d8c7b761f3f3159ea3f1",
+    "head": "825f3e64570fdd1504050b4259a708376cfb88f6",
+    "scope": "Consolidated nine-file implemented UI/R48 checkpoint, separate from existing Task1 core assessment",
+    "verdict": "CHANGES REQUESTED",
+    "critical": 0,
+    "important": 2,
+    "minor": 1,
+    "report": "task-2-ui-review-report.md",
+    "runtime": "NOT_RUN: static independent review under B exclusive host",
+    "findings": [
+      {
+        "id": "T2-R1",
+        "severity": "Important",
+        "summary": "Stale library after successful recording/catalog publication; first-show load ignores existing MEMORY_INGESTED path",
+        "parent_disposition": "VERIFIED_AND_ACCEPTED",
+        "status": "PENDING_ACTUAL_REGRESSION_RED_AND_FIX"
+      },
+      {
+        "id": "T2-R2",
+        "severity": "Important",
+        "summary": "Participant-load failure loses feedback and has no retry, leaving selector unavailable",
+        "parent_disposition": "VERIFIED_AND_ACCEPTED",
+        "status": "PENDING_ACTUAL_REGRESSION_RED_AND_FIX"
+      },
+      {
+        "id": "T2-R3",
+        "severity": "Minor",
+        "summary": "Missing shared-jobs busy-start feedback leaves enabled capture actions silently dropped",
+        "parent_disposition": "VERIFIED_AND_ACCEPTED",
+        "status": "PENDING_ACTUAL_REGRESSION_RED_AND_FIX"
+      }
+    ],
+    "next_stage": "Same independent RED role preparing four targeted tests only; no source fix/runtime yet. Actual RED under new root grant, same GREEN fixes, same reviewer reassesses scoped diff.",
+    "task2_acceptance": "PENDING",
+    "group_acceptance": "PENDING",
+    "limits": "No B4 mutation/title-index, B5 guard/reindex/delete event, guarded large-corpus p95/heartbeat, full/mypy, preview launch, hosted/merge or certification acceptance."
   }
 }

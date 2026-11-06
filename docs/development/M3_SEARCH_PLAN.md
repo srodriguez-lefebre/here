@@ -83,8 +83,8 @@ canonical detail/participant reads and the same injected controller getter, no
 B4 mutations/snapshots. Parent search.py is unchanged from e4d; its 177 passes and
 APPROVED CORE review remain bound to e4d. Root reports an isolated probe and
 XML122 without failures. Initial post-handoff M3 runtime was NOT_RUN; subsequent
-UI attempts below still do not establish R48 consumer acceptance. No new UI lint
-result is recorded. Real R48 consumer acceptance, B4 title/
+focus5/6 establish focused synthetic R48 read-consumer evidence, with changes
+requested by the independent UI review. This is not complete B4 acceptance. B4 title/
 version/index behavior, coherent shared B5 R42 suppression, sole reindex facade
 and real before-after/no-op equivalence remain pending.
 Small synthetic cases do not establish the guarded 1,000/100,000 p95
@@ -92,31 +92,43 @@ or Qt heartbeat. Full suite, mypy delta and subsequent relevant checks remain op
 Final four-file Ruff check/format passed at e4d after mechanical formatting and an
 explicit same-fixture re-export; no assertions/scenarios were weakened.
 
-Task 2's original RED results remain unchanged: 2 failures/8 passes, then
-2 failures/8 passes/26 absent-LibraryView setup errors. Later focus1 at exact
-`544b6e5f5b62942e0e103fa67359a66a74c0d566` ran 38 cases: 13 failed/25 passed,
-zero errors/skips/64.47s (XML internal 63.142s). Focus2 at exact
-`3957a7ce9754c76388bd42c1a1580334015a107d` ran 38 cases: nine failed/29 passed,
-zero errors/skips/22.52s (XML internal 18.005s). All old 26 widget cases now reach
-assertions; both real R48 cases remain blocked before roster/speaker/target checks
-(first transcript wait, later list-model helper exception). Focus2 has eight
-helper exceptions and one status-filter positive-wait timeout. Ten lifecycle
-cases pass in each run; no UI GREEN, R48 or complete Task 2 acceptance follows.
+Task 2's original RED, setup errors and focus1/2 failures remain historical.
+Focus3 exact `2389a7f` recorded nine failures/29 passes/18.14s (XML 18.058s).
+Status probe exit0/2.973s/jobs idle confirmed enum-to-str transport; GREEN 21ee889
+restored the canonical enum. RED a9e022e's public QListWidget helper integrated as
+`39a2767`; focus4 on that head first reached real R48 semantic assertions:
+three failures/35 passes/13.16s (XML 12.909s), missing roster/scoped speaker names
+and Tab traversal. Keyboard probe exit0/2.84s/jobs idle proved default table Tab
+cycled columns; disabling that navigation leaves the table for detail/editor.
 
-The synthetic event/focus probe exited zero/3.33s with jobs idle. RED's two
-positive-result waits preceded focus2; subsequent model-parent/click-sequence
-corrections and GREEN's removal of the temporary double-click workaround retain
-the original scenarios/assertions and date traversal fix. Latest prepared worker
-`2389a7f191bd41baf1fc173b8d87c2ea26dacb1f` remains NOT_RUN, source tree
-`74d5d07cf67446487e6503ea6b836ea8e54438e4`, tests tree
-`02995c7fb8150e46f5205bdab4e585986c99694a`. No result is attributed to that head.
+GREEN `887f2152ae918d9b12e35e813c3150e7e222703a` consumes canonical roster and
+exact revision/speaker assignments, reuses that mapping for passive targets and
+fixes Tab. Focus5 at that exact clean HEAD passed 38/12.49s (XML 12.434s).
+Focus6 ran HEAD 887 plus ONLY the formatter diff, passing 38/12.57s (XML 12.523s),
+zero failures/errors/skips. It was not a run at later 825 HEAD. All nine pre-run
+Git blobs stayed unchanged and match post-release style commit
+`825f3e64570fdd1504050b4259a708376cfb88f6`; source/tests trees are
+`15b4872ee5bb3f8d69c4db8f7373103f74bf903d` /
+`60430875b7dc44d1b5c012a94d1dc7c86a197f3f`. Final limited nine-file Ruff check/
+format passed after one E501/six format findings; only formatting changed six
+files, no scenarios/assertions. Both actual R48 consumers complete all roster,
+request-scoped speaker/passive-target/raw text/timing/custom-root assertions.
+This is focused automatic verification only, not B4 mutation or B5 acceptance.
 
-Coordinator explicitly released the UI runtime window after focus2; root ACKed
-B's next window. This docs stage has no runtime grant. R50 preparation report
-exists without dependent product source or actual B5 integration acceptance.
-`M3_SEARCH_EVIDENCE.json` binds commands, heads, corrections and actual artifacts.
-UI GREEN/review, B4/B5 integration, full/mypy, guarded p95/heartbeat and final gates
-remain pending; small synthetic Qt cases do not establish the large-corpus budget.
+Independent `/root/task2_review` at frozen 825 returns **CHANGES REQUESTED**:
+T2-R1 Important post-recording/catalog stale UI; T2-R2 Important unrecoverable
+participant-load failure/erased warning; T2-R3 Minor missing shared-busy feedback.
+Parent accepted all findings. Same RED prepares four targeted regressions; actual
+RED and same-GREEN fixes await a new grant. The same reviewer will reassess the
+scoped fixes; Task 2/group remain open, no extra review seat or acceptance closure.
+
+Coordinator explicitly released runtime immediately after focus6 commands and
+BEFORE reports/commit/review. Root ACKed B's exclusive full/mypy window; this docs
+stage has no imports/tests/probes/lint/runtime grant. R50 remains preparation only,
+without dependent product source or B5 acceptance. B4 mutations, B5 guard/reindex/
+delete notification, guarded p95/heartbeat, full/mypy and final hosted/group gates
+remain pending. `M3_SEARCH_EVIDENCE.json` binds commands, heads, nine executed blobs,
+review findings and retained failures. Core e4d proof/review remains unchanged.
 Composite checkboxes remain unchecked: no partial evidence closes their remaining
 clauses. Group/hosted gates, certification and a 0.4.0 bump are not claimed.
 
