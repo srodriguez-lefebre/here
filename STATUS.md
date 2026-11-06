@@ -81,11 +81,12 @@ Hasta esa transferencia no hay otro writer. Processing continúa sin concesión.
 Cualquier handoff adicional se concede explícitamente. Migraciones/pyproject/uv.lock/versiones
 siguen seriales y requieren permiso de root. Global docs son root-only.
 
-Runtime del checkpoint: M3 posee ventana EXCLUSIVA para GREEN11 R53 y, si pasa,
-regresión query177+guard51 en secuencia sobre fuente congelada. B liberó native35
-y compat2 antes de escribir fixes; prepara foco7 en service, sin runtime.
-M3 RED prepara un control nuevo de >200 supresiones/límite SQLite; no modifica los
-51/11 congelados. Sin full/build/uv/mypy/benchmark concurrente. Consultar SIEMPRE
+Runtime del checkpoint: B posee ventana EXCLUSIVA para el lote v2 en serie sobre
+624be55: native35, CORECOMPAT-A, CORECOMPAT-B, SERVICE-FULL y guard/privacy remainder,
+deteniéndose ante el primer fallo. R54-R1 ADDRESSED/SPEC y calidad APPROVED por
+la misma review independiente. M3 liberó su perfil diagnóstico exit0; interpreta
+resultados y UI GREEN prepara un timeline pasivo de Busy, todavía sin ejecutarlo.
+Sin full/build/uv/mypy/benchmark concurrente. Consultar SIEMPRE
 los dos ledgers antes de reasignar: este owner es snapshot, no permiso permanente.
 READERS7 terminó7P/5,10s, incluido primer uso con raíz vacía. M3 verificó44P/14,42s
 con título/Conflict/FTS B4 real, source75be486/srcd1bddf68, test-format ed8e5aa.
@@ -151,11 +152,20 @@ APPROVED acotada y foco2P/higiene; contexto R52 completo aún no aprobado. TAIL-
 control live-finally pasó1P/2,15s tras un primer fallo de limpieza del test1F/2,39s;
 ambos retenidos, misma review ADDRESSED y test-only integradoedf7d48. API mínima
 R52:4P/4,08s antes del registro StartRequest; no aprobación R52 completa.
-Native35 actual:30P/1F/4S/24,35s (skips privilegios), fallo de reporte por no incluir
+Native35 histórico:30P/1F/4S/24,35s (skips privilegios), fallo de reporte por no incluir
 operación preparada retenida aunque los archivos quedan protegidos. Compat2:
 1P/1F/2,63s, before-stage alcanza exit73 pero deja .publication.json; assertions
-A intactas. Fixes fuente acotados en curso, foco7 pendiente. Warning Ruff heredado
-queda para root/config serial. Cero writer UI B.
+A intactas. Fixes acotados de reporte/staging pasaron foco7/6,73s sobre aa16784.
+La review independiente encontró R54-R1 Important: referencia léxica equivalente
+por dot/case no protegía el staging. Nuevo RED real4F/3,31s; el primer intento
+4F/3,03s era arnés sin import json y se conserva separado. Fix solo service
+624be55f2101450e458824739de8c8bfb80d0ba5, srcd4575d1a70a2fb2579acb669012cfb8510caa1d5,
+testsc0a23fdec146fdeb9eeb1eb6d5ffe6e1d1672d0b: GREEN9/5,49s/XML5,422, controles
+completos de bytes, owner, row/outcome y orphan genuino. Misma re-review acotada
+R54-R1 ADDRESSED/SPEC y calidad APPROVED, sin nuevos hallazgos; lote amplio v2
+autorizado, todavía sin resultado. Full/tipos sobre este source no corridos.
+No transferir R52 ni cerrar Task5. Warning Ruff heredado queda para root/config
+serial. Cero writer UI B.
 
 M3 checkpoint primario docs d7009c724da4fb5eca01d8e28fcec56f6529bf3d, source
 e3ede58c32f5d848988b94dd8c4a5319512546c3, tests35efb958f45c9b107f3639fe018c6f0df42b3b79.
@@ -178,7 +188,24 @@ real y segundo no-op alcanzados. Escala/p95/regresión177/full/tipos aún pendie
 R53 ruling cbe2fa7: callback opcional al mismo MemoryService, una delegación/sin
 recursos propios; reads/fakes intactos. RED11:10F/1P/2,40s, API ausente real. GREEN
 search y UI separados, combinadod8ec92b3d6aca9ec872b8f3d77d446f7b686f91a,
-src0bea8879682c59f3aa5b7dbede9eba1ec78760f0, todavía sin corrida sobre ese combinado.
+src0bea8879682c59f3aa5b7dbede9eba1ec78760f0. GREEN11 R53 pasó y ambas reviews
+acotadas aprobaron; regresión separada228P/1benchmark skip/38,53s. Control real
+de220 IDs con límite SQLite64 pasó1P/4,09s; review aprobó ese
+alcance, sin inventar RED ni p95. Docs distintos integraron23 corridas pytest y
+3 previews Qt separados, preservando la evidencia anterior.
+
+Primera medición real1000 reuniones/100000 segmentos/98901 docs FTS,220 registros
+y221 supresiones: cinco warmups y40 muestras públicas correctas, p95
+1303,482595ms, FALLA presupuesto500ms. XML72,625s; todas las muestras conservadas.
+UI real1F/16,17s: Busy en requests3/4 library-page, cero respuestas de búsqueda y
+objetivo de ocho consultas no alcanzado.115 ticks/578,164ms/max11,2069ms son intervalo diagnóstico
+parcial, NO heartbeat aprobado. Workers drenados. Fuente0bea; árbol ejecutado
+89c628f569eeef03236ce29c5194f0c46d722815, tests13c5f8c06be88b4260b03151a18be3dd416e4855;
+commit posterior equivalente ec800c271b6a5dafd2ab269dd7cc28edba42db5d solo formato.
+Reporte guarded-performance-first-run-report.md y dos logs/XML mantienen fallos
+y límites. Perfil causal y timeline Busy pendientes; no inferir optimización ni
+relajar budgets, corpus, guards o flujo. Todo sigue en evidencia automática
+sintética, sin cierre de grupos ni certificación real.
 
 Historia de corridas, no estado vigente ni resultados sumables:
 
@@ -348,7 +375,9 @@ no provee selección meeting_ids ni OR del retrieval M4: handoff interno pendien
 sin asumir MemoryService.search, SQL directo de intelligence o filtro post-LIMIT.
 Root resolverá ese contrato; no es bloqueo humano ni aceptación de un adapter.
 
-No hay bloqueo humano actual. Próximo: GREEN11/regresión de M3 y foco7 de los fixes
-R52/R54, alternando host tras release confirmado. Consultar ledgers antes de rotar
+No hay bloqueo humano actual. Próximo: validación amplia ya preparada de B
+sobre624be55; diagnóstico causal de p95/Busy de M3, luego
+corrección justificada y medición nueva. Alternar host tras release confirmado.
+Consultar ledgers antes de rotar
 host o asignar archivos; los planes/fixtures/reviews ya preparados no se reinician.
 Reanudar desde estos IDs/reportes sin recrear los chats ni repetir el catálogo A.
