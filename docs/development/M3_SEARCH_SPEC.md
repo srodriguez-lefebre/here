@@ -400,9 +400,30 @@ cross-view and external ownership remain outside; actual Busy/Retry is retained.
 31 separate records preserve all29 prior and preview3; no completeTask2/group/
 hardware/types/full acceptance. Query p95902.413285>500 remains FAILED;
 DF1ADA69 proposal is historical; current proposalA315/source-freeze addendum
-records root-authorized isolated R61ab837 SOURCE_PREPARED/NOT_RUN, not integrated.
+at that R58 checkpoint recorded R61ab837 SOURCE_PREPARED/NOT_RUN; its later
+existing-controls verification is recorded below, still not integrated.
 Independent byte/digest controls are preparing; no byte proof, speedup,500ms
 acceptance or B wait is claimed.
+
+### R61 existing controls — isolated worker only
+
+At clean isolated `ab837b987ff9ba759e8aae3dea14a1d89daaef33`,source
+`04f3fd9802b378efc588df393d92e238915f203f`/tests a2ac/config7143,source Ruff
+check/format-check passed without edits. Separate existing controls10P/4.95s,
+XML10/internal4.829s and regression240P/52.48s,XML240/internal52.394s passed:
+140search+37fallback+51guard+11facade+1scale. All82raw/Gitbindings invariant,
+no edits/retries; GLOBAL RELEASE immediately after session20047exit0 before
+postchecks/analysis/docs/Git. See `r61-existing-verification-report.md` and its
+pinned measurements/logs/XML/exits. Primary24fd/source12774 remains unchanged;
+these are not combined R58/R61 or primary invocations. R57marker/DB unchanged.
+
+These existing green contracts remain controls, not semantic RED or an oracle.
+Baseline v2 byte/digest/error/cursor goldens NOT_CAPTURED; candidate equivalence
+NOT_RUN. Genuine capture package is READY/NOT_RUN,static command/hash correction
+complete; its separate grant reserves no host. No R61 p95,
+byte compatibility,speedup,current full/types/UI or integration claim; historical
+valid40 p95902.413285>500 remains FAILED.33 separate pytest records preserve ALL31
+prior,entirepreview3/types and literal criteria/tasks/Closing/M3B unchanged.
 
 ## Intent
 
