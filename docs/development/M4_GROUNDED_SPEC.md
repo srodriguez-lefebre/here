@@ -1,7 +1,9 @@
 # M4 grounded core specification
 
-Status: written 2026-11-05, not in execution (ruling 15). Implementation starts only
-on an explicit user instruction after M3 closes. Governing design:
+Status: preparation only, not in execution. Ruling 20 supersedes the historical
+ruling 15 pause, but M4 A implementation still requires M3 closure, accepted actual
+handoffs, the normal contract-document PR and root dispatch. No M4 GO is granted.
+Governing design:
 `PRODUCT_DESIGN.md` §3, §6, §8 and §9, a taken decision (ruling 3). Spanish plan and
 acceptance criteria: `../MILESTONE_4_PLAN.md`.
 
@@ -14,6 +16,16 @@ network and no key, and a provider mode with structured output whose every citat
 mechanically verified before anything is shown. Transcript text is data, never
 instructions. Missing evidence produces an honest abstention, not a guess.
 
+## Inherited foundation and handoff boundary
+
+Foundation: M2 A merge `53712c5beedafc2d40e2abf10c13362a1c3c9f78` and contract
+merge `73d3cb384bd422de6899d8c7b761f3f3159ea3f1`. This preparation applies root
+DELIVERY through `03f31ba` (R20/35/39–52) and the frozen M3 B preparation contracts
+(SPEC `03207dd`, PLAN `9c177e5`). Those drafts are not implemented M3 B APIs.
+M3 A checkpoint `00cf0ea` has real SearchService/query DTOs and local evidence;
+its B5 integration, full group gates and M3 closure remain pending. None is
+substituted by this document or a prepared fixture. Root owns handoffs and leases.
+
 ## Decisions
 
 ### Package and dependencies
@@ -22,9 +34,13 @@ New package `src/intelligence/` with `models.py`, `retrieval.py`, `local.py`,
 `providers.py`, `verifier.py`, `service.py`, registered in `pyproject.toml`. No Qt, no
 Typer. The provider adapter reuses the OpenAI SDK already in the project and the
 client factory in `src/transcription/client.py` (`build_client`,
-`require_provider_key`); no new runtime dependency. Retrieval reads through
-`MemoryService.search` and the segment repository of M2; it never opens SQLite on its
-own.
+`require_provider_key`); no new runtime dependency. Retrieval consumes the memory-owned
+query/read boundary: current M3 defines `SearchService(connection_factory)` in
+`memory/search.py`, with `search(SearchQuery) -> SearchPage | MeetingPage`.
+The factory returns a fresh LibraryConnection per operation and SearchService closes
+it. Intelligence never opens SQLite or implements its own query/index/registry reader.
+There is no assumed `MemoryService.search` facade. The exact scoped retrieval and
+adjacent-segment snapshot handoff below must be accepted before implementing it.
 
 ### Requests and scope
 
@@ -45,6 +61,41 @@ revisions by default. `Coverage` reports segments and meetings consulted and whe
 any budget truncated; the caller shows it as "N fragmentos de M reuniones", never as
 an exhaustive review. "Summarize this meeting" selects all segments of that meeting
 and processes them in bounded batches with progress and cancellation.
+
+### Query, scope and coherent evidence handoff
+
+R39/R41/R45 remain memory-owned: opaque cursor/filter/backend binding, actual null
+dates, complete-only persistent FTS, opt-in read-only partials and literal/degraded
+fallback. Never fabricate dates, rank precision or another indexer. Search generation
+covers the actual full rank corpus, including nonmatching/filtered/suppressed rows
+still indexed. Canonical `memory.service.InvalidInput.reason="corpus_changed"`
+rejects stale ranked continuation; evidence assembled across incompatible snapshots
+cannot be combined. Ordinary listing keeps its original date/ID insertion behavior.
+
+R47 normalized empty search returns MeetingPage with listing filters/limit/cursor
+intact, not invented SearchHits or segments. That page is not evidence and cannot
+widen the explicit M4 scope. Removing stopwords must not turn an empty retrieval
+expression into an implicit whole-library request.
+
+The inspected M3 SearchQuery does not expose selected meeting IDs, and its FTS
+builder quotes individual tokens rather than offering the M4 OR-term retrieval
+contract. Therefore selected-scope filtering before limits, literal OR-term semantics,
+diversification, adjacent context and bounded retrieval from one coherent evidence
+snapshot remain an explicit **pending memory-owned handoff**. Root resolves it after
+the producer is accepted. No new signature is selected here; no raw MATCH string,
+post-LIMIT scope filtering, renamed facade or direct intelligence SQL substitutes
+for it. Preserve the budgets and scope requirements above in that handoff.
+
+R42/R50 suppression must guard all source/context reads and revalidation, before
+exposure and keyset/LIMIT. The approved `catalog_read_view(library)` contract has
+caller-owned fresh connection/close, B-owned lock-before-BEGIN and one transaction
+through generation/fetch. Its immutable snapshot IDs/fingerprint include registry
+UUIDs and exact normalized-origin/fingerprint aliases resolved in that DB view.
+Pending and complete suppress; invalid/inaccessible state fails closed. The memory
+boundary owns this integration, not an intelligence-side parser or nested transaction.
+Actual B5/M3 interoperability is pending. Do not hold a DB transaction/ownership lock
+across a provider call; use the accepted snapshot/revalidation contract before
+publication without treating disappeared or changed evidence as success.
 
 ### Local mode
 
@@ -85,12 +136,32 @@ A rejection carries the reason per item. The service may retry once with the rea
 Verification proves citation existence, not semantic truth; the result keeps claim
 kinds so the UI can label synthesis.
 
+R46 supplies the passive `Citation(meeting_id, revision_id, segment_id, quote=None,
+start_char=None, end_char=None)`. Validate source membership and any supplied quote
+or Unicode character span; offsets must address original source text, not bytes or
+positions invented in normalized snippets. Preserve the verifier's existing minimal
+normalization rule without broadening it. M3 B's resolver validates those references
+and resolves title/date/status/timing and exact revision/audio links from guarded
+memory; a provider/UI-supplied CitationTarget grants no authority. Null dates/times
+stay absent, measured zero stays zero, and request-scoped speakers are not inferred
+global participant identities (R46/R48). Its actual resolver/read adapter is pending.
+
 ### Results
 
 `Answer` carries mode, model, coverage, verified claims and extractions, each with
 `Citation` objects resolvable through `MemoryService.resolve_citation`. Visible
 messages are redacted: no key, no meeting text by default. Typed errors as in
 `PRODUCT_DESIGN.md` §3 plus `ProviderUnavailable` and `VerificationFailed`.
+The resolver name denotes the planned M3 B handoff, not a verified method on merged
+M2 A. Resolve against authoritative source rather than trust target fields.
+
+Future M4 B persistence consumes R51's private trusted `_derived_row_purgers` only
+as ordered SQL on B's same final cleanup transaction before core relationships are
+removed; no own transaction/commit/connection/I/O/provider. Failure rolls derived/core
+rows back together into pending replay. It is not a read resolver or an M4 A task.
+R51/R52 keep accepted deletion pending/hidden after a barrier even if SQL rows vanish.
+Composition reuses the injected service and explicit configured roots; no second
+service, new .env reader or origin-derived root probing belongs to intelligence.
 
 ## Acceptance
 
