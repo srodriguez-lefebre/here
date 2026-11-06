@@ -111,8 +111,9 @@ No cambies una definición de terminado para convertir un bloqueo de hardware en
   - `HERE_PROVIDER_SMOKE_KEY` para los smokes opt-in contra el proveedor real (M4 y
     M5); el usuario la dejó en su `.env` (ruling 19). Sin ella se saltean. Nunca se
     imprime ni se copia a ningún artefacto.
-- Skips esperados en una máquina sin privilegio de symlinks: seis, todos en
-  `test_output_session_writer.py` y `test_session_artifact_safety.py`.
+- Skips esperados en una máquina sin privilegio de symlinks: siete, en
+  `test_memory_database.py`, `test_output_session_writer.py` y
+  `test_session_artifact_safety.py`.
 - `scripts/build_windows.ps1` descarga y verifica Inno Setup 6.7.0 por su cuenta;
   no hace falta instalarlo. Necesita el Python 3.13.15 administrado por `uv`.
 

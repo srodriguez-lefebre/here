@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
@@ -32,6 +33,7 @@ TRANSCRIPT_ENCODING = "utf-8-sig"
 METADATA_ENCODING = "utf-8"
 MARKDOWN_ENCODING = "utf-8"
 TRANSCRIPT_FILE = "transcript.txt"
+RAW_TRANSCRIPT_FILE = "raw_transcript.txt"
 MARKDOWN_FILE = "transcript.md"
 METADATA_FILE = "session.json"
 CHUNKS_FILE = "chunks.json"
@@ -55,6 +57,7 @@ class SessionArtifactPaths:
     chunks: ChunkMetadataDocument
     errors: ErrorMetadataDocument
     segments_path: Path | None = None
+    raw_transcript_path: Path | None = None
 
 
 def _session_id_from_datetime(value: datetime) -> str:
@@ -82,6 +85,7 @@ def create_session_dir(target_dir: Path, completed_at: datetime) -> tuple[str, P
 def validate_session_artifacts(session_dir: Path, extra_files: list[str] | None = None) -> None:
     for filename in (
         TRANSCRIPT_FILE,
+        RAW_TRANSCRIPT_FILE,
         MARKDOWN_FILE,
         METADATA_FILE,
         CHUNKS_FILE,
@@ -111,10 +115,10 @@ def read_session_metadata(session_dir: Path) -> SessionMetadata | None:
     return metadata
 
 
-def _stage_document(destination: Path, content: str) -> Path:
+def _stage_document(destination: Path, content: str, *, encoding: str = METADATA_ENCODING) -> Path:
     staged = reserve_artifact_path(destination, ".stage")
     try:
-        staged.write_text(content, encoding=METADATA_ENCODING)
+        staged.write_text(content, encoding=encoding)
     except BaseException:
         staged.unlink(missing_ok=True)
         raise
@@ -126,27 +130,39 @@ def _publish_metadata_and_segments(
     metadata_json: str,
     segments_json: str | None,
     obsolete_paths: tuple[Path, ...] = (),
+    *,
+    raw_text: str | None = None,
+    before_metadata_commit: Callable[[Path], None] | None = None,
 ) -> None:
-    """Publish metadata last; restore segments and obsolete entries on I/O failure.
+    """Publish metadata last; restore evidence on ordinary precommit failure.
 
     Cleanup of owned temporary paths cannot invalidate committed metadata.
     This is not a multi-file transaction against process termination or concurrent writers.
     """
     segments_path = metadata_path.parent / SEGMENTS_FILE
+    raw_path = metadata_path.parent / RAW_TRANSCRIPT_FILE
     staged_paths: list[Path] = []
     backups: dict[Path, Path] = {}
     moved_backups: set[Path] = set()
-    segment_published = False
+    published_paths: set[Path] = set()
     committed = False
     try:
         staged_segments = None
         if segments_json is not None:
             staged_segments = _stage_document(segments_path, segments_json)
             staged_paths.append(staged_segments)
+        staged_raw = None
+        if raw_text is not None:
+            staged_raw = _stage_document(raw_path, raw_text, encoding=TRANSCRIPT_ENCODING)
+            staged_paths.append(staged_raw)
         staged_metadata = _stage_document(metadata_path, metadata_json)
         staged_paths.append(staged_metadata)
 
-        for destination in (segments_path, *obsolete_paths):
+        for destination in (
+            segments_path,
+            *((raw_path,) if staged_raw is not None else ()),
+            *obsolete_paths,
+        ):
             if destination.is_symlink() or destination.exists():
                 backup = reserve_artifact_path(destination, ".backup")
                 backups[destination] = backup
@@ -155,10 +171,15 @@ def _publish_metadata_and_segments(
                 moved_backups.add(destination)
         if staged_segments is not None:
             staged_segments.replace(segments_path)
-            segment_published = True
+            published_paths.add(segments_path)
+        if staged_raw is not None:
+            staged_raw.replace(raw_path)
+            published_paths.add(raw_path)
+        if before_metadata_commit is not None:
+            before_metadata_commit(staged_metadata)
         staged_metadata.replace(metadata_path)
         committed = True
-    except OSError as publication_error:
+    except Exception as publication_error:
         rollback_error: OSError | None = None
         for destination, backup in reversed(backups.items()):
             if destination not in moved_backups:
@@ -172,12 +193,12 @@ def _publish_metadata_and_segments(
                 )
             else:
                 moved_backups.remove(destination)
-        if segments_path not in backups and segment_published:
+        for destination in published_paths - backups.keys():
             try:
-                segments_path.unlink(missing_ok=True)
+                destination.unlink(missing_ok=True)
             except OSError as error:
                 rollback_error = rollback_error or error
-                rollback_error.add_note(f"Could not remove uncommitted {segments_path}: {error}")
+                rollback_error.add_note(f"Could not remove uncommitted {destination}: {error}")
         if rollback_error is not None:
             raise rollback_error from publication_error
         raise
@@ -212,6 +233,7 @@ def write_session_artifacts(
     live_pipeline_used: bool,
     fallback_used: bool,
     transcript_text: str | None = None,
+    raw_transcript_text: str | None = None,
     chunks: list[ChunkMetadata] | None = None,
     errors: list[ErrorMetadata] | None = None,
     status: Literal["pending", "completed", "failed", "cancelled"] = "completed",
@@ -224,6 +246,7 @@ def write_session_artifacts(
     total_paused_seconds: float = 0.0,
     capture_sources: list[CaptureSourceMetadata] | None = None,
     segments: list[TranscriptSegment] | None = None,
+    before_metadata_commit: Callable[[Path, SessionMetadata], None] | None = None,
 ) -> SessionArtifactPaths:
     if session_dir is None:
         session_id, session_dir = create_session_dir(target_dir, completed_at)
@@ -242,6 +265,8 @@ def write_session_artifacts(
         output_files.append(SEGMENTS_FILE)
     if transcript_text is not None:
         output_files = [TRANSCRIPT_FILE, MARKDOWN_FILE, *output_files]
+    if raw_transcript_text is not None:
+        output_files.append(RAW_TRANSCRIPT_FILE)
     if recoverable_audio is not None:
         output_files.append(recoverable_audio)
     if errors:
@@ -271,6 +296,9 @@ def write_session_artifacts(
     )
 
     transcript_path = session_dir / TRANSCRIPT_FILE
+    raw_transcript_path = (
+        session_dir / RAW_TRANSCRIPT_FILE if raw_transcript_text is not None else None
+    )
     markdown_path = session_dir / MARKDOWN_FILE
     metadata_path = session_dir / METADATA_FILE
     chunks_path = session_dir / CHUNKS_FILE
@@ -283,7 +311,15 @@ def write_session_artifacts(
     segments_path = session_dir / SEGMENTS_FILE if segments is not None else None
     segments_json = (
         TranscriptSegmentDocument(
-            segments=[asdict(segment) for segment in segments]
+            segments=[
+                {
+                    **asdict(segment),
+                    "timing_source": "provider"
+                    if segment.start is not None or segment.end is not None
+                    else "absent",
+                }
+                for segment in segments
+            ]
         ).model_dump_json(indent=2)
         if segments is not None
         else None
@@ -320,7 +356,16 @@ def write_session_artifacts(
         if not retain
     )
     _publish_metadata_and_segments(
-        metadata_path, metadata.model_dump_json(indent=2), segments_json, obsolete_paths
+        metadata_path,
+        metadata.model_dump_json(indent=2),
+        segments_json,
+        obsolete_paths,
+        raw_text=raw_transcript_text,
+        before_metadata_commit=(
+            (lambda staged: before_metadata_commit(staged, metadata))
+            if before_metadata_commit is not None
+            else None
+        ),
     )
 
     return SessionArtifactPaths(
@@ -336,4 +381,5 @@ def write_session_artifacts(
         chunks=chunks_document,
         errors=errors_document,
         segments_path=segments_path,
+        raw_transcript_path=raw_transcript_path,
     )

@@ -27,6 +27,7 @@ class TranscriptSegmentMetadata(BaseModel):
     speaker: str | None = None
     chunk_index: int | None = None
     speaker_scope: str | None = None
+    timing_source: Literal["provider", "imported_explicit", "absent"] | None = None
 
 
 class TranscriptSegmentDocument(BaseModel):

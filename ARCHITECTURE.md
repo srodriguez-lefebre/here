@@ -32,6 +32,16 @@ The main flow is:
   timeline merge.
 - `output/`: Pydantic metadata models, Markdown rendering, and session artifact
   writing.
+- `memory/`: immutable catalog DTOs, operation-owned SQLite connections, numbered
+  migrations with managed backups, an explicit transaction repository, validated
+  artifact ingestion and local revision publication/reconciliation. Scoped fixes
+  through round 3 and the combined group-fix wave are integrated at `7bfd0cb`.
+  The final 26-case group/recovery focus passes; the earlier 940/seven-skip full
+  belongs to `8087e25`. New full 3 has eight capture-recovery test-wrapper failures,
+  945 passes/seven skips, now historical. Test-only correction `ef70f78` passes
+  its 13-case focus and full 4: 953 passed/seven skips in 358.94s, both wheel
+  smokes passing on unchanged source. Final technical review APPROVED source,
+  fixture and docs `8845877`; hosted gates remain open.
 - `ui/`: Qt Widgets presentation, the live-logo overlay, and the single adapter
   from visual actions to the application contract.
 
@@ -136,6 +146,24 @@ display timeline merges them. Invalid timestamps become missing; valid zero
 timestamps remain zero. `session.json.capture_sources` separately retains original
 device names and raw audio properties when `sources` describes a normalized mix.
 
+`coerce_audio_transcription` retains nonempty text-only responses as untimed,
+speakerless evidence without mutating the provider-owned DTO. Live and offline
+merging still use the plain-text overlap path for unstructured evidence. The
+additive nullable `timing_source` field accepts `provider`, `imported_explicit` and
+`absent`; historical documents may omit it. Newly written provider segments use
+`provider` when at least one valid bound remains, otherwise `absent`. Reversed
+bounds become null before recording offsets are applied; one-sided finite
+measurements retain their measured bound.
+
+All five transcript completion paths carry `TranscriptionResult.raw_text` to
+`raw_transcript.txt` independently of cleaned `final_text`. The optional
+`SessionArtifactPaths.raw_transcript_path` and `session.json.output_files` expose
+that artifact. The writer preflights its managed entry and stages raw and segment
+evidence before publishing metadata. A handled metadata-replace failure restores
+previous raw bytes or removes a fresh unpublished raw file. This I/O rollback is
+not an atomic filesystem transaction against process termination or concurrent
+writers; task 3 still owns immutable catalog publication and reconciliation.
+
 `events.json` is written when lifecycle events exist. Pause and resume events
 contain both wall-clock time and the duration of material actually recorded.
 `session.json.total_paused_seconds` records the accumulated wall-clock pause;
@@ -144,11 +172,199 @@ no silence is inserted into `audio.wav`.
 This split keeps artifacts useful for debugging now and ready for a later local
 search/RAG layer.
 
+## Catalog foundation (M2 A task 1)
+
+`open_library(data_dir)` owns one connection per worker or operation to
+`<data_dir>/library.sqlite3`; the connection is never shared with the Qt thread.
+Connections enable foreign keys, FULL synchronous writes and a 250 ms busy timeout.
+Proven-local Windows volumes use WAL; remote/mapped or unproven-local volumes use
+rollback journaling with a warning. Future schema versions are
+refused before persistent pragmas are changed. Managed database, sidecar and backup
+paths reuse the output path validators.
+
+Numbered Python migrations create all twelve catalog tables, record names and
+checksums, and validate foreign keys and integrity within a `BEGIN IMMEDIATE`
+transaction. Before upgrading an existing populated database, a separate read
+connection takes a SQLite backup API snapshot under the migrator's write
+reservation. Backups live under `<data_dir>/backups/` and are enumerated as managed
+data for later lifecycle purge. Failed migrations roll back DDL and their ledger.
+
+`MemoryRepository` requires an explicit owned transaction for mutations and revision
+activation. Database constraints enforce same-meeting active revisions, unique
+revision numbers and segment ordinals, and valid durable states and timing bounds.
+Frozen DTOs carry stored values without introducing global speaker identities.
+SQLite busy/locked errors from migration reads, repository reads and writes become
+the recoverable `Busy` error, including the rollback-journal exclusive-lock case.
+
+Task 3 builds publication and producer integration on this foundation as described
+below. Original F1–F7, NB1 and NB2 are addressed in scoped re-review. The final
+whole-group review of `8087e25` requests changes for GR1–GR3. Their combined fix
+is integrated at `7bfd0cb`, with a 26-case group/recovery focus passing. Test-only
+fixture correction `ef70f78` has the current full 4 passing 953/seven skips; the
+final scoped review is APPROVED. The earlier
+940-pass/seven-skip full retains its historical `8087e25` source.
+
+## Catalog publication and local recovery (M2 A task 3)
+
+Current source `c3cdf08` adds the three PR #21 Copilot corrections under R40.
+Ordinary precommit `Exception` triggers the existing evidence rollback before
+propagation; `BaseException`/process-termination semantics remain unchanged and
+failed rollback retains backups/causal diagnostics. The controller constructs its
+MemoryService first and shares it with the default SessionProcessor, preserving
+explicit processors. A rejected completed-session replay yields an existing
+RecoveryCandidate (`status=completed`, `can_retry=False`, readable `error_summary`)
+before retry-audio inspection. Existing desktop controls show the warning and
+disable provider retry; successful/no-marker completed controls stay hidden.
+Eight new cases pass and affected focus 325/one symlink skip passes. Current full 5
+passes 961/seven symlink skips in 371.80s, both wheel smokes passing. Final scoped
+review remains pending; earlier approval/full4 apply to the previous source.
+
+`MemoryService.ingest_session(session_dir, *, revision_of=None)` interprets v1
+artifacts without modifying the origin. Known artifact roles and explicit WAV
+references are validated before referenced files are opened, hashed or probed;
+`session.json` is always included. A contained `.env` or unknown manifest entry is
+not authorized input. Nested managed paths reuse the shared path helpers.
+
+Publication holds `.memory.lock` with bounded acquisition while using short DB
+transactions. It reserves `.staging/<operation-uuid>`, durably writes the planned
+file/hash registration in `.publication.json`, copies and verifies recognized
+artifacts, records a prepared operation, then renames to
+`meetings/<meeting-uuid>/revisions/<revision-uuid>`. One DB transaction inserts the
+entities/evidence, updates active-complete FTS and activates the revision. Copies,
+hashing and provider work remain outside SQLite transactions.
+
+After DB commit, `catalog.json` records the revision's IDs, hashes, assets and
+origin mapping; append-only `states/<row_version>-<uuid>.json` preserves the latest
+meeting status and active pointer. The operation becomes complete afterward.
+Reconciliation can finish receipts for known committed entities or revert an
+uncommitted owned publication. Cleanup validates all entries first; only registered
+protocol names may be removed, and unknown files/subdirectories defer cleanup with
+a warning. A UUID directory alone never establishes ownership of its contents.
+
+With a missing catalog, managed receipts and state snapshots supply reconstruction
+evidence without reopening external origins. Unreceipted material is uncertain and
+is retained/reported. If DB commit knowledge and the receipt are both lost, recovery
+does not infer that the material was committed. Receipt/pending metadata are
+untrusted. Receipt envelope objects, nested mappings and arrays of objects are
+validated before mapping methods or referenced reads. A malformed meeting tree is
+retained with an identified warning; valid siblings can rebuild and maintenance
+JSON remains usable. Artifact roles precede reads/hashes, and generated state
+names precede state reads. Earlier missing-role-guard observations describe
+superseded source.
+
+Origin plus fingerprint makes ordinary import idempotent. Trusted explicit retry
+supplies the expected active revision under `revision_of`. Each explicit producer
+invocation has a new publication UUID. Operation payload and receipt 3 bind it to
+the committed revision, expected parent, normalized origin, measured fingerprint
+and source kind. Exact proof/content/committed-revision matching makes that
+publication's replay unchanged, including after rebuild restores the proven
+complete operation. Prepared-only state cannot prove commit. Fresh identical
+retries still create new revisions; receipt 2 is accepted without invented proof.
+Covered GUI legacy
+retry and existing-session CLI preserve the source optional identity independently
+of canonical catalog ownership. Trusted legacy preparation resolves/preimports its
+lineage before mutation/provider, including None/opaque M1 IDs; ordinary imports
+retain strict UUID validation. Aware
+dates preserve their instants in UTC; naive source dates remain unspecified with
+a warning. FTS5 indexes active complete revisions using accent-folding unicode61;
+missing capability returns typed `FtsUnavailable` while preserving publication.
+
+The service exposes `.owners/<meeting-uuid>.lock` handles for capture/provider-work
+lifetimes. Catalog reconciliation probes OS ownership and preserves live rows;
+residual lock filenames or PIDs do not prove liveness. Competing application
+producer and recovery paths now acquire/recheck owners before mutation. Native
+capture ownership starts before publishing the journal at
+`<sessions_root>/.capture_owners/<capture_id>.lock`. The controller job scope retains
+that OS lease through real helper closure and final persistence, even if the
+constructor or catalog fails; no deadline/protocol changes. Abandoned
+recording/processing rows become interrupted. Remote/mapped/unproven-local Windows
+volumes use rollback journaling with a visible warning; proven local storage uses WAL.
+
+`SessionProcessor` registers a version-2 intent before explicit producer work.
+Every final artifact path supplies the output writer's internal
+`before_metadata_commit` callback: after subordinate artifacts are published but
+before the final `session.json` replace, it durably writes marker 3. This preserves
+the original optional meeting ID, expected revision, ingest/status intent,
+publication UUID and `source_kind` (`session`/`legacy_audio_only`), and adds `hashes`.
+The seal contains the prospective `session.json` bytes and the exact recognized
+artifact inventory, using validated roles and lowercase SHA-256 values. Hashing
+remains outside SQLite transactions. Readers retain marker 1/2 compatibility
+without inventing a seal or provenance.
+
+`publish_memory` validates a sealed final manifest and the entire evidence map
+before catalog work. A pending manifest, unmatched inventory or changed bytes
+cannot authorize importing the previous result or removing uncertain intent.
+The marker and source bytes remain with a warning; pending-manifest discovery
+adds that warning to the existing `RecoveryCandidate.error_summary`. Matching
+final evidence replays locally without a provider call. Failed/cancelled retries
+with no new transcript update only durable state and preserve the previous complete
+active revision, including during busy replay.
+
+The real controller privately defers capture-failure catalog publication through
+the existing cancellation cutover. Any accepted cancellation reseals its final
+manifest and original error/audio evidence before the first catalog publication,
+preserving one meeting and one partial revision for canonical or optional source
+IDs. Direct `persist_capture_failure` and foreign injected processors keep their
+existing contracts. The private directory/manifest-bound result is still consumed
+once; injected processors retain a fallback. This handoff is separate from durable
+replay proof, and catalog failure keeps the saved audio/text.
+
+`MEMORY_INGESTED` follows `SESSION_PERSISTED` before terminal completion. Nonfatal
+catalog issues populate `ApplicationSnapshot.memory_warning`; the existing window
+detail displays it only when no real `last_error` has priority. New work or clean
+publication clears the warning, without changing a completed recording into failure.
+Maintenance CLI ingest/reconcile/show use the same service and expose JSON results
+with typed error categories. Postcommit housekeeping now reports committed success
+with a recoverable warning instead of precommit rejection.
+
+Schema 2 adds `revision_audio_assets` (meeting/revision/asset, source file and
+ordinal) without changing migration 1. Version-2/3 receipts, rebuild and `show` JSON
+retain ordered links, including reused assets in A→B→A retries; cumulative assets
+cannot substitute for those references. Ambiguous older evidence is retained with
+a warning rather than assigned by guess. Scoped review marks original F1–F7 addressed.
+
+WAV-only legacy retry reserves a canonical identity/actual lease with origin revision
+NULL and no invented historical transcript before provider work. Durable
+`source_kind=legacy_audio_only` keeps unknown capture dates NULL across retries and
+rebuild. Metadata-only recovery inspection does not create lock files; actual
+materialization upgrades and retains the leases before mutation. Missing-metadata
+journal candidates require canonical UUID before constructing/probing the path;
+existing manifests retain their optional/opaque source identity.
+
+Scoped reviews address NB1, NB2 and the five prior integrated failures. Historical
+full 2 at `8087e25` passes 940 tests/seven skips in 325.09s. Its final whole-group
+source/docs verdict is changes requested for GR1–GR3; GD1/GD2 minor checkpoint
+corrections were committed separately. The combined R38 fix at `7bfd0cb` matches
+Green `ec55b95` source/tests exactly. Independent baseline RED reported 11 failures
+and one passing control; the final group/recovery focus passes 26 in 34.46s. An
+additional pre-final-replace control first failed only its missing uncertainty
+warning, then passed with the recovery correction. The single scoped re-review
+marks GR1–GR3/GD1/GD2 ADDRESSED and technically APPROVES source, fixture and
+documentation supplement `8845877`. Fresh root wheel/sdist and noneditable 65-file probe
+pass on `7bfd0cb`; full 3 reports eight failures/945 passes/seven skips in 364.23s,
+both wheel smokes passing. Two existing capture-recovery monkeypatch wrappers
+reject `before_metadata_commit`; their narrow optional-keyword forwarding fix
+preserves all assertions and crash cutpoints. It is integrated at `ef70f78`:
+13 cases pass in 24.82s and **full 4 passes 953/seven symlink skips in 358.94s**,
+XML 960 cases/0 failures/0 errors/7 skips/internal 358.621s. Both wheel smokes pass.
+The original `7bfd0cb` wheel remains exact for its unchanged 65-file product source;
+only the test wrappers changed. Hosted gates remain pending. Earlier
+failed fulls and the unexplained child timeout
+retain their original results; no new certification or group acceptance is claimed.
+
 ## Existing Audio Transcription
 
 `here trans {file}` builds the same recoverable session shape from an existing
 audio file. When `{file}` is already `audio.wav` inside a failed session folder,
 the command updates that session in place.
+
+`SessionProcessor.transcribe_audio_path(...)` now owns file normalization, pending
+publication, completion/failure artifacts and conservative postcommit cleanup.
+CLI helpers inject their existing transcriber, normalizer and clock and delegate
+to that application owner; no direct CLI artifact writer remains. Recording,
+offline fallback, file transcription and retry therefore share application-owned
+raw/segment persistence while retaining external input ownership and the existing
+recoverable-audio filename and exception-cause guards.
 
 ## Diagnostics
 

@@ -4,6 +4,7 @@ import math
 import threading
 import time
 from collections.abc import Callable
+from contextlib import nullcontext
 from contextvars import copy_context
 from dataclasses import replace
 from datetime import datetime
@@ -26,10 +27,13 @@ from here.application.processing import (
     SessionProcessor,
     error_metadata,
 )
+from here.config.paths import get_data_dir
 from here.config.settings import require_provider_key, settings_operation
 from here.live_processing import LiveTranscriptionController
+from here.memory.service import MemoryService
 from here.output.metadata import SessionEventMetadata
-from here.output.session_writer import SessionArtifactPaths
+from here.output.ownership import owned_job
+from here.output.session_writer import SessionArtifactPaths, read_session_metadata
 from here.recording.control import ControllableRecording
 from here.recording.models import CaptureFailed
 from here.recording.reservation import audio_reservation
@@ -80,12 +84,16 @@ class HereApplicationController:
         capture_factory: CaptureFactory = _default_capture_factory,
         live_factory: LiveFactory = _default_live_factory,
         processor: SessionProcessor | None = None,
+        memory_service: MemoryService | None = None,
         clock: Callable[[], datetime] = lambda: datetime.now().astimezone(),
         monotonic: Callable[[], float] = time.monotonic,
     ) -> None:
         self._capture_factory = capture_factory
         self._live_factory = live_factory
-        self._processor = processor or SessionProcessor()
+        self._memory = memory_service or MemoryService(get_data_dir())
+        self._processor = processor or SessionProcessor(memory_service=self._memory)
+        self._meeting_id: str | None = None
+        self._retry_revision: str | None = None
         self._clock = clock
         self._monotonic = monotonic
         self._lock = threading.RLock()
@@ -177,6 +185,7 @@ class HereApplicationController:
             started_at = self._clock()
             self._request = request
             self._capture = None
+            self._meeting_id = None
             self._live = None
             self._cancel_recording = False
             self._stop_requested = False
@@ -253,6 +262,7 @@ class HereApplicationController:
         )
 
     @settings_operation
+    @owned_job()
     def _run_recording(self) -> None:
         request = self._request
         assert request is not None
@@ -267,6 +277,16 @@ class HereApplicationController:
             with self._lock:
                 self._live = live
             capture = self._capture_factory(request, self._block_sink)
+            self._meeting_id = getattr(capture, "meeting_id", None)
+            if (capture_identity := self._meeting_id) is not None:
+                self._memory_action(
+                    lambda: self._memory.begin_capture(
+                        capture_identity,
+                        started_at=self._snapshot.started_at.isoformat()
+                        if self._snapshot.started_at
+                        else None,
+                    )
+                )
             with self._lock:
                 self._capture = capture
                 self._snapshot = replace(
@@ -322,15 +342,20 @@ class HereApplicationController:
                 self._transition(ApplicationState.CANCELLED, details={"recoverable": False})
             else:
                 try:
-                    artifacts = self._processor.persist_capture_failure(
-                        exc,
-                        request.output_dir,
-                        use_alt_transcription_model=request.use_alt_transcription_model,
-                        events=self._events,
-                        started_at=self._snapshot.started_at,
-                        total_paused_seconds=self._snapshot.total_paused_seconds,
-                    )
-                    self._finish_capture_failure(artifacts, exc)
+                    with (
+                        self._processor._capture_failure_publication()
+                        if isinstance(self._processor, SessionProcessor)
+                        else nullcontext()
+                    ):
+                        artifacts = self._processor.persist_capture_failure(
+                            exc,
+                            request.output_dir,
+                            use_alt_transcription_model=request.use_alt_transcription_model,
+                            events=self._events,
+                            started_at=self._snapshot.started_at,
+                            total_paused_seconds=self._snapshot.total_paused_seconds,
+                        )
+                        self._finish_capture_failure(artifacts, exc)
                 except Exception as persistence_error:
                     self._fail("capture_persistence", persistence_error)
         except SessionProcessingFailed as exc:
@@ -367,6 +392,12 @@ class HereApplicationController:
             with self._lock:
                 self._capture = None
                 self._live = None
+            if (finished_identity := self._meeting_id) is not None:
+                self._memory_action(
+                    lambda: self._memory.finish_capture(
+                        finished_identity, discard=self._cancel_recording
+                    )
+                )
 
     def _launch_worker(self, worker, *, release_audio=False):
         # The completion observer, never Qt, joins the actual worker after its finally.
@@ -393,6 +424,10 @@ class HereApplicationController:
         with self._lock:
             if self._cancel_recording:
                 return False
+            if (processing_identity := self._meeting_id) is not None:
+                self._memory_action(
+                    lambda: self._memory.set_status(processing_identity, "processing")
+                )
             previous = self._snapshot.state
             self._snapshot = replace(self._snapshot, state=ApplicationState.PROCESSING)
             self._append_session_event("processing", details=details)
@@ -461,6 +496,15 @@ class HereApplicationController:
             )
         for event in events:
             self._emit(event)
+            if event.kind is EventKind.SESSION_PERSISTED:
+                self._ingest_persisted(artifacts.session_dir, previous)
+
+    def _memory_action(self, action: Callable[[], object]) -> None:
+        try:
+            action()
+        except Exception:
+            # Capture and its journal remain authoritative if the library is busy.
+            pass
 
     def _persisted(self, session_dir: Path, *, recoverable: bool) -> None:
         with self._lock:
@@ -477,6 +521,57 @@ class HereApplicationController:
                 state=state,
                 session_dir=session_dir,
                 details={"recoverable": recoverable},
+            )
+        )
+        self._ingest_persisted(session_dir, state)
+
+    def _ingest_persisted(self, session_dir: Path, state: ApplicationState) -> None:
+        details: dict[str, str | int | float | bool | None]
+        try:
+            metadata = read_session_metadata(session_dir)
+            result = (
+                self._processor._take_catalog_result(session_dir)
+                if isinstance(self._processor, SessionProcessor)
+                else None
+            )
+            if result is None:
+                result = SessionProcessor(memory_service=self._memory).publish_memory(
+                    session_dir,
+                    revision_of=self._retry_revision,
+                    status_only=bool(
+                        self._retry_revision
+                        and metadata
+                        and metadata.status in {"failed", "cancelled"}
+                    ),
+                )
+            details = {"status": result.status, "meeting_id": result.meeting_id}
+            if result.warnings:
+                details["message"] = "; ".join(
+                    str(getattr(item, "message", item)) for item in result.warnings
+                )
+            if result.status == "rejected":
+                details.update(
+                    pending_recovery=True,
+                    message="Audio guardado; biblioteca pendiente de recuperación local",
+                )
+        except Exception:
+            details = {
+                "status": "rejected",
+                "meeting_id": self._meeting_id,
+                "pending_recovery": True,
+                "message": "Audio guardado; biblioteca pendiente de recuperación local",
+            }
+        with self._lock:
+            self._snapshot = replace(
+                self._snapshot,
+                memory_warning=(str(details["message"]) if details.get("message") else None),
+            )
+        self._emit(
+            ApplicationEvent(
+                kind=EventKind.MEMORY_INGESTED,
+                state=state,
+                session_dir=session_dir,
+                details=details,
             )
         )
 
@@ -602,6 +697,7 @@ class HereApplicationController:
                 self._snapshot,
                 state=ApplicationState.PROCESSING,
                 last_error=None,
+                memory_warning=None,
                 worker_complete=False,
             )
             worker = threading.Thread(
@@ -623,14 +719,26 @@ class HereApplicationController:
 
     def _run_retry(self, session_dir: Path) -> None:
         try:
+            metadata = read_session_metadata(session_dir)
+            try:
+                self._retry_revision = self._memory.active_revision(
+                    metadata.meeting_id if metadata else None
+                )
+            except Exception:
+                self._retry_revision = None
             artifacts = self._processor.retry(session_dir, cancel_event=self._processing_cancel)
             self._persisted(artifacts.session_dir, recoverable=True)
             self._transition(ApplicationState.COMPLETED, details={"retry": True})
         except ProcessingCancelled as exc:
             self._persisted(exc.session_dir, recoverable=True)
             self._transition(ApplicationState.CANCELLED, details={"recoverable": True})
+        except SessionProcessingFailed as exc:
+            self._persisted(exc.session_dir, recoverable=exc.recoverable)
+            self._fail("retry", exc)
         except Exception as exc:
             self._fail("retry", exc)
+        finally:
+            self._retry_revision = None
 
     def wait_until_terminal(self, timeout: float | None = None) -> ApplicationSnapshot:
         with self._lock:

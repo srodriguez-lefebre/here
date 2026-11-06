@@ -127,6 +127,380 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Cost if wrong:** gasto en la cuenta del usuario por smokes repetidos; se acota
     porque solo corren en los pasos que los PLAN nombran, con texto corto.
 
+20. **Ruling:** por instrucción explícita del usuario el 2026-11-05, se reemplaza
+    el ruling 15 y se autoriza implementar completos M2–M5 en los nueve grupos
+    de PR de STATUS, empezando por M2_CATALOG_PLAN, tarea 1. Codex orquesta RED
+    por subagente, implementación GREEN, review por otro subagente independiente
+    y documentación/evidencia por otro, con worktrees separados, un escritor por
+    archivo y los solapamientos exclusivos de CLAUDE §11. Migraciones, pyproject y
+    versión siempre en serie. Cada grupo: PR abierto contra main con evidencia y
+    review independiente; Copilot solicitado sobre el head actual y recibido;
+    cada observación respondida en su hilo, corregida con commit o rechazada con
+    razón y review repetida tras correcciones sustantivas; CI Windows verde en ese
+    head; merge commit con --admin --match-head-commit; anotación en DELIVERY.
+    Ninguna condición se omite, incluso si Copilot demora. Contratos que cambien
+    requieren PR de documentación del PLAN siguiente antes de implementarlo. Cada
+    hito verifica todos sus criterios con corridas reales y actualiza ACCEPTANCE,
+    versión (0.3.0, 0.4.0, 0.5.0, 1.0.0), README, ARCHITECTURE, WHATS_NEW y STATUS.
+    Se registran defaults menores como rulings; solo se pregunta lo previsto por
+    CLAUDE §3. Smokes del ruling 19 usan HERE_PROVIDER_SMOKE_KEY del .env original,
+    sin imprimirla ni persistirla, con texto/audio sintéticos. Máquina limpia se
+    pide con protocolo cuando corresponda. Prueba de dos horas: **omitida por
+    ruling 5**, nunca aprobada. Se mantienen los tres niveles de evidencia y las
+    definiciones de terminado. M5 exige instalador 1.0.0 y portable como artefactos
+    Windows con SHA256SUMS, inventario, provenance y avisos; matriz completa,
+    instalación limpia y upgrade desde 0.2.0 real conservando biblioteca. Bloqueos
+    humanos quedan en STATUS con PR abierto y evidencia; se retoma desde STATUS.
+    **Cost if wrong:** implementación y gasto de CI/proveedor de cuatro hitos;
+    los gates y la evidencia impiden confundir código con certificación.
+
+21. **Ruling:** el archivo separado de texto fuente de cada transcripción se llama
+    `raw_transcript.txt`. Conserva `raw_text` independientemente del texto de
+    presentación en `transcript.txt`; el nombre concreta el requisito ya aprobado
+    de preservar raw text, sin agregar tiempos ni hablantes. **Cost if wrong:**
+    renombrar el artefacto y ajustar sus lectores, manifiestos y tests antes de
+    publicar un formato estable.
+22. **Ruling:** `MemoryService.ingest_session` admite el argumento opcional y
+    aditivo `revision_of`, cuyo valor es el ID de revisión activa esperada. Solo la
+    vía confiable de retry explícito lo aporta para publicar una revisión nueva;
+    se valida la identidad y la revisión esperada antes de activar. Una importación
+    ordinaria con el mismo UUID y contenido distinto sigue rechazada como conflicto;
+    el contenido de una carpeta no otorga autoridad de retry. Precisa el contrato
+    de tarea 3, cuyos tests RED e implementación siguen pendientes. **Cost if wrong:**
+    ajustar los adaptadores de retry, tests de conflicto/concurrencia y contrato de
+    ingestión antes de que ciclo de vida dependa de él; no se reescriben revisiones
+    previas para resolver el conflicto.
+
+23. **Ruling:** la publicación y reconciliación locales del catálogo se serializan
+    con `<data_dir>/.memory.lock`; la propiedad real de captura/procesamiento se
+    acredita con un lock de archivo del sistema operativo en
+    `<data_dir>/.owners/<uuid>.lock`, sin inferir actividad de un PID o timestamp.
+    Adquisición acotada a 250 ms devuelve `Busy`; los locks no sustituyen las
+    transacciones cortas ni permiten copiar/calcular hashes dentro de ellas. No se
+    agrega dependencia ni proceso residente. La aplicación puede conservar en su
+    carpeta de sesión propia `memory_pending.json`, con versión, identidad y la
+    revisión esperada del retry explícito, para reintentar solo ingestión local
+    cuando la DB estuvo ocupada o corrupta. No contiene secretos, payloads del
+    proveedor ni autoridad sobre rutas externas; nunca dispara proveedor al abrir.
+    Los paths y cada componente se validan con los helpers existentes. La
+    reconciliación conserva trabajos con propiedad real vigente; un archivo de
+    lock residual no demuestra actividad. **Cost if wrong:** ajustar el layout
+    interno de locks y el lector de marcadores antes de que M2 B/M5 dependan de
+    ellos; los archivos originales y revisiones previas siguen preservados.
+
+24. **Ruling:** se adopta el default de M2 que permite una raíz de datos de red
+    con advertencia visible, sin recomendarla; incluye unidades de red mapeadas,
+    y SQLite usa rollback journal en vez de WAL cuando el volumen es remoto.
+    Las advertencias del catálogo se presentan separadas del error de captura en
+    el campo aditivo `ApplicationSnapshot.memory_warning`: una captura completada
+    sigue completada y no adquiere un `last_error` falso. La ventana muestra esa
+    advertencia cuando no hay un error real con prioridad, y la limpia al iniciar
+    otro trabajo o completar una persistencia sin advertencias. Precisa la forma
+    de mostrar el aviso que ya exige el criterio 10; no agrega pantalla ni flujo.
+    **Cost if wrong:** ajustar el canal de advertencias y el sondeo del volumen;
+    ninguna revisión ni audio necesita reescribirse.
+
+25. **Ruling:** el manifiesto de una sesión importada solo puede referenciar
+    artefactos conocidos de sesión y audio WAV explícito validado. Una ruta
+    contenida no basta para autorizar leerla: nombres como `.env`, logs ajenos o
+    archivos desconocidos se rechazan antes de abrir, sondear o calcular hashes.
+    Una referencia de audio tampoco convierte credenciales en audio. La regla
+    conserva los artefactos v1 conocidos y nunca copia la carpeta completa.
+    Concreta el principio de privacidad y la validación de entradas del SPEC.
+    **Cost if wrong:** extender explícitamente los tipos de artefacto permitidos
+    cuando un formato legítimo lo requiera; las fuentes externas no se modifican.
+
+26. **Ruling:** la reconstrucción del catálogo usa snapshots administrados
+    autocontenidos con IDs, revisiones, segmentos, assets, hashes y procedencia.
+    `catalog.json` dentro de la revisión se publica después del commit de DB y
+    sirve como recibo de terminación; un árbol preparado sin recibo no acredita
+    una revisión publicada. Los estados durables se conservan sin reescribir
+    historia en `meetings/<uuid>/states/<row_version>-<uuid>.json`. Con la DB
+    vigente, reconciliación puede terminar recibos pendientes desde lo que fue
+    comprometido; si se pierden DB/journal antes del recibo, el árbol incierto se
+    informa y no se activa por conjetura. La reconstrucción valida rutas y hashes,
+    usa solo archivos administrados y no escanea fuentes externas ni llama al
+    proveedor. **Cost if wrong:** versionar los snapshots/recibos y ajustar el
+    lector de reconstrucción y la purga de M2 B; las revisiones anteriores no se
+    modifican para corregir el formato.
+
+27. **Ruling:** transcribir un archivo y reintentar desde la aplicación también
+    mantienen estado durable `processing` y propiedad real durante el trabajo del
+    proveedor, sin mantener una transacción SQLite abierta. Si un retry falla sin
+    devolver una transcripción, conserva la revisión activa anterior y solo cambia
+    el estado a `failed`; no fabrica una revisión nueva con texto viejo. Cuando la
+    DB está ocupada, el marcador local puede distinguir un intento de ingestión de
+    una actualización de estado y guardar ese desenlace junto a la revisión esperada.
+    El replay local respeta esa precondición y no ejecuta de nuevo al proveedor.
+    **Cost if wrong:** ajustar el lector de intención del marcador y los adaptadores
+    de procesamiento; el historial de evidencia previo permanece intacto.
+
+28. **Ruling:** el retry explícito de una sesión v1 ya importada que conserva
+    `meeting_id=None` en sus archivos reutiliza la identidad canónica del catálogo
+    mediante su origen normalizado y la revisión activa esperada. La huella nueva
+    del resultado no crea otra reunión en ese recorrido confiable. La importación
+    ordinaria conserva el contrato ruta + huella; el retry no reescribe el ID
+    opcional del artefacto legado para resolver la asociación. Si el origen apunta
+    a varias identidades posibles, se informa conflicto en lugar de elegir una
+    por conjetura. **Cost if wrong:** ajustar la resolución del contexto de retry
+    y los mappings de origen, conservando audio y revisiones ya publicadas.
+
+29. **Ruling:** el arnés sintético de captura espera de forma acotada una
+    confirmación real de que su backend fake terminó el bootstrap antes de devolver
+    el helper a la prueba del dispositivo. La confirmación no simula `ready` del
+    protocolo: enumeración, apertura, lectura y cierre siguen siendo ejercidos con
+    sus límites y watchdogs originales. No se cambia ningún deadline del producto.
+    En los tests de consumidor/pipe bloqueados, progreso primario se observa sin
+    abrir el journal activo; el journal se inspecciona tras el cierre real del hijo.
+    Motivo medido: un fake sano agotó el lease de 1,5 s durante imports antes del
+    request; un lector abierto reprodujo `WinError 5` en el writer sin cambios.
+    La comparación pre-M2 A también falló 15 casos de 33; no se atribuye a la tarea
+    3 ni se presenta una causa global no probada. **Cost if wrong:** rehacer la
+    instrumentación del fixture y su evidencia, manteniendo intactos los límites
+    operativos y criterios de captura.
+
+30. **Ruling:** cada staging de publicación registra antes de copiar un plan
+    propio `.publication.json` con versión, ID de operación y hashes de nombres
+    reconocidos. Un UUID de carpeta por sí solo no prueba propiedad de sus hijos.
+    La limpieza usa únicamente ese plan validado o los nombres registrados por la
+    operación persistida; archivos o subdirectorios desconocidos se conservan y
+    producen advertencia/limpieza diferida antes de borrar. Los snapshots de estado
+    también validan nombre generado, versión e identidad antes de una purga propia.
+    **Cost if wrong:** versionar el lector del plan de staging y reintentar limpieza
+    local; material desconocido y fuentes originales permanecen preservados.
+
+31. **Ruling:** cada revisión registra explícitamente los assets de audio que
+    consumió, incluso si sus bytes ya existían y no se copian otra vez. La
+    migración 2 agrega `revision_audio_assets` con reunión, revisión, asset, ordinal
+    y nombre de fuente; las claves foráneas compuestas impiden cruzar reuniones y
+    ordinal/nombre son únicos dentro de la revisión. No se altera el checksum de
+    la migración 1. `MemoryService.show` y su JSON CLI exponen
+    `revision_audio_assets`. El recibo de publicación versión 2 conserva esos
+    vínculos y solo sus assets; rebuild restaura la misma asociación A→B→A, sin
+    elegir audio por orden de archivos o por conjetura sobre el hash agregado.
+    Un recibo antiguo sin prueba inequívoca no autoriza inventar el vínculo:
+    material incierto se conserva y se advierte. La biblioteca real 0.2.0 no tenía
+    este catálogo; esto no autoriza reescribir sus sesiones v1. **Cost if wrong:**
+    nueva migración/versión de recibo y adaptación del lector/rebuild y de M2 B,
+    conservando evidencia inmutable y asociaciones ya comprobadas.
+
+32. **Ruling:** la protección de una captura empieza antes de publicar su journal,
+    mientras el factory todavía puede estar esperando apertura/`ready`. El handle
+    nativo mantiene una lease real en
+    `<sessions_root>/.captures/.owners/<capture_id>.lock`, con componentes validados,
+    además de la lease de catálogo del ruling 23. El lock se adquiere antes de crear
+    o publicar el journal; discovery y materialize prueban ambos locks antes de
+    inspeccionar media cambiante o intentar persistencia/cleanup. Ausencia de la
+    fila de catálogo, PID o edad del journal no prueban abandono. El handoff entre
+    handle, sesión y controlador no deja una ventana sin dueño; la lease se libera
+    después del cierre real del helper y del desenlace de persistencia/publicación,
+    incluso si el catálogo falló. Apertura fallida y cleanup cierran idempotentemente
+    cuando ya no hay trabajo propietario. Se permite extraer el lock genérico a
+    `output/ownership.py` y ampliar solo la propiedad en `recording/journal.py`,
+    `isolated.py` y, si hace falta handoff, `models.py`; sin proceso residente nuevo,
+    cambios de protocolo ni deadlines. Es una corrección de F5, con RED independiente
+    y re-review pendientes, no evidencia de una carrera observada. **Cost if wrong:**
+    ajustar el handoff/cierre y los lectores de recovery, preservando journals y
+    audio; nunca sustituir propiedad real por heurísticas.
+
+33. **Ruling:** un productor explícito sobre un v1 todavía sin mapping resuelve
+    primero su identidad canónica mediante importación local validada, antes de
+    normalizar, escribir pending o llamar al proveedor. Para el `meeting_id=None`
+    legado y para el ID opaco que el productor M1 ya acepta, conserva exactamente
+    el valor en metadata y en la entrada al proveedor; `meetings.id` sigue siendo
+    UUID y el vínculo usa origen normalizado, huella y revisión activa esperada.
+    El permiso para el ID opaco pertenece solo al recorrido interno confiable,
+    no a la importación ordinaria, que conserva su validación UUID estricta. No
+    se crea una segunda identidad determinista solo para saltar la propiedad.
+    Si el catálogo no puede resolver la identidad, el productor falla de forma
+    recuperable antes de mutar la sesión o ejecutar al proveedor. Es cobertura
+    de F2/F5, con RED y review pendientes, sin comando/flujo nuevo ni modificación
+    del origen v1. **Cost if wrong:** ajustar resolución y handoff de ownership,
+    conservando el ID legado original, la evidencia previa y los mappings válidos.
+
+34. **Ruling:** precisión de implementación del ruling 32: la lease nativa vive en
+    `<sessions_root>/.capture_owners/<capture_id>.lock`. Así `.captures/` conserva
+    su colección de directorios UUID de journals, utilizada por sus lectores
+    existentes. Un scope interno por trabajo del controlador, propagado mediante
+    `ContextVar`, registra la lease antes de publicar y la retiene hasta su salida,
+    después de reaping y persistencia/publicación, incluso si el constructor falla
+    antes de devolver el handle. El scope no agrega un proceso ni una autoridad
+    persistente: mantiene el handle del lock OS. Fuera del controlador, `wait` y
+    fallo de apertura conservan su contrato de liberar tras cierre real para permitir
+    recovery directo. La extracción de lock no cambia límites operativos.
+    **Cost if wrong:** ajustar el scope/handoff y sus lectores, manteniendo la
+    protección de todo el trabajo y la recuperación de la API directa.
+
+35. **Ruling:** por nueva instrucción explícita del usuario, primero se cierra M2 A
+    completo con review, suite estable y todos los gates de Copilot/CI/merge. Solo
+    después de ese merge y de completar los PRs de documentación de contratos
+    necesarios, root crea dos chats separados del proyecto: M2 B (ciclo de vida y
+    borrado) y M3 A (búsqueda/acciones), cada uno con rama y worktree propios. Antes
+    de iniciar, cada brief incluye objetivo, SPEC/PLAN aceptados, SHA base real,
+    archivos propios y compartidos, dependencias, límites y DoD verificable. Los
+    chats ejecutan sus grupos completos con subagentes RED/GREEN/review/docs; root
+    sigue como único orquestador de contratos, leases por archivo, integración y
+    merges. IDs de chats, ramas, worktrees y responsables se registran en STATUS
+    cuando existan; ahora están pendientes y la SHA del merge A no se inventa.
+    Después de M2 B puede adelantarse M5 B con claims pendientes hasta M4 B; el
+    resto conserva sus dependencias. Un writer por archivo; migraciones,
+    pyproject/uv.lock y versión en serie; suites sensitivas sin otros tests/builds
+    pesados. Calidad, privacidad, aceptación y gates de merge siguen intactos. No
+    se reinicia ni duplica trabajo realizado; no se crea ningún chat en este
+    checkpoint. **Cost if wrong:** conflictos o duplicación entre frentes y
+    contratos desalineados; root los evita con briefs sobre la base mergeada,
+    leases exclusivos, PRs docs previos y verificación de integración.
+
+36. **Ruling:** cada publicación explícita usa un `publication_id` UUID nuevo,
+    incluso si su evidencia coincide con la anterior. El marcador versión 2
+    conserva ese token; el payload de operación y el recibo versión 3 registran
+    token, padre esperado, origen normalizado, huella y revisión comprometida.
+    Solo esa prueba durable exacta autoriza replay idempotente de una publicación
+    ya aplicada y la retirada de su marcador, también después de reconstruir la
+    DB desde recibos. Rebuild restaura las operaciones completas probadas por los
+    recibos v3; acepta recibos v2 sin inventarles provenance. No se agrega una
+    migración: se reutiliza `pending_operations`. Token ausente, diferente o sin
+    commit probado no autoriza aceptar un padre stale ni borrar intención incierta.
+    El controlador consume una vez el resultado privado ya publicado por su
+    `SessionProcessor`; procesadores ajenos mantienen el fallback. Ese handoff
+    evita un segundo callback de publicación, pero no sustituye la prueba durable
+    del replay. **Cost if wrong:** versionar los lectores de marker/recibo y el
+    handoff, conservando evidencia, padres y marcadores inciertos.
+
+37. **Ruling:** el retry legado de una carpeta con WAV válido y sin `session.json`
+    conserva el uso de M1. Antes de mutar o llamar al proveedor reserva una UUID
+    canónica y su lease mediante origen normalizado y huella medida del WAV;
+    `ingest_sources.revision_id` puede ser NULL, con cero revisiones anteriores.
+    No fabrica un manifiesto v1 para importarlo ni una transcripción histórica.
+    `source_kind=legacy_audio_only` queda en la provenance durable y en los recibos
+    para conservar `started_at`/`completed_at` de captura NULL durante retries y
+    rebuild, aunque el v1 de compatibilidad posterior contenga fechas inferidas.
+    Los timestamps reales del procesamiento/publicación siguen siendo evidencia
+    de esos eventos, sin convertirse en fecha de la grabación desconocida. No
+    cambia la validación de rutas/roles ni se reescribe un ID legado opcional.
+    **Cost if wrong:** ajustar reserva, provenance y lectores, manteniendo audio,
+    identidad y fechas desconocidas sin conjeturas.
+
+38. **Ruling:** para cerrar GR1, el writer de artefactos ofrece un callback interno
+    justo antes del replace final de `session.json`, después de publicar los
+    artefactos subordinados. El productor registra primero un marcador versión 3
+    con el mismo token, padre esperado y source kind, más el hash del manifiesto
+    prospectivo y un sello de hashes de sus artefactos con roles validados.
+    Recovery solo publica si toda esa evidencia final coincide; una intención
+    previa sin resultado final coincidente se conserva con aviso, sin importar
+    el resultado viejo ni ejecutar al proveedor. Se mantiene lectura de markers
+    1/2 y recibos 2/3, schema 2 y conflicto estricto de UUID/parent. Para GR3, el
+    controlador real difiere la primera publicación de fallo de captura hasta
+    sellar el resultado bajo el cutover de cancelación existente; la llamada
+    directa a persistencia y los procesadores inyectados conservan su contrato.
+    Una operación conserva una sola identidad/publicación, el audio y la causa
+    original de captura. Hashes, copias y proveedor quedan fuera de transacciones
+    SQLite. No cambia ningún flujo, dependencia, proceso, deadline, versión ni
+    definición de terminado. Es diseño autorizado para una única tanda GR1–GR3,
+    implementado en la tanda integrada `7bfd0cb`, con RED/GREEN/foco local y
+    re-review independiente final APPROVED. **Cost if wrong:** ajustar el sello,
+    su compatibilidad y el handoff de cutover, conservando evidencia incierta y
+    las precondiciones de revisión, sin aceptar como final un intento incompleto.
+
+39. **Ruling:** para las fechas de captura desconocidas de R37, M3 lista por
+    `started_at DESC NULLS LAST, meeting_id ASC`. La búsqueda ordena por rank
+    ascendente y luego la misma fecha/ID, con `segment_id ASC` como desempate
+    final. La paginación usa cursor opaco versionado, vinculado a sus filtros,
+    y representa NULL explícitamente en su tupla; nunca usa una fecha ficticia
+    ni el timestamp de procesamiento como sustituto. Sin límites de fecha se
+    incluyen reuniones sin fecha; un filtro `from` inclusivo o `to` exclusivo
+    las excluye mediante la semántica SQL de NULL. La UI conserva la fecha como
+    desconocida. El fallback conserva estos desempates para su ranking propio.
+    Es precisión interna de los defaults de paginación del SPEC, sin nueva
+    pantalla, dependencia, retención ni criterio de terminado. Queda preparado
+    para el PR de contratos posterior al merge de A; no inicia M3 ni modifica
+    el head publicado de PR #21. **Cost if wrong:** ajustar cursores/ordenación
+    y sus tests antes de publicar M3, manteniendo determinismo y fechas NULL.
+
+40. **Ruling:** se corrigen las tres observaciones de Copilot recibidas en PR #21
+    sobre `3394149` sin cambiar producto ni terminado. El callback previo al commit
+    forma parte de la publicación atómica: toda excepción ordinaria suya ejecuta
+    el rollback de evidencia antes de propagarse; una terminación de proceso no
+    se convierte en éxito ni se oculta. El procesador por defecto comparte el
+    `MemoryService` del controlador, incluida una raíz inyectada, conservando los
+    procesadores explícitos del caller. El replay local rechazado de una sesión
+    completed queda visible por el mecanismo de advertencia existente, con
+    candidato no reintentable (`can_retry=False`) si se usa la lista de recovery;
+    nunca ofrece otra transcripción al proveedor, modifica el resultado final
+    ni borra su marcador incierto. Cada corrección exige RED independiente,
+    GREEN, review independiente del diff, nueva solicitud/recepción de Copilot y
+    CI verde en el head nuevo. Las corridas previas siguen siendo históricas.
+    **Cost if wrong:** ajustar rollback, composición e informe de recovery con
+    los mismos datos/contratos; preservar audio, evidencia anterior y avisos reales.
+
+41. **Ruling:** M3 obtiene los hits parciales opt-in mediante una rama SQL literal
+    de solo lectura sobre segmentos de la revisión activa parcial. El índice
+    persistente sigue conteniendo solo revisiones activas completas, mantenido por
+    A/B5. Con FTS disponible, sus hits BM25 se combinan con la rama parcial literal
+    de rank uniforme 0; sin FTS, ambas ramas usan el fallback literal de rank 0.
+    Se consultan los mismos campos autorizados, se escapan también los comodines
+    de LIKE y se aplican visibilidad/filtros antes de cursor/LIMIT. R39 ordena la
+    unión, cuyo cursor incluye modo/backend e include_partial. Snippets de texto
+    real acotados y badge/timing reales; reindexado no altera la rama parcial ni
+    crea otro escritor. Es precisión del opt-in y fallback ya aprobados, con
+    verificación de equivalencia pendiente en B/M3. **Cost if wrong:** ajustar la
+    consulta literal/ranking y sus tests antes del cierre M3, preservando BM25,
+    la visibilidad por defecto y la evidencia de origen.
+
+42. **Ruling:** B conserva la misma supresión mínima ya definida por
+    `deleted_origins` en un registro versionado bajo `<data_dir>/.deletions/`,
+    fuera del árbol que se purga: UUID, pares de origen normalizado/huella y
+    control pending/complete. Este registro no guarda texto, audio, títulos,
+    participantes ni credenciales. Su replace/flush durable, después de validar
+    la confirmación, propiedad real e inventario, es el punto de aceptación del
+    borrado y precede a la primera transacción delete. Desde ahí cualquier Busy,
+    fallo de archivos o backups se informa pending; la supresión ya aceptada se
+    aplica antes de exponer filas, reimportar o reconstruir recibos/FTS, incluso
+    si el catálogo SQL se perdió. Los lectores B/M3 comparten ese guard antes de
+    LIMIT y la UI invalida callbacks anteriores de su operación de borrado.
+    Reconcile restaura supresión/orígenes y estado delete antes del rebuild
+    normal; recibos sobrevivientes sirven solo para probar inventario de limpieza.
+    Registro inválido/inaccesible falla la exposición de catálogo de forma cerrada
+    con error recuperable, sin autorizar una purga inferida. Desconocidos se
+    conservan y mantienen pending. Solo tras verificar archivos, DB/WAL y backups
+    se marca complete durable; el tombstone mínimo sigue reconstruyendo
+    `deleted_origins`. Otra identidad/origen explícito con igual audio sigue
+    permitido. Se extiende el journal/reconcile existente, mismo data_dir y misma
+    política de borrado/supresión, con un solo escritor y sin proceso nuevo.
+    **Cost if wrong:** ajustar barrera/guards y recuperación de inventario antes
+    de implementar/certificar B, conservando supresión y evidencia incierta;
+    nunca declarar purga completa por un registro pendiente o solo por un UUID.
+
+43. **Ruling:** la observación `4488285573` de la nueva review de Copilot
+    `5794829768` se corrige dentro del mismo aviso de R40. Un manifiesto de sesión
+    válido con marcador pendiente malformado conserva sesión, marcador y audio y
+    produce un candidato de advertencia no reintentable, con mensaje acotado y sin
+    reproducir el contenido inválido. El fallo se captura solo en la validación
+    local del marcador, preservando ownership y rechazo de rutas inseguras; los
+    vecinos válidos siguen su replay y nunca se invoca al proveedor. No se inventa
+    un padre/token para reparar el marcador. Tests RED independientes, foco de
+    recovery/compatibilidad, wheel nuevo y ambos smokes locales preceden a la
+    publicación. La suite completa sobre la fuente corregida se verifica en CI
+    Windows offscreen del head exacto antes del merge; el full local 5 queda
+    histórico de c3cdf08. Se mantienen cobertura y los cuatro gates, sin repetir
+    otro full local del mismo head además del full obligatorio de CI. **Cost if
+    wrong:** ajustar la clasificación de errores/advertencia y su cobertura,
+    manteniendo evidencia incierta y el botón de proveedor deshabilitado.
+
+44. **Ruling:** la observación `4488473222` de Copilot `5795057762` se corrige
+    preservando R33/R40/R43. Si el catálogo no permite resolver ownership de un
+    manifiesto legado válido con ID ausente u opaco, discovery devuelve solo su
+    advertencia de biblioteca no reintentable, con texto fijo acotado. No inspecciona
+    audio, materializa, inventa UUID/padre, modifica fuente o catálogo corrupto,
+    ni llama al proveedor. El fallo de resolución de catálogo se distingue del
+    lock de un dueño real activo y de un rechazo de ruta; esos guards siguen
+    impidiendo inspección/mutación. Se prueban corrupción SQLite real, identidad
+    legada y controles sanos/owner activo con RED independiente y review del diff.
+    La verificación completa mantiene la ruta R43: focos y wheel/smokes locales,
+    suite completa Windows en el head exacto y Copilot nuevo recibido/respondido
+    antes del merge. **Cost if wrong:** ajustar clasificación/advertencia y sus
+    lectores, conservando evidencia incierta y bloqueo de toda acción sin ownership.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
@@ -564,3 +938,716 @@ local symlink-privilege skips at `e5520c6`. Independent distribution review,
 current-head Windows source/package CI and its guarded merge complete the revised
 M1 delivery. The two long acceptance runs are omitted by explicit user instruction;
 M2–M5 are future plans outside this run. No further Copilot request is authorized.
+
+## 2026-11-05 — M2 A task 1 local checkpoint
+
+Ruling 20 authorizes the current nine-group M2–M5 execution and supersedes the
+historical stop statements above. Task 1 source `9a80060` implements frozen catalog
+DTOs, all twelve initial tables, numbered/checksummed transactional migrations,
+managed SQLite API backups, operation-owned connections and an explicit transaction
+repository. This checkpoint is implemented and automatically verified locally;
+the M2 group is not merged or complete.
+
+Evidence runs recorded in `ACCEPTANCE.md`: `M2A-T1-RED-20261105` (27 feature
+failures; root confirmation 27 failures in 3.32s), initial focus 26 passed/1 skip
+in 2.30s, and initial full suite 768 passed/9 skipped in 174.94s. Independent review
+requested one P2 correction: migration/repository reads leaked OperationalError
+under a real second-connection EXCLUSIVE lock in supported rollback journaling.
+`M2A-T1-LOCK-RED-20261105` reproduced all eight boundaries (8 failed/9 deselected
+in 2.51s; full focus 8 failed/26 passed/1 skipped in 18.45s).
+`M2A-T1-LOCK-GREEN-20261105` passed 34 tests with one local symlink-privilege skip
+in 4.70s after translation through the existing typed Busy boundary. Scoped
+independent re-review accepted the correction and reported no remaining actionable
+task 1 findings. The reviewer did not rerun the author's suites.
+
+Final named run `M2A-T1-FINAL-20261105`: **778 passed, 7 skipped in 173.68s** on
+Windows, CPython 3.13.15 and PySide6/Qt 6.11.2, with offscreen Qt, a synthetic
+provider key and temporary roots/DBs. `HERE_WHEEL_PYTHON` selected an isolated
+noneditable-wheel environment; both wheel smokes passed. Seven remaining skips
+are six existing symlink-privilege cases and the new memory database symlink case.
+Changed-file Ruff and format checks passed; isolated mypy passed with missing
+imports ignored, while normal mypy retains the known flat-layout import limitation.
+Local logs/review reports are under `.superpowers/sdd/M2_CATALOG_PLAN/` in the group
+worktree; no private audio, user library, `.env` or real provider was accessed.
+
+Task 2 has a local focused GREEN run (310 passed/1 skip in 24.60s), with its complete
+suite still running; task 3 writes RED in a separate worktree. No process-kill file
+publication, producer/catalog integration, FTS or lifecycle acceptance is claimed
+by task 1. M2 criteria 8/14 have partial local evidence; criterion 15 requires
+current-head hosted Windows CI. Hardware/provider/clean-install certification and
+M2 closure are not claimed; the two-hour row remains omitted, not passed.
+
+## 2026-11-05 — PR #20 ruling 19 documentation merge
+
+PR [#20](https://github.com/srodriguez-lefebre/here/pull/20) merged at
+2026-11-05T20:24:29Z with merge commit
+`763a891fa7c0bed54a3158040094b6f083b88f32`, guarded by exact reviewed head
+`2f25a0d9738e22d315b79b23a16ea3c8f3c324d3` using the admin merge-commit path.
+The initial independent preparation review accepted the documentation; a distinct
+reviewer accepted the follow-up M5 release-plan correction.
+
+Copilot inline `4485511464` identified stale credential requests in
+`M5_RELEASE_PLAN.md`; correction `2f25a0d` requests only the clean machine and uses
+the already authorized `HERE_PROVIDER_SMOKE_KEY` for opt-in synthetic provider
+smokes. Reply `4485574698` records the disposition and the thread is resolved.
+Current-head Copilot review `5791519593` is **COMMENTED**, with no active issues;
+it is not represented as APPROVED. Exact-head Windows CI `42102225168` passed
+(2m36s) and Windows package workflow `42102224714` passed (3m34s). Root confirmed
+all four review/CI gates before merge. Integrating this documentation merge into
+the M2 branch does not constitute a provider run or M2 feature acceptance.
+
+## 2026-11-05 — M2 A task 2 local checkpoint
+
+Task source `037fc036ef43467136bcf7b8e95c6f8395d1aa5e` was integrated as
+`1cdaadb`. Independent reviewer `catalog_review` accepted SPEC compliance and code
+quality with no findings on that exact task head. The reviewer inspected source
+and submitted evidence rather than rerunning the suites. This checkpoint is
+implemented and automatically verified locally; group A and M2 remain open.
+
+All five completion paths preserve source segments and `raw_transcript.txt`
+independently of optional display cleanup. Text-only responses gain an untimed,
+speakerless evidence segment; source order and request/chunk speaker scope remain.
+Nullable additive timing provenance retains historical compatibility, valid
+one-sided measurements and absent bounds without fabricated time. CLI publication
+now delegates to `SessionProcessor.transcribe_audio_path`; input ownership,
+pending manifests, failure causes and conservative replaced-audio cleanup remain.
+Managed raw entry preflight and metadata-last I/O rollback preserve prior raw
+bytes or remove a fresh unpublished raw file after a handled metadata failure.
+
+Named runs in `ACCEPTANCE.md` and `M2_CATALOG_EVIDENCE.json`:
+
+- `M2A-T2-RED-20261105`: 82 failed/153 passed/1 skipped in 21.18s.
+- `M2A-T2-RAW-RED-20261105`: 2 failed/112 deselected in 2.12s before the raw
+  rollback correction; both regressions pass in the final focus.
+- `M2A-T2-FOCUS-20261105`: 310 passed/1 symlink skip in 24.60s, including real
+  synthetic-WAV seek across a virtual five-minute wall pause.
+- `M2A-T2-FIRST-FULL-20261105`: 8 failed/775 passed/8 skipped in 171.12s. Existing
+  fault wrappers rejected additive `raw_text`; narrow forwarding changes preserved
+  all original assertions and process-kill phases.
+- `M2A-T2-CAPTURE-RECOVERY-20261105`: all 68 passed in 25.64s, including the real
+  killed-subprocess and synthetic crash boundaries exposed by that first full run.
+- `M2A-T2-FINAL-20261105`: **783 passed, 8 skipped in 160.71s**, Windows CPython
+  3.13.15, offscreen Qt and synthetic provider key. Six skips require symlink
+  privilege; two noneditable-wheel smokes lack `HERE_WHEEL_PYTHON` in this run.
+
+All 13 touched files pass Ruff and formatting; diff checks pass. Mypy comparison
+on seven production files is baseline 60/current 58 diagnostics, no new messages;
+existing import/stub/Any/SDK issues remain. No private data, `.env`, hardware or real
+provider was accessed. This task's handled-I/O rollback is not a filesystem
+transaction against process termination/concurrent writers; catalog immutable
+publication and reconciliation still belong to task 3. No current-head hosted CI,
+provider/hardware/installer certification or M2 closure is claimed.
+
+Task 3 service/artifact/controller RED remains 31 failed/18 passed in 2.50s,
+confirmed by root in 4.25s. CLI RED is being completed after task 2 released its
+shared files; no task 3 GREEN is claimed at this checkpoint.
+
+Follow-up task 1 typing evidence: a temporary canonical `here/` package containing
+unchanged copies of the four memory source files and the existing output path
+validator passed `mypy --follow-imports=silent --no-incremental -p here.memory`
+with `MYPYPATH` selecting that temporary root: **Success: no issues found in
+4 source files**, without `--ignore-missing-imports`. Log:
+`task-1-mypy-layout-checked.log`. Root removed only the verified owned temporary
+directory afterward; no dependency or production layout changed. The ordinary
+global flat-layout mypy baseline remains unclean.
+
+Task 3 subsequently completed combined CLI/service/artifact/controller RED:
+39 failed/18 passed in 7.33s (`task-3-complete-root-red.log`). A distinct agent is
+implementing GREEN; no passing result or task 3 completion is claimed yet.
+
+## 2026-11-05 — M2 A task 3 protocol and scoped evidence (pending final)
+
+Candidate source remains in `m2-ingestion` on base `1cdaadb`, uncommitted at this
+checkpoint. The protocol follows rulings 23–30: actual capture/processing owner
+locks, local ingest/status markers, visible nonfatal warning, explicit source roles,
+post-commit `catalog.json` receipts, append-only state snapshots, trusted legacy
+retry lineage and registered-stage cleanup. The three maintenance CLI commands
+share the local service and JSON exit codes 0/2/3/4. No final task/group completion,
+stable final full-suite pass or independent task/group approval is claimed.
+
+The source reserves and registers staging before copies, prepares the DB journal,
+renames to immutable revision material, commits entities/evidence/FTS/activation,
+then writes a completion receipt/state snapshot and marks the operation complete.
+Rebuild uses managed committed receipts only; lost DB/journal plus missing receipt
+leaves uncertain material retained with warnings. Imported source remains unchanged;
+aware dates normalize to UTC and naive historical dates remain unspecified. Failed
+provider retry updates only state and preserves the previous complete revision,
+including when a local status marker must be replayed after Busy. Opening the app
+never repeats provider work. The library warning remains separate from actual
+capture/provider errors and is cleared by new work or clean publication.
+
+Observed RED scopes include original 31 failures/18 passes (2.50s; root 4.25s),
+eight CLI failures (5.94s), root combined 39/18 (7.33s), seven missing ownership
+features (1.44s), wrong WAL for mapped remote storage (one failure, 2.00s), rebuild/
+failed-file gaps (two Green failures, 6.41s), contained synthetic credential read
+attempts stopped by traps (two author failures, 2.58s; implementer 3.37s), warning
+UI field (three failures, 5.65s), provider-work ownership/state-only replay (four
+author failures, 9.78s; implementer 9.26s), legacy retry duplicate UUID (one, 7.58s),
+UTC offset storage (two, 2.46s), and unknown-stage file deletion (one, 2.43s).
+No trap permitted an actual private credential read. The last preservation
+amendment still needs final checks. Receipt privacy and audio/revision association
+are concrete independent-review focus; required guarantees are not inferred from
+staging or path containment alone.
+
+Scoped GREEN results at distinct source states: 49 service/artifact/controller
+cases in 28.07s, 50 CLI/processing in 36.99s, eight ownership/storage in 22.78s,
+34 rebuild/service/artifacts/ownership in 53.42s, 27 warning UI/controller in 9.61s,
+70 privacy/preflight/recovery in 86.61s, 48 combined memory in 51.99s, 85 processing/
+ownership/recovery/CLI/controller in 79.17s, five legacy/processing in 14.10s and
+two UTC in 1.83s. They cannot be summed or presented as the stable final suite.
+The single old external-file identity expectation was adjusted by the independent
+test author to canonical pending UUID preservation; existing-session identity
+remained exact, and all three compatibility variants passed in 10.99s.
+
+The first full diagnostic had changing source and overlapping focus/mypy work:
+34 failed/822 passed/9 skipped in 363.35s. It exposed 14 early catalog-init/preflight
+failures, later corrected without weakening assertions, the obsolete new-ID
+expectation above, and capture opening/journal faults. Later isolated diagnostics
+gave 21 failed/12 passed in 75.37s; stable quiet Green gave 17 failed/16 passed in
+87.56s. A fully source-isolated prior baseline also failed 15/33 cases (18 passed,
+87.08s), so those failures are not all attributed to task 3. A preliminary one-case
+comparison passed at 7.41s/7.68s but its child still used the Green installation;
+it is not represented as fully isolated source proof.
+
+Independent diagnostics observed H1 in one normal fake launch: its original 1.5s
+lease expired during bootstrap imports before request/device work. H2 reproduced
+the Windows sharing mechanism on a disposable journal, with a held reader causing
+WinError 5 and the unchanged writer succeeding after close; the original failing
+case's exact overlap remains unproven. Ruling 29 authorized only test bootstrap
+acknowledgement and checkpoint-based progress observation, keeping product
+opening/read/close/watchdog limits, stalls and actual child reaping unchanged.
+Author focus passed four cases/29 deselected in 19.71s; full isolated passed all
+33 in 126.10s, each run alone. `capture_diagnostics` accepted SPEC/quality of fixture
+SHA256 `665181979ffd5b0d354c473de9a6e1f12fbc3209f42561e1af5f99b0dad67ca1`
+without rerunning suites. That review does not approve task 3.
+
+Pre-amendment static evidence: Ruff/format on 24 files passed. Raw flat-layout mypy
+had 232 errors/43 files; canonical-layout baseline/current had 79/79 diagnostics
+over 62/64 modules with no new touched-file messages. Registered-stage preservation
+was added afterward and requires fresh checks. Final stable source result/head,
+independent task/whole-branch review, hosted Windows CI and received/responded
+Copilot remain gates. M2 B needs its contract-adjusted documentation PR before
+implementation; version 0.3.0 is only for closing B/M2. Two-hour acceptance stays
+omitted, never passed. No hardware/provider/installer certification is claimed.
+
+## 2026-11-05 — Task 3 frozen candidate, suite result and seven open findings
+
+The candidate is now committed **only in `m2-ingestion`**: synthetic capture fixture
+`efb73a92ea89bc53318ce1a811eaf61129a76fbf` and task source
+`6c422f0b8671d2f736645abb6835d351783cbcc7`. All 27 file hashes match the independent
+review manifest `task-3-candidate-files.json`; docs independently compared them
+read-only. These commits establish immutable FIX_BASE, not task acceptance or
+integration into the root catalog branch.
+
+After the earlier checkpoint, registered cleanup and receipt/pending/state privacy
+guards were verified. Stable memory/UI/controller/processing focus: 122 passed in
+108.36s. Additional concrete privacy RED: three failures in 5.00s and one unknown
+state-name access in 3.08s; traps stopped before reading any synthetic credential.
+Shared role validation now precedes hash/read/delete, undeclared WAV inventory does
+not confer ownership, and generated state validation precedes state reads.
+Immediate post-fix focus passed 46 in 66.62s (earlier related focus 31/34.78s).
+Earlier missing-guard observations describe superseded source and are not a finding
+against this frozen candidate. Final candidate Ruff/format/diff pass on 27 files;
+canonical mypy remains baseline/current 79/79, no new touched-file diagnostics.
+
+The first stable full, `M2A-T3-STABLE-FULL1-20261105`, reported **6 failed,
+877 passed, 9 skipped in 486.12s**. All six failures were the existing postcommit
+audio-cleanup fault test's read/missing_metadata/invalid_json × completed/failed
+parameters: its global metadata-read injection also counted the new independent
+catalog consumer. The RED author scoped the injection/count only to the real
+cleanup delegate while retaining exact-one, real JSON corruption, outcome, original
+cause and all path/audio-byte assertions. Author ten-case focus passed in 16.76s;
+Green transferred rerun passed ten in 17.10s. No product code or deadline changed
+for this correction. First log/XML remain intact.
+
+The second stable full, `M2A-T3-CANDIDATE-FULL-20261105`, ran alone against frozen
+source and reported **883 passed, 9 skipped in 598.56s**. Its XML has 892 cases,
+zero failures/errors and nine skips; first full XML has 892 cases/six failures/
+zero errors/nine skips. Logs and XML are separately retained under
+`.superpowers/task3-full-final.*` and `task3-full-final-2.*` in Green. Pytest wall
+summary and internal JUnit durations are distinguished in `ACCEPTANCE.md`.
+Seven skips need symlink privilege (including task 1's memory case); two wheel
+smokes lack a noneditable environment. This is local automatic verification of
+covered behavior, not hosted CI, a wheel pass or hardware/provider certification.
+
+Independent static review by `ingestion_review` requests SPEC and quality changes:
+
+- F1 P1: explicit immutable revision/audio relationship, including reused A→B→A.
+- F2 P2: preserve imported legacy None identity in existing-session CLI trans.
+- F3 P2: identical explicit retry must complete durable state/revision.
+- F4 P2: report committed publication success after housekeeping failure.
+- F5 P2: require actual owner before producer/provider or recovery mutation.
+- F6 P2: malformed marker envelope/types must not abort valid siblings.
+- F7 P2: typed input/conflict/I/O categories must preserve CLI 2/3/4.
+
+All seven remain open. The reviewer ran no tests and the passing suite does not
+resolve these static paths. F5 includes second-instance discovery→materialize→
+persistence/cleanup reachability before owner exclusion; discovery alone does not
+change durable catalog status, and no actual audio loss is observed or claimed.
+Round-1 RED/fixes/re-review and a corrected stable suite remain required, followed
+by whole-group review and the exact-head GitHub gates. Ruling 31 above authorizes
+the pending migration 2/receipt v2/show/rebuild relationship fix without changing
+migration 1 or inferring ambiguous old evidence. It is not implemented yet.
+
+Evidence levels remain separate: candidate code exists with a passing suite;
+automatic verification is local and scoped to its covered cases; no new real
+hardware/provider/clean-install certification. Task 3, group A and M2 are not
+accepted or closed. Version remains 0.2.0; 0.3.0 belongs to B/M2 closure. Preparation
+of B's adjusted SPEC/PLAN stays a separate documentation PR gate, not authorization
+to implement B or bypass the seven findings.
+
+## 2026-11-05 — Task 3 round-1 integration, NB1 and five integrated failures
+
+Root integrated the fixture/candidate/fixes as `1277e19`, `3370483`, `3a83482`
+and `1f1bc88513840b84c388a61d9c077907cf2fba2e`. This matches Green's reviewed
+`c28472b5bd651f4d7f7fe2f40449f5a23e325f67` after fixes `16263c4` + `c28472b`:
+src tree `780529d42936c979740443c51f1022fd2bb99a5e` and tests tree
+`d226358ec038837dba6e40790c77eac74e74b538` are identical. Read-only Git comparison
+also finds no source/config/scripts/workflow differences. Integration is not
+acceptance or merge of group A. Earlier candidate-only statements above retain
+their original checkpoint scope.
+
+Forty new independent RED cases passed together in 69.70s after fixes. Ruff and
+format checks on 20 touched files passed; resolved mypy remains baseline/current
+79/79 with no new diagnostic messages. Independent scoped static re-review
+`task-3-fix-1-review-report.md` marks the original F1–F7 **ADDRESSED**, including
+migration 2/explicit revision-audio links/receipt v2, trusted legacy identity,
+identical explicit retry, postcommit outcomes, actual ownership, marker validation
+and typed CLI errors. Migration 1 remains unchanged.
+
+The re-review still requests changes for **Important NB1/P2**. A real controller
+retry invokes publication again after the real SessionProcessor has committed:
+its stale parent recreates the origin marker and returns warning/conflict. Actual
+postcommit-before-origin-marker-removal replay is also not recognized as the
+already committed publication. The fix must preserve one new immutable revision
+per fresh explicit retry while making that publication's replay idempotent using
+durable proof. Arbitrary stale-parent acceptance, unchanged for a fresh identical
+retry, and deleting uncertain intent are not acceptable shortcuts. Round-2 RED in
+`tests/test_memory_publication_replay.py` is being prepared/executed by its author;
+no result has been delivered at this checkpoint. The review accepts neither task
+3 nor the group.
+
+`M2A-INTEGRATED-FULL1-20261105` closed at **5 failed, 920 passed, 7 skipped in
+553.39s**. Root log/XML are `.superpowers/m2a-integrated-final-1.txt`/`.xml`:
+932 cases, five failures, zero errors, seven symlink-privilege skips; internal XML
+time is 552.876s. Both noneditable-wheel smokes passed. Pending diagnosis/fix,
+without omitting or relaxing assertions:
+
+- Three capture-recovery snapshots include newly introduced owner-lock files:
+  `test_failed_manifest_copies_with_same_uuid_are_both_discoverable` and both
+  canonical-interrupted/canonical-failed variants of
+  `test_retry_copied_session_preserves_independent_capture`.
+- `test_trans_command_completes_failed_session_audio` fails with an sf.info stub
+  lacking subtype (command exit 1 instead of 0).
+- `test_legacy_audio_only_session_still_retries` is blocked by missing session.json
+  during legacy identity resolution.
+
+Fresh CPython 3.13.15 wheel and sdist builds succeeded. The off-repo `-I` probe of
+the isolated noneditable wheel verified all 65 installed Python files byte-identical
+to source, schema 2 including revision_audio_assets, FTS5, empty foreign_key_check
+and integrity_check=ok. `.superpowers/m2a-wheel-catalog-probe.json` records hashes:
+wheel `bb7a49a9f5b5c6a6b25f48f39b036badc489bee3870c69b0024af8f0d61dd7bd`,
+sdist `8ebd3a3a44d48df68d94dcb8748adf8af52dfde334465bc2bcecfa0d95513358`.
+No hardware/provider was used. This is automatic local distribution/catalog proof,
+not installer or real-device certification and not a passing integrated suite.
+
+Evidence levels: round-1 code is integrated but task completion remains unaccepted;
+automatic checks provide scoped passes plus the explicit five-failure full result;
+no new real certification exists. Next: NB1 and all five failures, focused checks,
+re-review, stable full and whole-group review, then current-head PR/Copilot/Windows
+CI/guarded merge. No M2 A/M2 closure or 0.3.0 bump.
+
+Ruling 35 records the user's revised orchestration order: only after A is merged
+and required contract-doc PRs are completed does root create separate project
+chats for complete M2 B and M3 A groups. Discovered project:
+`local-e307e59e09194b354122137b16ef6d77`, host `local`, Git enabled, original root
+`C:/Users/savar/Documents/proyects/here`. Actual chat IDs, branches, worktrees,
+executors and merged-A base SHA are all pending; none was created. Four B/M3 A
+SPEC/PLAN files have been prepared in `m2-segments` with no PR yet (reports
+`lifecycle-plan-preparation-report.md`, `m3-plan-preparation-report.md`). Root owns
+contracts, file leases, integration and merges; each future brief states actual
+base/ownership/dependencies/limits/DoD before RED/GREEN/review/docs execution.
+M5 B may advance after M2 B with claims pending until M4 B; all other dependencies,
+privacy/quality/acceptance/merge gates remain intact. Sensitive suites keep exclusive
+windows. No previous work is restarted or duplicated.
+
+## 2026-11-06 — Task 3 rounds 2/3 integrated, full 2 green, group review pending
+
+Root `8087e252112fd2e6de1efeff1d0f3f531d4be77d` matches Green
+`4a3cb7ced77a73046098e20cb34aeb00af0e6f61` after round-2 `944e358` and round-3
+`4a3cb7c`; src tree `948efa342c9569ca751cffb4718d82f3dd872de6`, tests tree
+`30c62e6f7e9e0a818e125a6c7762db91335b47f1`. Read-only docs-author Git verification
+confirms matching trees and empty source/config/scripts/workflow diff.
+
+Rulings 36/37 are implemented. Marker 2 includes a fresh publication UUID and
+source_kind. Operation payload and receipt 3 retain exact token/expected parent/
+normalized origin/measured fingerprint/committed revision/source-kind proof;
+rebuild restores proven complete operations. Receipt 2 remains accepted without
+invented proof; DB schema stays 2. The real processor's private manifest-bound
+result is consumed once by the controller, while durable replay independently
+covers real postcommit child crashes with existing/rebuilt DB and equal/changed
+evidence. Fresh explicit identical retries still produce a new revision. Valid
+WAV-only legacy retry reserves canonical UUID/lease before mutation/provider,
+with NULL origin revision and zero historical transcript revisions; durable
+source_kind preserves NULL capture dates across retry/rebuild. No process,
+protocol, device/test deadline, dependency or version change was made.
+
+Independent scoped round-2 review marks NB1 and the named integration regressions
+ADDRESSED. Final covering focus: 61 passed in 68.06s; existing controller/processing/
+UI: 69 passed in 23.02s. Metadata-only inspection does not create new lock files;
+journal mutation upgrades ownership without dropping current leases. The CLI
+fixture author supplied real PCM16 instead of invalid bytes/incomplete sf.info;
+original outcome assertions remain and production validation was not weakened.
+An intermediate replay focus reported 16 passed/1 failed in 315.60s, a 30-second
+child timeout before commit proof/replay. Identical unchanged case passed alone
+in 5.02s and in final combined focus (call 2.72s). Mechanism remains unproven; no
+timeout/assertion change or root-cause claim is made. Logs remain retained.
+
+Round-2 review introduced NB2: missing-metadata capture identity had to be validated
+before deriving the journal probe path. Independent author RED: two failures/one
+opaque-existing-manifest control pass in 2.45s. Round-3 scoped review
+`task-3-fix-3-review-report.md` marks NB2 ADDRESSED, no new Critical/Important
+breakage in that diff; covering runs 3 passed/2.40s and 27 passed/20.86s.
+Existing manifests retain optional/opaque identity. Ruff/format clean on ten and
+two files respectively; resolved comparative mypy baseline/current 79/79 with no
+new diagnostic messages, no globally clean claim. Reviewers inspected supplied
+logs/source and ran no tests.
+
+`M2A-INTEGRATED-FULL2-8087e25`, started alone at 2026-11-06T00:01:58Z, completed
+**940 passed, 7 skipped in 325.09s**, zero failures. Root log/XML:
+`.superpowers/m2a-integrated-final-2.txt`/`.xml`. Independent read-only XML confirms
+947 cases, zero failures/errors, seven symlink-privilege skips, internal 325.029s;
+both fresh noneditable wheel CLI/GUI smokes passed. Earlier full 1f1bc88's five
+failures/920 passes/seven skips/553.39s remain historical evidence above; all five
+have later focused coverage and addressed scoped review. No assertion was omitted
+or relaxed to count this run as passing.
+
+Fresh CPython 3.13.15 wheel/sdist and off-repo `-I` noneditable probe of the exact
+8087e25 source verify 65 Python files byte-identical, DB schema 2, FTS5, empty FK
+check and integrity_check=ok. Probe
+`.superpowers/m2a-wheel-catalog-probe-8087e25.json`, artifacts
+`.superpowers/m2a-final-dist-8087e25`; wheel SHA256
+`4f37ca61d50df87e588ecdd1c2e9221690fd3aa9472dc33081c4116600147ad8`, sdist SHA256
+`b5110b1dd0c78c485e52a738e147f21a5a64e6dfaa5aaf515ae68b8d10de5271`.
+Prior probes remain historical with their own hashes. This is local automatic
+verification, not real hardware/provider/clean-install certification.
+
+Whole-group review by `catalog_group_review` is still in progress on
+763a891..8087e25 with three provisional Important findings: completed metadata can
+commit before the first pending marker, leaving a kill without startup replay and
+an interrupted row; non-object receipt JSON can reach `.get` and abort valid rebuild
+siblings; accepted cancellation after capture-failure publication leaves cancelled
+UI/manifest but failed catalog, conflict and a stuck marker. The complete source
+report `group-review-report.md` records GR1/GR2/GR3 Important/P2 OPEN and source
+verdict changes requested. Its global assessment remains provisional pending the
+committed docs supplement. No final all-source/docs acceptance or fixes are claimed.
+Scoped NB1/NB2 acceptance and a green full do not accept Task 3/group A/M2. Await
+final findings, RED/GREEN/re-review and verification after any source correction,
+then current-head PR/Copilot received/responded/Windows CI/guarded merge gates.
+There is no M2 A PR or hosted group CI approval yet.
+
+Rulings 20–37 remain unchanged. R35 ordering is preserved: finish/merge A and
+required contract-doc PRs before root creates separate complete-group project chats
+M2 B and M3 A. Future chat IDs/branches/worktrees/executors/merged-A base remain
+pending; none created. Root alone orchestrates leases/contracts/integration/merges,
+with serialized migrations/pyproject/version and exclusive sensitive suites.
+Prepared four B/M3 A docs in m2-segments were not changed by this writer. Version
+remains 0.2.0; 0.3.0 only at B/M2 closure; final 1.0.0 goal and real acceptance
+requirements remain intact.
+
+## 2026-11-06 — Combined GR1–GR3 wave integrated, full 3 in progress
+
+Root `7bfd0cbf477a42aacc44b83b3d2da1e438801756` integrates Green
+`ec55b9564d3af01247d3367675a340a361f6b6ef`. Read-only docs-author Git inspection
+confirms matching source tree `2b4036f7deb905efb0a8836f378d267a066564b4` and tests
+tree `a4310416bd10dc922b49e010d8495a98bfdfd585`; root reports empty source/tests/
+config/scripts/workflow diff. Exactly six production files and three independently
+authored new regression files; no dependency, schema migration, version, process,
+protocol, deadline or product-flow change. Worker tracked files are clean; existing
+untracked uv-setup.log was preserved. This is integration, not acceptance or merge.
+
+The single whole-group source/docs review is final changes requested on
+763a891..8087e25 plus committed docs supplement e00dd08: GR1–GR3 Important/P2,
+GD1/GD2 Minor/P3. Minor checkpoint corrections are committed in 7be93af. There is
+one scoped independent re-review of the combined wave and documentation, not a
+second whole-group review or restart of NB1/NB2. Provisional source inspection
+considers GR1–GR3 ADDRESSED with no new actionable breakage; final source/docs
+verdict awaits committed documentation and actual full 3 evidence. Keep GR1–GR3
+OPEN until that final independent verdict. Hosted gates remain pending.
+
+R38 implemented: all final producer paths call the output writer's internal
+before_metadata_commit callback after subordinate artifacts and before the actual
+final session.json replace. Marker3 retains token, expected parent, original
+optional ID, source kind and intent, adding exact role-validated hashes including
+the actual staged prospective manifest bytes. A pending/unmatched final outcome
+retains source/marker bytes with visible uncertainty through the existing
+RecoveryCandidate.error_summary; it cannot adopt the old result or invoke the
+provider. Markers1/2 remain readable without invented seal/proof; receipts 2/3 and
+DBschema 2 stay unchanged. Real controller capture-failure publication is privately
+deferred through the existing cancellation cutover so one accepted cancelled
+outcome is sealed before first catalog ingest. Canonical and None-source-ID shapes
+retain one identity/partial revision, original capture error and audio. Direct
+persist_capture_failure and injected processors keep their contract. Receipt
+object/nested container/hash validation isolates malformed meeting trees with an
+identified warning while valid siblings/repeat discovery/maintenance JSON work.
+
+Independent RED original 12 cases:11 failures/1 passing interrupted-attempt control,
+four sequential retained logs totaling 27.48s. Initial GREEN 12 passed/21.67s. Affected
+21-file focus 404 passed/1 symlink-privilege skip/159.03s precedes only the narrow
+pending-v3 warning correction. The 13th additional pre-final-replace control was
+authored without baseline execution; actual run against the first candidate gave
+1 failure/5 deselected/3.93s, exactly absent visible uncertainty warning while old
+R1/interrupted state/source bytes/marker were preserved. After the narrow correction,
+final group plus recovery focus 26 passed/34.46s (all 13 group cases plus malformed
+marker, legacy-discovery ownership and NB2 controls). These overlapping runs are
+not summed as one suite. Raw logs .superpowers/group-fix-*.txt and implementation
+report group-fix-implementation-report.md are retained. Docs read final summaries,
+source diff and report; docs executed no tests/imports/build/mypy.
+
+Nine-file Ruff/format checks pass. Canonical mypy against8087e25: baseline/current
+79 errors in 20 files/65 source files; new touched-file diagnostic messages {}.
+This is comparative no-regression evidence, not globally clean typing. Formatting
+normalized mixed processor-call newlines only; assertions were not changed.
+
+Fresh CPython3.13.15 wheel/sdist build and off-repo -I noneditable probe passed on
+exact 7bfd0cb at 2026-11-06T00:43:49.472905Z. Probe
+.superpowers/m2a-wheel-catalog-probe-7bfd0cb.json confirms 65 byte-identical Python
+files/schema 2/FTS5; root reports empty FKcheck/integrity_check=ok. Artifact directory
+.superpowers/m2a-final-dist-7bfd0cb; wheel SHA256
+e2f9c3ff09a5d5b41fcec9c35c1fab149294e9901f276e042bd2ce0bd12b0827,
+sdist499d9249202451e95dafb3718dd78f2004bc825659f5810659f401a5707e92ee.
+No provider/hardware used. Both wheel-smoke outcomes await full 3 result.
+
+Full 3 started alone at 2026-11-06T00:44:04.5472024Z, source 7bfd0cb, fresh wheel;
+logs/XML .superpowers/m2a-integrated-final-3.*. Final result: **8 failed, 945 passed,
+7 skipped in 364.23s**. Docs independently parsed XML: 960 cases/8 failures/0 errors/
+7 skips/internal 362.276s. Both wheel CLI/GUI cases pass with no failure/skip nodes
+(3.593s/2.747s). All eight traces show TypeError for additive before_metadata_commit
+in two old test_capture_recovery publication wrappers, real-child publish and
+simulated publish_at. The independent RED author owns the narrow optional-keyword
+forwarding correction on codex/m2-capture-fixture; every assertion and real/simulated
+crash cutpoint stays intact. Its 13-case focus (6 real/7 simulated), test-only commit,
+root integration and corrected full 4 are pending; no product source fix diagnosed.
+Current source/wheel/probe 7bfd remain exact if only tests change. Historical full2
+at 8087e25 remains valid 940 passes/7skips/325.09s with both wheel smokes passing for
+its own source; full1's five failures/920 passes/7 skips and prior diagnostics/timeout
+remain preserved. No passing aggregate is claimed for the new source.
+Evidence levels: implementation integrated with final focused GREEN; automatic
+local synthetic focus/static/wheel evidence, failed full 3 and corrected full 4/hosted CI
+pending; no new hardware/provider/clean-install certification. Task 3/group A/M2
+remain unaccepted; version 0.2.0, 0.3.0 only at B/M2 closure. Two-hour acceptance
+remains omitted by ruling 5. No new ruling or DoD change. R35 still requires A
+merge plus required contract-doc PR merges before root creates project chats B/M3 A;
+IDs/branches/worktrees/executors/real merged-A base stay pending, none created.
+Prior future docs/fixtures remain untouched. Copilot received/responded on current
+head, exact-head Windows CI, guarded admin merge and ledger remain required.
+
+## 2026-11-06 — Current integrated full 4 green; final scoped docs verdict pending
+
+Execution head ef70f78cfc9c8f2910e77b2b2818ce2e6b4d71ae integrates the TEST-ONLY
+fixture correction c3a3ccbcf2928502cbf0d0881fdfee3d7f86d84a. It changes only two
+publication-wrapper signatures/delegations in tests/test_capture_recovery.py to
+accept/forward optional before_metadata_commit. All 114 assertions are identical
+by author AST comparison; all real/simulated crash cutpoints and deadlines remain.
+Docs independently read the committed 24-line diff and report and final focus log:
+13 passed in 24.82s, covering six real kills/seven simulated crashes. File SHA256
+5E542C069A811CC3F209B55815EC52B5D953ED5F977699AF18D7C86B9582E134. Report/log:
+.superpowers/sdd/M2_CATALOG_PLAN/capture-fixture-forwarding-report.md and
+capture-fixture-forwarding-focus.txt. No product source changed.
+
+Product source tree remains 2b4036f7deb905efb0a8836f378d267a066564b4 from 7bfd0cb;
+tests tree is now 30c88848b3cf42c9ce4443328e3c8e0100e2af44. Root verifies no
+source/config/scripts/workflow diff. The existing fresh 65-file noneditable wheel
+and probe of 7bfd0cb therefore remain exact; no redundant build or new artifact
+hash is claimed. Full 3's eight failures/945 passes/seven skips remain preserved
+above with their actual TypeError diagnosis, not relabeled as passed.
+
+M2A-INTEGRATED-FULL4-ef70f78 ran alone from 2026-11-06T00:54:42.9822634Z with
+QT_QPA_PLATFORM=offscreen, synthetic OPENAI_API_KEY and the same fresh noneditable
+wheel environment. Root exit 0; actual result **953 passed, 7 skipped in 358.94s**.
+Logs/XML .superpowers/m2a-integrated-final-4.txt/.xml. Docs independently read final
+summary and parsed XML: 960 cases, zero failures/errors, seven symlink-privilege
+skips, internal 358.621s. Both wheel smoke cases pass without failure/skip nodes:
+CLI 3.018s, GUI 2.634s. This is a passing current integrated full on unchanged product
+source plus the corrected test fixtures, not a new hardware/provider/installer
+certification or hosted CI result. All historical failed suites, old full2's
+940/7/325.09s and the unexplained unchanged child timeout retain their own scope.
+
+R38 is implemented and locally automatically verified. The same independent
+reviewer provisionally considers GR1–GR3/GD1/GD2 addressed and the narrow fixture
+accepted; the final source/docs verdict awaits this committed documentation
+supplement. GR1–GR3 formal status remains OPEN until that final independent
+assessment. No second whole-source review, new ruling, DoD change, task/group/M2
+acceptance or version bump. Version 0.2.0, two-hour omission under ruling 5 and final
+1.0.0 acceptance requirements remain unchanged. PR/current-head Copilot received/
+responded, exact-head Windows CI and guarded admin merge are pending. R35 still
+requires A merge plus necessary contract-doc PR merges before project chats B/M3 A;
+no chats or future-front execution have started, and future IDs/base remain pending.
+
+## 2026-11-06 — Final independent technical verdict and routine ledger cleanup
+
+Same scoped reviewer APPROVED source7bfd0cb, fixtureef70f78 and committed docs
+8845877d75342d1c0f65f1a6674155c7439ab4ce in group-fix-review-report.md:
+GR1/GR2/GR3/GD1/GD2 ADDRESSED, no remaining Critical/Important finding or new
+source defect. Task3 is implemented, locally automatically verified and technically
+accepted. Full4 evidence and every historical failed run remain unchanged.
+GD3 Minor/P3's three stale current phrases (JSON source state, STATUS released
+lease/completed full4, SPEC aggregate verification) are corrected in this normal
+verdict update. No additional review/runtime is requested. Docs lease released.
+Root may open the M2 A PR; Copilot received/responded, exact-head Windows CI,
+guarded merge and ledger remain pending. Group A/M2 are not closed or certified;
+version0.2.0 and R35 future-chat/contract-doc gates remain unchanged. No new ruling.
+
+## 2026-11-06 — PR #21 Copilot correction wave 1 integrated; full5 passed
+
+Copilot review5794475912 COMMENTED on published3394149 at01:21:05Z confirmed
+C1 rollback (inline4488007346), C2 shared default catalog (4488007374) and C3
+blocked completed replay warning (4488007407). R40 corrections are integrated in
+c3cdf085c03718ca6a9d5db87ea0de28fa9652b0 from61fb8e2815887c19a1d6dc64572e5f469ec5cee9;
+source b465d3198840f96d5d15a85eeb45e4312e4c4dec, tests293bc5038bae501dee07631704899e5f385e9025,
+identical to worker. Three source files/three new independent tests, no other product
+contract/version/schema/dependency/deadline change. Existing R41/R42 next-contract
+planning rulings remain intact; neither is implemented by this correction.
+
+Ordinary precommit Exception restores previous evidence before propagating;
+BaseException/process termination unchanged, failed rollback retains backup/cause.
+Default SessionProcessor shares the controller's actual MemoryService/custom root;
+explicit processors retain contract. Rejected completed local replay becomes an
+existing completed/can_retryFalse recovery warning before retry-audio probes;
+metadata/marker/prior revision remain, no provider retry or new UI flow. Successful
+replay/no-marker controls unchanged. Independent scoped verdict C1-C3 is pending.
+
+Independent RED8 cases:5 failed/3 controls passed, sequential26.91s. GREEN8 passed
+9.77s; affected15-file focus325 passed/1 symlink skip/141.36s. Ruff/format6 pass;
+canonical mypy339/current79 errors/20 files/65 sources, no new diagnostics{}. Report
+copilot-1-implementation-report.md and RED report/logs retained in local ledger.
+Docs read exact raw bot comments, actual source diff/reports/probe; no runtime.
+
+Fresh c3cdf08 wheel/sdist/probe at2026-11-06T01:47:42.753122Z:65 source files equal,
+noneditable/schema2/FTS5; FK/integrity root-reported. Wheel SHA256
+acbc092001eda20bcf980bf9d74d2c53c01698322641e9f8a9d313c34efec051; sdist
+f7d80d8612aa6e2de13662324c16f670baa5022a2ad4dfcd976df1e6847b33ab.
+Full5 started alone2026-11-06T01:47:43.289345Z, .superpowers/m2a-integrated-final-5.*:
+**961 passed,7 symlink skips,0 failures in371.80s**, root exit0. Docs independently
+read final log/parsed XML:968 cases/0 failures/0 errors/7 skips/internal371.710s.
+Both wheel CLI3.747s/GUI2.978s pass with no failure/skip nodes. Current source-only
+scoped inspection provisionally marks C1-C3 addressed/no new defects; final
+technical verdict awaits committed docs supplement and actual full5 evidence. Prior independent approval/full4 and hosted Windows339 remain
+historical. CI42142394863 on339 passed958/2wheel skips/250.79s; package42142395026
+passed, proving339 only. Published PR head is still339, not localc3cdf08.
+
+Root still must receive final current scoped acceptance, reply each inline, request
+and receive Copilot on corrected head and get exact-head Windows CI before guarded
+merge. No A/M2 close/certification/version change or future-chat creation. Two-hour
+acceptance remains omitted by ruling5. R35 ordering and all historical failed
+full1/full3/diagnostics/timeout plus full2/full4 scope remain unchanged.
+
+Final Copilot-wave1 independent verdict: APPROVED, source/tests c3cdf08 plus
+committed documentation f06b33b. C1/C2/C3 all ADDRESSED; no Critical/Important or
+new actionable source defect. Reviewer directly verified full5 961/7/371.80s,
+968 XML cases/zero failures/errors and both wheel smokes, with scope limits in
+copilot-1-review-report.md. CD1 stale full5 heading/publication wording corrected
+in this normal ledger update. Source/tests unchanged; no further runtime/review
+requested. Root may publish, reply separately to inline4488007346/7374/7407 with
+c3cdf08, and request/receive Copilot on the actual corrected head. Windows CI on
+that head and guarded merge remain pending; no group/milestone closure or real
+certification is inferred from this technical acceptance.
+
+## 2026-11-06 — Copilot C4 integrated; exact-head complete Windows suite pending
+
+Review5794829768 COMMENTED on published D23 at02:09:04Z resolves C1–C3 and adds
+C4/4488285573. R43 was committed in3cf8726 before code. Source56af5253a8eec498c594bd6f1e1e456ad69f9453
+integrates0a28842e9ac0a9f670a5e800077bf0fce8ae9e6d: src a17ec107c212d62e1984bb1cede094b579db5137,
+tests c6a29f96af9ffc1e0c488ca73a430ef9a99b86b6, identical to worker. Only recovery.py
+and one new independent test change. Marker-data ValueError is caught locally,
+UnsafeSessionPath re-raised; fixed bounded non-echoing nonretryable warning retains
+valid identity/status before WAV probes. No fallback proof, byte changes or provider.
+
+Actual RED6 failures/2 controls in6.69s; GREEN8/8.18s; affected124/90.52s, zero
+skips; Ruff/format2 clean, canonical mypyD23/current79/79 with no new diagnostics.
+Fresh noneditable probe56af525 at2026-11-06T02:26:03.485121Z verifies65 equal source
+files/schema2/FTS5, root-reported FK/integrity. Wheel SHA256
+cdc99d7b0b76bdce2d8c606edb7adabcd335984be4fc0bce000690648a5bc37a; sdist
+df30e3ffc9aa4e33d4b5b995f982d1c52097541ff1633b0035ee00074d686eb3.
+Distribution file4 passed7.44s, XML4/0F0E0S/internal7.314s; installed wheel
+CLI3.928/GUI2.748 pass, mutex0.005/path0.570 pass. Docs read source diff/reports/
+probe and parsed actual XML; no runtime. Logs .superpowers/m2a-copilot-2-wheel-smokes.*.
+
+Final independent scoped verdict pending committed docs. R43 requires the complete
+Windows suite and package CI on the corrected exact head before merge; no duplicate
+localfull6 and no waived full-suite gate. Full5CDF and CI_D23 are historical only:
+D23 tests42147566672 passed966/2wheel skips/331.02s, package42147566683 passed.
+Published PR21 stillD23; C4 unanswered/unpublished. C1–C3 replies4488243766/
+4488243915/4488244052 resolved. Root must replyC4 with reachable correction SHA,
+request/receive new Copilot, obtain exact-head complete-suite/package CI green,
+then guarded merge. No group/M2 close, certification, version bump or future chats.
+R39–R43 and all historical failures/timeouts retain their scope; no new ruling here.
+
+C4 final independent verdict: APPROVED for source56af525 and committed six-doc
+supplement58176ce; C4 ADDRESSED, no Critical/Important or new actionable source
+defect. Reviewer checked actual focus reports, fresh65-file byte-equal wheel/probe
+and distribution log/XML4 passed/7.44s, including both installed-wheel entries.
+CD2 carried-forward CDF/current-pending note is marked historical in the normal
+verdict update. No further local runtime/review requested. R43 still requires the
+COMPLETE Windows suite/package on the actual corrected published head before
+merge, plus newly received/responded Copilot. No localfull6, group/milestone close
+or real certification is asserted by this scoped technical approval.
+
+## 2026-11-06 — Copilot C5 integrated; current full-suite hosted gate pending
+
+Review5795057762 COMMENTED on5b515e8844cc0d135461517dd55e907b65845c4d at
+02:42:41Z confirms C4 resolved and adds C5/inline4488473222. C4 reply4488439090
+and threadPRRT_kwDORsQx4M60We91 are resolved. Complete Windows CI5b42151367541
+passes974/two wheel-environment skips/349.23s and package42151367491 passes;
+these results prove5b only and remain historical for the new C5 correction.
+
+R44 was committed4375247 before implementation. Rootc59ae331ebf124400ef3e476e5f0fcc029e83999
+integratese8bd181f12fcfc25b8d66365689823552fa4e50b: src5c66169c0a93a8f0606a011bd9570bbdd9137903,
+testsfb958d021eaf7d149c00a3a1be174e36fbef2a1c, identical to worker. Only recovery.py
+and one new independently authored test change. Actual retry_parent LibraryError
+or ambiguous-origin ValueError becomes a private signal; discovery keeps already
+validated legacy metadata visible with its real identity/status/duration and a
+fixed bounded nonretryable warning. It inspects no marker/error/audio/native
+material for that warning and changes no source/catalog bytes. Actual owner-busy
+and unsafe-path guards remain strict; stale materialize fails closed. No invented
+UUID/parent/proof, provider call, repair, schema/dependency/version/deadline change.
+
+Independent RED: initial five cases2 failed/3 controls passed10.98s, then one real
+ambiguous-origin case1 failed2.95s on the same frozen5b baseline. Six distinct cases,
+three RED/three PASS across two sequential runs (13.93s summed), not one six-case
+run. The first five-case prefix stayed byte-identical. Final test SHA256
+F7308104984F667919810A10F4575C01AE9B7F4D0B554A6D34468643CBD45696.
+GREEN6 pass4.24s; affected17-file focus169 pass114.05s, zero failures/skips.
+Ruff/format2 clean; canonical mypy5b/current79 errors/20 files/65 sources in both,
+new touched messages{}. Reportscopilot-3-red-report.md/copilot-3-implementation-report.md
+and raw logs remain in the local ledger. RED/GREEN files/runtime released.
+
+Fresh wheel/sdist and noneditable probe c59ae33 at2026-11-06T03:08:14.816511Z:
+65 Python files byte-equal, schema2/FTS5; FK/integrity passed as reported by root.
+Wheel SHA2562c49dd9d896ce4b46d932bddc2f58cfb09380c7a22fe6d0d6a1f2e2f2c096de5;
+sdist952b4706e290bc8e9134e61def5dadc09b341edf311ca136c46923ba8b7ee9a4.
+Distribution file4 pass7.51s, XML4/0F0E0S/internal7.456s: installed CLI3.996s,
+GUI2.757s, mutex0.007s and inherited-path0.559s. Docs read actual probe/stdout and
+parsed XML, without runtime. Logs .superpowers/m2a-copilot-3-wheel-smokes.log/.xml.
+
+Implementation and covered automatic local verification exist; final scoped
+independent source/docs verdict is pending this committed supplement. R43/R44
+require the COMPLETE exact-head Windows suite and package CI before merge; no
+duplicate localfull7 or waiver. Published PR21 remains5b; C5 is not yet replied or
+published, and new received/responded Copilot/current-head CI/guarded merge remain
+pending. Full5CDF and every failed historical run retain their actual scope.
+No group/M2 closure, real hardware/provider/clean-install certification, new ruling
+or version bump. Two-hour acceptance is omitted by ruling5. R35 still requires A
+merge plus required contract-doc PR merges before the two project chats; none
+created, future IDs/branches/worktrees/responsibles remain pending.
+
+C5 final scoped independent verdict: APPROVED for sourcec59ae33 and committed
+six-document supplement3fdbd05; C5 ADDRESSED, no new actionable Critical,
+Important or Minor finding. Reviewer directly inspected the source/test correction,
+six committed docs, actual probe and distribution stdout/XML:65 byte-identical
+installed files,4 passed/7.51s including both wheel entries, zero failures/errors/
+skips. Report: `copilot-3-review-report.md`. No extra review/local full requested.
+This routine verdict ledger changes no source/tests or acceptance definition.
+Root must still publish/reply C5, receive new Copilot and complete exact-head
+Windows suite/package success before guarded merge. No group/milestone closure
+or real certification follows from technical approval alone.

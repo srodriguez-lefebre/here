@@ -8,12 +8,17 @@ import time
 import numpy as np
 from here.audio_helper import OwnedHelper
 from here.config.settings import get_settings
+from here.output.ownership import retain_for_job
 from here.recording.control import OpenedSource
 from here.recording.journal import CaptureJournal
 from here.recording.models import CaptureFailed
 
 
 class WindowsRecordingHandle:
+    @property
+    def meeting_id(self) -> str:
+        return str(self._journal.document.capture_id)
+
     def __init__(
         self,
         mode="both",
@@ -33,25 +38,44 @@ class WindowsRecordingHandle:
         self._cancelled = False
         self._ready = threading.Event()
         self._done = threading.Event()
-        self._journal = CaptureJournal.create(sessions_root or get_settings().TRANSCRIPTIONS_DIR)
-        self._helper = helper_factory(
-            "capture",
-            {
-                "mode": mode,
-                "microphone_device_id": microphone_device_id,
-                "system_device_id": system_device_id,
-                "sessions_root": str(self._journal.root),
-                "capture_id": self._journal.document.capture_id,
-            },
+        self._scoped_owner = retain_for_job(self.close_ownership)
+        self._journal = CaptureJournal.create(
+            sessions_root or get_settings().TRANSCRIPTIONS_DIR, owned=True
         )
-        self._thread = threading.Thread(
-            target=self._run, args=(block_sink, timeout), name="here-capture-owner", daemon=True
-        )
-        self._thread.start()
+        try:
+            self._helper = helper_factory(
+                "capture",
+                {
+                    "mode": mode,
+                    "microphone_device_id": microphone_device_id,
+                    "system_device_id": system_device_id,
+                    "sessions_root": str(self._journal.root),
+                    "capture_id": self._journal.document.capture_id,
+                },
+            )
+            self._thread = threading.Thread(
+                target=self._run, args=(block_sink, timeout), name="here-capture-owner", daemon=True
+            )
+            self._thread.start()
+        except BaseException:
+            self._journal.release_ownership()
+            raise
         self._ready.wait()
         if self._error is not None:
             self._thread.join()
+            if not self._scoped_owner:
+                self.close_ownership()
             raise self._error
+
+    def close_ownership(self):
+        """Close only after native closure and the enclosing application's outcome."""
+        thread = getattr(self, "_thread", None)
+        if thread is not None and thread.is_alive():
+            self.stop()
+            thread.join()
+        journal = getattr(self, "_journal", None)
+        if journal is not None:
+            journal.release_ownership()
 
     def _run(self, sink, timeout):
         helper = self._helper
@@ -171,6 +195,8 @@ class WindowsRecordingHandle:
         self._thread.join(timeout)
         if self._thread.is_alive():
             raise TimeoutError("Timed out waiting for audio capture to stop")
+        if not self._scoped_owner:
+            self.close_ownership()
         if self._error is not None:
             raise self._error
         return self._result

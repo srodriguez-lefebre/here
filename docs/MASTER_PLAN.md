@@ -104,3 +104,53 @@ ejecutan ni se presentan como aprobadas. El cierre de M1 se evalúa con
 el alcance restante en Windows: correcciones, distribución instalable,
 verificaciones de runtime/instalación, avisos, checksums y PR revisadas
 y mergeadas. Al cerrar M1 termina esta ejecución; M2-M5 quedan pendientes.
+
+### Ejecución vigente al 2026-11-05
+
+La instrucción explícita del usuario registrada como ruling 20 reemplaza la pausa
+de implementación del ruling 15 y el límite histórico de terminar en M1. Se
+implementan M2–M5 en los nueve grupos de PR que enumera `STATUS.md`, conservando
+los principios y las definiciones de terminado de este plan. El grupo actual es
+M2 A: la base de catálogo de su tarea 1 (`9a80060`) tiene review independiente
+aceptada y verificación local; `M2A-T1-FINAL-20261105` registra 778 pasan/7 skips
+en `ACCEPTANCE.md`, sin sustituir CI del grupo.
+La tarea 2 conserva raw y segmentos en todos los recorridos. La tarea 3 integró
+las rondas 2/3 en `8087e25`: reviews acotadas marcan originales F1–F7, NB1 y NB2
+ADDRESSED. El full histórico `1f1bc88` dio cinco fallos/920 pasan/7 skips; sus
+correcciones tienen cobertura; su full histórico pasa 940 tests/7 skips en 325,09 s.
+La review única de todo A terminó con veredicto fuente/docs changes requested por
+GR1–GR3 Important: replay tras metadata, aislamiento de recibos inválidos y
+divergencia de catálogo al cancelar captura. La tanda única de fixes R38 está
+integrada en `7bfd0cb`, equivalente a Green `ec55b95`, con foco final de grupo y
+recovery de 26 pasan/34,46 s. Marker 3 sella evidencia final antes de metadata;
+recibos 2/3 y schema 2 se conservan. La re-review final independiente APPROVED
+fuente7bfd/fixtureef70/docs8845877 marca GR1–GR3/GD1/GD2 ADDRESSED. El full940/7
+corresponde al histórico `8087e25`; faltan los gates de GitHub. Full 3 de `7bfd0cb` dio ocho fallos/
+945 pasan/siete skips en 364,23 s, por dos wrappers de tests de captura que rechazan
+el callback aditivo. Sus assertions/cortes de crash se conservan al reenviarlo.
+La corrección test-only `ef70f78` pasó foco13/24,82 s y full 4:953 pasan/7 skips/
+358,94 s, ambos smokes wheel pasan con el mismo source/probe no editable exacto.
+Los fallos históricos permanecen. Tarea 3 aceptada técnicamente en local;
+grupo A e hito siguen abiertos hasta sus gates y alcance restantes.
+PR #21 recibió tres observaciones de Copilot sobre 3394149; R40 se implementó en
+c3cdf08 con 8 casos nuevos y foco afectado 325/1skip pasando. Full 5 pasa 961/7/371,80 s; review acotada
+de esa corrección está pendiente; aprobación/full4/CI anteriores conservan su
+fuente real. Aún faltan respuestas/nueva review Copilot/CI exacto/merge de A.
+El ciclo
+de vida/borrado y el cierre de M2 siguen pendientes; no cambia la versión a 0.3.0
+hasta cerrar el grupo B. Su PLAN ajustado se entrega antes en un PR de docs según
+ruling 14, sin sustituir los gates del grupo A.
+
+La nueva instrucción del ruling 35 ordena cerrar y mergear A primero y completar
+los PRs docs de contratos. Después root crea dos chats separados del proyecto para
+M2 B y M3 A, cada uno con rama/worktree y brief sobre la SHA mergeada real; IDs,
+bases y responsables futuros siguen pendientes en STATUS. Root conserva contratos,
+leases, integración y merges. Cada chat ejecuta su grupo con RED/GREEN/review/docs,
+sin reiniciar ni duplicar trabajo. Tras M2 B puede adelantarse M5 B con claims
+pendientes hasta M4 B; se mantienen las demás dependencias y los mismos criterios.
+
+Cada merge exige review independiente, Copilot recibido y respondido sobre el head
+actual y CI de Windows verde en ese head; el ruling 20 no permite omitir una
+condición por demora. La evidencia automática local no certifica hardware,
+proveedor ni instalación limpia. La prueba de dos horas permanece omitida por
+ruling 5, sin presentarla como aprobada.

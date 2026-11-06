@@ -100,6 +100,7 @@ Each recording creates a timestamped folder inside `transcriptions/`:
 ```text
 transcriptions/YYYYMMDD_HHMMSS/
   audio.wav
+  raw_transcript.txt
   transcript.txt
   transcript.md
   session.json
@@ -111,6 +112,11 @@ If transcription fails, the audio and diagnostic metadata remain available so
 the session can be retried without recording it again. Failed sessions also
 include an `errors.json` file.
 
+Successful live, offline, fallback, file transcription and retry paths preserve
+`raw_transcript.txt` with the transcription text before optional cleanup.
+`transcript.txt` and `transcript.md` contain the display text, which may be cleaned.
+Keeping both lets you inspect the source text when cleanup changes the wording.
+
 An unexpected Windows capture failure also preserves finalized audio and a failed
 session for retry. If mixing fails, source WAV copies remain in that session.
 Explicit recording cancellation deletes captured audio and creates no session.
@@ -119,7 +125,12 @@ exceeding either budget triggers offline transcription of the saved audio.
 
 `segments.json` stores versioned provider evidence: original segment text,
 nullable timing/speaker values, and request scope for chunk-local speaker labels.
-It retains overlapping chunk evidence separately from the merged or cleaned
+Text-only responses retain an untimed segment with no inferred speaker.
+The optional `timing_source` field distinguishes `provider`, `imported_explicit`
+and `absent`; new provider evidence uses `absent` when no valid bound remains.
+Contradictory bounds become missing, and a wall-clock pause never shifts a recorded
+audio position. Historical segment documents without this field remain readable.
+`segments.json` retains overlapping chunk evidence separately from the merged or cleaned
 display transcript. `session.json.capture_sources` preserves original device names,
 sample rates, channels, and frame counts after mixing.
 
@@ -128,6 +139,73 @@ pause/resume and processing lifecycle events without storing raw audio blocks.
 
 The project produces transcripts and processing metadata. It does not currently
 generate summaries or action items.
+
+## Local catalog (M2 in progress)
+
+The source candidate implements cataloging of recordings, file transcriptions
+and explicit retries under the configured user data root. It keeps managed copies
+and immutable transcript revisions; importing a saved session leaves the original
+folder unchanged. Repeated import of the same origin is unchanged. Conflicting
+content with the same meeting UUID is rejected; an explicit application retry
+is intended to create the next revision while retaining earlier evidence.
+
+These maintenance commands work without a provider key:
+
+```powershell
+$result = here memory ingest path\to\saved-session --json | ConvertFrom-Json
+here memory show $result.meeting_id --json
+here memory reconcile --json
+```
+
+`ingest` reports `status`, `meeting_id` and warnings. `show` returns the meeting,
+audio assets, revisions and segments; `reconcile` reports local recovery warnings.
+The intended exit codes are 0 for success, 2 for invalid input, 3 for a rejected conflict or
+missing meeting, and 4 for an unavailable/corrupt catalog. `--json` keeps the result
+machine-readable. Local catalog commands never transcribe or contact the provider.
+
+The data root contains `library.sqlite3`, `meetings/<uuid>/revisions/`, managed
+backups and staging material. Keep these together for recovery. Completed revision
+receipts and later state snapshots allow reconstruction from managed evidence;
+uncertain publications are retained with a warning. Unknown source files are not
+imported merely because they share a session folder.
+
+If only catalog publication fails, saved audio and text remain usable. The desktop
+shows a separate library-pending warning, and later discovery retries local catalog
+work without repeating transcription. A failed provider retry keeps the previous
+complete revision active. Ordinary application retry still requires an explicit
+action and the provider credential.
+
+Before final session metadata is committed, the application seals its local
+publication intent against the actual final artifact bytes. Startup publishes
+only matching final evidence; an unfinished or changed result stays preserved
+with a recovery warning. Malformed managed receipts are retained with warnings
+while valid neighboring meetings can rebuild. Accepted cancellation during capture
+failure persistence is finalized before the first catalog publication, preserving
+the original capture error and audio under the same meeting.
+
+M2 is not released or complete. Integrated source `7bfd0cb` implements the combined
+GR1–GR3 fixes. Final pending markers use version 3; readers accept markers 1/2,
+publication receipts remain version 3 with version-2 compatibility, and the DB
+schema stays 2. The final group/recovery focus passes 26 tests. The earlier
+940-pass/seven-skip full belongs to historical source `8087e25`. New full 3 at
+`7bfd0cb` reports eight failures/945 passes/seven skips: existing capture-recovery
+test wrappers reject the additive precommit callback. Both wheel smokes pass.
+The test-only wrapper correction is integrated at `ef70f78`; its 13-case focus
+passes and full 4 passes **953 tests/seven symlink skips in 358.94s**, including
+both wheel smokes on unchanged product source. Final scoped independent review
+APPROVED source, fixture and docs `8845877`; GR1–GR3/GD1/GD2 are ADDRESSED.
+Current evidence and pending hosted CI/Copilot/merge gates are tracked
+in [STATUS.md](STATUS.md).
+The packaged 0.2.0 delivery above retains its recorded M1 scope.
+
+PR [#21](https://github.com/srodriguez-lefebre/here/pull/21) received three Copilot
+observations on `3394149`. Corrections are integrated in `c3cdf08`: ordinary
+precommit callback errors restore prior evidence; the default processor shares
+the controller's catalog; completed sessions with blocked local publication show
+an existing recovery warning with provider retry disabled. Eight new cases pass,
+and the affected focus passes 325/one symlink skip. Prior full4/technical approval
+and Windows CI belong to the previous source. Full 5 passes 961/seven symlink skips in 371.80s; scoped review of
+these corrections remain pending, followed by replies/new Copilot/exact-head CI.
 
 ## Audio Diagnostics
 

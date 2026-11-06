@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Literal
 
 import pytest
-from here.output.metadata import ChunkMetadata
+from here.output.metadata import ChunkMetadata, TranscriptSegmentMetadata
 from here.output.session_writer import (
     AUDIO_FILE,
     CHUNKS_FILE,
@@ -163,6 +163,7 @@ def _write_segment_artifacts(
     tmp_path: Path,
     *,
     segments: list[TranscriptSegment] | None,
+    raw_text: str | None = None,
     session_dir: Path | None = None,
     status: Literal["pending", "completed", "failed", "cancelled"] = "completed",
 ) -> SessionArtifactPaths:
@@ -178,9 +179,51 @@ def _write_segment_artifacts(
         live_pipeline_used=False,
         fallback_used=False,
         segments=segments,
+        raw_transcript_text=raw_text,
         session_dir=session_dir,
         status=status,
     )
+
+
+@pytest.mark.parametrize("rewrite", [False, True])
+def test_metadata_publication_failure_preserves_previous_raw_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, rewrite: bool
+) -> None:
+    directory = tmp_path / "transcriptions" / "raw-publication"
+    directory.mkdir(parents=True)
+    raw_path = directory / "raw_transcript.txt"
+    if rewrite:
+        _write_segment_artifacts(
+            tmp_path,
+            segments=[TranscriptSegment("old evidence")],
+            raw_text="old raw evidence",
+            session_dir=directory,
+        )
+    previous_raw = raw_path.read_bytes() if rewrite else None
+    previous_metadata = (directory / METADATA_FILE).read_bytes() if rewrite else None
+    replace = Path.replace
+
+    def fail_metadata_replace(path: Path, destination):
+        if Path(destination) == directory / METADATA_FILE:
+            raise OSError("synthetic metadata publication failure")
+        return replace(path, destination)
+
+    monkeypatch.setattr(Path, "replace", fail_metadata_replace)
+    with pytest.raises(OSError, match="synthetic metadata publication failure"):
+        _write_segment_artifacts(
+            tmp_path,
+            segments=[TranscriptSegment("new evidence")],
+            raw_text="new raw evidence",
+            session_dir=directory,
+        )
+    if rewrite:
+        assert raw_path.read_bytes() == previous_raw
+        assert (directory / METADATA_FILE).read_bytes() == previous_metadata
+    else:
+        assert not raw_path.exists()
+        assert not (directory / METADATA_FILE).exists()
+    assert not list(directory.glob(".*.stage"))
+    assert not list(directory.glob(".*.backup"))
 
 
 @pytest.mark.parametrize("status", ["failed", "cancelled", "pending", "completed"])
@@ -492,6 +535,7 @@ def test_direct_typed_reversed_evidence_is_persisted_without_contradictory_times
             "speaker": "A",
             "chunk_index": 3,
             "speaker_scope": "chunk:3",
+            "timing_source": "absent",
         }
     ]
 
@@ -540,6 +584,7 @@ def test_direct_invalid_bounds_persist_as_missing_and_survive_shift_and_scope(
             "speaker": "A",
             "chunk_index": 4,
             "speaker_scope": "chunk:4",
+            "timing_source": "absent" if bounds == "both" else "provider",
         }
     ]
     expected_shifted = (
@@ -577,6 +622,26 @@ def test_direct_numeric_strings_use_numeric_validation_before_persistence(
     assert (segment["start"], segment["end"]) == expected
     assert segment["text"] == "evidence"
     assert segment["speaker"] == "A"
+
+
+@pytest.mark.parametrize("timing_source", ["provider", "imported_explicit", "absent"])
+def test_segment_metadata_roundtrip_preserves_explicit_timing_provenance(timing_source):
+    payload = {
+        "text": "original evidence",
+        "start": None if timing_source == "absent" else 0.0,
+        "end": None if timing_source == "absent" else 1.0,
+        "speaker": "A",
+        "timing_source": timing_source,
+    }
+    restored = TranscriptSegmentMetadata.model_validate(payload)
+    assert restored.model_dump()["timing_source"] == timing_source
+
+
+def test_legacy_segment_metadata_without_timing_source_remains_readable():
+    restored = TranscriptSegmentMetadata.model_validate({"text": "legacy evidence", "start": 0.0})
+    assert restored.text == "legacy evidence"
+    assert restored.start == 0.0
+    assert restored.model_dump().get("timing_source") is None
 
 
 @pytest.fixture

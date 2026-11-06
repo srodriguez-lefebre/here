@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import importlib
+import json
+import sqlite3
 import threading
 import time
 from pathlib import Path
@@ -17,6 +20,7 @@ from here.application import (
 )
 from here.application.processing import ProcessingCancelled, SessionProcessingFailed
 from here.recording.models import RecordingSession
+from memory_fixtures import MEETING_ID, OTHER_MEETING_ID, make_session, write_json
 
 
 class FakeCapture:
@@ -441,6 +445,189 @@ def test_audio_telemetry_rechecks_state_before_emitting(
     assert levels == []
     controller.cancel()
     controller.wait_until_terminal(2)
+
+
+def test_persisted_recording_enters_catalog_before_memory_event_and_completion(tmp_path):
+    memory = importlib.import_module("here.memory.service").MemoryService(tmp_path / "data")
+    source = make_session(tmp_path / "recorded", meeting_id=MEETING_ID)
+    processor = FakeProcessor(source.directory)
+    processor.release.set()
+    core = HereApplicationController(
+        capture_factory=lambda *args: FakeCapture(),
+        live_factory=lambda *args: FakeLive(),
+        processor=processor,
+        memory_service=memory,
+    )
+    events = []
+    core.subscribe(events.append)
+    core.start(StartRequest(output_dir=tmp_path))
+    wait_for_state(core, ApplicationState.RECORDING)
+    core.stop()
+    snapshot = core.wait_until_terminal(5)
+    assert snapshot.state is ApplicationState.COMPLETED
+    assert snapshot.worker_complete
+    memory_events = [event for event in events if event.kind.value == "memory_ingested"]
+    assert len(memory_events) == 1
+    assert memory_events[0].kind is EventKind.MEMORY_INGESTED
+    assert memory_events[0].details["status"] == "inserted"
+    assert memory_events[0].details["meeting_id"] == MEETING_ID
+    persisted = next(
+        index for index, event in enumerate(events) if event.kind is EventKind.SESSION_PERSISTED
+    )
+    indexed = events.index(memory_events[0])
+    completed = next(
+        index
+        for index, event in enumerate(events)
+        if event.kind is EventKind.STATE_CHANGED and event.state is ApplicationState.COMPLETED
+    )
+    assert persisted < indexed < completed
+    with sqlite3.connect(tmp_path / "data" / "library.sqlite3") as connection:
+        assert connection.execute("SELECT id FROM meetings").fetchall() == [(MEETING_ID,)]
+        assert connection.execute("SELECT sha256 FROM audio_assets").fetchall() == [
+            (source.audio_sha256,)
+        ]
+
+
+def test_catalog_failure_after_recording_keeps_audio_and_reports_pending_recovery(
+    tmp_path, monkeypatch
+):
+    module = importlib.import_module("here.memory.service")
+    memory = module.MemoryService(tmp_path / "data")
+    database = importlib.import_module("here.memory.database")
+    source = make_session(tmp_path / "recorded", meeting_id=MEETING_ID)
+    before = (source.audio.read_bytes(), source.metadata.read_bytes())
+    processor = FakeProcessor(source.directory)
+    processor.release.set()
+
+    def catalog_busy(*args, **kwargs):
+        raise database.Busy("Synthetic catalog contention")
+
+    monkeypatch.setattr(memory, "ingest_session", catalog_busy)
+    core = HereApplicationController(
+        capture_factory=lambda *args: FakeCapture(),
+        live_factory=lambda *args: FakeLive(),
+        processor=processor,
+        memory_service=memory,
+    )
+    events = []
+    core.subscribe(events.append)
+    core.start(StartRequest(output_dir=tmp_path))
+    wait_for_state(core, ApplicationState.RECORDING)
+    core.stop()
+    snapshot = core.wait_until_terminal(5)
+    assert snapshot.state is ApplicationState.COMPLETED
+    assert snapshot.last_error is None
+    assert snapshot.session_dir == source.directory
+    assert (source.audio.read_bytes(), source.metadata.read_bytes()) == before
+    warning = next(event for event in events if event.kind.value == "memory_ingested")
+    assert warning.details["status"] == "rejected"
+    assert warning.details["pending_recovery"] is True
+    message = str(warning.details["message"]).lower()
+    assert "audio" in message and "biblioteca" in message and "recuper" in message
+
+
+@pytest.mark.parametrize("outcome", ["completed", "failed", "cancelled"])
+def test_capture_identity_has_durable_recording_processing_and_outcome_states(tmp_path, outcome):
+    module = importlib.import_module("here.memory.service")
+    root = tmp_path / "data"
+    memory = module.MemoryService(root)
+    source = make_session(tmp_path / "recorded", meeting_id=MEETING_ID)
+    metadata = json.loads(source.metadata.read_text(encoding="utf-8"))
+    metadata["status"] = outcome
+    write_json(source.metadata, metadata)
+    capture = FakeCapture(RecordingSession(sources=[], meeting_id=MEETING_ID))
+    capture.meeting_id = MEETING_ID
+
+    class OutcomeProcessor(FakeProcessor):
+        def process(self, *args, **kwargs):
+            self.called.set()
+            assert self.release.wait(3)
+            if outcome == "failed":
+                raise SessionProcessingFailed(
+                    "Synthetic processing failure", source.directory, recoverable=True
+                )
+            if outcome == "cancelled":
+                raise ProcessingCancelled(source.directory)
+            return SimpleNamespace(session_dir=source.directory)
+
+    processor = OutcomeProcessor(source.directory)
+    core = HereApplicationController(
+        capture_factory=lambda *args: capture,
+        live_factory=lambda *args: FakeLive(),
+        processor=processor,
+        memory_service=memory,
+    )
+
+    def durable_status():
+        with sqlite3.connect(root / "library.sqlite3") as connection:
+            row = connection.execute(
+                "SELECT status FROM meetings WHERE id=?", (MEETING_ID,)
+            ).fetchone()
+            return row[0] if row else None
+
+    core.start(StartRequest(output_dir=tmp_path))
+    try:
+        wait_for_state(core, ApplicationState.RECORDING)
+        assert durable_status() == "recording"
+        core.pause()
+        assert durable_status() == "recording"
+        core.resume()
+        core.stop()
+        assert processor.called.wait(3)
+        assert durable_status() == "processing"
+        processor.release.set()
+        snapshot = core.wait_until_terminal(5)
+        assert snapshot.state.value == outcome
+        assert durable_status() == outcome
+        assert source.audio.is_file() and source.metadata.is_file()
+    finally:
+        capture.done.set()
+        processor.release.set()
+        core.wait_until_terminal(5)
+
+
+def test_destructive_capture_cancel_discards_only_its_durable_recording_row(tmp_path):
+    memory = importlib.import_module("here.memory.service").MemoryService(tmp_path / "data")
+    retained = make_session(tmp_path / "retained", meeting_id=OTHER_MEETING_ID)
+    assert memory.ingest_session(retained.directory).status == "inserted"
+    raw_capture = tmp_path / "synthetic-capture.wav"
+    raw_capture.write_bytes(b"synthetic unfinished capture")
+
+    class OwnedCapture(FakeCapture):
+        meeting_id = MEETING_ID
+
+        def cancel(self):
+            raw_capture.unlink()
+            super().cancel()
+
+    capture = OwnedCapture(RecordingSession(sources=[], meeting_id=MEETING_ID))
+    core = HereApplicationController(
+        capture_factory=lambda *args: capture,
+        live_factory=lambda *args: FakeLive(),
+        processor=FakeProcessor(tmp_path / "must-not-persist"),
+        memory_service=memory,
+    )
+    core.start(StartRequest(output_dir=tmp_path))
+    try:
+        wait_for_state(core, ApplicationState.RECORDING)
+        with sqlite3.connect(tmp_path / "data" / "library.sqlite3") as connection:
+            assert connection.execute(
+                "SELECT status FROM meetings WHERE id=?", (MEETING_ID,)
+            ).fetchone() == ("recording",)
+        core.cancel()
+        snapshot = core.wait_until_terminal(5)
+        assert snapshot.state is ApplicationState.CANCELLED
+        assert not raw_capture.exists()
+        assert retained.audio.is_file() and retained.metadata.is_file()
+        with sqlite3.connect(tmp_path / "data" / "library.sqlite3") as connection:
+            assert connection.execute("SELECT id, status FROM meetings").fetchall() == [
+                (OTHER_MEETING_ID, "completed")
+            ]
+            assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
+    finally:
+        if not capture.cancelled:
+            core.cancel()
+        core.wait_until_terminal(5)
 
 
 def test_invalid_commands_are_rejected_without_changing_state(tmp_path: Path) -> None:

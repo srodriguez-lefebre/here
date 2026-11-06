@@ -495,11 +495,15 @@ class LiveTranscriptionController:
         chunk_segments: Sequence[TranscriptSegment],
         offset_seconds: float,
     ) -> tuple[str, SegmentTimeline | None]:
-        if timeline is not None and chunk_segments:
+        has_structured_evidence = any(
+            segment.start is not None or segment.end is not None or segment.speaker is not None
+            for segment in chunk_segments
+        )
+        if timeline is not None and has_structured_evidence:
             timeline.extend(shift_segments(chunk_segments, offset_seconds))
             return format_transcript_segments(timeline.to_list()), timeline
 
-        if timeline is not None and not chunk_segments:
+        if timeline is not None:
             timeline = None
 
         merged_raw_text = merge_transcript_parts(

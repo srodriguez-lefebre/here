@@ -46,11 +46,15 @@ def _merge_chunk_transcription(
     offset_seconds: float,
     config: ChunkingConfig,
 ) -> tuple[str, SegmentTimeline | None]:
-    if timeline is not None and transcription.segments:
+    has_structured_evidence = any(
+        segment.start is not None or segment.end is not None or segment.speaker is not None
+        for segment in transcription.segments
+    )
+    if timeline is not None and has_structured_evidence:
         timeline.extend(shift_segments(transcription.segments, offset_seconds))
         return format_transcript_segments(timeline.to_list()), timeline
 
-    if timeline is not None and not transcription.segments:
+    if timeline is not None:
         timeline = None
 
     merged_raw_text = merge_transcript_parts(

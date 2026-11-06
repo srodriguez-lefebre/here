@@ -1,7 +1,13 @@
 # Hito 2 — Memoria estructurada
 
-Estado: plan preparado el 2026-11-04, completado el 2026-11-05. **No está en
-ejecución.** Arranca solo con una instrucción explícita del usuario (ruling 15). El diseño detallado está en
+Estado: **en ejecución desde el 2026-11-05**, por instrucción explícita del usuario
+(ruling 20, reemplaza ruling 15). Grupo actual A; el hito no está cerrado.
+Checkpoint actual de PR #21: fuente c3cdf08 integra correcciones R40/C1–C3 tras
+Copilot sobre 3394149. Ocho casos nuevos y foco 325/1skip pasan; full 5 pasa 961/7/
+371,80 s, ambos smokes wheel. Review independiente final del diff pendiente.
+La aprobación/full4/CI anteriores son históricos
+de la fuente previa; respuestas/nueva review Copilot/CI exacto/merge pendientes.
+El diseño detallado está en
 [`development/PRODUCT_DESIGN.md`](development/PRODUCT_DESIGN.md), secciones 2, 3 y 4,
 que es decisión tomada (ruling 3). Este plan no lo repite: fija alcance, orden, criterios
 verificables y lo que queda fuera.
@@ -30,12 +36,14 @@ Lo que M1 ya entrega y M2 consume tal cual:
 Lo que falta y M2 construye:
 
 - Un catálogo con autoridad sobre identidad, título, participantes, relaciones y
-  revisiones. Hoy la única "identidad" es la carpeta por fecha.
-- Revisiones inmutables de transcripción. Hoy `retry` reescribe la misma carpeta.
+  revisiones. Tarea 3 implementa identidad e ingestión con verificación local y review técnica aceptadas.
+- Revisiones inmutables de transcripción. Tarea 3 conserva snapshots propios;
+  los archivos compatibles de la sesión pueden actualizarse durante retry.
 - Un estado durable propio de la reunión, separado de los nueve estados del
   controlador y de los cuatro literales de `session.json`.
-- Una única vía de persistencia de producto. Hoy `src/cli.py` llama a
-  `write_session_artifacts` directamente en tres lugares.
+- Integración del catálogo con la vía de persistencia de aplicación. La tarea 2
+  movió las escrituras directas de CLI a `SessionProcessor`; la tarea 3 agrega
+  publicación y replay local, todavía sin aceptación final del grupo.
 - Borrado íntegro: FTS, revisiones, archivos propios, backups administrados y, más
   adelante, respuestas de M4 que citen la reunión.
 
@@ -78,7 +86,7 @@ siete. Valen las cinco del diseño.
 
 | Grupo | Tareas del diseño | Documentos | Estado |
 |---|---|---|---|
-| A. Catálogo inmutable | 1 modelos, migraciones y repositorio · 2 segmentos y raw text en todos los recorridos · 3 ingestión, identidad y revisiones | `M2_CATALOG_SPEC.md`, `M2_CATALOG_PLAN.md` | plan escrito, sin ejecutar |
+| A. Catálogo inmutable | 1 modelos, migraciones y repositorio · 2 segmentos y raw text en todos los recorridos · 3 ingestión, identidad y revisiones | `M2_CATALOG_SPEC.md`, `M2_CATALOG_PLAN.md` | C1–C3 corregidos en c3cdf08, foco 8/afectado 325+1skip pasan; full 5 verde 961/7/371,80 s; review final pendiente; aprobación/full4/CI339 históricos, gates del nuevo head/merge pendientes |
 | B. Ciclo de vida y borrado | 4 participantes, edición con `row_version`, reconciliación · 5 borrado transaccional y FTS | `M2_LIFECYCLE_SPEC.md`, `M2_LIFECYCLE_PLAN.md` | plan escrito, sin ejecutar |
 
 Orden obligatorio: A antes que B. Si al mergear A cambió la forma de
@@ -156,13 +164,120 @@ El hito se considera terminado cuando se cumplen conjuntamente:
     reflejan lo implementado; las filas M2 de `ACCEPTANCE.md` nombran la corrida que
     las cierra.
 
+### Evidencia parcial de ejecución — 2026-11-05
+
+La tarea 1 de A aporta modelos inmutables, las doce tablas, migraciones numeradas,
+backups por API de SQLite y repositorio transaccional. RED inicial de 27 fallos;
+primera suite completa local: 768 pasan/9 skips en 174,94 s. Una review independiente
+detectó lecturas bloqueadas sin error tipado; ocho regresiones con EXCLUSIVE real
+fallaron antes de la corrección. Foco corregido: 34 pasan/1 skip de privilegio de
+symlink en 4,70 s, con re-review independiente aceptada. Corrida final
+`M2A-T1-FINAL-20261105`: 778 pasan/7 skips en 173,68 s; ambos smokes del wheel
+no editable pasaron. Límites y comandos en `development/ACCEPTANCE.md`.
+
+| Criterio | Estado de evidencia |
+|---|---|
+| 1–5. Productores, identidad y revisiones | Implementados y verificados localmente con full4 953/7/358,94 s; review técnica final APPROVED, GR1–GR3 ADDRESSED; CI/merge pendientes |
+| 6–7. Segmentos y pausa | Verificados automáticamente en local y aceptados por review técnica; CI pendiente, sin certificación hardware/proveedor |
+| 8. Migración, backup y esquema futuro | Verificación automática local de la base de catálogo; falta CI de Windows en el head del grupo |
+| 14. DB ocupada y transacciones cortas | Verificación local y review técnica aceptadas; CI pendiente |
+| 15. Suite en CI de Windows | Pendiente; una suite local no cierra este criterio |
+| 9–10, 13. Crash, catálogo pendiente y rutas | Guards/NB1/NB2/GR1–GR3 ADDRESSED por review técnica final; full4 local verde; gates hospedados/merge pendientes |
+| 11–12. Borrado sin resurrección | Grupo B pendiente; no lo cierra la limpieza de staging de tarea 3 |
+| 16. Docs y evidencia de cierre | Checkpoints locales documentados; cierre de grupo/hito pendiente |
+
+La tarea 2 (`037fc03`, integrada como `1cdaadb`) preserva `raw_transcript.txt`
+separado del texto limpio y `segments.json` en vivo, offline, fallback, archivo y
+retry, por la vía de aplicación. Tiempos inválidos siguen nulos; `timing_source`
+es aditivo y nullable para documentos históricos. Review independiente de SPEC y
+calidad PASS, sin hallazgos. Foco 310 pasan/1 skip en 24,60 s; captura/recuperación
+con fases de kill conservadas 68 pasan en 25,64 s. Corrida
+`M2A-T2-FINAL-20261105`: 783 pasan/8 skips en 160,71 s (seis symlinks y dos smokes
+de wheel sin entorno opt-in). Tarea 3 completó RED conjunto de 39 fallos/18 pasan
+en 7,33 s y fijó el candidato `6c422f0` en su worktree, sin integración ni aprobación.
+
+Checkpoint de tarea 3: implementa ingestión, staging registrado, recibos
+post-commit y snapshots de estado sin reescribir historia; retries confiables con
+revisión activa esperada, incluso para sesiones v1 sin UUID en el manifiesto;
+propiedad real de captura/procesamiento; replay solo local de ingestión o desenlace
+fallido; FTS derivado, fechas UTC y aviso no fatal en la ventana. La segunda suite
+estable del candidato pasó 883 tests/9 skips en 598,56 s. La primera dio seis
+fallos de instrumentación de limpieza; se conservó y el autor acotó solo la inyección
+sin cambiar assertions (diez pasan/16,76 s; Green 17,10 s). Detalles y XML en
+`ACCEPTANCE.md`. La preservación desconocida y los guards de recibos/estado fueron
+verificados en el candidato; el hallazgo previo de guards ausentes quedó superado.
+Historial de ronda 1: la review inicial pidió siete correcciones. Green `c28472b`, integrada
+root `1f1bc88`, las marca ADDRESSED en re-review con 40 casos nuevos pasando
+en 69,70 s. Schema 2 y recibo v2 de R31 están implementados sin alterar migración 1.
+En ese checkpoint seguía abierto NB1 Important/P2: controller publica de nuevo el retry ya comprometido
+y el replay del marcador postcommit usa un parent obsoleto. La suite integrada root
+dio cinco fallos/920 pasan/7 skips en 553,39 s; tres snapshots de recovery con nuevos
+locks, stub sf.info incompleto y retry legacy solo-audio requerían diagnóstico.
+Ambos smokes del wheel pasaron; siete skips de symlink. Wheel/sdist y probe aislado
+no editable verifican 65 archivos Python iguales, schema 2/FTS5/FK/integrity, sin
+certificar hardware/proveedor ni cerrar el hito. Se requiere fix/re-review y suite
+corregida antes de aceptar tarea/grupo.
+La corrección del arnés sintético de captura
+pasó 33 casos y review independiente, sin cambiar deadlines del producto; no
+certifica hardware ni aprueba los contratos cuestionados.
+
+Checkpoint histórico: `8087e25` incorpora rondas 2/3 y R36/R37 implementados.
+Marker v2/receipt v3 prueban replay comprometido sin confundir un retry nuevo;
+schema DB sigue 2. Reserva audio-only canónica con revisión origen NULL/cero
+revisiones previas conserva fechas captura NULL. Reviews acotadas marcan NB1 y
+regresiones ADDRESSED (61/68,06 s y 69/23,02 s), luego NB2 ADDRESSED/sin nuevo
+breakage en su diff (3/2,40 s y 27/20,86 s). El full anterior fallido se conserva.
+Full 2 iniciado solo a 2026-11-06T00:01:58Z pasa 940/7 en 325,09 s, cero fallos.
+Review de grupo en curso con tres Important provisionales: ventana metadata antes
+del primer marker, aislamiento de recibo JSON no-objeto y cancelación de captura
+que diverge entre catálogo failed y UI/manifest cancelled. GR1/GR2/GR3 están OPEN,
+source verdict changes requested; review global provisional hasta suplemento docs
+comprometido. Aún requieren corrección/verificación; no se reabre NB1/NB2 addressed.
+Wheel/sdist nuevos verifican el source exacto con probe no editable65/schema 2/
+FTS5/FK/integrity. Un timeout intermedio de hijo se conserva, pasó luego sin cambios
+aislado y en foco final; no se probó causa ni modificó deadline alguno.
+No hay certificación nueva de hardware, proveedor o instalación limpia, ni cierre
+del grupo A o de M2. La versión sigue en 0.2.0 hasta el cierre de hito previsto.
+
+Checkpoint vigente: root `7bfd0cb` integra Green `ec55b95`, con source/tests iguales.
+La review global única terminó changes requested para GR1–GR3; GD1/GD2 Minor se
+corrigieron en `7be93af`. R38 implementado sella hashes exactos de manifiesto
+prospectivo y artefactos con roles validados en marker 3 antes del replace final.
+La intención sin resultado final coincidente permanece con aviso, sin importar el
+resultado anterior ni llamar al proveedor. El cutover privado de fallo/cancelación
+precede la primera publicación, con una identidad y la causa/audio originales.
+Recibos malformados se retienen con aviso sin abortar vecinos válidos. Se mantienen
+lectura markers 1/2, recibos 2/3 y schema 2. RED original: 11 fallos/1 control pasa;
+control nuevo ejecutado primero contra candidato dio 1 fallo/5 deselected/3,93 s
+por aviso ausente, preservando revisión previa/bytes/marker. Foco final tras fix:
+26 pasan/34,46 s; foco afectado previo al único fix de aviso: 404/1 skip/159,03 s.
+Ruff/format de nueve archivos limpios y mypy comparativo 79/79 sin mensajes nuevos.
+Build wheel/sdist y probe no editable nuevos pasaron: 65 archivos iguales,
+schema 2/FTS5/FK/integrity. Full 3 dio 8 fallos/945 pasan/7 skips/364,23 s;
+ambos smokes wheel pasaron. Dos wrappers de test_capture_recovery rechazan el
+callback aditivo; corrección de forwarding conserva assertions/cortes de crash,
+sin cambio de fuente de producto. Corrección test-only ef70f78 integrada con
+114 assertions/cortes intactos; foco 13 pasa 24,82 s y full 4 pasa 953/7/358,94 s.
+XML 960/0F/0E/7S/interno 358,621 s; ambos smokes wheel pasan sobre la misma fuente
+y wheel exactos. Re-review independiente final APPROVED sobre docs8845877,
+GR1–GR3/GD1/GD2 ADDRESSED. Tarea3 aceptada técnicamente; grupo/hito abiertos,
+sin CI/Copilot/merge ni certificación nueva.
+
+La instrucción R35 exige primero cierre completo y merge de A y sus PRs docs de
+contratos necesarios. Solo entonces root crea chats separados M2 B y M3 A, con
+ramas/worktrees propios y briefs que fijan base mergeada real, objetivo, SPEC/PLAN,
+archivos, dependencias, límites y DoD. Chats/IDs/asignaciones todavía pendientes;
+root conserva leases, contratos, integración y merges. M2 B puede avanzar junto
+con búsqueda independiente de M3 A; las acciones que dependan de B esperan su
+contrato aceptado. Tras B se permite adelantar M5 B, con claims pendientes hasta
+M4 B. No se reinicia trabajo, cambian criterios ni se anuncia versión 0.3.0 ahora.
+
 ## Lo que queda pendiente de decidir
 
-- Si el índice FTS5 se construye en el grupo A (junto con la revisión activa) o se
-  difiere al B. Default: en A, como índice derivado sin consulta de producto, para que
-  B pueda probar que el borrado lo purga.
-- Ubicación exacta de la DB cuando `HERE_DATA_DIR` apunta a una carpeta de red o
-  sincronizada. Default: permitirla con advertencia visible, sin recomendarla.
+- FTS5 ya adoptado e implementado en A como índice derivado sin consulta de producto;
+  B debe verificar que su borrado lo purga.
+- Raíz remota/no probada local ya resuelta por ruling 24: rollback journal y aviso
+  visible, manteniendo la raíz configurada sin recomendarla.
 - Tamaño de lote y política de progreso para importar un `TRANSCRIPTIONS_DIR` grande.
   Default: una sesión por transacción, progreso por conteo, cancelable entre sesiones.
 

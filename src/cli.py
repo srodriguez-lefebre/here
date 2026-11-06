@@ -1,13 +1,12 @@
-import re
+import json
 import time
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, is_dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated
-from uuid import uuid4
+from uuid import UUID
 
-import soundfile as sf
 import typer
 from here.application import (
     ApplicationState,
@@ -16,32 +15,20 @@ from here.application import (
     create_default_controller,
 )
 from here.application.processing import SessionProcessor
-from here.application.recovery import validate_recovery_audio
 from here.audio.mix import materialize_normalized_session
-from here.config.settings import get_settings, require_provider_key, settings_operation
+from here.config.paths import get_data_dir
+from here.config.settings import get_settings, settings_operation
 from here.live_processing import LiveTranscriptionController
+from here.memory.database import LibraryError
+from here.memory.service import MemoryService
 from here.output.metadata import (
     ChunkMetadata,
-    ChunkMetadataDocument,
     ErrorMetadata,
-    ErrorMetadataDocument,
-    SessionMetadata,
-    capture_metadata,
-)
-from here.output.paths import session_artifact_path
-from here.output.session_writer import (
-    AUDIO_FILE,
-    CHUNKS_FILE,
-    ERRORS_FILE,
-    create_session_dir,
-    read_session_metadata,
-    write_session_artifacts,
 )
 from here.output.session_writer import (
     TRANSCRIPT_ENCODING as TRANSCRIPT_ENCODING,
 )
 from here.recorder import (
-    RecordedAudioSource,
     RecordingSession,
     record_both_until_enter,
     record_mic_until_enter,
@@ -64,6 +51,8 @@ os_app = typer.Typer(invoke_without_command=True)
 test_app = typer.Typer()
 app.add_typer(record_app, name="record")
 app.add_typer(test_app, name="test")
+memory_app = typer.Typer(help="Maintain the local meeting catalog without a provider.")
+app.add_typer(memory_app, name="memory")
 record_app.add_typer(mic_app, name="mic")
 record_app.add_typer(os_app, name="os")
 OutputDirOption = Annotated[
@@ -78,6 +67,63 @@ AudioFileArgument = Annotated[
     Path,
     typer.Argument(help="Audio file to transcribe."),
 ]
+
+
+def _memory_output(value: object, json_output: bool) -> None:
+    def encode(item):
+        return asdict(item) if is_dataclass(item) and not isinstance(item, type) else str(item)
+
+    serialized = json.dumps(value, default=encode, ensure_ascii=False)
+    if json_output:
+        typer.echo(serialized)
+    else:
+        logger.info(serialized)
+
+
+def _memory_error(error: Exception, json_output: bool, code: int) -> None:
+    _memory_output({"error": str(error)}, json_output)
+    raise typer.Exit(code)
+
+
+@memory_app.command("ingest")
+def memory_ingest(path: Path, json_output: bool = typer.Option(False, "--json")) -> None:
+    if not path.is_dir():
+        _memory_error(ValueError("Session directory does not exist"), json_output, 2)
+    try:
+        result = MemoryService(get_data_dir()).ingest_session(path)
+    except (LibraryError, OSError) as exc:
+        _memory_error(exc, json_output, 4)
+        return
+    _memory_output(asdict(result), json_output)
+    if result.status == "rejected":
+        raise typer.Exit({"invalid_input": 2, "io": 4}.get(result.error_category or "conflict", 3))
+
+
+@memory_app.command("reconcile")
+def memory_reconcile(json_output: bool = typer.Option(False, "--json")) -> None:
+    try:
+        report = MemoryService(get_data_dir()).reconcile()
+    except (LibraryError, OSError) as exc:
+        _memory_error(exc, json_output, 4)
+        return
+    _memory_output(asdict(report), json_output)
+
+
+@memory_app.command("show")
+def memory_show(meeting_id: str, json_output: bool = typer.Option(False, "--json")) -> None:
+    try:
+        if str(UUID(meeting_id)) != meeting_id:
+            raise ValueError("Use a canonical meeting UUID")
+    except ValueError as exc:
+        _memory_error(exc, json_output, 2)
+    try:
+        result = MemoryService(get_data_dir()).show(meeting_id)
+    except (LibraryError, OSError) as exc:
+        _memory_error(exc, json_output, 4)
+        return
+    if result is None:
+        _memory_error(ValueError("Meeting does not exist"), json_output, 3)
+    _memory_output(result, json_output)
 
 
 @dataclass(slots=True)
@@ -138,86 +184,6 @@ def _run_audio_diagnostic(action: Callable[[], str]) -> None:
         raise typer.Exit(code=1) from exc
 
 
-def _load_session_metadata(session_dir: Path) -> SessionMetadata | None:
-    return read_session_metadata(session_dir)
-
-
-def _load_chunk_metadata(session_dir: Path) -> list[ChunkMetadata]:
-    chunks_path = session_dir / CHUNKS_FILE
-    if not chunks_path.exists():
-        return []
-    return ChunkMetadataDocument.model_validate_json(chunks_path.read_text(encoding="utf-8")).chunks
-
-
-def _load_error_metadata(session_dir: Path) -> list[ErrorMetadata]:
-    errors_path = session_dir / ERRORS_FILE
-    if not errors_path.exists():
-        return []
-    return ErrorMetadataDocument.model_validate_json(errors_path.read_text(encoding="utf-8")).errors
-
-
-def _session_from_audio_file(audio_path: Path) -> RecordingSession:
-    info = sf.info(audio_path)
-    return RecordingSession(
-        sources=[
-            RecordedAudioSource(
-                path=audio_path,
-                sample_rate=info.samplerate,
-                channels=info.channels,
-                frames=info.frames,
-                label=audio_path.stem,
-                device_name=audio_path.name,
-            )
-        ]
-    )
-
-
-def _cleanup_replaced_audio(
-    session_dir: Path,
-    previous: SessionMetadata | None,
-    *,
-    input_path: Path,
-    current_audio: str,
-) -> None:
-    """Best-effort removal of one known derived file after final publication."""
-    if previous is None or previous.recoverable_audio is None:
-        return
-    name = previous.recoverable_audio
-    if re.fullmatch(r"audio(?:_[0-9a-f]{32})?\.wav", name) is None:
-        logger.warning("Previous recoverable audio has an unknown name; retained: {}", name)
-        return
-    try:
-        current = read_session_metadata(session_dir)
-        if (
-            current is None
-            or current.status not in {"completed", "failed"}
-            or current.session_id != previous.session_id
-            or current.meeting_id != previous.meeting_id
-            or current.recoverable_audio != current_audio
-        ):
-            raise ValueError("Final session metadata could not be confirmed")
-        references = [*current.output_files, current_audio]
-        references.extend(
-            item.audio_file
-            for item in (*previous.capture_sources, *current.capture_sources)
-            if item.audio_file
-        )
-        protected = {
-            input_path.absolute(),
-            *((session_dir / item).absolute() for item in references),
-        }
-        candidate = session_artifact_path(session_dir, name)
-        if candidate.absolute() in protected:
-            return
-        candidate.unlink(missing_ok=True)
-    except (OSError, ValueError, RuntimeError) as exc:
-        logger.warning(
-            "Session metadata committed; replaced audio retained because cleanup failed: {}: {}",
-            name,
-            exc,
-        )
-
-
 @settings_operation
 def _save_transcription(
     session: RecordingSession,
@@ -248,162 +214,14 @@ def _transcribe_audio_path(
     *,
     use_alt_transcription_model: bool = False,
 ) -> None:
-    require_provider_key()
-    if not audio_path.exists():
-        raise RuntimeError(f"Audio file does not exist: {audio_path}")
-
-    settings = get_settings()
-    transcription_model = (
-        settings.ALT_TRANSCRIPTION_MODEL
-        if use_alt_transcription_model
-        else settings.TRANSCRIPTION_MODEL
+    processor = SessionProcessor(
+        transcribe=transcribe_recording_session,
+        normalize=materialize_normalized_session,
+        clock=lambda: datetime.now().astimezone(),
+        retry_delays=(),
     )
-    completed_at = datetime.now().astimezone()
-    existing_metadata = _load_session_metadata(audio_path.parent)
-    if existing_metadata is not None:
-        session_artifact_path(audio_path.parent, audio_path.name)
-        validate_recovery_audio(audio_path.parent, existing_metadata)
-    source_session = _session_from_audio_file(audio_path)
-    source_session.meeting_id = existing_metadata.meeting_id if existing_metadata else None
-    previous_chunks = _load_chunk_metadata(audio_path.parent) if existing_metadata else []
-    previous_errors = _load_error_metadata(audio_path.parent) if existing_metadata else []
-
-    if existing_metadata is not None:
-        session_dir = audio_path.parent
-        session_id = existing_metadata.session_id
-    else:
-        session_id, session_dir = create_session_dir(target_dir, completed_at)
-
-    recoverable_audio = AUDIO_FILE
-    if existing_metadata is not None:
-        if audio_path.name == existing_metadata.recoverable_audio:
-            recoverable_audio = audio_path.name
-        else:
-            # A managed raw input must not replace audio referenced by the old
-            # completed manifest before pending publication has committed.
-            recoverable_audio = f"audio_{uuid4().hex}.wav"
-    recoverable_session: RecordingSession | None = None
-    newly_owned_audio = False
-    try:
-        if audio_path.parent == session_dir and audio_path.name == recoverable_audio:
-            recoverable_session = source_session
-        else:
-            recoverable_session = materialize_normalized_session(
-                source_session,
-                session_dir,
-                output_name=recoverable_audio,
-            )
-            newly_owned_audio = True
-    except Exception as exc:
-        if existing_metadata is not None:
-            raise RuntimeError("Recoverable audio preparation failed") from exc
-        errors = [
-            *previous_errors,
-            _error_metadata("recoverable_audio", exc),
-        ]
-        write_session_artifacts(
-            session=source_session,
-            capture_sources=existing_metadata.capture_sources
-            if existing_metadata
-            else capture_metadata(source_session),
-            target_dir=target_dir,
-            completed_at=existing_metadata.completed_at if existing_metadata else completed_at,
-            transcription_model=transcription_model,
-            cleanup_model=settings.CLEANUP_MODEL,
-            cleanup_enabled=settings.CLEANUP_ENABLED,
-            alt_model_used=use_alt_transcription_model,
-            live_pipeline_attempted=existing_metadata.live_pipeline_attempted
-            if existing_metadata
-            else False,
-            live_pipeline_used=existing_metadata.live_pipeline_used if existing_metadata else False,
-            fallback_used=existing_metadata.fallback_used if existing_metadata else False,
-            chunks=previous_chunks,
-            errors=errors,
-            status="failed",
-            failure_stage="recoverable_audio",
-            session_dir=session_dir,
-            session_id=session_id,
-        )
-        raise RuntimeError("Recoverable audio preparation failed") from exc
-
-    SessionProcessor().publish_pending(
-        recoverable_session,
-        session_dir,
-        session_id=session_id,
-        completed_at=completed_at,
-        recoverable_audio=recoverable_audio,
-        use_alt_transcription_model=use_alt_transcription_model,
-        capture_sources=existing_metadata.capture_sources
-        if existing_metadata
-        else capture_metadata(source_session),
-        newly_owned_audio=newly_owned_audio,
-    )
-    try:
-        result = transcribe_recording_session(
-            recoverable_session,
-            use_alt_transcription_model=use_alt_transcription_model,
-        )
-    except Exception as exc:
-        failed_chunks = previous_chunks + list(getattr(exc, "chunks", []))
-        errors = [
-            *previous_errors,
-            _error_metadata("offline_transcription", exc),
-        ]
-        write_session_artifacts(
-            session=recoverable_session,
-            capture_sources=existing_metadata.capture_sources
-            if existing_metadata
-            else capture_metadata(source_session),
-            target_dir=target_dir,
-            completed_at=existing_metadata.completed_at if existing_metadata else completed_at,
-            transcription_model=transcription_model,
-            cleanup_model=settings.CLEANUP_MODEL,
-            cleanup_enabled=settings.CLEANUP_ENABLED,
-            alt_model_used=use_alt_transcription_model,
-            live_pipeline_attempted=existing_metadata.live_pipeline_attempted
-            if existing_metadata
-            else False,
-            live_pipeline_used=existing_metadata.live_pipeline_used if existing_metadata else False,
-            fallback_used=existing_metadata.fallback_used if existing_metadata else False,
-            chunks=failed_chunks,
-            errors=errors,
-            status="failed",
-            failure_stage="offline_transcription",
-            recoverable_audio=recoverable_audio,
-            session_dir=session_dir,
-            session_id=session_id,
-        )
-        _cleanup_replaced_audio(
-            session_dir, existing_metadata, input_path=audio_path, current_audio=recoverable_audio
-        )
-        raise RuntimeError("Transcription failed") from exc
-
-    artifacts = write_session_artifacts(
-        session=recoverable_session,
-        capture_sources=existing_metadata.capture_sources
-        if existing_metadata
-        else capture_metadata(source_session),
-        target_dir=target_dir,
-        transcript_text=result.final_text,
-        segments=getattr(result, "segments", None),
-        completed_at=existing_metadata.completed_at if existing_metadata else completed_at,
-        transcription_model=transcription_model,
-        cleanup_model=settings.CLEANUP_MODEL,
-        cleanup_enabled=settings.CLEANUP_ENABLED,
-        alt_model_used=use_alt_transcription_model,
-        live_pipeline_attempted=existing_metadata.live_pipeline_attempted
-        if existing_metadata
-        else False,
-        live_pipeline_used=existing_metadata.live_pipeline_used if existing_metadata else False,
-        fallback_used=existing_metadata.fallback_used if existing_metadata else False,
-        chunks=previous_chunks + list(getattr(result, "chunks", [])),
-        status="completed",
-        recoverable_audio=recoverable_audio,
-        session_dir=session_dir,
-        session_id=session_id,
-    )
-    _cleanup_replaced_audio(
-        session_dir, existing_metadata, input_path=audio_path, current_audio=recoverable_audio
+    artifacts = processor.transcribe_audio_path(
+        audio_path, target_dir, use_alt_transcription_model=use_alt_transcription_model
     )
     logger.success("Saved to {path}", path=artifacts.session_dir)
 

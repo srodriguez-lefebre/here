@@ -61,7 +61,10 @@ event = CaptureJournal.event
 def source_index(label): return 7 if label == "microphone" else 8
 def checkpointed(writer):
     checkpoint(writer)
-    marker(f"checkpoint-{source_index(writer.source.label)}").touch()
+    index = source_index(writer.source.label)
+    marker(f"checkpoint-{index}").touch()
+    # Publish the measured count only after the real WAV/header/journal checkpoint.
+    marker(f"frames-{index}-{writer.source.frames}").touch()
 def observed_event(journal, kind, **details):
     event(journal, kind, **details)
     if kind in ("paused", "resumed"):
@@ -89,6 +92,8 @@ if behavior == "catchup":
     windows._capture_windows_stream_to_file = delayed_capture
     CaptureWriter.write = slow_write
 from here.recording.helper_worker import run
+marker("bootstrapped").touch()
+while not marker("start-capture").exists(): time.sleep(0.01)
 raise SystemExit(run())
 """
 
@@ -99,9 +104,27 @@ def factory(tmp_path, behavior="normal"):
     helpers = []
 
     def launch(action, params):
+        bootstrapped = script.with_suffix(".bootstrapped")
+        start_capture = script.with_suffix(".start-capture")
+        bootstrapped.unlink(missing_ok=True)
+        start_capture.unlink(missing_ok=True)
         helper = OwnedHelper(action, params, command=[sys.executable, str(script)])
         helpers.append(helper)
-        return helper
+        try:
+            # Separate synthetic interpreter/import setup from the existing device
+            # lease, which starts only after this factory returns to its owner.
+            deadline = time.monotonic() + 10
+            while not bootstrapped.exists():
+                if helper.process.poll() is not None:
+                    raise AssertionError("Synthetic audio backend exited before bootstrap")
+                if time.monotonic() >= deadline:
+                    raise AssertionError("Synthetic audio backend bootstrap timed out")
+                time.sleep(0.01)
+            start_capture.touch()
+            return helper
+        except BaseException:
+            helper.close()
+            raise
 
     return launch, helpers
 
@@ -259,6 +282,20 @@ def wait_for(predicate, timeout=3):
 
 def journal_for(handle):
     return CaptureJournal.load(handle._journal.root, handle._journal.document.capture_id)
+
+
+def primary_checkpoint_frames(tmp_path, minimum=96000):
+    def observed_frames():
+        frames = max(
+            (
+                int(marker.name.rsplit("-", 1)[1])
+                for marker in tmp_path.glob("fake_hardware.frames-7-*")
+            ),
+            default=0,
+        )
+        return frames if frames >= minimum else None
+
+    return wait_for(observed_frames)
 
 
 def pause_and_drain(handle, tmp_path, indexes=(7,)):
@@ -578,11 +615,10 @@ def test_blocked_live_consumer_does_not_block_primary_and_is_owned(tmp_path):
     )
     try:
         assert entered.wait(2)
-        time.sleep(2)
-        checkpoint = CaptureJournal.load(
-            handle._journal.root, handle._journal.document.capture_id
-        ).recording_session()
-        assert checkpoint.sources[0].frames >= 48000
+        # Keep enough actual primary progress to overflow the blocked live queue,
+        # observing child checkpoint markers without opening its replace target.
+        checkpoint_frames = primary_checkpoint_frames(tmp_path)
+        assert checkpoint_frames >= 48000
         handle.stop()
         with pytest.raises(TimeoutError):
             handle.wait(0.2)
@@ -591,9 +627,10 @@ def test_blocked_live_consumer_does_not_block_primary_and_is_owned(tmp_path):
         release.set()
         handle.stop()
     session = handle.wait(4)
-    assert session.sources[0].frames >= checkpoint.sources[0].frames
+    assert session.sources[0].frames >= checkpoint_frames
     assert handle.live_error is not None
     assert helpers[0].process.poll() == 0
+    assert journal_for(handle).recording_session().sources[0].frames == session.sources[0].frames
 
 
 def test_cancel_deletes_only_owned_capture_after_child_close(tmp_path):
@@ -768,17 +805,16 @@ def test_slow_pipe_never_blocks_primary_writer_and_rejects_partial_live(tmp_path
     try:
         release.clear()
         assert blocked.wait(2)
-        time.sleep(2)
-        session = CaptureJournal.load(
-            handle._journal.root, handle._journal.document.capture_id
-        ).recording_session()
-        assert session.sources[0].frames >= 48000
+        checkpoint_frames = primary_checkpoint_frames(tmp_path)
+        assert checkpoint_frames >= 48000
         handle.pause()
         handle.stop()
     finally:
         release.set()
         handle.stop()
     saved = handle.wait(5)
-    assert saved.sources[0].frames >= session.sources[0].frames
+    assert saved.sources[0].frames >= checkpoint_frames
     assert handle.live_error is not None
     assert helpers[0].get("result")["value"]["live_dropped"]
+    assert helpers[0].process.poll() == 0
+    assert journal_for(handle).recording_session().sources[0].frames == saved.sources[0].frames
