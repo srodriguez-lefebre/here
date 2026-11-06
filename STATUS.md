@@ -92,24 +92,34 @@ Hasta esa transferencia no hay otro writer. Processing continúa sin concesión.
 Cualquier handoff adicional se concede explícitamente. Migraciones/pyproject/uv.lock/versiones
 siguen seriales y requieren permiso de root. Global docs son root-only.
 
-Runtime del checkpoint: B posee ventana EXCLUSIVA para RED W1 (nuevo archivo4
-casos v1), tras el release completo M3. W2/W3 tienen briefs y autores RED nuevos,
+Runtime del checkpoint: B posee ventana EXCLUSIVA para RED W2 y después W3,
+secuenciales en sus fuentes624 originales. W1 terminó con release completo:
+RED3F/1P/16,63s → GREEN4P/19,91s y regresión delete79P/5symlink skips/182,92s.
+Fuente42a29fbfaef83c30b895ed6e75af95562313623a, src01400e51c9ac19d66309aaa6bf91976a95c91992;
+misma re-review W1 ADDRESSED/SPEC y calidad del alcance APPROVED, sin nuevos C/I.
+W2/W3 permanecen abiertos y sin fix. Tienen briefs y autores RED distintos,
 solo preparación en worktrees separados sobre624be55: b5_w2_red en
 `C:/Users/savar/.codex/worktrees/b5-w2-red/here` (detached624 al crear),
 b5_w3_red en `C:/Users/savar/.codex/worktrees/b5-w3-red/here`, rama
 `codex/m2-b5-w3-red`. El ledger B registra bindings y ramas posteriores.
 M3 terminó10 controles R55 y240 de regresión, sin fallos; benchmark40 válido
-p95=902,413285ms FALLA500. Prepara perfil residual2 y observer sin ejecutarlos.
+p95=902,413285ms FALLA500. Perfil residual2 exit0 liberado: control5207ms/perfil2744ms,
+diagnóstico frío no comparable al gate warm. Observer R55 ya revisado/preparado,
+sin ejecución. Pytest eliminó su catálogo temporal205; R57 permite un input
+sintético dedicado fuera de esa limpieza, mediante el helper aceptado intacto,
+con nueva procedencia y sin afirmar igualdad binaria. Builder/diagnóstico warm
+están en preparación sin materialización/imports/runtime mientras B tiene host.
 B liberó full1
 con1F/310P/110,55s, detenido25% por -x: el override global TRANSCRIPTIONS_DIR del
 runner interfirió con test_config_paths. No editar producto/test para ese fallo;
 corregir runner después de conservar intento. Mypy fresco B4→624 válido/estable:
 65 módulos,79→79 errores/115→115 diagnósticos, multiset delta vacío, NO type-clean.
-Review whole Task5 CHANGES REQUESTED, Critical0/Important3: W1/P2 pierde la prueba
+Review whole Task5 original CHANGES REQUESTED, Critical0/Important3: W1/P2 pierde la prueba
 del WAV v1 durante purge; W2/P1 puede completar con staging publicado identificado
 todavía presente; W3/P2 discovery de journal nativo omite supresión antes de audio/
 candidato. Root leyó informe completo y acepta los tres como defectos del contrato
-existente. RED independientes primero; service.py conserva GREEN principal para
+existente. Su continuación cerró W1; W2/W3 aún no. RED independientes primero;
+service.py conserva GREEN principal para
 W1/W2. Recovery.py podrá transferirse exclusivamente a otro GREEN tras RED W3,
 pero esa transferencia aún no está activada. El lote v2 sobre
 624be55 terminó sin fallos: native31P/4skips, CORECOMPAT-A98P/5skips,
@@ -195,7 +205,7 @@ completos de bytes, owner, row/outcome y orphan genuino. Misma re-review acotada
 R54-R1 ADDRESSED/SPEC y calidad APPROVED, sin nuevos hallazgos; los cinco XML v2
 confirman el lote amplio anterior sin fallos/errores. Los tipos frescos no agregan
 diagnósticos; el full de esta fuente todavía no pasó. Review whole Task5/grupo y docs distintos en
-curso; hallazgo v1 y el fallo de runner se registran por separado.
+curso; W1 corregido/revisado, W2/W3 abiertos y fallo de runner se registran separados.
 No transferir R52 ni cerrar Task5. Warning Ruff heredado queda para root/config
 serial. Cero writer UI B.
 
@@ -420,9 +430,10 @@ no provee selección meeting_ids ni OR del retrieval M4: handoff interno pendien
 sin asumir MemoryService.search, SQL directo de intelligence o filtro post-LIMIT.
 Root resolverá ese contrato; no es bloqueo humano ni aceptación de un adapter.
 
-No hay bloqueo humano actual. Próximo: RED W1/W2/W3 y correcciones/re-review B;
-perfil residual R55 y timeline Busy M3 antes de otra optimización; PR documental
-de contratos M3 B antes de habilitar ese frente. Alternar host tras release confirmado.
+No hay bloqueo humano actual. Próximo: RED W2/W3 y correcciones/re-review B;
+input dedicado/diagnóstico warm R55 y timeline Busy M3 antes de otra optimización.
+PR documental24 ya mergeado; M3 B todavía espera GO y handoffs reales.
+Alternar host tras release confirmado.
 Consultar ledgers antes de rotar
 host o asignar archivos; los planes/fixtures/reviews ya preparados no se reinician.
 Reanudar desde estos IDs/reportes sin recrear los chats ni repetir el catálogo A.

@@ -808,6 +808,23 @@ Los rulings nuevos se escriben en español por el ruling 6.
     como productor aceptado. **Cost if wrong:** ajustar el documento y fijar sus
     bindings antes del dispatch, sin iniciar implementación con supuestos abiertos.
 
+57. **Ruling:** la limpieza automática de pytest eliminó el catálogo temporal205
+    después de sus corridas, no sus logs/muestras/bindings. Para el diagnóstico
+    residual M3 se admite una única reposición sintética nombrada, en un TEMP
+    dedicado fuera de `pytest-of-savar`, usando exactamente el generador/helper
+    aceptado, sin copia ni cambio de carga. Se documentan fuente/helper,1000
+    reuniones/100000 segmentos/98901 documentos FTS,220 registros/221 IDs, alias,
+    fingerprint real y manifest/DB antes/después. No se afirma igualdad binaria
+    con el input desaparecido. La materialización necesita ventana exclusiva y
+    queda fuera de intervalos; las consultas siguen leyendo guard/generación/
+    corpus completos, sin caché de resultados o digest. El fixture se preserva
+    durante los diagnósticos para no repetir trabajo por retención de pytest.
+    Warmups/control/instrumentación aportan diagnóstico, nunca un nuevo p95 ni
+    aceptación;500ms/50ms y todos los fallos previos permanecen. El observer UI
+    conserva su fixture original independiente. **Cost if wrong:** corregir el
+    launcher y repetir solo el diagnóstico invalidado con nueva procedencia,
+    conservando resultados y sin modificar producto, privacidad ni presupuestos.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
