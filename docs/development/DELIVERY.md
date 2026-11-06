@@ -1758,3 +1758,46 @@ Historical exact1fd CI passed980/two wheel skips/294.91s in42157559503 and packa
 These are not the corrected-head gates. Reply4488791517 with the reachable fix,
 request/receive new Copilot and get complete exact-head Windows tests/package
 green before guarded merge. No future chat or implementation has started.
+
+## 2026-11-06 — Contract PR #22 merged; separate fronts initialized
+
+The scoped independent R45 review APPROVED96f76db, inline4488791517 ADDRESSED.
+Root published96f, replied4488851997 at03:53:51Z with that fixing commit and
+resolved threadPRRT_kwDORsQx4M60XqLK. New Copilot requested03:54:08Z on exact
+96f; review5795547739 COMMENTED03:57:00Z confirms no open issues and R45 resolved,
+with zero new inline observations. Complete Windows tests42159238848 passed980/
+two installed-wheel environment skips/304.66s; package42159238847 passed on96f.
+Raw log `.superpowers/contracts-ci-42159238848.log`, checks/reviews/comments/threads
+JSON retained alongside it. Previous1fd CI remains historical. No search code or
+search-runtime acceptance is inferred from this documentation-only validation.
+
+Root checked non-draft/main/exact head, received bot identity, every individual
+reply/resolved thread and all exact-head checks before invoking
+`gh pr merge 22 --merge --admin --match-head-commit 96f76dbbcb5ab4ba92866d9acf73c2673e140ee8`.
+Actual merge:73d3cb384bd422de6899d8c7b761f3f3159ea3f1 at03:59:54Z. This completes
+the required contract maintenance before dispatch; no milestone DoD was changed.
+
+As explicitly requested, root created exactly two project chats through the app,
+each with its own native worktree, from actual main73d3cb3:
+
+- M2·B: ciclo de vida y borrado, chat01a1af04-b158-75a2-8933-98783880f3e8,
+  branchcodex/m2-lifecycle, C:/Users/savar/.codex/worktrees/faab/here.
+- M3·A: búsqueda y acciones, chat01a1af04-e779-7363-be61-c840651b0b18,
+  branchcodex/m3-search, C:/Users/savar/.codex/worktrees/2710/here.
+
+Root independently verified both actual branches, exact base SHA and clean Git
+initialization, with accepted A53712c5 ancestry. Initialization reads only; no
+future source/test/doc implementation, suite/build or provider invocation before
+the full GO. STATUS records the IDs/bases/responsible executors and leases. Root
+remains sole global contract/file/runtime/integration/merge orchestrator; each
+chat executes its whole group with distinct RED/GREEN/review/docs subagent roles.
+The first reserved host runtime window is B4 RED; M3 prepares without running
+tests until a separate grant. Shared metadata/types/UI handoffs are explicit.
+
+Real M1/0.2 upgrade baseline preparation is also retained under
+`.superpowers/m5-upgrade-baseline-0.2.0/`: original run42102224714/artifact13450512413,
+six supplied checksums and730 portable inventory entries verified. No installer
+or binary was executed; this is fixture preparation, not upgrade certification.
+Report `.superpowers/m5-upgrade-baseline-preparation-report.md` preserves actual
+installer/portable hashes and provenance, separately from the artifact archive
+digest. M2 remains open/version0.2.0; two hours remains omitted under ruling5.

@@ -28,49 +28,56 @@ Suite Windows `42155415514`: **980 pasan/2 skips wheel/307,46 s**.
 Package Windows `42155415501`: success. Los dos smokes wheel omitidos en CI
 pasan por separado en el wheel fresco exacto: distribución4/7,51 s.
 
-## Tarea en curso: contratos para los dos frentes
+## Tarea en curso: dos frentes separados, inicialización verificada
 
-Ruling 35: después de A, completar el PR de documentación necesario antes de crear
-los chats separados M2 B y M3 A. **Todavía no se creó ninguno ni empezó su código.**
-Rama actual de mantenimiento: `codex/m2b-m3a-contracts`; base real A merge
-`53712c5beedafc2d40e2abf10c13362a1c3c9f78`; worktree raíz de orquestación
-`C:/Users/savar/.codex/worktrees/m2-catalog/here`. PR de contratos
-[#22](https://github.com/srodriguez-lefebre/here/pull/22), head
-`1fd228fecc255198cfa00f8969d35c609c9de9e6`: review independiente final APPROVED,
-PC1–PC3 ADDRESSED. Copilot5795454802 recibido sobre ese head a03:41:49Z abre
-observación4488791517: BM25 cambia con el corpus y puede invalidar ranks de cursor.
-R45 precisa generación de búsqueda reproducible y rechazo/reinicio estructurado,
-con listado fecha/ID intacto. El diff documental corregido espera review acotada,
-publicación/respuesta y nueva review Copilot. CI1fd pasó980/2wheel skips/294,91 s
-(tests42157559503 y package42157559427 success); será histórico para el head nuevo,
-que requiere sus propios gates. Merge docs pendiente; ningún chat creado.
-No confundir aprobación documental con implementación de B/M3.
+El PR de contratos [#22](https://github.com/srodriguez-lefebre/here/pull/22) se
+mergeó en `73d3cb384bd422de6899d8c7b761f3f3159ea3f1` a2026-11-06T03:59:54Z.
+Head revisado `96f76dbbcb5ab4ba92866d9acf73c2673e140ee8`; review independiente
+APPROVED, PC1–PC3/R45 ADDRESSED. Copilot5795547739 recibido03:57:00Z sin issues
+abiertos; observación BM25 respondida4488851997/hilo resuelto. CI Windows exacto
+42159238848 pasó980/2wheel skips/304,66s y package42159238847 success. Merge
+con `--merge --admin --match-head-commit 96f76dbbcb5ab4ba92866d9acf73c2673e140ee8`.
+Esto acepta documentación; no implementa ni certifica búsqueda/ciclo de vida.
 
-Documentos a reconciliar/revisar: `docs/development/M2_LIFECYCLE_SPEC.md` y
-`M2_LIFECYCLE_PLAN.md`; `M3_SEARCH_SPEC.md` y `M3_SEARCH_PLAN.md`;
-agenda de `docs/MILESTONE_3_PLAN.md`. Heredan el A aceptado y R39–R44:
-NULL/cursor y orden estable, generación de búsqueda R45, parcial opt-in sin otro indexador,
-barrera durable de borrado/supresión y warnings fail-closed de recuperación.
-M3 A puede avanzar búsqueda independiente desde A; título/reindex y guards
-compartidos esperan el handoff aceptado de B y lease de root. Fakes no cierran
-esa integración. No se inventan contratos de B como APIs existentes.
+Root creó los dos chats pedidos en el mismo proyecto, cada uno con worktree y
+rama propios. Git verificado por root: ambos clean en la base de contratos73d3cb3,
+con el merge A53712c5 como ancestro. Inicialización solamente; antes del GO no
+hay código/tests/docs nuevos ni suites/builds/proveedor ejecutados por los frentes.
 
-Root prepara un brief por frente con objetivo, SPEC/PLAN, commit base real,
-archivos exclusivos/compartidos, dependencias, límites y DoD. La base de trabajo
-se fija tras el merge del PR de contratos, conservando este merge A como ancestro.
+Proyecto `local-e307e59e09194b354122137b16ef6d77`, host `local`; raíz original
+`C:/Users/savar/Documents/proyects/here` preservada. Root orquesta desde
+`C:/Users/savar/.codex/worktrees/m2-catalog/here`, rama
+`codex/m2b-m3a-orchestration`, con base73d3cb3.
 
-Proyecto: `local-e307e59e09194b354122137b16ef6d77`, host `local`, Git habilitado,
-raíz original `C:/Users/savar/Documents/proyects/here` (checkout del usuario intacto).
+| Frente / responsable ejecutor | Chat ID | Rama | Worktree | Base |
+|---|---|---|---|---|
+| M2·B: ciclo de vida y borrado | 01a1af04-b158-75a2-8933-98783880f3e8 | codex/m2-lifecycle | C:/Users/savar/.codex/worktrees/faab/here | 73d3cb384bd422de6899d8c7b761f3f3159ea3f1 |
+| M3·A: búsqueda y acciones | 01a1af04-e779-7363-be61-c840651b0b18 | codex/m3-search | C:/Users/savar/.codex/worktrees/2710/here | 73d3cb384bd422de6899d8c7b761f3f3159ea3f1 |
 
-| Frente | Chat ID | Rama | Worktree | Base A merge | Responsable |
-|---|---|---|---|---|---|
-| M2 B · ciclo de vida/borrado | Pendiente | Pendiente | Pendiente | 53712c5beedafc2d40e2abf10c13362a1c3c9f78 | Pendiente de asignar por root |
-| M3 A · búsqueda/acciones | Pendiente | Pendiente | Pendiente | 53712c5beedafc2d40e2abf10c13362a1c3c9f78 | Pendiente de asignar por root |
+Briefs completos de cada frente en `.superpowers/m2b-front-brief.md` y
+`m3a-front-brief.md`: objetivo, SPEC/PLAN, bases reales, archivos/leases,
+dependencias, límites y DoD. Root completa metadatos y entrega GO a cada chat;
+cada ejecutor usa subagentes RED/GREEN/review independiente/docs por tarea.
+Root conserva contratos, integración, global docs y todos los merges. No reiniciar
+trabajo previo ni duplicar fixtures. Monitorear los dos chats con wait_threads;
+pedidos de leases/handoffs se registran en su progreso/reporte local.
 
-Registrar IDs, ramas, worktrees, base de contratos y responsables reales al crear
-los chats. Cada chat ejecuta su grupo completo con subagentes RED/GREEN/review/
-docs; root conserva contratos, leases, integración y merges. No reiniciar tareas
-ni duplicar fixtures o reviews ya aceptados.
+Leases tras GO: B posee memory models/repository/database/service, controller/
+recovery y CLI; M3 posee search.py/tests de búsqueda y sus archivos UI enumerados,
+porque B todavía no tiene writer UI. Cualquier handoff de models, artifacts,
+processing o UI se concede explícitamente. Migraciones/pyproject/uv.lock/versiones
+siguen seriales y requieren permiso de root. Global docs son root-only.
+
+Runtime: ventana inicial reservada para pytest RED de B4, activa al entregar GO;
+M3 prepara sus tests/archivos sin ejecutarlos hasta concesión. Ningún full/build/
+mypy pesado compartido. Cada rol libera la ventana con evidencia real; root la
+asigna al otro frente. Leer/editar archivos autorizados sí puede seguir en paralelo.
+
+M3 consulta el catálogo A; título real espera contrato B4 aceptado y reindex/
+supresión real espera B5. R45 exige generación de búsqueda coherente, rechazo
+estructurado antes de usar ranks viejos y reinicio por requests existentes;
+el listado fecha/ID conserva continuidad ante inserts. No contar fakes como
+integración. Root facilita los contratos/DTOs compartidos con un solo writer.
 
 ## Secuencia y concurrencia autorizada
 
@@ -80,7 +87,7 @@ M4 A `M4_GROUNDED`1–3; M4 B `M4_PRODUCT`4–5; M5 A `M5_SETTINGS`1–2;
 M5 B `M5_PORTABILITY`3; M5 C `M5_RELEASE`4–5. Versiones al cerrar hitos:
 0.3.0, 0.4.0, 0.5.0 y1.0.0, en serie y solo con sus criterios verificados.
 
-M2 B y M3 A podrán avanzar simultáneamente tras los gates de contratos. Después
+M2 B y M3 A tienen los gates de contratos cumplidos y avanzan tras sus GO. Después
 de M2 B puede adelantarse M5 B en lo permitido por §11, con claims pendientes
 hasta M4 B. El resto conserva las dependencias de los planes. Preparación del
 PLAN siguiente, fixtures sintéticos y respuestas a Copilot pueden solaparse.
@@ -130,6 +137,6 @@ No se leyó el `.env` real ni audio/biblioteca privados. Smokes opt-in futuros u
 solo HERE_PROVIDER_SMOKE_KEY y texto/audio sintéticos según ruling19, sin imprimir
 ni persistir la credencial. Máquina Windows limpia: pedir al necesitar la fila,
 con protocolo escrito. Prueba de dos horas: **omitida por ruling 5**, nunca aprobada.
-No hay bloqueo humano actual. Próxima acción: cerrar la review del diff R45,
-publicar/responder su hilo y recibir nuevo Copilot/CI exacto; mergear el PR de
-contratos con sus gates, crear los dos chats con briefs y registrar su estado real.
+No hay bloqueo humano actual. Próxima acción: entregar los GO completos a ambos
+chats, activar RED B4 y coordinar el RED M3 siguiente y los handoffs compartidos.
+Reanudar desde estos IDs/reportes sin recrear los chats ni repetir el catálogo A.
