@@ -526,6 +526,196 @@ Los rulings nuevos se escriben en español por el ruling 6.
     interna antes de cerrar M3, conservando resultados completos, guards de borrado
     y la paginación de listado ya definida.
 
+46. **Ruling:** para el handoff de modelos B/M3 se fijan defaults internos del
+    SPEC sin cambiar funciones de producto. `MeetingQuery.text` filtra título;
+    `SearchQuery.text` consulta texto. Fechas de query son strings ISO aware,
+    validadas/canonizadas a UTC por el servicio; bounds nulos conservan su sentido.
+    Ambos usan limit50, cursorNone, filtros vacíos e include_partialFalse; el opt-in
+    de parciales rige listado y búsqueda como ya exige el hito. `MeetingPage.items`
+    contiene `MeetingSummary(meeting, audio_available=False, partial=False)`, sin
+    copiar ni inventar campos de Meeting; los tests acceden a `item.meeting.id`.
+    Se aceptan los demás campos propuestos en el reporte M3 `shared-dto-request.md`
+    para SearchHit/SearchPage/SearchCapabilities/CitationTarget, como dataclasses
+    frozen/slots, con tuples inmutables. Disponibilidad se deriva de enlaces de
+    revisión/estado registrado, no de recencia ni lectura de archivos por la UI.
+    Se declara también `Citation(meeting_id, revision_id, segment_id, quote=None,
+    start_char=None, end_char=None)`, solo referencia; el resolver M3 B verificará
+    texto/offsets y ruta desde memoria. Target no resuelve ni autoriza audio en M3 A.
+    `InvalidInput` canónico se expone desde memory.service, con razón estructurada
+    keyword `reason` por defecto invalid_input; B define una sola clase y M3 la
+    reutiliza, en particular corpus_changed. La factory retorna LibraryConnection
+    nueva por operación y el consumidor la cierra. Models se entrega temporalmente
+    tras congelar B4 y observar RED M3; ningún segundo writer, tipo duplicado o
+    migración para este handoff. **Cost if wrong:** adaptar campos/serialización y
+    callers antes de aceptar M3, sin rebajar los contratos de consulta, citas,
+    borrado o fechas desconocidas.
+
+47. **Ruling:** la query vacía normalizada de `SearchService.search` delega a
+    `list_meetings` con los mismos filtros, límite y cursor; retorna MeetingPage,
+    mientras una búsqueda no vacía retorna SearchPage. Se explicita la anotación
+    interna `SearchPage | MeetingPage`: no se fabrica un SearchHit/segmento para
+    representar una reunión, no se ejecuta MATCH vacío ni se amplía visibilidad.
+    La UI sigue despachando texto vacío al listado. Su cursor fecha/ID conserva
+    continuidad y queda fuera de la generación de búsqueda R45. Default completo
+    y opt-in de revisión activa parcial siguen como el SPEC, sin inventar una
+    revisión para reservas. Es precisión del flujo vacío ya acordado en §3 del
+    diseño, no un comando o pantalla nuevo. **Cost if wrong:** adaptar anotaciones
+    y despacho de consumidores conservando los dos DTOs, filtros y aceptación.
+
+48. **Ruling:** se completa el contrato de lectura B4 que ya requiere Biblioteca,
+    sin una API alternativa en UI ni nuevas tablas. `MemoryService.get_meeting(id)`
+    retorna MeetingDetail coherente de DB con sus participantes, vínculos/roles y
+    asignaciones; `list_participants(meeting_id=None)` retorna tuples de Participant
+    con IDs/nombres reales para el filtro, globales o asociados según argumento.
+    MeetingDetail agrega al final de sus campos existentes `participants`,
+    `participant_links` y `speaker_assignments`, con tuples vacíos compatibles.
+    Los vínculos son MeetingParticipant(meeting_id,participant_id,role=None) y las
+    asignaciones SpeakerAssignment(meeting_id,revision_id,speaker_key,participant_id),
+    con participant_id nullable como la DB; no se interpreta una etiqueta como
+    identidad global. B implementa las lecturas y luego integra el guard R42 antes
+    de exposición; M3 no consulta SQL ni reconstruye relaciones por su cuenta.
+    ApplicationController expone su MemoryService real por una propiedad read-only
+    `memory_service`, preservando la raíz inyectada y R40. M3 devuelve ahora el lease
+    de models tras congelar sus DTOs; B agrega el contrato y entrega un commit
+    acotado, sin importar toda la búsqueda M3 en su grupo. El RED independiente
+    suplementario prueba estas lecturas antes del GREEN correspondiente. No cambia
+    pantalla, comando, retención, dependencias ni criterio de terminado.
+    **Cost if wrong:** adaptar DTOs/adaptadores de lectura y sus callers antes de
+    aceptar B/M3, conservando una sola autoridad y la supresión de datos borrados.
+
+49. **Ruling:** se corrige B4-R1 de la review independiente, dentro del mecanismo
+    persist_state ya previsto en B4. La transición durable de estado y su evento
+    dejan en la misma transacción el trabajo local necesario para publicar su
+    snapshot. Si falla el write posterior al commit, una reconciliación posterior
+    con DB sana debe reintentarlo aun cuando la reunión ya sea terminal; luego un
+    rebuild conserva estado, ID y occurred_at originales del evento, sin crear
+    otro evento para simular recuperación. Se reutiliza el journal y su protocolo
+    idempotente; no hay segunda recuperación, proveedor, migración ni cambio de
+    comportamiento de captura. RED independiente cubre el fallo transitorio en
+    stale→interrupted y los terminales afectados antes del fix y re-review acotada.
+    El full congelado en curso conserva su fuente/resultado histórico, no se
+    modifica código ni tests durante esa corrida. **Cost if wrong:** ajustar el
+    encolado/replay de snapshots y sus warnings, manteniendo el outcome realmente
+    commiteado y toda la evidencia de origen.
+
+50. **Ruling:** se concreta el adaptador interno ya requerido por R42/R45, tras
+    review independiente del contrato B5/M3. B posee
+    `memory.service.catalog_read_view(library)`, context manager que recibe una
+    LibraryConnection fresca sin transacción activa; el caller la abre y cierra,
+    B posee el lock acotado existente y la única transacción de lectura. Adquiere
+    el lock antes de BEGIN y lo conserva hasta terminar generación y fetch; no
+    migra, publica, repara ni abre otra conexión. Rechaza uso anidado sin tocar una
+    transacción ajena. Search reemplaza su BEGIN/commit/rollback por ese contexto,
+    conservando factory/finally-close. No hay lock o BEGIN recursivo: los writers
+    ya bloqueados reutilizan solo el parser interno común. El valor inmutable
+    SuppressionSnapshot expone `suppressed_meeting_ids: tuple[str, ...]` ordenado
+    y `fingerprint: str`; las entradas canónicas quedan internas al productor.
+    Los IDs son la unión de UUIDs del registro y reuniones cuyo ingest_sources
+    coincide en el par exacto origen normalizado/fingerprint, resuelto en esa
+    misma vista DB. El fingerprint versionado incluye entradas canónicas y esos
+    IDs resueltos, para detectar cambios de visibilidad por aliases aun con el
+    registro intacto. M3 lo incorpora a la generación R45 existente, conserva el
+    corpus FTS real completo y excluye IDs en SQL antes de keyset/LIMIT, manejando
+    sets vacíos/grandes sin filtrado tardío. Pending y complete suprimen; ausencia
+    genuina es vacía y un registro inválido/inaccesible/inseguro falla cerrado con
+    LibraryError existente. Se mantiene un parser y ninguna autoridad nueva de
+    purga; no cambian protocolo, privacidad, migraciones, dependencias ni p95.
+    Los tests B5 y la integración real con M3 deben probar estas condiciones; esta
+    decisión y su review estática no son evidencia de implementación o aceptación.
+    **Cost if wrong:** ajustar el adaptador interno antes del handoff, preservando
+    una única autoridad de supresión y snapshot coherente de cada página.
+
+51. **Ruling:** se fijan los defaults internos B5 tras revisar su propuesta
+    a9b785a7 y el contrato independiente, sin cambiar R42/R50 ni el DoD. En models,
+    valores frozen/slots `DeletionResult(status,meeting_id=None,reason='',warnings=(),
+    error_category=None)` y `ReindexReport(indexed_meetings=0,indexed_segments=0,
+    warnings=())`. Status es completed/pending/rejected; categorías existentes
+    invalid_input/conflict/io/None. Reason usa códigos fijos invalid_input,
+    not_found, conflict, busy, hook_failed, purge_failed, io o cleanup_pending,
+    nunca texto de excepción/contenido para interpretar. InvalidInput/NotFound/
+    Conflict/Busy previos a aceptación mantienen errores tipados y exits2/3/4;
+    un resultado rejected tiene categoría explícita. Cualquier fallo ordinario
+    tras barrera durable válida, incluso de una invocación anterior, produce
+    pending con UUID canónico, reason y categoría io/exit4, nunca rejected ni
+    NotFound por faltar filas SQL. Solo purga completa verificada y complete
+    durable permiten completed/exit0. Registro inválido falla cerrado; no prueba
+    rechazo de un intento posiblemente aceptado. Muertes de proceso conservan
+    intención durable para replay. Reindex cuenta filas FTS realmente insertadas
+    y sus reuniones distintas después de commit; excluye suprimidas/históricas/
+    partial. Sin FTS devuelve0/0 y FtsUnavailable existente; otros errores de
+    storage/Busy siguen tipados, sin aparentar éxito parcial.
+    `before_delete: list[Callable[[str],None]]` termina sincrónicamente la
+    liberación, no solo encola una señal. Se invoca sin transacción ni lock de
+    catálogo que el GUI pueda necesitar; luego se adquieren locks existentes y
+    se revalidan identidad, ownership, fase e inventario antes de nueva barrera.
+    Tras fallo/ACK se consulta la fase actual para cubrir aceptación concurrente.
+    El adaptador Qt futuro debe hacer stop/unload/invalidate de cargas en su hilo
+    y esperar ACK acotado desde el worker, sin bloquear el hilo Qt ni tocar player
+    desde el worker; su timeout concreto se fija al implementar ese adaptador.
+    `_derived_row_purgers: list[Callable[[MemoryRepository,str],None]]` es registro
+    privado de código confiable: corre en orden al inicio de la transacción SQL
+    de cleanup final, antes de perder relaciones y retirar core/FTS. Usa esa misma
+    conexión, solo SQL, sin commit/BEGIN/rollback/otra conexión/I/O/proveedor;
+    fallo revierte juntos core/derivados y deja pending/replay idempotente.
+    El registro privado es `.deletions/<uuid-canónico>.json` con solo
+    schema_version1, meeting_id, origins de pares origin_path/origin_fingerprint
+    y phase pending/complete. Inventario queda en pending_operations/proof A,
+    nunca inferido del UUID/registro. El temp conocido conserva el rol del writer
+    existente `.<uuid>.json.<token-mkstemp>.stage`: regular seguro, metadata-only,
+    no se lee como barrera ni cambia visibilidad o autoridad antes del replace.
+    Solo su writer limpia el temp propio probado; stale se retiene/reporta.
+    Entradas finales corruptas/unsafe/inaccesibles o desconocidas fallan cerrado,
+    sin purga inferida ni fallback vacío. Se valida versión/tipos/UUID del nombre
+    y contenido, pares/fase y encoding canónico. La equivalencia real de páginas
+    con búsqueda M3 se verifica en su rama integrada con la fuente B5 exacta;
+    B prueba productor/SQL/guard, sin duplicar/vendorear búsqueda. Ambos registran
+    ese resultado como interoperabilidad separada de sus CI/artefactos, antes de
+    aceptar B5/grupos. Estas decisiones y su review son estáticas, no funcionalidad
+    B5/M3/M4 aprobada. **Cost if wrong:** adaptar los contratos y sus callers antes
+    del handoff, preservando fase durable, locks, privacidad y todos los gates.
+
+52. **Ruling:** el adapter de ownership nativo B5 usa autoridad explícita de la
+    composición existente, sin registro durable nuevo de raíces. La review de los
+    callpaths96e8aed muestra que begin_capture/begin_processing retienen el lease
+    OS canónico `.owners/<ID>.lock` antes de modificar SQL; protege el mismo ID
+    aun con una raíz por-request desconocida para otro proceso. La apertura nativa
+    obtiene UUID nuevo antes de reservar catálogo. Se cierra el tail real donde
+    controller libera catálogo antes del cleanup nativo: retener catálogo hasta
+    concluir cleanup nativo u ordenar primero el close nativo existente, respetando
+    handles inyectados, idempotencia de owned_job y deadlines actuales. No se
+    inventa un productor soportado que fuerce UUID viejo con solo un lock nativo.
+    `MemoryService(data_dir,*,sessions_root:Path|None=None)` conserva las lecturas
+    sin contexto; la composición pasa la raíz configurada real y el método privado
+    `_register_sessions_root(root)` retiene raíces explícitas por proceso. Registrar
+    StartRequest.output_dir antes de lanzar el worker sobre el MISMO servicio
+    inyectado, sin reemplazar su data_dir. GUI/composición y RecoveryService que
+    ya conocen la raíz la transmiten antes de cualquier delete/cleanup; CLI delete
+    y reconciliación destructiva usan get_settings().TRANSCRIPTIONS_DIR dentro del
+    settings_operation existente. El core no carga settings/.env por su cuenta.
+    Sin contexto explícito, el chequeo destructivo falla cerrado con LibraryError
+    recuperable existente/io4, no Busy que finja dueño probado; reads y reparación
+    no destructiva continúan. Si ya hay barrera válida, falta de contexto deja
+    pending/hidden según R51, nunca rechazo o rollback ficticio de la aceptación.
+    Raíces absolutas lexicales se deduplican; validar raíz, `.capture_owners`, ID y
+    rol de lock al usarlos y revalidar después del ACK R51. Usar probes/leases OS
+    acotados existentes: después del ACK libre de locks R51 y la revalidación,
+    adquirir/retener los aplicables y el canónico desde antes de hacer durable la
+    barrera hasta terminar cleanup. El preflight previo al ACK no es aceptación;
+    un dueño que aparezca durante ese ACK se detecta antes de nueva barrera.
+    No crear raíces ni borrar archivos externos para descubrir dueños;
+    ausencia de un path declarado no es prueba global de inactividad. Ningún
+    ingest_source, receipt, manifest o paquete concede autoridad para inspeccionar
+    otra raíz. No cambia retención, ubicación de datos, tráfico, procesos o UX.
+    RED suplementario por autor distinto precede el delta: default explícito y
+    custom, freshCLI/StartRequest/inyección, orden real de cleanup, lease canónico
+    con raíz desconocida/fallo SQL, contexto ausente/unsafe, revalidación tras ACK
+    y retención de leases durante cleanup. Se prueba en worktree separado del
+    GREEN actual; fixtures/callers reciben contexto sintético explícito conforme
+    al contrato, sin relajar assertions ni reclasificar el primer RED100. La review
+    estática no verifica el adapter. **Cost if wrong:** ajustar composición y
+    lifetime de leases antes de aceptar B5/M3; una autoridad durable más amplia
+    sería otra decisión de §3, fuera de esta implementación mínima.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
@@ -1758,3 +1948,87 @@ Historical exact1fd CI passed980/two wheel skips/294.91s in42157559503 and packa
 These are not the corrected-head gates. Reply4488791517 with the reachable fix,
 request/receive new Copilot and get complete exact-head Windows tests/package
 green before guarded merge. No future chat or implementation has started.
+
+## 2026-11-06 — Contract PR #22 merged; separate fronts initialized
+
+The scoped independent R45 review APPROVED96f76db, inline4488791517 ADDRESSED.
+Root published96f, replied4488851997 at03:53:51Z with that fixing commit and
+resolved threadPRRT_kwDORsQx4M60XqLK. New Copilot requested03:54:08Z on exact
+96f; review5795547739 COMMENTED03:57:00Z confirms no open issues and R45 resolved,
+with zero new inline observations. Complete Windows tests42159238848 passed980/
+two installed-wheel environment skips/304.66s; package42159238847 passed on96f.
+Raw log `.superpowers/contracts-ci-42159238848.log`, checks/reviews/comments/threads
+JSON retained alongside it. Previous1fd CI remains historical. No search code or
+search-runtime acceptance is inferred from this documentation-only validation.
+
+Root checked non-draft/main/exact head, received bot identity, every individual
+reply/resolved thread and all exact-head checks before invoking
+`gh pr merge 22 --merge --admin --match-head-commit 96f76dbbcb5ab4ba92866d9acf73c2673e140ee8`.
+Actual merge:73d3cb384bd422de6899d8c7b761f3f3159ea3f1 at03:59:54Z. This completes
+the required contract maintenance before dispatch; no milestone DoD was changed.
+
+As explicitly requested, root created exactly two project chats through the app,
+each with its own native worktree, from actual main73d3cb3:
+
+- M2·B: ciclo de vida y borrado, chat01a1af04-b158-75a2-8933-98783880f3e8,
+  branchcodex/m2-lifecycle, C:/Users/savar/.codex/worktrees/faab/here.
+- M3·A: búsqueda y acciones, chat01a1af04-e779-7363-be61-c840651b0b18,
+  branchcodex/m3-search, C:/Users/savar/.codex/worktrees/2710/here.
+
+Root independently verified both actual branches, exact base SHA and clean Git
+initialization, with accepted A53712c5 ancestry. Initialization reads only; no
+future source/test/doc implementation, suite/build or provider invocation before
+the full GO. STATUS records the IDs/bases/responsible executors and leases. Root
+remains sole global contract/file/runtime/integration/merge orchestrator; each
+chat executes its whole group with distinct RED/GREEN/review/docs subagent roles.
+The first reserved host runtime window is B4 RED; M3 prepares without running
+tests until a separate grant. Shared metadata/types/UI handoffs are explicit.
+
+Real M1/0.2 upgrade baseline preparation is also retained under
+`.superpowers/m5-upgrade-baseline-0.2.0/`: original run42102224714/artifact13450512413,
+six supplied checksums and730 portable inventory entries verified. No installer
+or binary was executed; this is fixture preparation, not upgrade certification.
+Report `.superpowers/m5-upgrade-baseline-preparation-report.md` preserves actual
+installer/portable hashes and provenance, separately from the artifact archive
+digest. M2 remains open/version0.2.0; two hours remains omitted under ruling5.
+
+## 2026-11-06 — M2 B task4 accepted locally; independent fronts continue
+
+Task4 SOURCE4e1b2cead486563516b69e09fb45543ee85b53aa is implemented and
+automatically verified locally with synthetic data. Distinct docs author committed
+96e8aed255a442acb14bbdff5c32877ec201c628 (B SPEC/PLAN/EVIDENCE only), preserving
+src4ca55bbe7e88ff59f79dee47e8740fef2253718e and
+testsbf4f471a87ad84df8ac41f8da375f8fd1025f42e. Root read the actual full log/XML,
+same-reviewer scoped verdict and distinct docs report before accepting this handoff.
+
+Named run M2B-T4-R1-FULL-4e1b2ce-20261106 passed1043/skipped9/390.03s, exit0;
+JUnit1052/0failures/0errors/9skips/internal389.952s. Two installed-wheel environment
+skips and seven unavailable-symlink-privilege skips remain omissions. Current
+comparative mypy9e10c9c→4e1b2ce is79→79 inherited diagnostics with empty normalized
+file/message multiset delta, same config; this is not a type-clean baseline.
+Original independent review's B4-R1 is ADDRESSED, scoped SPEC/R49 and quality
+APPROVED, no new findings. R49 reuses persist_state in the state/event transaction;
+postcommit repair preserves actual IDs/occurred_at/outcomes without duplicate events.
+
+Detailed commands/hashes/history are in M2_LIFECYCLE_EVIDENCE.json. Initial RED,
+R48 supplement, old full1036/9 while R1 was open, R1 RED5, real-wrapper RED2,
+GREEN7, compatibility128P/1F, callers40P and the separate corrected owner1P are
+retained with their exact sources. The last two results are not a fresh129-pass
+run. The owner test retains the original publication identity and adds complete
+state-journal/no-prepared assertions. No failed result or withdrawn unexecuted
+guard draft is relabeled as a pass. Linked attribution has state2 reconstruction;
+unlinked global participants remain SQL-durable only.
+
+Root authorized M3 to consume ONLY frozen96e8aed for real title/version/FTS
+integration, preserving its R46 DTOs and canonical errors; no new core writer lease
+was granted. B begins task5 RED in write-only mode after task4 acceptance, retaining
+all nine R42 boundaries and R50. No B5 guard/reindex/purge or M3 performance result
+is implied. The UI's separate42-pass checkpoint and scoped R1–R3 review remain
+synthetic local evidence; actual B4/B5 consumer integration and whole-group gates
+are still pending. Root keeps global docs, runtime rotation and all merges.
+
+Group B/M2 remain open at0.2.0. Fresh wheel/package/build smokes, exact-head Windows
+CI, received/responded current-head Copilot and guarded merge remain mandatory.
+No new hardware/provider/clean-install certification is claimed. Two hours remains
+**omitida por ruling 5**, never passed. STATUS records actual chat/branch/worktree
+IDs and the current writer/runtime leases; completed A is not restarted.

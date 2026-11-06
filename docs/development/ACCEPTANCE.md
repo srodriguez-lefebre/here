@@ -12,7 +12,7 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M1 | Provider/timestamps and diarization | Synthetic real-provider run and segment output inspected | Single/multiple-source TTS smokes passed; long transcription/diarization omitted by explicit user instruction |
 | M1 | Failure/crash/network/disconnection/disk-pressure recovery | Fault-injection plus bounded hardware run | PR12 faults, writer/publication process kills and helper-owner death passed; native recoverable saved failure passed; no repeated installed fault matrix claim; long run omitted by user |
 | M1 | Installed application opens, records and uninstalls | Fresh Windows installation and bundled-runtime smoke | Incorporated-source `1740b2d` local Windows 11 frozen GUI/CLI, Start launch, active-update refusal, reinstall/uninstall and data preservation passed; recording retains earlier source evidence; distribution peer review/clean hosted package CI/merge pending |
-| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | A implementado y verificado automáticamente; PR21 merge53712c5 tras CI980/2/307,46 s y reviews. Ciclo de vida/borrado B pendiente; M2 abierto, sin certificación nueva |
+| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | A mergeado PR21; B tarea4 implementada/verificada automáticamente en local por M2B-T4-R1-FULL-4e1b2ce-20261106 (1043/9/390,03s), review y docs aceptados. Borrado/cierre B/M2 pendientes; sin certificación nueva |
 | M2 · criterio 2 | Grabación, archivo y retry comparten persistencia de aplicación | CLI delega a SessionProcessor, artefactos y fallos compatibles | Consolidación verificada en focos de tarea 2; integración de catálogo implementada en 7bfd0cb con foco final 26; review técnica y CI final A980/2/307,46 s aceptados; B/M2 pendientes |
 | M2 · criterios 6–7 | Segmentos nullable y pausa sin desplazar el WAV | Cinco recorridos con proveedor fake, procedencia y seek de marcas en WAV sintético | Verificados automáticamente en focos de tarea 2 y catálogo implementado en tarea 3; full4 y review técnica final aceptados; sin certificación de captura/proveedor |
 | M2 · criterio 8 | Migración transaccional, backup administrado y rechazo de esquema futuro | FK/integrity, rollback de DDL y snapshot SQLite API con WAL comprometido | Verificado automáticamente en local: M2A-T1-LOCK-GREEN-20261105 y M2A-T1-FINAL-20261105, más CI final A980/2/307,46 s |
@@ -27,6 +27,31 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M5 | Portable data including optional audio and citations | Export/import on a fresh root, hashes and hostile ZIP tests | Open |
 | M5 | Install/update/uninstall preserve user memory | N to N+1 installation and separate uninstall test | Open |
 | All | PR groups reviewed and merged | PR URLs, reviewed heads, comment dispositions, CI and merge SHAs | M2–M5 en ejecución por ruling 20; cada uno de los nueve grupos requiere review independiente, Copilot recibido/respondido y CI Windows verde sobre el head exacto antes del merge; M2 A mergeado por PR21/53712c5 con todos los gates; los ocho grupos restantes pendientes |
+
+## Checkpoint local M2 B — tarea 4, 2026-11-06
+
+Tarea4 aceptada en coordinación local: fuente4e1b2cead486563516b69e09fb45543ee85b53aa,
+src4ca55bbe7e88ff59f79dee47e8740fef2253718e y testsbf4f471a87ad84df8ac41f8da375f8fd1025f42e.
+Docs de otro autor96e8aed255a442acb14bbdff5c32877ec201c628 mantienen esos árboles.
+Nivel implementado y verificado automáticamente con datos sintéticos, sin
+certificación nueva. B5/borrado, integración B5 en M3, performance, wheel nuevo,
+CI/Copilot/merge de B y cierre M2/0.3.0 siguen pendientes.
+
+| Corrida nombrada | Resultado observado | Alcance y límites |
+|---|---|---|
+| M2B-T4-R1-FULL-4e1b2ce-20261106 | 1043 pasan/9 skips/390,03s; XML1052/0F/0E/9S/interno389,952s | Full local offscreen/key sintética/raíces temporales; dos smokes wheel sin entorno y siete casos sin privilegio symlink omitidos, nunca aprobados |
+| M2B-T4-R1-MYPY-4e1b2ce-20261106 | Baseline9e10→4e1:79→79 errores heredados; delta normalizado vacío | Mismo config y mapeo, comparación de multiset archivo/mensaje; no es una base type-clean |
+| M2B-T4-R1-COMPAT-20261106 | 128 pasan/1 falla/86,28s de129 | Mismo source927A3A; fallo de conteo global del journal conservado, sin agregarlo a otra corrida |
+| M2B-T4-R1-OWNER-20261106 | Caso único1 pasa/3,15s | Conserva publicación original exacta y exige persist_state completo/sin prepared; no equivale a un nuevo129 verde |
+
+Review original identificó B4-R1; la misma re-review acotada lo cerró ADDRESSED,
+SPEC/R49 y calidad APPROVED, cero hallazgos abiertos. El journal existente registra
+snapshot en la transacción de estado/evento y repara postcommit sin reemplazar
+IDs/occurred_at. La full histórica1036/9 en9e10 tenía R1 abierto y no verifica el fix.
+`M2_LIFECYCLE_EVIDENCE.json` conserva comandos/hashes, RED y fallos históricos.
+State2 reconstruye atribución vinculada; participantes globales no vinculados
+conservan durabilidad SQL. No cerrar filas del hito completo con esta tarea.
+La prueba de dos horas sigue **omitida por ruling 5**, nunca aprobada.
 
 ## Current execution scope
 
