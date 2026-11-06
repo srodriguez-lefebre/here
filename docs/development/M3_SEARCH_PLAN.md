@@ -362,6 +362,7 @@ The ledger now retains all28 prior records plus this separate observed invocatio
 R57 materializer31F/warmC4 scripts are PREPARED ONLY: dedicatedBASE absent, no new
 materialization/DB/fingerprint result; raw80 plus declared supplement81 preserved.
 Existing p95902.413285>500 remains FAILED; no source fix/B transfer is authorized.
+
 ## Dependencies and handoff during execution
 
 Accepted A and contract-documentation merges permit task 1's independent

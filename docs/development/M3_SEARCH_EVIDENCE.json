@@ -939,7 +939,7 @@
     "Received/responded current-head Copilot, exact-head Windows CI/package as required, PR and guarded root merge. No M3 hosted gate has started in this checkpoint."
   ],
   "not_run": {
-    "large_corpus_benchmark": "EXECUTED FAILED on both separately bound0bea andR55sources. Latest R55valid5+40 p95902.413285>500; old0bea1303.482595 preserved. R55 UI notrun; default skips unchanged.",
+    "large_corpus_benchmark": "EXECUTED FAILED on both separately bound0bea andR55sources. Latest R55valid5+40 p95902.413285>500; old0bea1303.482595 preserved. R55 uninstrumented UI acceptance NOT_RUN; separate instrumented observer FAILED diagnostically; default skips unchanged.",
     "guarded_p95": "FAILED latestR55:valid40 p95902.4132849997841ms vs unchanged<500,actualb9+stagednewteststyle/e198/a2ac/7143; historical0bea1303.482595failure unchanged.",
     "qt_heartbeat": "UNINSTRUMENTED R55 heartbeat acceptance NOT_RUN. Instrumented observer executed1F/observational diagnostic:0SearchPages/0completed8,partial359ticks/max27.155ms NOTpass,final50msassertUNREACHED. Old0bea evidence unchanged.",
     "real_B4_R48_B5_integration": "Historical B4/R48 consumers retain their source scope. R50 actual guard/real-B-reindex checkpoint is bounded-approved at D6; R53 facade/composition and R50 interaction are bounded-approved at d8 with actual 11 passes and a separate 228-pass/1-benchmark-skip regression. Complete B5/UI delete ACK/native/R52/current full/types remain PENDING; no complete task/group approval.",
