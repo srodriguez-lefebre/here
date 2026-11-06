@@ -899,7 +899,7 @@
     "Real sole B reindex/page/partial/fallback/SECOND-noop evidence is complemented by actualR53 GREEN11 and bounded T1/T2 approvals atd8. Callback/composition checkpoint is approved; complete Task1/Task2/B5 and final integration/performance/type/full gates remain held.",
     "Accepted B496e8 producer integrated; actual current/stale title/version/evidence/FTS consumers and truthful UI types approved at D1/ed8. Historical44/no-new-mypy does not constitute fresh E3 or final B5-integrated acceptance.",
     "Implemented UI fixes, D1 types/title and bounded E3 display/preview checkpoints approved at their scopes. Final B5-integrated preview, broader layout/accessibility, complete Task2 and integrated verification/global/hosted gates remain pending.",
-    "LatestR55valid40p95902.413285ms FAILED unchanged<500; historical0bea1303.482595 retained. R55UIobserver/heartbeat NOT_RUN,old0beaBusyINCOMPLETE not transferred. Newdiagnostic/profile2 and passiveUIobserver require separate grant; no further sourcefix authorized.",
+    "Latest R55 valid40 p95902.413285ms FAILED unchanged<500; historical0bea1303.482595 retained. R55UIobserver/heartbeat NOT_RUN,old0beaBusyINCOMPLETE not transferred. Diagnostic2 completed diagnostically/no acceptance; no further source fix or B transfer authorized.",
     "FreshR55newcontrols10 and separateexisting240 pass; previous0bea/d8 runs retain history. R55sourceRuff/current no-new-mypy/finalfull/UI/preview remainpending; test-onlyhygiene is not sourcehygiene.",
     "Complete same Task1 assessment and task docs/evidence; root global integration docs only when capacity ready; Task2 and later single global review.",
     "Received/responded current-head Copilot, exact-head Windows CI/package as required, PR and guarded root merge. No M3 hosted gate has started in this checkpoint."
@@ -1888,7 +1888,7 @@
     "runtime": "NONE; root/B owns host",
     "no_M3B_regeneration": "Existing root M3B SPEC03207dd/PLAN9c177e5 remains owned by root; no duplicate preparation or start",
     "recording_cutoff": "28separatepytestrecords=25priorunchanged+R55controls10P+existingregression240P+valid40query1F. Entirepreview3 unchanged. BoundedR55SPEC/functionalqualityAPPROVED,noC/I/Minor; p95FAILED,completeTask1notapproved.",
-    "future_preparation": "Diagnostic2 SAMEsourceauthor rebindR55/knownsyntheticinput205 and passiveUIobserver refreshedR55source/testprovenance PREPARED ONLY/NEEDS_EXECUTION; no runtime/newsourcefix/acceptance inferred."
+    "future_preparation": "After frozen28-record checkpoint, separately granted diagnostic2 executed on R55/known205,exit0,NOT acceptance; no new pytest records. Passive UI observer remains PREPARED/NOT_RUN and needs execution; no source fix/B transfer authorized."
   },
   "R53_facade_checkpoint": {
     "status": "BOUNDED_SPEC_QUALITY_APPROVED_WITH_ACTUAL_GREEN_AND_CURRENT_REGRESSION",
@@ -2245,7 +2245,7 @@
     "hygiene": "ONLYnewtestI001/formatinitialfindings retained; safeimportsort/layout finalcheck+formatPASS. SourceRuff/mypy/full/UI NOTRUN inthisgrant.",
     "release": "GLOBALRELEASEimmediatelyafterlastbenchmarkprocessBEFOREXML/metrics/analysis/reports/review/commit;all80raw/treeunchanged",
     "UI": "R55observer/heartbeatNOT_RUN. Old0beaBusyINCOMPLETEhistoryonly,notR55result.",
-    "next": "Diagnostic2R55knowninput205 and refreshedR55passiveUIobserver preparedonly/needsnewgrant; no secondoptimization or Btransfer authorized."
+    "next": "Diagnostic2 completed after a separate new root grant:actualHEAD1cb/sourcee198/tests a2ac/input205,one control+one cProfile call,exit0; diagnostic only. Passive UI observer remains NOT_RUN; no second optimization or B transfer authorized."
   },
   "guarded_query_cost_diagnostic": {
     "report": "guarded-query-cost-profile-report.md",
@@ -2253,6 +2253,30 @@
     "source": "Historical0bea/clean7cf0347/inputknown194,notR55",
     "calls": "2actualpubliccalls:unprofiled1266.9802ms+profiled1878.714ms,exit0. No pytestcases/XML or p95 result.",
     "finding": "Instrumentedgeneration1549.1202ms/199918jsondumpsdominantsubtree; nestedinclusivecosts notsummed. ActualTEMP0.3961ms notdominant; Bregistry308.0842ms material but noBlease. SupportsinternalgenerationR55hypothesis,notpredictedpass or causalspeedup.",
-    "future": "Diagnostic2minimalR55/input205rebindPREPARED ONLY/NOTEXECUTED"
+    "future": "Historical preparation superseded by separately executed R55/input205 diagnostic2,recorded in guarded_query_cost_diagnostic_R55; original0bea profile remains unchanged."
+  },
+  "guarded_query_cost_diagnostic_R55": {
+    "status": "DIAGNOSTIC_COMPLETED_NOT_BENCHMARK",
+    "head": "1cb2442a69d47a14afc92662288ab579958ab00c",
+    "source_tree": "e198e954658eefa15222476adfdfc06db797b8a8",
+    "tests_tree": "a2acb894f96523dae6e871fc65a9e13d6c7eb4e5",
+    "config_blob": "7143d4deff5acb55e524baa5ee15c101bce9b3b5",
+    "script_sha256": "d113444a529a9284f42182ae699b3dbe3dfe52dc6a85f39748e1ea85a1fa3518",
+    "summary": "guarded-query-cost-profile-r55-1-summary.json",
+    "summary_sha256": "485C625CC663A6C7D59504FDAB0159BEF6C2885AF9F78E573B27901E2B55A0E7",
+    "report": "guarded-query-cost-diagnosis-preparation.md, final actual diagnostic2 addendum",
+    "input": "Known synthetic205,actual1000meetings/100000segments/98901FTS/220records/221IDs; canonical fingerprint ed49e87611a030bed2f26615c51ae1ea28772357356264d5c03e83de6a223140",
+    "exit_code": 0,
+    "calls": "Exactly one real public unprofiled control plus one cProfile public call; same10 visible hits/cursor. No pytest cases/XML or repeat benchmark.",
+    "control_ms": 5206.956800000626,
+    "profiled_public_wall_ms": 2744.1124000033597,
+    "validation_ms_outside_calls": 1613.3980999948108,
+    "profile": "Generation1683.1486ms inclusive/self132.6825;788fetchmany724.7501ms,784direct dumps approx473ms,5direct SQL approx298ms. Bregistry1008.0762ms includes220pathvalidations approx869ms. Nested inclusive values MUST NOT be added.",
+    "limits": "Two unequal single-call timings do not establish warm p95,causal speedup,host-load cause or measurement invalidity. Existing valid40 p95902.413285>500 remains FAILED; UIobserver NOT_RUN. No source fix/B transfer or full acceptance.",
+    "preservation": "PASS80 raw files/head/source/tests/config/DB/220 registry records before=after",
+    "release": "Immediately after process15731 exit, before postchecks/analysis",
+    "silent_log": "No stdout/stderr emitted; Tee-Object produced no file, zero-byte log materialized after release to record the observed empty stream",
+    "artifacts_prefix": "guarded-query-cost-profile-r55-1",
+    "record_accounting": "Separate diagnostic after28-record docs freeze; ALL28 pytest and entirepreview3 unchanged."
   }
 }

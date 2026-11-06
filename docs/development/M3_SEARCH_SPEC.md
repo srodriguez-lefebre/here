@@ -331,14 +331,25 @@ SAME Task1 FINAL bounded R55 SPEC/functional-quality review is APPROVED, no
 confirmed Critical/Important/Minor finding; complete Task1 NOT APPROVED and
 performance FAILED. Only new-test hygiene passed after retained I001/format
 findings; source Ruff/current mypy/full remain unrun. R55 UI observer/heartbeat
-NOT_RUN; old0bea Busy/INCOMPLETE is not transferred to this source. Diagnostic2
-R55/known input205 and refreshed passive UI observer are PREPARED ONLY and need
-new execution grants; no second source optimization is authorized.
+NOT_RUN; old0bea Busy/INCOMPLETE is not transferred to this source. Diagnostic2 was PREPARED ONLY at this freeze; its later executed diagnostic is
+recorded below. Passive UI observer still needs execution; no second source
+optimization is authorized.
 
 28 separate pytest records preserve all25 prior and the entire preview3. GLOBAL
 RELEASE immediately followed the last process BEFORE XML/metrics/reports/review/
 commit. All broader B/native/delete/UI/preview/types/full/global/hosted/task/group/
 M3 gates stay open, with unchanged thresholds/criteria/version and no certification.
+After that 28-record freeze, a separate grant executed diagnostic2 at actual clean
+HEAD1cb/sourcee198/tests a2ac/config7143 on known synthetic input205: one real
+control5206.9568ms plus one cProfile call2744.1124ms, exit0. Generation1683.1486ms
+inclusive/self132.6825 includes788 fetchmany724.7501ms,784 direct dumps about473ms
+and5 SQL about298ms; B registry1008.0762ms includes220 path checks about869ms.
+Nested inclusive timings are not added. Two unequal calls establish no warm p95,
+causal speedup,host-load cause or measurement invalidity. GLOBAL RELEASE preceded
+analysis; raw80/DB/registry/source/tests/config unchanged. See the final addendum
+of `guarded-query-cost-diagnosis-preparation.md` and its pinned summary in JSON.
+This is diagnostic evidence, no new pytest case or acceptance. UI observer remains
+NOT_RUN; valid40 p95902.413285>500 remains FAILED, with no new source/B fix authority.
 
 ## Intent
 
