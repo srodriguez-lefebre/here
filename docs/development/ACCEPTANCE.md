@@ -34,7 +34,7 @@ Tarea4 aceptada en coordinación local: fuente4e1b2cead486563516b69e09fb45543ee8
 src4ca55bbe7e88ff59f79dee47e8740fef2253718e y testsbf4f471a87ad84df8ac41f8da375f8fd1025f42e.
 Docs de otro autor96e8aed255a442acb14bbdff5c32877ec201c628 mantienen esos árboles.
 Nivel implementado y verificado automáticamente con datos sintéticos, sin
-certificación nueva. B5/borrado, integración real M3, performance, wheel nuevo,
+certificación nueva. B5/borrado, integración B5 en M3, performance, wheel nuevo,
 CI/Copilot/merge de B y cierre M2/0.3.0 siguen pendientes.
 
 | Corrida nombrada | Resultado observado | Alcance y límites |

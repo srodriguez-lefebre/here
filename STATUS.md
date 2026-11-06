@@ -72,11 +72,12 @@ archivo en todos los worktrees. Processing continúa sin concesión.
 Cualquier handoff adicional se concede explícitamente. Migraciones/pyproject/uv.lock/versiones
 siguen seriales y requieren permiso de root. Global docs son root-only.
 
-Runtime ACTUAL: B tiene grant EXCLUSIVO para RED H1/H2, dos nodos/nueve escenarios
-previstos en fuente c9f64c3 congelada; no son aún resultados. M3 liberó después de
-preview2 y no retiene procesos. Tail GREEN controller-only escribe en su WT sin
-runtime; review/docs y preparación de planes continúan en paralelo. No full,
-benchmark, build, uv o mypy simultáneo. Native RED34 ya observado y test-committed.
+Runtime ACTUAL: B tiene grant EXCLUSIVO secuencial para tail2 y después H1/H2 GREEN9
+cuando publique freeze, nunca simultáneos. RED H1/H2 terminó7F/2P/0E/S/6,63s y
+liberó procesos; tests-only225144dc4dba807d093e1302ad2dfcc2ee076d66. M3 liberó
+después de preview2 y no retiene procesos. Tail controller-only y GREEN principal
+escriben archivos disjuntos; review/docs y preparación continúan en paralelo.
+No full/build/uv/mypy/benchmark concurrente. Native RED34 observado/test-committed.
 READERS7 terminó7P/5,10s, incluido primer uso con raíz vacía. M3 verificó44P/14,42s
 con título/Conflict/FTS B4 real, source75be486/srcd1bddf68, test-format ed8e5aa.
 Mypy79→78, cero diagnósticos nuevos; primer79→87 retenido. Foco legado33:30P/3F/
@@ -84,7 +85,8 @@ Mypy79→78, cero diagnósticos nuevos; primer79→87 retenido. Foco legado33:30
 aprobados. No trasladar44/mypy al nuevo sourceE3 como nueva corrida.
 La UI42P/review R1–R3 conservan su alcance previo; ningún grupo está cerrado.
 La validación corta de integridad del fixture M4 también terminó y liberó host:
-exit0/0,326s; sin here/proveedor/pytest. Sin full/mypy/build/benchmark/uv M3 aún.
+exit0/0,326s; sin here/proveedor/pytest. Faltan full/build/benchmark y mypy final
+M3 sobre fuente integrada posterior a E3; el mypy79→78 previo corresponde a D1.
 Cada coordinador libera inmediatamente al terminar los comandos, antes de reportes
 o commits; root rota el host con esa confirmación. Escritura autorizada, docs y
 reviews de lectura siguen en paralelo, nunca dos tests/builds/mypy pesados.
@@ -117,8 +119,9 @@ review independiente CHANGES REQUESTED, H1/H2 Important/P2 abiertos. H1 probe FT
 enmascara OperationalError de storage/Busy como FTS ausente; H2 registry I/O dentro
 de BEGIN IMMEDIATE en edición/status. READ BEGIN R50 sí es intencional. Mismos
 RED/GREEN/reviewer continúan fix acotado; no handoff c9 a M3 hasta re-review verde.
-Reporte task-5-handoff-review-report.md. Dos archivos RED H1/H2 listos y congelados;
-GREEN espera observar RED y su test-only commit antes de corregir ese alcance.
+Reporte task-5-handoff-review-report.md. RED H1/H2 real7F/2P/6,63s, sin errores/skips,
+test-commit225144d; storage/Busy y cinco lecturas bajo WRITE alcanzaron los asserts.
+Los dos controles pasan. GREEN principal corrige ese alcance con controller revocado.
 
 RED nativo R52 tiene su worktree separado verificado:
 `C:/Users/savar/.codex/worktrees/m2-native-owner-red/here`, rama
@@ -138,7 +141,8 @@ aisló QFontDatabase offscreen vacío. Preview2 con Segoe UI existente registrad
 solo en arnés pasa función y texto legible en capturas533x452/1100x800; root vio
 ambas. Conserva scroll/clipping de encabezado y combos, sin aprobación general
 de layout ni cambio de producto/config/font global. Scoped reviewer aprobó solo
-esa evidencia; docs distintos del checkpoint en curso. Tres corridas Qt separadas,
+esa evidencia; docs distintos ya integrados en00cf0ea97bc97a6f8b02d242e26d179f407f8003,
+sourceE3/tests35 sin cambios. Tres corridas Qt separadas,
 no pytest/benchmark/DB/audio/red/proveedor. P95 real1000/100000 con guard+heartbeat,
 full/mypy/review integrada y gates hospedados de M3 siguen pendientes.
 
@@ -294,6 +298,15 @@ del arnés (whitelist tuple y stdout cp1252) conservados en
 `m4-synthetic-corpus-validation-report.md`; ninguna aceptación semántica M4.
 Futuro RED inspecciona/consume al recibirlo UNA vez por root.
 Reporte `m4-synthetic-corpus-preparation-report.md` en ese worktree; corpus previos intactos.
+
+Preparación documental M4 A en paralelo: responsable catalog_group_fixes,
+`C:/Users/savar/.codex/worktrees/m4-grounded-preparation/here`, rama
+`codex/m4-grounded-preparation`, base73d3cb384bd422de6899d8c7b761f3f3159ea3f1.
+Brief explícito entregado; solo M4_GROUNDED_SPEC/PLAN y reporte ignored, sin
+código/fixtures/runtime/GO M4. Conserva dependencia cierre M3. El actual SearchQuery
+no provee selección meeting_ids ni OR del retrieval M4: handoff interno pendiente,
+sin asumir MemoryService.search, SQL directo de intelligence o filtro post-LIMIT.
+Root resolverá ese contrato; no es bloqueo humano ni aceptación de un adapter.
 
 No hay bloqueo humano actual. Próxima acción: recoger RED H1/H2, corregir/revisar
 ese alcance y handoff verificado a M3, mientras segundo GREEN termina controller.
