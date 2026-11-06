@@ -13,7 +13,7 @@ from contextvars import ContextVar
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path, PureWindowsPath
-from typing import Any, Callable, Iterator
+from typing import Any, Callable, Iterable, Iterator
 from uuid import UUID, uuid4
 
 from here.memory.artifacts import (
@@ -372,6 +372,16 @@ def _journal_path_key(root: Path, relative: str | None) -> str | None:
     return os.path.normcase(os.path.normpath(os.path.join(root, spelling)))
 
 
+def _validate_delete_roles(directory: Path, names: Iterable[str]) -> None:
+    """Existing WAVs still need role proof; already removed WAVs need no unlink."""
+    remaining = []
+    for name in names:
+        path = session_artifact_path(directory, name)
+        if path.suffix.lower() != ".wav" or path.exists():
+            remaining.append(name)
+    validate_artifact_roles(directory, remaining)
+
+
 def _remove_tree(root: Path, relative: str, names: set[str] | None = None) -> None:
     """Remove registered protocol files; unknown material defers cleanup."""
     directory = managed_path(root, relative, directory=True)
@@ -563,7 +573,7 @@ class MemoryService:
                     )
                 ):
                     raise ValueError("Invalid registered publication inventory")
-                validate_artifact_roles(directory, plan["hashes"])
+                _validate_delete_roles(directory, plan["hashes"])
                 operation = repo.get_pending_operation(plan["operation_id"])
                 if operation is not None:
                     payload = json.loads(operation.payload_json)
@@ -602,7 +612,7 @@ class MemoryService:
                             raise ValueError("Cleanup audio must belong to its meeting")
                         if path.suffix.lower() != ".wav":
                             raise ValueError("Cleanup audio must have a WAV role")
-                        validate_artifact_roles(path.parent, (path.name,))
+                        _validate_delete_roles(path.parent, (path.name,))
                     for ordinal, values in enumerate(snapshot["revision_audio_assets"]):
                         link = RevisionAudioAsset(**values)
                         if (
@@ -612,7 +622,7 @@ class MemoryService:
                             or link.ordinal != ordinal
                         ):
                             raise ValueError("Cleanup audio relationship mismatch")
-                        validate_artifact_roles(directory, (link.source_file,))
+                        _validate_delete_roles(directory, (link.source_file,))
                     files[receipt.relative_to(self.data_dir).as_posix()] = file_hash(receipt)
                 directories.add(directory.relative_to(self.data_dir).as_posix())
                 files[registration.relative_to(self.data_dir).as_posix()] = file_hash(registration)
@@ -662,7 +672,7 @@ class MemoryService:
             parts = path.relative_to(root).parts
             if len(parts) == 3 and parts[0] == "revisions" and _is_uuid(parts[1]):
                 if path.name not in {"catalog.json", ".publication.json"}:
-                    validate_artifact_roles(path.parent, (path.name,))
+                    _validate_delete_roles(path.parent, (path.name,))
             elif len(parts) == 2 and parts[0] == "states":
                 if path.exists():
                     read_meeting_snapshot(path.parent, path.name, record.meeting_id)
@@ -769,7 +779,7 @@ class MemoryService:
         # restart with SQL loss during the file phase. Unknown material is retained.
         def purge_order(relative: str) -> tuple[int, bool, str]:
             path = Path(relative)
-            if path.name in {"catalog.json", ".publication.json"}:
+            if path.name in {"catalog.json", ".publication.json", "session.json"}:
                 role = 4
             elif "states" in path.parts:
                 role = 3
