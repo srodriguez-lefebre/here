@@ -39,7 +39,7 @@ las definiciones de terminado y los tres niveles de evidencia. Versión vigente
 - Fuente actual C5 c59ae331ebf124400ef3e476e5f0fcc029e83999 desde Green
   e8bd181f12fcfc25b8d66365689823552fa4e50b: src5c66169c0a93a8f0606a011bd9570bbdd9137903,
   testsfb958d021eaf7d149c00a3a1be174e36fbef2a1c, iguales al worker. R44 implementado;
-  review final del diff/docs pendiente. PR21 sigue publicado en5b515e8; C5 aún sin
+  review final del diff/docs APPROVED con suplemento3fdbd05. PR21 sigue publicado en5b515e8; C5 aún sin
   respuesta/publicación ni Copilot/CI del nuevo head.
 - Los nueve grupos se conservan: M2 A (`M2_CATALOG`, 1–3), M2 B
   (`M2_LIFECYCLE`, 4–5), M3 A (`M3_SEARCH`, 1–2), M3 B (`M3_LIBRARY`, 3–4),
@@ -61,8 +61,9 @@ las definiciones de terminado y los tres niveles de evidencia. Versión vigente
 `docs/MILESTONE_2_PLAN.md`. Tarea 3 implementada, verificada automáticamente en
 local y aceptada por review técnica independiente en la fuente previa a Copilot.
 C1–C4 resueltos por Copilot; C5 implementado y verificado automáticamente en focos y
-package locales. Review final del diff/docs y suite Windows completa del head corregido
-pendientes. Sin certificación nueva; grupo A abierto.
+package locales. Review final APPROVED fuentec59ae33/docs3fdbd05, C5 ADDRESSED y
+sin defectos nuevos. Suite Windows completa del head corregido pendiente.
+Sin certificación nueva; grupo A abierto.
 
 - Tarea 1: review independiente aceptada después del fix Busy. Foco 34 pasan/
   1 skip/4,70 s; full `M2A-T1-FINAL-20261105` 778 pasan/7 skips/173,68 s,
@@ -198,7 +199,8 @@ run 42142394863; package 42142395026 pasa solo sobre 339, no sobre el head corre
 3. CI_D23 es histórico: tests42147566672,966 pasan/2 skips wheel/331,02 s;
    package42147566683 pasa. No prueba56af525. CI actual5b: suite `42151367541` y
    bundle `42151367491`, ambos success sobre 5b515e8; suite974 pasan/2 skips wheel/
-   349,23 s. Son históricos para C5. Finalizar review independiente y responder C5
+   349,23 s. Son históricos para C5. Review independiente final APPROVED fuentec59ae33/
+   docs3fdbd05, C5 ADDRESSED, sin nuevos hallazgos. Publicar y responder C5
    con el commit publicado; pedir/recibir Copilot otra vez y
    verificar la suite completa/package en el nuevo head exacto antes del merge.
    Los pases 5b quedan históricos para la corrección nueva. Ningún gate se omite.
@@ -220,8 +222,9 @@ Probe fresco no editable c59ae33 de2026-11-06T03:08:14.816511Z:65 fuentes iguale
 schema2/FTS5/FK/integrity correctos. Distribución4 pasan7,51 s, XML4/0F0E0S/interno7,456;
 wheel CLI3,996/GUI2,757, mutex0,007/path0,559 pasan. Logs/XML
 `.superpowers/m2a-copilot-3-wheel-smokes.*`; hashes en el probe y ACCEPTANCE.
-Evidencia implementada y verificada automáticamente en local; review final y suite
-CI del head nuevo pendientes, sin certificación de hardware/proveedor/instalación.
+Evidencia implementada y verificada automáticamente en local; review final APPROVED
+fuentec59ae33/docs3fdbd05. Suite CI del head nuevo pendiente, sin certificación de
+hardware/proveedor/instalación.
 Full5CDF y CI5b conservan sus fuentes históricas; no hay full local7 ni merge de A.
 
 ### C4 — evidencia local histórica de56af525

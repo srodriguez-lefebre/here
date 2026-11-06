@@ -1640,3 +1640,14 @@ No group/M2 closure, real hardware/provider/clean-install certification, new rul
 or version bump. Two-hour acceptance is omitted by ruling5. R35 still requires A
 merge plus required contract-doc PR merges before the two project chats; none
 created, future IDs/branches/worktrees/responsibles remain pending.
+
+C5 final scoped independent verdict: APPROVED for sourcec59ae33 and committed
+six-document supplement3fdbd05; C5 ADDRESSED, no new actionable Critical,
+Important or Minor finding. Reviewer directly inspected the source/test correction,
+six committed docs, actual probe and distribution stdout/XML:65 byte-identical
+installed files,4 passed/7.51s including both wheel entries, zero failures/errors/
+skips. Report: `copilot-3-review-report.md`. No extra review/local full requested.
+This routine verdict ledger changes no source/tests or acceptance definition.
+Root must still publish/reply C5, receive new Copilot and complete exact-head
+Windows suite/package success before guarded merge. No group/milestone closure
+or real certification follows from technical approval alone.
