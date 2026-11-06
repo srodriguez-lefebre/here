@@ -71,26 +71,23 @@ parcial. B todavía no tiene writer UI. Processing continúa sin concesión.
 Cualquier handoff adicional se concede explícitamente. Migraciones/pyproject/uv.lock/versiones
 siguen seriales y requieren permiso de root. Global docs son root-only.
 
-Runtime ACTUAL: M3 liberó tras UI final38P/12,57s y Ruff/format nueve archivos,
-sin procesos. B posee ventana para mypy comparativo y UN full R49 corregido sobre
-4e1b2cead486563516b69e09fb45543ee85b53aa, clean y congelado, src4ca55bbe7e88ff59f79dee47e8740fef2253718e/
-testsbf4f471a87ad84df8ac41f8da375f8fd1025f42e; no build/uv ni mutación durante full.
-Mismo reviewer B4 aprobó R1 ADDRESSED/SPEC/quality, cero hallazgos; mypy actual79→79,
-multiset sin delta nuevo. FULL2 terminó1043P/9S/390,03s, XML1052/0F/0E/9S/interno389,952s,
-logs `task-4-full-2.*`, HEAD/src/tests sin cambios y clean. Dos skips wheel sin
-entorno y siete privilegios symlink. Coordinador liberó host antes de docs; autor
-distinto finalizaTask4evidence. Handoff B4 completo espera aceptación docs.
-Runtime ahora M3 UI: RED4 preparado7044b12 contra source825f3e6, tres findings de
-review (refresh al volver, retry/error participantes, capture-controls busy); primero
-RED real, después mismo GREEN/foco42/Ruff. Sin full/mypy/build/benchmark M3 aún. Suplemento outcome RED2
-falló2/0E/3,05s; GREEN R1 pasó7/7/5,24s. RED R1 previo5F/0E/4,10s en87f9a302
-y ambos focos UI conservan sus fuentes/logs; R48 consumer asserts aún pendientes.
-No repetir full previo. Sin build/benchmark todavía. Cada coordinador libera la ventana
-con evidencia real; root la asigna al otro
-frente. Nunca dos tests/builds/mypy pesados en el host. Leer/escribir archivos
-autorizados y preparación documental sí puede seguir en paralelo.
+Runtime ACTUAL: M3 UI tiene ventana exclusiva para corregir sus tres findings:
+refresh al volver, retry/error de participantes y capture-controls busy. Su RED4
+en7044b12 contra source825f3e6 produjo4F/0E/12,70s, sin fix previo. Mismo GREEN
+continúa con fix/foco42/Ruff; sin full/mypy/build/benchmark/uv. B no tiene runtime.
+Cada coordinador libera inmediatamente al terminar los comandos, antes de reportes
+o commits; root rota el host con esa confirmación. Escritura autorizada, docs y
+reviews de lectura siguen en paralelo, nunca dos tests/builds/mypy pesados.
 
-RED observados, sin aceptación nueva de tareas:
+Última verificación B4: fuente4e1b2cead486563516b69e09fb45543ee85b53aa,
+src4ca55bbe7e88ff59f79dee47e8740fef2253718e y testsbf4f471a87ad84df8ac41f8da375f8fd1025f42e.
+Review R1 ADDRESSED/SPEC/quality aprobados sin hallazgos; mypy79→79 sin delta.
+FULL2 pasó1043P/9S/390,03s, XML1052/0F/0E/9S/interno389,952s en
+`task-4-full-2.*`; HEAD/src/tests clean y sin mutaciones. Dos skips wheel sin
+entorno y siete privilegios symlink. Coordinador liberó host. Autor distinto
+finalizaTask4 docs/evidence; handoff B4 completo y B5 esperan aceptación docs.
+
+RED históricos y alcance, sin sumar sus resultados a corridas posteriores:
 
 - B4:111 casos,47 fallan/64 pasan/0 errores/0 skips/76,66s; XML interno75,352s.
   59 controles A/M1 y5 controles de marker pasan; fallan APIs/efectos B4 ausentes.
