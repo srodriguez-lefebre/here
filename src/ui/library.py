@@ -74,6 +74,26 @@ def _timing(segment):
     return f"{start} – {end}"
 
 
+class _DateFilter(QDateEdit):
+    def focusNextPrevChild(self, forward):  # noqa: N802
+        # Date sections are not separate stops in the library's control order.
+        # The unset special value has no section to advance to.
+        return QWidget.focusNextPrevChild(self, forward)
+
+
+class _MeetingResults(QTableWidget):
+    openRequested = Signal(int, int)
+
+    def mouseDoubleClickEvent(self, event):  # noqa: N802
+        index = self.indexAt(event.position().toPoint())
+        if index.isValid():
+            self.setCurrentIndex(index)
+            self.openRequested.emit(index.row(), index.column())
+            event.accept()
+        else:
+            super().mouseDoubleClickEvent(event)
+
+
 class LibraryView(QWidget):
     """Render canonical pages; stale requests cannot mutate the current view."""
 
@@ -134,7 +154,7 @@ class LibraryView(QWidget):
         self._retry.setAccessibleName("Reintentar consulta de biblioteca")
         self._retry.clicked.connect(self.refresh)
 
-        self._results = QTableWidget(0, 6)
+        self._results = _MeetingResults(0, 6)
         self._results.setAccessibleName("Resultados de reuniones de biblioteca")
         self._results.setHorizontalHeaderLabels(
             ["Título / coincidencia", "Fecha", "Duración", "Estado", "Audio", "Transcripción"]
@@ -144,6 +164,7 @@ class LibraryView(QWidget):
         self._results.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self._results.horizontalHeader().setStretchLastSection(True)
         self._results.cellActivated.connect(self._open_row)
+        self._results.openRequested.connect(self._open_row)
         self._more = QPushButton("Cargar más")
         self._more.setAccessibleName("Cargar más resultados")
         self._more.clicked.connect(self._continue)
@@ -205,7 +226,7 @@ class LibraryView(QWidget):
 
     @staticmethod
     def _date_control(name):
-        control = QDateEdit()
+        control = _DateFilter()
         control.setAccessibleName(name)
         control.setMinimumDate(_NO_DATE)
         control.setSpecialValueText("Sin límite")
