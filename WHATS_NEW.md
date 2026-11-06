@@ -17,11 +17,24 @@ recovery; opening the app replays local persistence rather than transcription.
 Scoped fixes now preserve revision-specific audio links, legacy identity and
 actual ownership through capture/recovery. Publication tokens distinguish an
 already committed replay from a fresh retry; WAV-only legacy recovery retains
-unknown capture dates. Pending markers use version 2 and publication receipts
-version 3; the DB stays at schema 2. The integrated suite passes 940 tests with
-seven skips; whole-group review remains open on crash replay, malformed receipts
-and capture-cancellation catalog state. Its three Important findings await fixes
-and final documentation review. M2 is unreleased; version 0.2.0 stays current.
+unknown capture dates. Final publication now seals the exact local artifacts before
+the final session metadata commit, so startup can recover a completed saved result
+without repeating transcription. Unmatched final evidence remains preserved with
+a warning. Invalid receipt envelopes no longer prevent valid neighbors rebuilding;
+capture-failure cancellation is sealed before its first catalog publication while
+retaining the original error and audio.
+
+Integrated source `7bfd0cb` uses final pending markers version 3 with readers for
+versions 1/2; receipts remain version 3, compatible with version 2, and the DB
+stays at schema 2. The final group/recovery focus passes 26 tests; the earlier
+940-pass/seven-skip full is historical evidence for `8087e25`. Full 3 at `7bfd0cb`
+has eight failures/945 passes/seven skips from two capture-recovery test wrappers
+rejecting the additive precommit callback; both wheel smokes pass. The narrow
+fixture correction is integrated at `ef70f78`, preserving all crash assertions.
+Its 13-case focus passes; full 4 passes **953 tests/seven skips in 358.94s** with
+both wheel smokes, using the unchanged product wheel. Final scoped independent
+re-review remains pending; GR1–GR3 stay open until review,
+with hosted gates still pending. M2 is unreleased; version 0.2.0 stays current.
 
 ## 0.2.0 — Windows M1 delivery
 

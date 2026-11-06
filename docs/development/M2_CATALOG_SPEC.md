@@ -1,14 +1,21 @@
 # M2 immutable catalog specification
 
 Status: in execution under the explicit 2026-11-05 mandate (ruling 20).
-Tasks 1/2 have local verification and independent reviews. Source `8087e25`
-matches Green `4a3cb7c`: original F1–F7, NB1 and NB2 are addressed by scoped
-re-reviews. Marker 2/receipt 3 and legacy audio-only lineage are implemented.
-The integrated full passes 940 tests/seven skips; whole-group review has three provisional
-Important findings concerning the metadata-before-marker crash window,
-non-object receipt isolation and accepted capture-cancellation catalog divergence.
-GR1–GR3 remain OPEN; source verdict is changes requested, final docs supplement
-pending. No task/group approval or hosted gates are complete.
+Tasks 1/2 have local verification and independent reviews. Original F1–F7, NB1
+and NB2 are addressed by scoped re-reviews. The final whole-group source/docs
+review of `8087e25` requests changes for GR1–GR3; minor GD1/GD2 checkpoint fixes
+are committed. Their combined source fix is integrated at `7bfd0cb`, identical
+to Green `ec55b95` source/tests. Final sealed markers use version 3; receipts
+remain version 3 and legacy audio-only lineage is preserved. The final
+group/recovery focus passes 26 cases/34.46s. The 940-pass/seven-skip full belongs
+to historical `8087e25`. New full 3 at `7bfd0cb` reports eight failures/945 passes/
+seven skips in 364.23s, caused by two existing capture-recovery test wrappers
+rejecting the additive precommit callback; both wheel smokes pass. Narrow fixture
+forwarding is integrated test-only at `ef70f78`, its 13-case focus passes and full 4
+passes 953/seven skips in 358.94s with both wheel smokes on unchanged product
+source. The final scoped independent verdict remains pending. GR1–GR3 remain OPEN
+until that verdict. No task/group approval or hosted
+gates are complete.
 The prior five-failure full remains historical evidence. Governing design:
 `PRODUCT_DESIGN.md` §2–§4, which is a taken decision (ruling 3). Spanish plan and
 acceptance criteria: `../MILESTONE_2_PLAN.md`.
@@ -93,7 +100,8 @@ rebuild and `show` JSON expose the same `revision_audio_assets`. An older receip
 without unambiguous proof stays uncertain with a warning; no relationship is
 invented. Receipt 3 retains these same links and additionally proves explicit
 publication provenance; receipt 2 remains readable without invented proof.
-Acceptance still waits for whole-group review/corrections and hosted gates despite the passing full.
+Acceptance still waits for the final scoped review, current aggregate verification
+and hosted gates despite the historical passing full.
 
 ### Segments and evidence
 
@@ -153,9 +161,12 @@ from committed entities. If both commit knowledge and its receipt are lost, the
 uncertain tree is retained and reported rather than guessed complete.
 Receipt 3 also records `operation_id` and its validated publication proof; rebuild
 restores the complete operation, including same-meeting parent validation. Receipt
-2 compatibility grants no synthetic token/proof. DB schema remains 2. Every malformed
-receipt must be isolated so valid siblings still rebuild; the current whole-group
-review provisionally found non-object JSON violating this requirement.
+2 compatibility grants no synthetic token/proof. DB schema remains 2. Receipt
+envelopes and nested mappings/arrays of objects are validated before mapping
+methods or referenced reads. Every malformed meeting tree is retained with an
+identified warning so valid siblings still rebuild; repeat reconcile/discovery and
+maintenance JSON remain usable. This is the implemented GR2 correction awaiting
+independent scoped re-review.
 
 Source artifact roles are explicit: known session JSON/text/Markdown plus validated
 WAV references. Containment alone never authorizes opening, probing or hashing a
@@ -174,11 +185,15 @@ behind that path. Catalog failure must not touch audio: the WAV and `session.jso
 remain, the result reports "audio saved; library pending recovery", and the next
 startup retries local tasks only.
 
-Application-owned output folders persist `memory_pending.json` version 2 with
+Application-owned output folders first persist `memory_pending.json` version 2 with
 `schema_version`, original optional `meeting_id`, expected `revision_of`,
 `intent` (`ingest` or `status`), `publication_id` and `source_kind` (`session` or
-`legacy_audio_only`). The reader accepts marker 1 without inventing proof.
-Startup validates that local intent and
+`legacy_audio_only`). After subordinate final artifacts are published, the
+writer's internal `before_metadata_commit` callback durably replaces that intent
+with marker 3 before the final `session.json` replace. Marker 3 retains those
+fields and adds `hashes`: exact lowercase SHA-256 values for the prospective
+manifest bytes and its role-validated final artifact inventory. The reader accepts
+markers 1/2 without inventing seals or proof. Startup validates that local intent and
 replays catalog work only, never provider transcription. A failed/cancelled retry
 with no new result retains the previous complete active revision and replays only
 its durable outcome under the same expected-revision precondition (ruling 27).
@@ -187,7 +202,12 @@ result once; unrelated injected processors retain the fallback. This avoids doub
 publication while durable proof independently supports restart replay. The scoped
 NB1 review covers actual postcommit child crashes with existing and rebuilt DBs.
 No completed metadata may become unrecoverable before its first durable local
-publication intent; the whole-group review provisionally found that crash gap.
+publication intent. Sealed replay requires the manifest to be final and the entire
+measured artifact map to match. A still-pending manifest or changed/incomplete
+final evidence retains its exact marker/source bytes with a warning, never
+imports the previous result as a new revision and never calls the provider.
+Pending-manifest discovery exposes that uncertainty through the existing public
+`RecoveryCandidate.error_summary`. GR1 implementation awaits scoped re-review.
 
 For valid WAV-only legacy retry without `session.json`, reserve a canonical UUID
 and actual lease before mutation/provider, with a measured origin mapping whose
@@ -204,10 +224,12 @@ or new work clears the warning. A completed recording remains completed when
 only the catalog is unavailable (ruling 24).
 Accepted cancellation while persisting a capture failure must preserve one meeting
 and the capture-error/audio evidence with cancelled UI, compatibility metadata and
-catalog outcome. A later same-operation status change must use the trusted durable
-state/expected-revision path or precede initial publication, preserving ordinary
-same-UUID conflict checks. GR3 finds this consistency requirement currently broken;
-it remains OPEN rather than covered by the existing UI/manifest-only assertions.
+catalog outcome. The real controller privately defers the first catalog publication
+through the existing cancellation cutover; any accepted cancellation reseals the
+final outcome before that publication. Canonical and optional source identities
+retain one meeting and one partial revision. Direct capture-failure persistence and
+foreign injected processors preserve their existing contracts, as do ordinary
+same-UUID conflict checks. GR3 implementation awaits scoped re-review.
 
 ### Durable meeting state
 
@@ -238,7 +260,9 @@ leases without creation; journal materialization upgrades ownership before mutat
 In the missing-metadata branch, canonical capture UUID validation precedes even
 the journal path join/probe. Existing manifests retain optional/opaque source IDs.
 Round-2/3 scoped reviews address the snapshot/audio-only regressions and NB2;
-the new integrated full passes 940 tests/seven skips; group review remains pending.
+historical full 2 at `8087e25` passes 940 tests/seven skips. The combined fix at
+`7bfd0cb` has a passing 26-case group/recovery focus; test-only `ef70f78` has the
+current full 4 passing 953/seven skips. Final scoped independent re-review remains pending.
 
 ### FTS
 

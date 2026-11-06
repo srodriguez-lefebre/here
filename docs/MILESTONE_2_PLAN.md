@@ -81,7 +81,7 @@ siete. Valen las cinco del diseño.
 
 | Grupo | Tareas del diseño | Documentos | Estado |
 |---|---|---|---|
-| A. Catálogo inmutable | 1 modelos, migraciones y repositorio · 2 segmentos y raw text en todos los recorridos · 3 ingestión, identidad y revisiones | `M2_CATALOG_SPEC.md`, `M2_CATALOG_PLAN.md` | tareas 1/2 con review aceptada; tarea 3 integrada, full local 940/7, review del grupo en curso con tres Important provisionales y gates hospedados pendientes |
+| A. Catálogo inmutable | 1 modelos, migraciones y repositorio · 2 segmentos y raw text en todos los recorridos · 3 ingestión, identidad y revisiones | `M2_CATALOG_SPEC.md`, `M2_CATALOG_PLAN.md` | tareas 1/2 con review aceptada; tanda GR1–GR3 en 7bfd0cb y fixture test-only ef70f78; full 4 verde 953/7/358,94 s; re-review final/gates hospedados pendientes; fulls históricos conservados |
 | B. Ciclo de vida y borrado | 4 participantes, edición con `row_version`, reconciliación · 5 borrado transaccional y FTS | `M2_LIFECYCLE_SPEC.md`, `M2_LIFECYCLE_PLAN.md` | plan escrito, sin ejecutar |
 
 Orden obligatorio: A antes que B. Si al mergear A cambió la forma de
@@ -172,10 +172,10 @@ no editable pasaron. Límites y comandos en `development/ACCEPTANCE.md`.
 
 | Criterio | Estado de evidencia |
 |---|---|
-| 1–5. Productores, identidad y revisiones | Rondas 2/3 integradas en 8087e25, F1–F7/NB1/NB2 addressed por reviews acotadas; full940/7 y review del grupo pendiente con tres Important provisionales, sin aprobación/CI |
+| 1–5. Productores, identidad y revisiones | Rondas 2/3 y tanda R38 integradas en 7bfd0cb, fixture ef70f78; F1–F7/NB1/NB2 addressed; GR1–GR3 OPEN hasta re-review final; full 4 verde 953/7/358,94 s, CI pendiente |
 | 6–7. Segmentos y pausa | Tarea 2 verifica evidencia/seek sintético; focos de tarea 3 preservan segmentos en catálogo, con verificación final/review pendientes |
 | 8. Migración, backup y esquema futuro | Verificación automática local de la base de catálogo; falta CI de Windows en el head del grupo |
-| 14. DB ocupada y transacciones cortas | Verificación automática local de escrituras y lecturas bloqueadas; la publicación con archivos/proveedor aún depende de tarea 3 |
+| 14. DB ocupada y transacciones cortas | Verificación local de escrituras/lecturas bloqueadas y publicación de tarea 3 implementada; aceptación agregada/re-review final/CI pendientes |
 | 15. Suite en CI de Windows | Pendiente; una suite local no cierra este criterio |
 | 9–10, 13. Crash, catálogo pendiente y rutas | Guards y NB1/NB2 addressed; GR1/GR2/GR3 OPEN por replay entre metadata/primer marker, recibos inválidos y divergencia de catálogo al cancelar captura, sin aceptación global |
 | 11–12. Borrado sin resurrección | Grupo B pendiente; no lo cierra la limpieza de staging de tarea 3 |
@@ -209,14 +209,14 @@ y el replay del marcador postcommit usa un parent obsoleto. La suite integrada r
 dio cinco fallos/920 pasan/7 skips en 553,39 s; tres snapshots de recovery con nuevos
 locks, stub sf.info incompleto y retry legacy solo-audio requerían diagnóstico.
 Ambos smokes del wheel pasaron; siete skips de symlink. Wheel/sdist y probe aislado
-no editable verifican 65 archivos Python iguales, schema2/FTS5/FK/integrity, sin
+no editable verifican 65 archivos Python iguales, schema 2/FTS5/FK/integrity, sin
 certificar hardware/proveedor ni cerrar el hito. Se requiere fix/re-review y suite
 corregida antes de aceptar tarea/grupo.
 La corrección del arnés sintético de captura
 pasó 33 casos y review independiente, sin cambiar deadlines del producto; no
 certifica hardware ni aprueba los contratos cuestionados.
 
-Checkpoint vigente: `8087e25` incorpora rondas 2/3 y R36/R37 implementados.
+Checkpoint histórico: `8087e25` incorpora rondas 2/3 y R36/R37 implementados.
 Marker v2/receipt v3 prueban replay comprometido sin confundir un retry nuevo;
 schema DB sigue 2. Reserva audio-only canónica con revisión origen NULL/cero
 revisiones previas conserva fechas captura NULL. Reviews acotadas marcan NB1 y
@@ -228,11 +228,35 @@ del primer marker, aislamiento de recibo JSON no-objeto y cancelación de captur
 que diverge entre catálogo failed y UI/manifest cancelled. GR1/GR2/GR3 están OPEN,
 source verdict changes requested; review global provisional hasta suplemento docs
 comprometido. Aún requieren corrección/verificación; no se reabre NB1/NB2 addressed.
-Wheel/sdist nuevos verifican el source exacto con probe no editable65/schema2/
+Wheel/sdist nuevos verifican el source exacto con probe no editable65/schema 2/
 FTS5/FK/integrity. Un timeout intermedio de hijo se conserva, pasó luego sin cambios
 aislado y en foco final; no se probó causa ni modificó deadline alguno.
 No hay certificación nueva de hardware, proveedor o instalación limpia, ni cierre
 del grupo A o de M2. La versión sigue en 0.2.0 hasta el cierre de hito previsto.
+
+Checkpoint vigente: root `7bfd0cb` integra Green `ec55b95`, con source/tests iguales.
+La review global única terminó changes requested para GR1–GR3; GD1/GD2 Minor se
+corrigieron en `7be93af`. R38 implementado sella hashes exactos de manifiesto
+prospectivo y artefactos con roles validados en marker 3 antes del replace final.
+La intención sin resultado final coincidente permanece con aviso, sin importar el
+resultado anterior ni llamar al proveedor. El cutover privado de fallo/cancelación
+precede la primera publicación, con una identidad y la causa/audio originales.
+Recibos malformados se retienen con aviso sin abortar vecinos válidos. Se mantienen
+lectura markers 1/2, recibos 2/3 y schema 2. RED original: 11 fallos/1 control pasa;
+control nuevo ejecutado primero contra candidato dio 1 fallo/5 deselected/3,93 s
+por aviso ausente, preservando revisión previa/bytes/marker. Foco final tras fix:
+26 pasan/34,46 s; foco afectado previo al único fix de aviso: 404/1 skip/159,03 s.
+Ruff/format de nueve archivos limpios y mypy comparativo 79/79 sin mensajes nuevos.
+Build wheel/sdist y probe no editable nuevos pasaron: 65 archivos iguales,
+schema 2/FTS5/FK/integrity. Full 3 dio 8 fallos/945 pasan/7 skips/364,23 s;
+ambos smokes wheel pasaron. Dos wrappers de test_capture_recovery rechazan el
+callback aditivo; corrección de forwarding conserva assertions/cortes de crash,
+sin cambio de fuente de producto. Corrección test-only ef70f78 integrada con
+114 assertions/cortes intactos; foco 13 pasa 24,82 s y full 4 pasa 953/7/358,94 s.
+XML 960/0F/0E/7S/interno 358,621 s; ambos smokes wheel pasan sobre la misma fuente
+y wheel exactos. Falta re-review independiente final acotada. GR1–GR3 permanecen
+OPEN hasta el veredicto. Sin aceptación de
+tarea/grupo/hito, CI/Copilot/merge ni certificación nueva.
 
 La instrucción R35 exige primero cierre completo y merge de A y sus PRs docs de
 contratos necesarios. Solo entonces root crea chats separados M2 B y M3 A, con
@@ -245,11 +269,10 @@ M4 B. No se reinicia trabajo, cambian criterios ni se anuncia versión 0.3.0 aho
 
 ## Lo que queda pendiente de decidir
 
-- Si el índice FTS5 se construye en el grupo A (junto con la revisión activa) o se
-  difiere al B. Default: en A, como índice derivado sin consulta de producto, para que
-  B pueda probar que el borrado lo purga.
-- Ubicación exacta de la DB cuando `HERE_DATA_DIR` apunta a una carpeta de red o
-  sincronizada. Default: permitirla con advertencia visible, sin recomendarla.
+- FTS5 ya adoptado e implementado en A como índice derivado sin consulta de producto;
+  B debe verificar que su borrado lo purga.
+- Raíz remota/no probada local ya resuelta por ruling 24: rollback journal y aviso
+  visible, manteniendo la raíz configurada sin recomendarla.
 - Tamaño de lote y política de progreso para importar un `TRANSCRIPTIONS_DIR` grande.
   Default: una sesión por transacción, progreso por conteo, cancelable entre sesiones.
 

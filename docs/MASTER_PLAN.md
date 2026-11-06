@@ -117,12 +117,21 @@ en `ACCEPTANCE.md`, sin sustituir CI del grupo.
 La tarea 2 conserva raw y segmentos en todos los recorridos. La tarea 3 integró
 las rondas 2/3 en `8087e25`: reviews acotadas marcan originales F1–F7, NB1 y NB2
 ADDRESSED. El full histórico `1f1bc88` dio cinco fallos/920 pasan/7 skips; sus
-correcciones tienen cobertura, y el full nuevo pasa 940 tests/7 skips en 325,09 s.
-La review de todo A sigue en curso con tres Important provisionales de replay tras
-metadata, aislamiento de recibos inválidos y divergencia de catálogo al cancelar
-captura. GR1–GR3 están abiertos; source verdict changes requested, suplemento docs
-pendiente antes del veredicto final global. Faltan correcciones y sus verificaciones,
-además de todos los gates de GitHub.
+correcciones tienen cobertura; su full histórico pasa 940 tests/7 skips en 325,09 s.
+La review única de todo A terminó con veredicto fuente/docs changes requested por
+GR1–GR3 Important: replay tras metadata, aislamiento de recibos inválidos y
+divergencia de catálogo al cancelar captura. La tanda única de fixes R38 está
+integrada en `7bfd0cb`, equivalente a Green `ec55b95`, con foco final de grupo y
+recovery de 26 pasan/34,46 s. Marker 3 sella evidencia final antes de metadata;
+recibos 2/3 y schema 2 se conservan. GR1–GR3 siguen abiertos hasta una re-review
+independiente acotada. El full de 940/7 corresponde al histórico `8087e25`; falta
+el veredicto final acotado y todos los gates de GitHub. Full 3 de `7bfd0cb` dio ocho fallos/
+945 pasan/siete skips en 364,23 s, por dos wrappers de tests de captura que rechazan
+el callback aditivo. Sus assertions/cortes de crash se conservan al reenviarlo.
+La corrección test-only `ef70f78` pasó foco13/24,82 s y full 4:953 pasan/7 skips/
+358,94 s, ambos smokes wheel pasan con el mismo source/probe no editable exacto.
+Los fallos históricos permanecen y la review final de docs sigue pendiente. No se presenta como
+aceptado el grupo ni el hito.
 El ciclo
 de vida/borrado y el cierre de M2 siguen pendientes; no cambia la versión a 0.3.0
 hasta cerrar el grupo B. Su PLAN ajustado se entrega antes en un PR de docs según

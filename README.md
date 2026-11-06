@@ -175,13 +175,27 @@ work without repeating transcription. A failed provider retry keeps the previous
 complete revision active. Ordinary application retry still requires an explicit
 action and the provider credential.
 
-M2 is not released or complete. Source `8087e25` includes scoped fixes for repeat
-publication/replay and legacy audio-only recovery. The catalog uses version-2
-pending markers and version-3 publication receipts while its DB schema stays 2.
-The integrated suite passes 940 tests with seven symlink skips; whole-group
-review has three provisional findings concerning crash replay, malformed receipt isolation and capture-cancellation
-catalog state. GR1–GR3 remain open; final docs review is pending. Current results,
-remaining corrections and hosted CI/Copilot gates are tracked in [STATUS.md](STATUS.md).
+Before final session metadata is committed, the application seals its local
+publication intent against the actual final artifact bytes. Startup publishes
+only matching final evidence; an unfinished or changed result stays preserved
+with a recovery warning. Malformed managed receipts are retained with warnings
+while valid neighboring meetings can rebuild. Accepted cancellation during capture
+failure persistence is finalized before the first catalog publication, preserving
+the original capture error and audio under the same meeting.
+
+M2 is not released or complete. Integrated source `7bfd0cb` implements the combined
+GR1–GR3 fixes. Final pending markers use version 3; readers accept markers 1/2,
+publication receipts remain version 3 with version-2 compatibility, and the DB
+schema stays 2. The final group/recovery focus passes 26 tests. The earlier
+940-pass/seven-skip full belongs to historical source `8087e25`. New full 3 at
+`7bfd0cb` reports eight failures/945 passes/seven skips: existing capture-recovery
+test wrappers reject the additive precommit callback. Both wheel smokes pass.
+The test-only wrapper correction is integrated at `ef70f78`; its 13-case focus
+passes and full 4 passes **953 tests/seven symlink skips in 358.94s**, including
+both wheel smokes on unchanged product source. Final scoped independent re-review
+remains pending. GR1–GR3 remain open
+until that review. Current evidence and hosted CI/Copilot/merge gates are tracked
+in [STATUS.md](STATUS.md).
 The packaged 0.2.0 delivery above retains its recorded M1 scope.
 
 ## Audio Diagnostics

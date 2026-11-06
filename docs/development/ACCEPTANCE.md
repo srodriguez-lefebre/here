@@ -12,11 +12,11 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M1 | Provider/timestamps and diarization | Synthetic real-provider run and segment output inspected | Single/multiple-source TTS smokes passed; long transcription/diarization omitted by explicit user instruction |
 | M1 | Failure/crash/network/disconnection/disk-pressure recovery | Fault-injection plus bounded hardware run | PR12 faults, writer/publication process kills and helper-owner death passed; native recoverable saved failure passed; no repeated installed fault matrix claim; long run omitted by user |
 | M1 | Installed application opens, records and uninstalls | Fresh Windows installation and bundled-runtime smoke | Incorporated-source `1740b2d` local Windows 11 frozen GUI/CLI, Start launch, active-update refusal, reinstall/uninstall and data preservation passed; recording retains earlier source evidence; distribution peer review/clean hosted package CI/merge pending |
-| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | Tareas 1/2 aceptadas localmente; fuente 8087e25 con F1–F7/NB1/NB2 addressed en reviews acotadas y full 940/7/325,09 s. Review de grupo en curso con tres Important provisionales; sin aceptación de tarea/grupo/hito; B abierto |
-| M2 · criterio 2 | Grabación, archivo y retry comparten persistencia de aplicación | CLI delega a SessionProcessor, artefactos y fallos compatibles | Consolidación de artefactos verificada localmente en M2A-T2-FOCUS-20261105 y M2A-T2-CAPTURE-RECOVERY-20261105; integración con catálogo y CI pendientes |
-| M2 · criterios 6–7 | Segmentos nullable y pausa sin desplazar el WAV | Cinco recorridos con proveedor fake, procedencia y seek de marcas en WAV sintético | Verificados automáticamente en local: M2A-T2-FOCUS-20261105; ordinal en catálogo depende de tarea 3; no certificación de captura o proveedor |
+| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | Tareas 1/2 aceptadas localmente; tanda GR1–GR3 en 7bfd0cb y fixture test-only ef70f78. Full4 verde 953/7/358,94 s, ambos smokes wheel; full 3 fallido conservado. Re-review final/CI pendientes; GR1–GR3 OPEN, sin aceptación; B abierto |
+| M2 · criterio 2 | Grabación, archivo y retry comparten persistencia de aplicación | CLI delega a SessionProcessor, artefactos y fallos compatibles | Consolidación verificada en focos de tarea 2; integración de catálogo implementada en 7bfd0cb con foco final 26; aceptación agregada/re-review final/CI pendientes |
+| M2 · criterios 6–7 | Segmentos nullable y pausa sin desplazar el WAV | Cinco recorridos con proveedor fake, procedencia y seek de marcas en WAV sintético | Verificados automáticamente en focos de tarea 2 y catálogo implementado en tarea 3; agregado/re-review final pendientes; sin certificación de captura/proveedor |
 | M2 · criterio 8 | Migración transaccional, backup administrado y rechazo de esquema futuro | FK/integrity, rollback de DDL y snapshot SQLite API con WAL comprometido | Verificado automáticamente en local: M2A-T1-LOCK-GREEN-20261105 y M2A-T1-FINAL-20261105; CI del grupo pendiente |
-| M2 · criterio 14 | Busy tipado y acotado, sin trabajo de proveedor/archivos en transacción | Segunda conexión real con bloqueo de escritura y EXCLUSIVE sobre lecturas | Base de repositorio verificada automáticamente en local: M2A-T1-LOCK-GREEN-20261105; falta publicación de tarea 3 y CI del grupo |
+| M2 · criterio 14 | Busy tipado y acotado, sin trabajo de proveedor/archivos en transacción | Segunda conexión real con bloqueo de escritura y EXCLUSIVE sobre lecturas | Base verificada en tarea1 y publicación implementada en tarea 3, con focos de recuperación Busy; agregado/re-review final/CI pendientes |
 | M2 · criterio 15 | Suite completa en CI de Windows sin credencial real ni display | Corrida hospedada sobre el head exacto del PR M2 A | Pendiente; M2A-T1-FINAL-20261105 es local y no cierra esta fila |
 | M2 | Deletion clears managed memory without resurrection | DB/FTS/files/answers/backup inspection after restart | Open |
 | M3 | Listing/filter/search and original moment navigation | End-to-end Qt selection and seek plus real WAV marker playback | Open |
@@ -40,9 +40,12 @@ ninguna observación corta certifica una ejecución larga.
 Los checkpoints locales de tareas 1/2 no cierran M2. La implementación de tarea 3
 aporta ingestión, FTS, revisiones inmutables e integración de productores. Su
 primer candidato pasó la suite estable y recibió siete correcciones. Reviews
-acotadas de rondas 1–3 marcan F1–F7/NB1/NB2 addressed; full 8087e25 pasa 940/7.
-La review del grupo sigue en curso con tres Important provisionales; B y CI
-del grupo siguen abiertos. Los smokes reales de proveedor
+acotadas de rondas 1–3 marcan F1–F7/NB1/NB2 addressed; full histórico 8087e25 pasa
+940/7. La review global única terminó changes requested por GR1–GR3. La tanda
+R38 está integrada en 7bfd0cb, con foco final 26/34,46 s y probe wheel nuevo;
+full 3 fallido por wrappers permanece histórico. Corrección test-only ef70f78
+pasa foco 13/24,82 s y full 4:953/7/358,94 s; re-review final/B/CI del grupo siguen
+abiertos. Los smokes reales de proveedor
 autorizados por ruling 19/20 usan solo audio y texto sintéticos; no se ejecutaron
 en estos checkpoints. No se leyó el
 `.env` real, la biblioteca del usuario ni grabaciones privadas. La matriz y las
@@ -347,7 +350,7 @@ siguen pendientes en STATUS; no se creó ni inició ningún frente. Los PRs docs
 contratos necesarios preceden al despacho, y los criterios/privacidad/calidad de
 cada hito no cambian.
 
-### Checkpoint vigente 8087e25 — rondas 2/3 y full integrado 2
+### Checkpoint histórico 8087e25 — rondas 2/3 y full integrado 2
 
 Root `8087e252112fd2e6de1efeff1d0f3f531d4be77d` equivale a Green
 `4a3cb7ced77a73046098e20cb34aeb00af0e6f61`; src tree
@@ -411,7 +414,7 @@ fix de esos tres caminos. El full verde no los resuelve: faltan
 RED/GREEN/re-review y verificación posterior, aceptación del
 grupo y todos los gates de PR/Copilot/WindowsCI/merge.
 
-| Nivel vigente | Resultado y límite |
+| Nivel en ese checkpoint histórico | Resultado y límite |
 |---|---|
 | 1 · Implementado | Fuente 8087e25 y fixes acotados con suite pasando; tarea/grupo aún sin aceptar por review global pendiente |
 | 2 · Verificado automáticamente | Focos 61/69/3/27, full 940/7 y wheel exacto; evidencia local sintética, hosted CI pendiente |
@@ -420,6 +423,93 @@ grupo y todos los gates de PR/Copilot/WindowsCI/merge.
 R35 conserva prioridad: cerrar/mergear A y PRs docs de contratos antes de crear los
 dos chats de proyecto B/M3 A. IDs/ramas/worktrees/base mergeada/responsables pendientes;
 ninguno creado. Versión 0.2.0; meta final 1.0.0 y requisitos de calidad/privacidad intactos.
+
+### Checkpoint vigente 7bfd0cb — tanda única de fixes GR1–GR3
+
+Root `7bfd0cbf477a42aacc44b83b3d2da1e438801756` integra Green
+`ec55b9564d3af01247d3367675a340a361f6b6ef`. Lectura Git independiente confirma
+src tree `2b4036f7deb905efb0a8836f378d267a066564b4` y tests tree
+`a4310416bd10dc922b49e010d8495a98bfdfd585` iguales. La review global única de
+763a891..8087e25 y suplemento e00dd08 terminó **changes requested** para GR1–GR3;
+GD1/GD2 Minor se corrigieron en7be93af. Queda una re-review acotada de tanda más
+docs/evidencia. GR1–GR3 siguen **OPEN** hasta veredicto independiente final, sin
+aprobación de tarea/grupo/hito. Su inspección provisional de fuente los considera
+ADDRESSED sin nuevo breakage accionable, pero no es el veredicto técnico final.
+
+R38 implementado: marker 3 con token/padre/source kind/intent y hashes exactos del
+manifiesto prospectivo y artefactos con roles validados se persiste antes del
+replace final de metadata. Evidencia final ausente/distinta o manifest pending
+se conserva con aviso, sin adoptar resultado anterior ni llamar al proveedor;
+el aviso pending aparece en `RecoveryCandidate.error_summary`. El controller real
+difiere la primera publicación de fallo de captura hasta sellar cancelación
+aceptada, conservando una identidad/revisión parcial y audio/causa originales.
+Receipts malformados se retienen y avisan por meeting sin abortar vecinos válidos.
+Readers marker 1/2, receipts 2/3, schema 2, privacidad, conflictos y fechas NULL de
+audio-only se conservan; no cambia proceso/deadline/dependencia/versión.
+
+| Corrida local | Resultado real | Límite |
+|---|---|---|
+| RED independiente 8087e25, cuatro logs secuenciales | 11 fallan/1 control pasa, 12 casos; 27,48 s sumados | Control13 posterior autorado sin ejecución baseline |
+| Primer GREEN, 12 casos | 12 pasan/21,67 s | Antes del control adicional |
+| Compatibilidad afectada, 21 archivos | 404 pasan/1 symlink skip/159,03 s | Antes únicamente del último fix de aviso pending-v3; no ejecución post-fix |
+| Control extra sobre candidato antes del fix de aviso | 1 falla/5 deselected/3,93 s | Falta aviso visible; R1/interrupted/bytes/marker preservados |
+| Foco final de grupo y recovery | 26 pasan/34,46 s | Todos los 13 casos de grupo más malformed-marker/legacy ownership/NB2; no suite completa |
+
+Logs `.superpowers/group-fix-focus.txt`, `group-fix-compatibility.txt`,
+`group-fix-seal-warning-red.txt`, `group-fix-final-focus.txt`; reportes retenidos
+`group-red-report.md` y `group-fix-implementation-report.md` en el ledger local.
+Lectura de summary RED/GREEN confirma resultados; docs no ejecutó tests/imports.
+Ruff/format de nueve archivos pasan; mypy canónico baseline 8087/current: 79 errores/
+20 archivos/65 fuentes en ambos, mensajes nuevos `{}`. Es no regresión comparativa,
+no una base mypy global limpia.
+
+Wheel/sdist nuevos CPython3.13.15 y probe off-repo `-I` no editable en
+`.superpowers/m2a-wheel-catalog-probe-7bfd0cb.json`, observado
+2026-11-06T00:43:49.472905Z: 65 archivos Python byte-idénticos, schema 2/FTS5;
+root informa foreign_key_check vacío/integrity_check=ok. Lectura del probe confirma
+head, hashes, formato no editable y ausencia de hardware/proveedor.
+
+| Artefacto de 7bfd0cb | SHA-256 |
+|---|---|
+| here-0.2.0-py3-none-any.whl | `e2f9c3ff09a5d5b41fcec9c35c1fab149294e9901f276e042bd2ce0bd12b0827` |
+| here-0.2.0.tar.gz | `499d9249202451e95dafb3718dd78f2004bc825659f5810659f401a5707e92ee` |
+
+**Full 3: 8 fallan/945 pasan/7 skips en 364,23 s**, iniciado solo a
+2026-11-06T00:44:04.5472024Z con wheel nuevo; logs/XML
+`.superpowers/m2a-integrated-final-3.txt`/`.xml`. Lectura independiente confirma
+XML 960 casos/8 failures/0 errors/7 skipped/interno 362,276 s; los dos casos de
+wheel cli_main/gui_main no tienen failure/skip y pasan (3,593 s/2,747 s).
+
+Los ocho fallos son TypeError por `before_metadata_commit` no aceptado por dos
+wrappers de `tests/test_capture_recovery.py`, en el hijo real y `publish_at`
+simulado. Afectan fases reales pending/final_before/final_after/remove y simuladas
+pending_before/pending_after/final_before/final_after. El autor RED corrige solo
+forwarding del keyword opcional en ambos wrappers conservando assertions y cortes
+de crash. Corrección autor `c3a3ccbcf2928502cbf0d0881fdfee3d7f86d84a` integrada en
+root `ef70f78cfc9c8f2910e77b2b2818ce2e6b4d71ae`, solo tests; foco 13 (6 reales/
+7 simulados) pasa en24,82 s, leído en log real. Autor compara 114 assertions
+idénticas por AST; lectura del diff confirma wrappers y cortes intactos. SHA del
+archivo `5E542C069A811CC3F209B55815EC52B5D953ED5F977699AF18D7C86B9582E134`;
+reportes `capture-fixture-forwarding-report.md`/`capture-fixture-forwarding-focus.txt`.
+Source tree sigue `2b4036f7deb905efb0a8836f378d267a066564b4`; tests tree nuevo
+`30c88848b3cf42c9ce4443328e3c8e0100e2af44`. Full 4 empezó solo a
+2026-11-06T00:54:42.9822634Z, log/XML `.superpowers/m2a-integrated-final-4.*`;
+**953 pasan/7 skips/cero fallos en 358,94 s**. Lectura independiente de log/XML:
+960 casos/0 failures/0 errors/7 skipped/interno 358,621 s; ambos wheel CLI/GUI
+pasan sin failure/skip (3,018 s/2,634 s). Root confirma exit 0. Los siete skips son
+los mismos privilegios symlink, nunca tests aprobados. No cambia producto; el wheel/probe 7bfd sigue
+siendo exacto para fuente sin cambios. El full anterior940/7 no prueba este head.
+
+| Nivel vigente | Resultado y límite |
+|---|---|
+| 1 · Implementado | Tanda R38 integrada 7bfd0cb y fixture test-only ef70f78 con full 4 pasando; GR1–GR3 OPEN hasta re-review final, sin aceptación |
+| 2 · Verificado automáticamente | RED/GREEN/foco 26, fixture 13, static sin nuevos errores, wheel/probe exacto y full 4:953/7/358,94 s con ambos smokes pasando; full 3 fallido conservado; CI pendiente; datos sintéticos |
+| 3 · Certificado | Sin nueva certificación hardware/proveedor/instalador/upgrade limpio; dos horas omitida por ruling 5 |
+
+R35 exige merge A y PRs docs de contratos antes de chats B/M3 A; siguen sin crear.
+Versión 0.2.0, criterios, calidad/privacidad y meta 1.0.0 intactos. Copilot sobre head
+actual, CI Windows exacto y merge guardado pendientes. Todas las suites fallidas
+anteriores y el timeout de causa no probada conservan fuentes y límites originales.
 
 ## Runs
 

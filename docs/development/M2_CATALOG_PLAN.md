@@ -5,9 +5,15 @@
 > syntax. **Status: in execution since 2026-11-05 (ruling 20).** Task 1 independent
 > review accepted after its Busy correction. Task 2 SPEC/quality review passed;
 > local suite evidence is recorded below. Source `8087e25` includes scoped fixes
-> through round 3: original F1–F7, NB1 and NB2 addressed. Full 2 passes 940/seven skips; whole-group
-> review remains pending, with three provisional Important group findings. No task/group
-> approval or current-head Windows/Copilot gate is complete.
+> through round 3: original F1–F7, NB1 and NB2 addressed. The final whole-group
+> source/docs review requests changes for GR1–GR3; their single combined fix is
+> integrated at `7bfd0cb`, with final group/recovery focus 26 passed/34.46s.
+> Full 2's 940/seven skips belongs to historical `8087e25`. Full 3 at `7bfd0cb`
+> has eight test-wrapper failures/945 passes/seven skips, retained historically.
+> Test-only correction `ef70f78` passes focus13 and full4:953/seven skips/358.94s.
+> Final scoped re-review remains pending; GR1–GR3 stay OPEN
+> until review. No task/group approval
+> or current-head Windows/Copilot gate is complete.
 
 **Goal:** Durable meeting identity, immutable transcript revisions and one
 application-owned persistence path, rebuildable from files and usable without a key.
@@ -272,7 +278,7 @@ Both noneditable-wheel smokes pass. Fresh wheel/sdist and off-repo `-I` probe ve
 65 byte-identical Python files, schema2/FTS5/FK/integrity; local automatic evidence
 only. New suite, re-review and whole-group approval remain required before PR gates.
 
-### Current source checkpoint after rounds 2/3
+### Historical source checkpoint after rounds 2/3
 
 Root `8087e252112fd2e6de1efeff1d0f3f531d4be77d` matches Green
 `4a3cb7ced77a73046098e20cb34aeb00af0e6f61`: src tree
@@ -305,7 +311,7 @@ Full 2 started alone at 2026-11-06T00:01:58Z on root `8087e25`, log/XML
 smokes pass; seven skips need symlink privilege.
 Fresh wheel/sdist and off-repo noneditable `-I` probe on that source verify 65
 byte-identical Python files/schema2/FTS5/FK/integrity. Previous full/probes remain
-historical. Whole-group source review is still in progress with three provisional
+historical. At that checkpoint, whole-group source review was in progress with three provisional
 Important paths: completed metadata before the first durable pending marker, and
 non-object receipt JSON aborting valid rebuild siblings, and accepted capture-failure
 cancellation diverging between cancelled manifest/UI and failed catalog with conflict/
@@ -315,6 +321,69 @@ docs supplement. Cover all three with coordinated RED/GREEN/re-review; preserve
 one meeting, original capture-error/audio evidence and ordinary identity-conflict
 rules. Do not restart already addressed NB1/NB2.
 Closing checkboxes remain unchecked pending aggregate results/review and hosted gates.
+
+### Current source checkpoint — combined GR1–GR3 fix wave
+
+Root `7bfd0cbf477a42aacc44b83b3d2da1e438801756` integrates Green
+`ec55b9564d3af01247d3367675a340a361f6b6ef`; source tree
+`2b4036f7deb905efb0a8836f378d267a066564b4`, tests tree
+`a4310416bd10dc922b49e010d8495a98bfdfd585`. Source/tests/config/scripts/workflow
+diff is empty. The single final whole-group review of `763a891..8087e25`, including
+docs supplement `e00dd08`, requests changes for GR1/GR2/GR3 Important/P2. GD1/GD2
+minor checkpoint corrections are in `7be93af`; no second whole-source review is
+planned. GR1–GR3 remain OPEN until one scoped independent re-review of this wave.
+
+R38 is implemented: every final producer output seals marker 3 in the writer's
+internal pre-metadata-commit callback after subordinate artifacts exist. Its exact
+`hashes` include prospective final manifest bytes and role-validated artifacts,
+alongside the same token, expected parent, intent and source kind. Pending or
+unmatched final evidence stays byte-preserved with a warning and no provider or
+old-result revision; discovery uses existing `RecoveryCandidate.error_summary`.
+Markers 1/2 and receipts 2/3 remain compatible; DB stays schema 2. The real
+controller's private capture-failure deferral seals accepted cancellation before
+the first catalog publication, preserving one canonical/optional identity, one
+partial revision and original capture error/audio. Direct calls/injected processors
+keep their contracts. Receipt container validation isolates malformed meeting
+trees, preserving them and rebuilding good siblings with warning/JSON results.
+
+Independent baseline RED: 12 cases, 11 failures/1 interrupted-attempt control PASS,
+four sequential logs totaling 27.48s. The thirteenth control was authored without
+baseline execution; on the new candidate it first failed only the missing visible
+pending-v3 uncertainty warning (1 failure/5 deselected/3.93s), while preserving
+R1/interrupted status/source bytes/marker. After the narrow warning correction,
+final group plus recovery focus passes **26 cases in 34.46s**, covering all 13 group
+cases and malformed-marker/legacy-ownership/NB2 controls. First 12 GREEN passed
+in 21.67s. Earlier affected compatibility focus passed **404/1 symlink skip in
+159.03s**, before only the final pending-v3 warning correction; do not relabel its
+source as the final post-correction source. Ruff/format pass on nine touched files;
+canonical comparative mypy against `8087e25` is 79 errors/20 files/65 source files
+in both baseline/current, with no new diagnostic messages, not a clean base.
+
+Root fresh wheel/sdist build and isolated noneditable probe have passed for
+`7bfd0cb`: 65 byte-identical source files, schema 2/FTS5 and root-reported FK/
+integrity checks. Full 3 reports **8 failed/945 passed/7 skipped in 364.23s**,
+XML 960 cases/8 failures/0 errors/7 skips/internal 362.276s. Both wheel smokes pass.
+All eight traces identify two existing capture-recovery monkeypatch wrappers
+rejecting additive `before_metadata_commit`. The independently authored narrow
+test-only correction must forward that optional callback through both wrappers,
+retaining every assertion/crash cutpoint; no production change is diagnosed.
+Correction author `c3a3ccbcf2928502cbf0d0881fdfee3d7f86d84a` is integrated as
+`ef70f78cfc9c8f2910e77b2b2818ce2e6b4d71ae`; only the two wrapper signatures/
+delegations change, 114 assertions and all crash cutpoints intact. Its focus passes
+13 in 24.82s (6 real kills/7 simulated), and current root full 4 passes **953/
+7 symlink skips in 358.94s**, XML 960/0 failures/0 errors/7 skips/internal 358.621s.
+Both wheel smokes pass. Full 4 began alone at 2026-11-06T00:54:42.9822634Z;
+`.superpowers/m2a-integrated-final-4.*`. Source tree remains
+`2b4036f7deb905efb0a8836f378d267a066564b4`; tests tree now
+`30c88848b3cf42c9ce4443328e3c8e0100e2af44`. The existing fresh `7bfd0cb` wheel/probe
+is reused because product source/config/scripts/workflows are unchanged; no
+redundant build or fabricated new artifact hash. Final scoped docs verdict pending.
+Historical full 2 at
+`8087e25` is valid 940/7/325.09s evidence for its own source, not this head. All
+earlier failed suites and the unchanged/unexplained child timeout remain above and
+in ACCEPTANCE/DELIVERY/evidence. No source-level fix verification closes a review
+finding or accepts Task 3/group A/M2. PR/Copilot/exact-head Windows CI/guarded merge
+remain pending; version is 0.2.0, with no new certification or future front started.
 
 ## Closing the group
 

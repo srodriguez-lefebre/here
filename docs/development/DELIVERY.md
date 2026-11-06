@@ -397,7 +397,8 @@ Los rulings nuevos se escriben en español por el ruling 6.
     original de captura. Hashes, copias y proveedor quedan fuera de transacciones
     SQLite. No cambia ningún flujo, dependencia, proceso, deadline, versión ni
     definición de terminado. Es diseño autorizado para una única tanda GR1–GR3,
-    todavía pendiente de RED/GREEN/re-review. **Cost if wrong:** ajustar el sello,
+    implementado en la tanda integrada `7bfd0cb`, con RED/GREEN/foco local y
+    re-review independiente final pendiente. **Cost if wrong:** ajustar el sello,
     su compatibilidad y el handoff de cutover, conservando evidencia incierta y
     las precondiciones de revisión, sin aceptar como final un intento incompleto.
 
@@ -1254,3 +1255,132 @@ with serialized migrations/pyproject/version and exclusive sensitive suites.
 Prepared four B/M3 A docs in m2-segments were not changed by this writer. Version
 remains 0.2.0; 0.3.0 only at B/M2 closure; final 1.0.0 goal and real acceptance
 requirements remain intact.
+
+## 2026-11-06 — Combined GR1–GR3 wave integrated, full 3 in progress
+
+Root `7bfd0cbf477a42aacc44b83b3d2da1e438801756` integrates Green
+`ec55b9564d3af01247d3367675a340a361f6b6ef`. Read-only docs-author Git inspection
+confirms matching source tree `2b4036f7deb905efb0a8836f378d267a066564b4` and tests
+tree `a4310416bd10dc922b49e010d8495a98bfdfd585`; root reports empty source/tests/
+config/scripts/workflow diff. Exactly six production files and three independently
+authored new regression files; no dependency, schema migration, version, process,
+protocol, deadline or product-flow change. Worker tracked files are clean; existing
+untracked uv-setup.log was preserved. This is integration, not acceptance or merge.
+
+The single whole-group source/docs review is final changes requested on
+763a891..8087e25 plus committed docs supplement e00dd08: GR1–GR3 Important/P2,
+GD1/GD2 Minor/P3. Minor checkpoint corrections are committed in 7be93af. There is
+one scoped independent re-review of the combined wave and documentation, not a
+second whole-group review or restart of NB1/NB2. Provisional source inspection
+considers GR1–GR3 ADDRESSED with no new actionable breakage; final source/docs
+verdict awaits committed documentation and actual full 3 evidence. Keep GR1–GR3
+OPEN until that final independent verdict. Hosted gates remain pending.
+
+R38 implemented: all final producer paths call the output writer's internal
+before_metadata_commit callback after subordinate artifacts and before the actual
+final session.json replace. Marker3 retains token, expected parent, original
+optional ID, source kind and intent, adding exact role-validated hashes including
+the actual staged prospective manifest bytes. A pending/unmatched final outcome
+retains source/marker bytes with visible uncertainty through the existing
+RecoveryCandidate.error_summary; it cannot adopt the old result or invoke the
+provider. Markers1/2 remain readable without invented seal/proof; receipts 2/3 and
+DBschema 2 stay unchanged. Real controller capture-failure publication is privately
+deferred through the existing cancellation cutover so one accepted cancelled
+outcome is sealed before first catalog ingest. Canonical and None-source-ID shapes
+retain one identity/partial revision, original capture error and audio. Direct
+persist_capture_failure and injected processors keep their contract. Receipt
+object/nested container/hash validation isolates malformed meeting trees with an
+identified warning while valid siblings/repeat discovery/maintenance JSON work.
+
+Independent RED original 12 cases:11 failures/1 passing interrupted-attempt control,
+four sequential retained logs totaling 27.48s. Initial GREEN 12 passed/21.67s. Affected
+21-file focus 404 passed/1 symlink-privilege skip/159.03s precedes only the narrow
+pending-v3 warning correction. The 13th additional pre-final-replace control was
+authored without baseline execution; actual run against the first candidate gave
+1 failure/5 deselected/3.93s, exactly absent visible uncertainty warning while old
+R1/interrupted state/source bytes/marker were preserved. After the narrow correction,
+final group plus recovery focus 26 passed/34.46s (all 13 group cases plus malformed
+marker, legacy-discovery ownership and NB2 controls). These overlapping runs are
+not summed as one suite. Raw logs .superpowers/group-fix-*.txt and implementation
+report group-fix-implementation-report.md are retained. Docs read final summaries,
+source diff and report; docs executed no tests/imports/build/mypy.
+
+Nine-file Ruff/format checks pass. Canonical mypy against8087e25: baseline/current
+79 errors in 20 files/65 source files; new touched-file diagnostic messages {}.
+This is comparative no-regression evidence, not globally clean typing. Formatting
+normalized mixed processor-call newlines only; assertions were not changed.
+
+Fresh CPython3.13.15 wheel/sdist build and off-repo -I noneditable probe passed on
+exact 7bfd0cb at 2026-11-06T00:43:49.472905Z. Probe
+.superpowers/m2a-wheel-catalog-probe-7bfd0cb.json confirms 65 byte-identical Python
+files/schema 2/FTS5; root reports empty FKcheck/integrity_check=ok. Artifact directory
+.superpowers/m2a-final-dist-7bfd0cb; wheel SHA256
+e2f9c3ff09a5d5b41fcec9c35c1fab149294e9901f276e042bd2ce0bd12b0827,
+sdist499d9249202451e95dafb3718dd78f2004bc825659f5810659f401a5707e92ee.
+No provider/hardware used. Both wheel-smoke outcomes await full 3 result.
+
+Full 3 started alone at 2026-11-06T00:44:04.5472024Z, source 7bfd0cb, fresh wheel;
+logs/XML .superpowers/m2a-integrated-final-3.*. Final result: **8 failed, 945 passed,
+7 skipped in 364.23s**. Docs independently parsed XML: 960 cases/8 failures/0 errors/
+7 skips/internal 362.276s. Both wheel CLI/GUI cases pass with no failure/skip nodes
+(3.593s/2.747s). All eight traces show TypeError for additive before_metadata_commit
+in two old test_capture_recovery publication wrappers, real-child publish and
+simulated publish_at. The independent RED author owns the narrow optional-keyword
+forwarding correction on codex/m2-capture-fixture; every assertion and real/simulated
+crash cutpoint stays intact. Its 13-case focus (6 real/7 simulated), test-only commit,
+root integration and corrected full 4 are pending; no product source fix diagnosed.
+Current source/wheel/probe 7bfd remain exact if only tests change. Historical full2
+at 8087e25 remains valid 940 passes/7skips/325.09s with both wheel smokes passing for
+its own source; full1's five failures/920 passes/7 skips and prior diagnostics/timeout
+remain preserved. No passing aggregate is claimed for the new source.
+Evidence levels: implementation integrated with final focused GREEN; automatic
+local synthetic focus/static/wheel evidence, failed full 3 and corrected full 4/hosted CI
+pending; no new hardware/provider/clean-install certification. Task 3/group A/M2
+remain unaccepted; version 0.2.0, 0.3.0 only at B/M2 closure. Two-hour acceptance
+remains omitted by ruling 5. No new ruling or DoD change. R35 still requires A
+merge plus required contract-doc PR merges before root creates project chats B/M3 A;
+IDs/branches/worktrees/executors/real merged-A base stay pending, none created.
+Prior future docs/fixtures remain untouched. Copilot received/responded on current
+head, exact-head Windows CI, guarded admin merge and ledger remain required.
+
+## 2026-11-06 — Current integrated full 4 green; final scoped docs verdict pending
+
+Execution head ef70f78cfc9c8f2910e77b2b2818ce2e6b4d71ae integrates the TEST-ONLY
+fixture correction c3a3ccbcf2928502cbf0d0881fdfee3d7f86d84a. It changes only two
+publication-wrapper signatures/delegations in tests/test_capture_recovery.py to
+accept/forward optional before_metadata_commit. All 114 assertions are identical
+by author AST comparison; all real/simulated crash cutpoints and deadlines remain.
+Docs independently read the committed 24-line diff and report and final focus log:
+13 passed in 24.82s, covering six real kills/seven simulated crashes. File SHA256
+5E542C069A811CC3F209B55815EC52B5D953ED5F977699AF18D7C86B9582E134. Report/log:
+.superpowers/sdd/M2_CATALOG_PLAN/capture-fixture-forwarding-report.md and
+capture-fixture-forwarding-focus.txt. No product source changed.
+
+Product source tree remains 2b4036f7deb905efb0a8836f378d267a066564b4 from 7bfd0cb;
+tests tree is now 30c88848b3cf42c9ce4443328e3c8e0100e2af44. Root verifies no
+source/config/scripts/workflow diff. The existing fresh 65-file noneditable wheel
+and probe of 7bfd0cb therefore remain exact; no redundant build or new artifact
+hash is claimed. Full 3's eight failures/945 passes/seven skips remain preserved
+above with their actual TypeError diagnosis, not relabeled as passed.
+
+M2A-INTEGRATED-FULL4-ef70f78 ran alone from 2026-11-06T00:54:42.9822634Z with
+QT_QPA_PLATFORM=offscreen, synthetic OPENAI_API_KEY and the same fresh noneditable
+wheel environment. Root exit 0; actual result **953 passed, 7 skipped in 358.94s**.
+Logs/XML .superpowers/m2a-integrated-final-4.txt/.xml. Docs independently read final
+summary and parsed XML: 960 cases, zero failures/errors, seven symlink-privilege
+skips, internal 358.621s. Both wheel smoke cases pass without failure/skip nodes:
+CLI 3.018s, GUI 2.634s. This is a passing current integrated full on unchanged product
+source plus the corrected test fixtures, not a new hardware/provider/installer
+certification or hosted CI result. All historical failed suites, old full2's
+940/7/325.09s and the unexplained unchanged child timeout retain their own scope.
+
+R38 is implemented and locally automatically verified. The same independent
+reviewer provisionally considers GR1–GR3/GD1/GD2 addressed and the narrow fixture
+accepted; the final source/docs verdict awaits this committed documentation
+supplement. GR1–GR3 formal status remains OPEN until that final independent
+assessment. No second whole-source review, new ruling, DoD change, task/group/M2
+acceptance or version bump. Version 0.2.0, two-hour omission under ruling 5 and final
+1.0.0 acceptance requirements remain unchanged. PR/current-head Copilot received/
+responded, exact-head Windows CI and guarded admin merge are pending. R35 still
+requires A merge plus necessary contract-doc PR merges before project chats B/M3 A;
+no chats or future-front execution have started, and future IDs/base remain pending.

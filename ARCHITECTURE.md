@@ -35,8 +35,12 @@ The main flow is:
 - `memory/`: immutable catalog DTOs, operation-owned SQLite connections, numbered
   migrations with managed backups, an explicit transaction repository, validated
   artifact ingestion and local revision publication/reconciliation. Scoped fixes
-  through round 3 are integrated; the local full passes 940/seven skips, while
-  whole-group review requests changes and hosted gates remain open.
+  through round 3 and the combined group-fix wave are integrated at `7bfd0cb`.
+  The final 26-case group/recovery focus passes; the earlier 940/seven-skip full
+  belongs to `8087e25`. New full 3 has eight capture-recovery test-wrapper failures,
+  945 passes/seven skips, now historical. Test-only correction `ef70f78` passes
+  its 13-case focus and full 4: 953 passed/seven skips in 358.94s, both wheel
+  smokes passing on unchanged source. Final scoped review and hosted gates remain open.
 - `ui/`: Qt Widgets presentation, the live-logo overlay, and the single adapter
   from visual actions to the application contract.
 
@@ -192,9 +196,12 @@ SQLite busy/locked errors from migration reads, repository reads and writes beco
 the recoverable `Busy` error, including the rollback-journal exclusive-lock case.
 
 Task 3 builds publication and producer integration on this foundation as described
-below. Source `8087e25` matches Green `4a3cb7c`; original F1–F7, NB1 and NB2 are
-addressed in scoped re-review. The integrated full passes 940 tests with seven skips; whole-group
-review has three provisional Important findings; exact-head hosted gates remain open.
+below. Original F1–F7, NB1 and NB2 are addressed in scoped re-review. The final
+whole-group review of `8087e25` requests changes for GR1–GR3. Their combined fix
+is integrated at `7bfd0cb`, with a 26-case group/recovery focus passing. Test-only
+fixture correction `ef70f78` has the current full 4 passing 953/seven skips; the
+one final scoped re-review remains pending. The earlier
+940-pass/seven-skip full retains its historical `8087e25` source.
 
 ## Catalog publication and local recovery (M2 A task 3)
 
@@ -224,9 +231,12 @@ With a missing catalog, managed receipts and state snapshots supply reconstructi
 evidence without reopening external origins. Unreceipted material is uncertain and
 is retained/reported. If DB commit knowledge and the receipt are both lost, recovery
 does not infer that the material was committed. Receipt/pending metadata are
-untrusted. The frozen candidate validates their artifact roles before reads/hashes,
-and generated state names before opening state files. Earlier missing-guard
-observations describe superseded source, not a current review finding.
+untrusted. Receipt envelope objects, nested mappings and arrays of objects are
+validated before mapping methods or referenced reads. A malformed meeting tree is
+retained with an identified warning; valid siblings can rebuild and maintenance
+JSON remains usable. Artifact roles precede reads/hashes, and generated state
+names precede state reads. Earlier missing-role-guard observations describe
+superseded source.
 
 Origin plus fingerprint makes ordinary import idempotent. Trusted explicit retry
 supplies the expected active revision under `revision_of`. Each explicit producer
@@ -256,16 +266,34 @@ constructor or catalog fails; no deadline/protocol changes. Abandoned
 recording/processing rows become interrupted. Remote/mapped/unproven-local Windows
 volumes use rollback journaling with a visible warning; proven local storage uses WAL.
 
-`SessionProcessor` publishes memory after compatible session artifacts exist,
-including capture-failure outcomes. Its version-2 `memory_pending.json` holds
-schema version, original optional meeting ID, expected revision, ingest/status
-intent, publication UUID and `source_kind` (`session`/`legacy_audio_only`). The
-reader also accepts marker 1 without fabricating provenance. Catalog failure keeps
-saved audio/text. The controller consumes its real processor's private
-directory/manifest-bound result once; injected processors retain a fallback.
-`RecoveryService.discover()` validates and replays that local intent without a
-provider call. Failed/cancelled retries with no new transcript update only durable
-state and retain the prior complete active revision, including during busy replay.
+`SessionProcessor` registers a version-2 intent before explicit producer work.
+Every final artifact path supplies the output writer's internal
+`before_metadata_commit` callback: after subordinate artifacts are published but
+before the final `session.json` replace, it durably writes marker 3. This preserves
+the original optional meeting ID, expected revision, ingest/status intent,
+publication UUID and `source_kind` (`session`/`legacy_audio_only`), and adds `hashes`.
+The seal contains the prospective `session.json` bytes and the exact recognized
+artifact inventory, using validated roles and lowercase SHA-256 values. Hashing
+remains outside SQLite transactions. Readers retain marker 1/2 compatibility
+without inventing a seal or provenance.
+
+`publish_memory` validates a sealed final manifest and the entire evidence map
+before catalog work. A pending manifest, unmatched inventory or changed bytes
+cannot authorize importing the previous result or removing uncertain intent.
+The marker and source bytes remain with a warning; pending-manifest discovery
+adds that warning to the existing `RecoveryCandidate.error_summary`. Matching
+final evidence replays locally without a provider call. Failed/cancelled retries
+with no new transcript update only durable state and preserve the previous complete
+active revision, including during busy replay.
+
+The real controller privately defers capture-failure catalog publication through
+the existing cancellation cutover. Any accepted cancellation reseals its final
+manifest and original error/audio evidence before the first catalog publication,
+preserving one meeting and one partial revision for canonical or optional source
+IDs. Direct `persist_capture_failure` and foreign injected processors keep their
+existing contracts. The private directory/manifest-bound result is still consumed
+once; injected processors retain a fallback. This handoff is separate from durable
+replay proof, and catalog failure keeps the saved audio/text.
 
 `MEMORY_INGESTED` follows `SESSION_PERSISTED` before terminal completion. Nonfatal
 catalog issues populate `ApplicationSnapshot.memory_warning`; the existing window
@@ -289,15 +317,25 @@ materialization upgrades and retains the leases before mutation. Missing-metadat
 journal candidates require canonical UUID before constructing/probing the path;
 existing manifests retain their optional/opaque source identity.
 
-Scoped reviews address NB1, NB2 and the five prior integrated failures. Full 2 on
-`8087e25` passes 940 tests/seven skips in 325.09s. Whole-group review has provisional Important findings for
-completed metadata committed before its first local marker and non-object receipt
-JSON aborting valid rebuild siblings, and accepted cancellation after capture-failure
-publication leaving manifest/UI cancelled but catalog failed with conflict/pending
-marker. GR1/GR2/GR3 remain OPEN; source verdict is changes requested, with final
-docs supplement pending. No fix or final all-source/docs acceptance is claimed for
-those paths. The earlier five-failure full and intermittent child timeout remain
-recorded; focused passes and wheel probes do not replace the aggregate gates.
+Scoped reviews address NB1, NB2 and the five prior integrated failures. Historical
+full 2 at `8087e25` passes 940 tests/seven skips in 325.09s. Its final whole-group
+source/docs verdict is changes requested for GR1–GR3; GD1/GD2 minor checkpoint
+corrections were committed separately. The combined R38 fix at `7bfd0cb` matches
+Green `ec55b95` source/tests exactly. Independent baseline RED reported 11 failures
+and one passing control; the final group/recovery focus passes 26 in 34.46s. An
+additional pre-final-replace control first failed only its missing uncertainty
+warning, then passed with the recovery correction. GR1–GR3 remain OPEN pending
+the single scoped re-review. Fresh root wheel/sdist and noneditable 65-file probe
+pass on `7bfd0cb`; full 3 reports eight failures/945 passes/seven skips in 364.23s,
+both wheel smokes passing. Two existing capture-recovery monkeypatch wrappers
+reject `before_metadata_commit`; their narrow optional-keyword forwarding fix
+preserves all assertions and crash cutpoints. It is integrated at `ef70f78`:
+13 cases pass in 24.82s and **full 4 passes 953/seven symlink skips in 358.94s**,
+XML 960 cases/0 failures/0 errors/7 skips/internal 358.621s. Both wheel smokes pass.
+The original `7bfd0cb` wheel remains exact for its unchanged 65-file product source;
+only the test wrappers changed. Final scoped verdict remains pending. Earlier
+failed fulls and the unexplained child timeout
+retain their original results; no new certification or group acceptance is claimed.
 
 ## Existing Audio Transcription
 

@@ -16,11 +16,15 @@ las definiciones de terminado y los tres niveles de evidencia. Versión vigente
 - Base histórica: `878e7d4`, v0.2.0; PR #20/ruling 19 mergeado en `763a891` e
   integrado. Grupo actual: `codex/m2-catalog`, worktree
   `C:/Users/savar/.codex/worktrees/m2-catalog/here`.
-- Código integrado actual: `8087e252112fd2e6de1efeff1d0f3f531d4be77d`, equivalente
-  a Green `4a3cb7c` tras rondas 2/3. Src tree
-  `948efa342c9569ca751cffb4718d82f3dd872de6`, tests tree
-  `30c62e6f7e9e0a818e125a6c7762db91335b47f1`; source/config/scripts/workflows
+- Fuente de producto integrada: `7bfd0cbf477a42aacc44b83b3d2da1e438801756`, equivalente
+  a Green `ec55b9564d3af01247d3367675a340a361f6b6ef` tras la tanda única GR1–GR3.
+  Src tree `2b4036f7deb905efb0a8836f378d267a066564b4`, tests tree
+  `a4310416bd10dc922b49e010d8495a98bfdfd585`; source/config/scripts/workflows
   sin diferencias con Green. Integración no equivale a aceptación ni merge de A.
+- Head de ejecución `ef70f78cfc9c8f2910e77b2b2818ce2e6b4d71ae` añade solo el forwarding
+  de dos wrappers de `tests/test_capture_recovery.py`, desde autor
+  `c3a3ccbcf2928502cbf0d0881fdfee3d7f86d84a`. Fuente idéntica a `7bfd0cb`; tests
+  tree `30c88848b3cf42c9ce4443328e3c8e0100e2af44`, 114 assertions/cortes intactos.
 - Los nueve grupos se conservan: M2 A (`M2_CATALOG`, 1–3), M2 B
   (`M2_LIFECYCLE`, 4–5), M3 A (`M3_SEARCH`, 1–2), M3 B (`M3_LIBRARY`, 3–4),
   M4 A (`M4_GROUNDED`, 1–3), M4 B (`M4_PRODUCT`, 4–5), M5 A
@@ -60,7 +64,7 @@ las definiciones de terminado y los tres niveles de evidencia. Versión vigente
   `task-3-fix-3-review-report.md`. Guard UUID antes de construir/probar journal
   cuando falta metadata; IDs opacos del manifiesto existente siguen compatibles.
   Focos 3/2,40 s y 27/20,86 s. Ruff/format y mypy comparativo 79/79 sin nuevos.
-- R36/R37 implementados: marker v2 con token/source_kind, receipt v3 con prueba
+- R36/R37 implementados en el histórico `8087e25`: marker v2 con token/source_kind, receipt v3 con prueba
   exacta y restauración de operaciones, replay tras crash real con DB presente o
   reconstruida; handoff privado consumido una vez por controller. Reserva audio-only
   canónica con origen/revisión NULL, cero revisiones históricas y fechas captura
@@ -77,7 +81,8 @@ las definiciones de terminado y los tres niveles de evidencia. Versión vigente
   durante persistencia del fallo de captura deja UI/manifest cancelled y catálogo
   failed con conflicto/marker atascado. GR1/GR2/GR3 Important/P2 están OPEN en
   `group-review-report.md`, veredicto fuente/docs changes requested. GD1/GD2 Minor
-  corregidos en `7be93af`; GR1–GR3 se corrigen en una única tanda con diseño R38.
+  corregidos en `7be93af`; tanda única R38 integrada. GR1–GR3 siguen OPEN hasta
+  una re-review independiente acotada del diff más docs/evidencia.
   Sin aceptación. No repetir esta review global ni reabrir NB1/NB2 ya addressed;
   después corresponde una sola re-review del diff de la tanda.
 - Wheel/sdist nuevos CPython 3.13.15 y probe off-repo `-I` no editable de `8087e25`:
@@ -86,16 +91,55 @@ las definiciones de terminado y los tres niveles de evidencia. Versión vigente
   Sin hardware/proveedor ni certificación nueva. No procesos, protocolos, deadlines,
   dependencias o versión nuevos. Meta final M5/1.0.0 intacta.
 
+### Tanda integrada GR1–GR3 — checkpoint vigente
+
+R38 implementado en `7bfd0cb`: todos los productores finales sellan marker 3 antes
+del replace de metadata, con token/padre/source kind/intent y hashes exactos del
+manifiesto prospectivo y artefactos con roles validados. Manifest pending o evidencia
+distinta permanece con aviso y bytes/marker intactos, sin importar resultado viejo
+ni llamar al proveedor. El aviso usa `RecoveryCandidate.error_summary`. El controller
+real difiere privadamente fallo de captura hasta sellar cancelación aceptada antes
+de la primera publicación, manteniendo una identidad/revisión parcial y causa/audio.
+Recibos malformados se aíslan con aviso sin abortar vecinos válidos. Lectura de
+marker 1/2, receipt 2/3 y schema 2 se mantienen.
+
+RED independiente original: 11 fallos/1 control pasa en 12 casos. Primer GREEN:
+12 pasan/21,67 s. Foco afectado: 404 pasan/1 symlink skip/159,03 s, anterior solo al
+último fix de aviso pending-v3. El control 13 fue autorado sin ejecución baseline;
+contra candidato dio 1 fallo/5 deselected/3,93 s por aviso ausente, manteniendo
+R1/interrupted/bytes/marker. Foco final tras corregirlo: **26 pasan en 34,46 s**,
+incluidos los 13 casos y controles recovery/ownership/NB2. Ruff/format limpios en
+nueve archivos; mypy canónico base 8087/current 79/79, 20 archivos con errores/65
+fuentes, mensajes nuevos `{}`; no base global limpia.
+
+Build fresco wheel/sdist y probe no editable de `7bfd0cb` pasaron:
+`.superpowers/m2a-wheel-catalog-probe-7bfd0cb.json`, 65 módulos byte-idénticos,
+schema 2/FTS5/FK/integrity correctos. Full 3 empezó **solo** a
+2026-11-06T00:44:04.5472024Z; logs/XML `.superpowers/m2a-integrated-final-3.*`:
+**8 fallos/945 pasan/7 skips en 364,23 s**, XML 960/8F/0E/7S/interno 362,276 s.
+Ambos smokes wheel pasan, verificados por lectura de XML. Todos los fallos son
+TypeError por `before_metadata_commit` aditivo en dos wrappers existentes de
+test_capture_recovery. Corrección test-only integrada en `ef70f78`: foco 13 pasa
+en 24,82 s (6 kills reales/7 simulados), 114 assertions/cortes intactos. Full 4
+empezó solo a 2026-11-06T00:54:42.9822634Z en `ef70f78`, mismo wheel exacto de
+`7bfd0cb` porque fuente/config/scripts/workflows siguen iguales. Log/XML
+`.superpowers/m2a-integrated-final-4.*`: **953 pasan/7 skips/cero fallos en
+358,94 s**, XML 960/0F/0E/7S/interno 358,621 s. Lectura independiente confirma
+summary/XML y ambos smokes wheel CLI/GUI pasan (3,018/2,634 s). Los siete skips
+requieren privilegios symlink. Es evidencia automática local sobre fuente
+7bfd/HEAD ef70f78, no CI hospedado ni certificación.
+El full 940/7 pertenece a `8087e25`, no al head nuevo.
+GR1–GR3 siguen OPEN hasta re-review independiente, sin gates hospedados ni aceptación.
+
 ## Próxima acción obligatoria
 
-1. Conservar review global terminada y full 2 verde con sus límites. RED de
-   GR1–GR3 entregado: 11 fallos/1 control PASS en 12 casos, con logs/reportes;
-   primer GREEN de esos 12 casos pasa en 21,67 s en `m2-final-fixes`, aún sin
-   integrar. Sigue compatibilidad afectada y un control del nuevo corte anterior
-   al replace final, después del resultado/sello. NB1/NB2 ya addressed.
-2. Corregir los tres hallazgos formales con RED/GREEN/re-review,
-   focos y nueva suite estable si la fuente cambia. No aceptar tarea/grupo solo
-   por focos y reviews de diffs; falta veredicto de todo A y verificación agregada.
+1. Tanda R38 y corrección test-only integradas; full 4 verde 953/7/358,94 s y ambos
+   smokes wheel verificados. Conservar full 3 fallido y foco 13/24,82 s pasando;
+   fuente/probe wheel 7bfd siguen exactos porque el diff es solo tests.
+   Conservar todos los fulls históricos sin reutilizarlos como resultado actual.
+2. Una sola re-review independiente acotada de la tanda y docs/evidencia contra
+   los hallazgos globales. GR1–GR3 siguen OPEN hasta el veredicto. No repetir review
+   global ni NB1/NB2 ya addressed; focos solos no aceptan tarea/grupo.
 3. PR de A, Copilot sobre head exacto recibido/respondido y CI Windows verde;
    merge guardado y ledger. Todavía no hay PR ni CI de A aprobados.
 4. Después del merge A y de los PRs de docs de contratos necesarios, root crea
@@ -131,30 +175,31 @@ El resto conserva sus dependencias; no se inicia ningún frente en este checkpoi
 
 ## Recuperación, decisiones y límites
 
-- Tanda única de fixes GR1–GR3: RED `catalog_red` prepara tres archivos nuevos
-  en `m2-preparation` y ejecuta contra baseline detached `8087e25` en
-  `ruling19-review`; liberó esos archivos y la ventana de tests. GREEN nuevo
-  `catalog_group_fixes` reutiliza el worktree liberado `m2-ingestion` sobre
-  `codex/m2-final-fixes`, base fuente `8087e25`; tiene la ventana exclusiva de
-  tests/static checks para la tanda. RED conserva solo la adición del nuevo
-  control anterior al replace, en preparación y sin ejecutar mientras GREEN corre.
+- Tanda única GR1–GR3: RED `catalog_red` entregó tres archivos nuevos y resultados
+  contra baseline detached `8087e25` en `ruling19-review`. GREEN
+  `catalog_group_fixes` congeló `ec55b95` en `m2-ingestion`/`codex/m2-final-fixes`,
+  integrado por root en `7bfd0cb`. RED/GREEN liberaron archivos/runtime; control
+  extra autorado sin ejecución baseline tiene RED candidato y GREEN final reales.
   Scope: processing/controller/recovery, memory service/artifacts y output
   session_writer; ningún otro escritor. Reviewer `catalog_group_review` terminó
   su misma review global con el suplemento docs `e00dd08`; después revisa el diff
-  de esta tanda una vez. Docs/evidencia `segments_red` liberó sus once archivos.
+  de esta tanda una vez. Docs/evidencia `catalog_closure_docs` tiene lease de once
+  archivos; root conserva la ventana exclusiva de runtime para wheel/full 3.
   Brief persistente: `.superpowers/sdd/M2_CATALOG_PLAN/group-fix-brief.md`.
   No se repiten las tareas ni las rondas anteriores; root integra y controla gates.
-- Rulings 31–34 registran asociación revision/audio/schema2, legacy confiable y
+- Rulings 31–34 registran asociación revision/audio/schema 2, legacy confiable y
   lease nativa `.capture_owners/` retenida por scope del trabajo hasta cierre real
   y persistencia. La review de ronda 1 está en `task-3-fix-1-review-report.md`.
 - Rulings 36/37 fijan el contrato de marker v2/recibo v3 con token y
   prueba durable del replay, handoff privado de una sola publicación y reserva
   audio-only sin padre ficticio ni fechas de captura inventadas. No se agrega
   migración. Implementados e integrados en `8087e25`, aún sin aceptación de tarea/grupo.
-- R38 autoriza el diseño interno de sello antes del commit final de metadata
-  (marker3, lectura1/2 compatible) y el cutover de fallo/cancelación antes de la
-  primera publicación. Implementación en worker con primer foco12 PASS, pendiente
-  de controles restantes, commit, integración, full nuevo y re-review acotada.
+- R38 implementa el diseño interno de sello antes del commit final de metadata
+  (marker 3, lectura1/2 compatible) y el cutover de fallo/cancelación antes de la
+  primera publicación. Integrado en `7bfd0cb`, foco final 26 PASS y static sin
+  nuevos errores; full 3 fallido por wrappers conservado y corrección test-only
+  integrada ef70f78/foco 13/24,82 s/full 4 verde 953/7/358,94 s. Re-review acotada
+  final pendiente, sin aceptación de tarea/grupo ni gates hospedados.
 - Todas las corridas anteriores, incluidos fulls fallidos y diagnóstico de captura,
   conservan alcance y límites en ACCEPTANCE/DELIVERY/evidence JSON. El arnés revisado
   no cambió deadlines del producto; H1 bootstrap se observó en un caso y H2 sharing
