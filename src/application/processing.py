@@ -4,7 +4,8 @@ import re
 import shutil
 import threading
 import time
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime
 from functools import wraps
@@ -17,7 +18,13 @@ from here.audio.mix import materialize_normalized_session
 from here.config.paths import get_data_dir
 from here.config.settings import get_settings, require_provider_key, settings_operation
 from here.live_processing import LiveTranscriptionController
-from here.memory.artifacts import file_hash, read_pending_intent, write_durable_json
+from here.memory.artifacts import (
+    file_hash,
+    publication_hashes,
+    read_pending_intent,
+    validate_pending_evidence,
+    write_durable_json,
+)
 from here.memory.database import LibraryError
 from here.memory.service import IngestResult, MemoryService, OwnershipBusy
 from here.output.metadata import (
@@ -303,6 +310,8 @@ def _catalog_producer(
             self._remember_catalog_result(exc.session_dir, result)
             raise
         else:
+            if method.__name__ == "persist_capture_failure" and self._defer_capture_publication:
+                return artifacts
             result = self.publish_memory(artifacts.session_dir, revision_of=self._retry_revision)
             self._remember_catalog_result(artifacts.session_dir, result)
             return artifacts
@@ -341,6 +350,43 @@ class SessionProcessor:
         self._publication_id: str | None = None
         self._source_kind = "session"
         self._catalog_result: tuple[Path, str, IngestResult] | None = None
+        self._defer_capture_publication = False
+
+    @contextmanager
+    def _capture_failure_publication(self) -> Iterator[None]:
+        """Let the controller seal its accepted cancellation before the first ingest."""
+        previous = self._defer_capture_publication
+        self._defer_capture_publication = True
+        try:
+            yield
+        finally:
+            self._defer_capture_publication = previous
+
+    def _seal_publication(self, staged_metadata: Path, metadata: SessionMetadata) -> None:
+        if metadata.status == "pending":
+            return
+        directory = staged_metadata.parent
+        publication_id = self._publication_id
+        revision_of, source_kind = self._retry_revision, self._source_kind
+        status_only = bool(revision_of and metadata.status in {"failed", "cancelled"})
+        if publication_id is None:
+            # The capture-failure decorator has returned, but the controller's
+            # locked cancellation cutover still belongs to the sealed operation.
+            pending = read_pending_intent(directory, metadata.meeting_id)
+            publication_id = pending.publication_id
+            revision_of, source_kind = pending.revision_of, pending.source_kind
+            status_only = pending.intent == "status"
+        if publication_id is None:
+            raise ValueError("Final output has no publication operation")
+        self._write_publication_intent(
+            directory,
+            metadata.meeting_id,
+            revision_of,
+            publication_id,
+            source_kind,
+            status_only=status_only,
+            hashes=publication_hashes(directory, metadata, staged_metadata=staged_metadata),
+        )
 
     def _remember_catalog_result(self, directory: Path, result: IngestResult) -> None:
         try:
@@ -405,16 +451,18 @@ class SessionProcessor:
         source_kind: str,
         *,
         status_only: bool = False,
+        hashes: dict[str, str] | None = None,
     ) -> None:
         write_durable_json(
             session_artifact_path(directory, "memory_pending.json"),
             {
-                "schema_version": 2,
+                "schema_version": 3 if hashes is not None else 2,
                 "meeting_id": meeting_id,
                 "revision_of": revision_of,
                 "intent": "status" if status_only else "ingest",
                 "publication_id": publication_id,
                 "source_kind": source_kind,
+                **({"hashes": hashes} if hashes is not None else {}),
             },
         )
 
@@ -433,12 +481,15 @@ class SessionProcessor:
             marker = session_artifact_path(session_dir, "memory_pending.json")
             publication_id = self._publication_id or str(uuid4())
             source_kind = self._source_kind
+            hashes = None
             if marker.exists():
                 pending = read_pending_intent(session_dir, metadata.meeting_id)
+                validate_pending_evidence(session_dir, metadata, pending)
                 if revision_of is None:
                     revision_of, status_only = pending.revision_of, pending.intent == "status"
                 publication_id = pending.publication_id or publication_id
                 source_kind = pending.source_kind
+                hashes = dict(pending.hashes) if pending.hashes is not None else None
             if revision_of is not None and (
                 not isinstance(revision_of, str) or str(UUID(revision_of)) != revision_of
             ):
@@ -450,6 +501,7 @@ class SessionProcessor:
                 publication_id,
                 source_kind,
                 status_only=status_only,
+                hashes=hashes,
             )
             if status_only:
                 if revision_of is None:
@@ -553,6 +605,7 @@ class SessionProcessor:
                 error_metadata("recoverable_audio", exc),
             ]
             artifacts = write_session_artifacts(
+                before_metadata_commit=self._seal_publication,
                 session=source_session,
                 capture_sources=existing_metadata.capture_sources
                 if existing_metadata
@@ -605,6 +658,7 @@ class SessionProcessor:
                 error_metadata("offline_transcription", exc),
             ]
             artifacts = write_session_artifacts(
+                before_metadata_commit=self._seal_publication,
                 session=recoverable_session,
                 capture_sources=existing_metadata.capture_sources
                 if existing_metadata
@@ -641,6 +695,7 @@ class SessionProcessor:
             ) from exc
 
         artifacts = write_session_artifacts(
+            before_metadata_commit=self._seal_publication,
             session=recoverable_session,
             capture_sources=existing_metadata.capture_sources
             if existing_metadata
@@ -884,6 +939,7 @@ class SessionProcessor:
             errors.append(error_metadata("recoverable_audio", exc))
             normalized = session
         artifacts = write_session_artifacts(
+            before_metadata_commit=self._seal_publication,
             session=normalized,
             target_dir=target_dir,
             completed_at=completed_at,
@@ -929,9 +985,9 @@ class SessionProcessor:
             SessionEventMetadataDocument(events=events).model_dump_json(indent=2),
             encoding="utf-8",
         )
-        write_artifact_text(
-            artifacts.session_dir / METADATA_FILE, metadata.model_dump_json(indent=2)
-        )
+        with staged_artifact_path(artifacts.session_dir / METADATA_FILE) as staged:
+            staged.write_text(metadata.model_dump_json(indent=2), encoding="utf-8")
+            self._seal_publication(staged, metadata)
         artifacts.metadata = metadata
 
     def _offline_with_retries(
@@ -1050,6 +1106,7 @@ class SessionProcessor:
         except Exception as exc:
             provenance = self._preserve_sources(session, session_dir)
             write_session_artifacts(
+                before_metadata_commit=self._seal_publication,
                 session=session,
                 target_dir=target_dir,
                 completed_at=completed_at,
@@ -1079,6 +1136,7 @@ class SessionProcessor:
             ) from exc
 
         write_session_artifacts(
+            before_metadata_commit=self._seal_publication,
             session=recoverable,
             target_dir=target_dir,
             completed_at=completed_at,
@@ -1138,6 +1196,7 @@ class SessionProcessor:
             )
         except TranscriptionFailure as exc:
             artifacts = write_session_artifacts(
+                before_metadata_commit=self._seal_publication,
                 session=recoverable,
                 capture_sources=capture_metadata(session),
                 target_dir=target_dir,
@@ -1186,6 +1245,7 @@ class SessionProcessor:
             )
 
         artifacts = write_session_artifacts(
+            before_metadata_commit=self._seal_publication,
             session=recoverable,
             capture_sources=capture_metadata(session),
             target_dir=target_dir,
@@ -1235,6 +1295,7 @@ class SessionProcessor:
             live_controller.abort()
             live_controller.cleanup()
         artifacts = write_session_artifacts(
+            before_metadata_commit=self._seal_publication,
             session=recoverable,
             capture_sources=capture_metadata(original),
             target_dir=target_dir,
@@ -1411,6 +1472,7 @@ class SessionProcessor:
                 )
             )
             write_session_artifacts(
+                before_metadata_commit=self._seal_publication,
                 session=source,
                 capture_sources=metadata.capture_sources if metadata else None,
                 target_dir=session_dir.parent,
@@ -1439,6 +1501,7 @@ class SessionProcessor:
         except Exception as exc:
             failure = error_metadata("offline_transcription", exc)
             write_session_artifacts(
+                before_metadata_commit=self._seal_publication,
                 session=source,
                 capture_sources=metadata.capture_sources if metadata else None,
                 target_dir=session_dir.parent,
@@ -1470,6 +1533,7 @@ class SessionProcessor:
             ) from exc
 
         artifacts = write_session_artifacts(
+            before_metadata_commit=self._seal_publication,
             session=source,
             target_dir=session_dir.parent,
             transcript_text=result.final_text,

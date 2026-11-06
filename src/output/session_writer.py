@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
@@ -131,6 +132,7 @@ def _publish_metadata_and_segments(
     obsolete_paths: tuple[Path, ...] = (),
     *,
     raw_text: str | None = None,
+    before_metadata_commit: Callable[[Path], None] | None = None,
 ) -> None:
     """Publish metadata last; restore raw evidence and obsolete entries on I/O failure.
 
@@ -173,6 +175,8 @@ def _publish_metadata_and_segments(
         if staged_raw is not None:
             staged_raw.replace(raw_path)
             published_paths.add(raw_path)
+        if before_metadata_commit is not None:
+            before_metadata_commit(staged_metadata)
         staged_metadata.replace(metadata_path)
         committed = True
     except OSError as publication_error:
@@ -242,6 +246,7 @@ def write_session_artifacts(
     total_paused_seconds: float = 0.0,
     capture_sources: list[CaptureSourceMetadata] | None = None,
     segments: list[TranscriptSegment] | None = None,
+    before_metadata_commit: Callable[[Path, SessionMetadata], None] | None = None,
 ) -> SessionArtifactPaths:
     if session_dir is None:
         session_id, session_dir = create_session_dir(target_dir, completed_at)
@@ -356,6 +361,11 @@ def write_session_artifacts(
         segments_json,
         obsolete_paths,
         raw_text=raw_transcript_text,
+        before_metadata_commit=(
+            (lambda staged: before_metadata_commit(staged, metadata))
+            if before_metadata_commit is not None
+            else None
+        ),
     )
 
     return SessionArtifactPaths(

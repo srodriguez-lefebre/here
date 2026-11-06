@@ -4,6 +4,7 @@ import math
 import threading
 import time
 from collections.abc import Callable
+from contextlib import nullcontext
 from contextvars import copy_context
 from dataclasses import replace
 from datetime import datetime
@@ -341,15 +342,20 @@ class HereApplicationController:
                 self._transition(ApplicationState.CANCELLED, details={"recoverable": False})
             else:
                 try:
-                    artifacts = self._processor.persist_capture_failure(
-                        exc,
-                        request.output_dir,
-                        use_alt_transcription_model=request.use_alt_transcription_model,
-                        events=self._events,
-                        started_at=self._snapshot.started_at,
-                        total_paused_seconds=self._snapshot.total_paused_seconds,
-                    )
-                    self._finish_capture_failure(artifacts, exc)
+                    with (
+                        self._processor._capture_failure_publication()
+                        if isinstance(self._processor, SessionProcessor)
+                        else nullcontext()
+                    ):
+                        artifacts = self._processor.persist_capture_failure(
+                            exc,
+                            request.output_dir,
+                            use_alt_transcription_model=request.use_alt_transcription_model,
+                            events=self._events,
+                            started_at=self._snapshot.started_at,
+                            total_paused_seconds=self._snapshot.total_paused_seconds,
+                        )
+                        self._finish_capture_failure(artifacts, exc)
                 except Exception as persistence_error:
                     self._fail("capture_persistence", persistence_error)
         except SessionProcessingFailed as exc:

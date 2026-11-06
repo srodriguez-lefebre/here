@@ -12,7 +12,7 @@ from contextvars import ContextVar
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Iterator
 from uuid import UUID, uuid4
 
 from here.memory.artifacts import (
@@ -71,6 +71,28 @@ def _is_uuid(value: object) -> bool:
         return isinstance(value, str) and str(UUID(value)) == value
     except ValueError:
         return False
+
+
+def _receipt_envelope(value: object) -> dict[str, Any]:
+    """Validate untrusted containers before mapping methods or referenced reads."""
+    if not isinstance(value, dict):
+        raise ValueError("Managed publication receipt must be an object")
+    for name in ("meeting", "revision", "hashes"):
+        if not isinstance(value.get(name), dict):
+            raise ValueError(f"Managed publication receipt {name} must be an object")
+    for name in ("audio_assets", "segments", "revision_audio_assets", "ingest_sources"):
+        entries = value.get(name)
+        if not isinstance(entries, list) or any(not isinstance(item, dict) for item in entries):
+            raise ValueError(f"Managed publication receipt {name} must be an array of objects")
+    if any(
+        not isinstance(name, str)
+        or not isinstance(digest, str)
+        or len(digest) != 64
+        or any(character not in "0123456789abcdef" for character in digest)
+        for name, digest in value["hashes"].items()
+    ):
+        raise ValueError("Managed publication receipt has invalid artifact hashes")
+    return value
 
 
 @dataclass(frozen=True)
@@ -860,7 +882,7 @@ class MemoryService:
                     if not receipt.exists():
                         warnings.append(f"Uncertain publication retained: {identity}/{revision_id}")
                         continue
-                    snapshot = json.loads(receipt.read_text(encoding="utf-8"))
+                    snapshot = _receipt_envelope(json.loads(receipt.read_text(encoding="utf-8")))
                     if (
                         snapshot.get("schema_version") not in {2, 3}
                         or snapshot["meeting"]["id"] != identity
@@ -981,7 +1003,7 @@ class MemoryService:
                                     (identity, active.id, segment.id, segment.text, meeting.title),
                                 )
             except (OSError, ValueError, RuntimeError, KeyError, TypeError) as exc:
-                warnings.append(str(exc))
+                warnings.append(f"Managed meeting {directory.name} retained: {exc}")
 
     def reconcile(self) -> RecoveryReport:
         warnings: list[object] = []

@@ -129,16 +129,25 @@ class RecoveryService:
                 metadata = read_session_metadata(directory)
                 if metadata is None:
                     continue
+                catalog_warning = None
                 with self._ownership(metadata.meeting_id, directory=directory) as claim:
                     marker = session_artifact_path(directory, "memory_pending.json")
-                    if marker.exists() and metadata.status != "pending":
+                    if marker.exists():
                         pending = read_pending_intent(directory, metadata.meeting_id)
-                        claim()
-                        SessionProcessor().publish_memory(
-                            directory,
-                            revision_of=pending.revision_of,
-                            status_only=pending.intent == "status",
-                        )
+                        if metadata.status != "pending":
+                            claim()
+                            SessionProcessor().publish_memory(
+                                directory,
+                                revision_of=pending.revision_of,
+                                status_only=pending.intent == "status",
+                            )
+                        elif pending.hashes is not None:
+                            # A final seal cannot make an uncommitted manifest final.
+                            # Preserve both pieces of evidence without acquiring a
+                            # writer lease or adopting the previous transcript.
+                            catalog_warning = (
+                                "Final catalog evidence is uncommitted; pending intent retained"
+                            )
                 # A copied manifest does not own other directories with the same ID.
                 key = (metadata.meeting_id or directory.name, directory)
                 if metadata.status == "completed":
@@ -155,6 +164,10 @@ class RecoveryService:
                     if errors.errors:
                         last_error = errors.errors[-1]
                         error_summary = last_error.cause_message or last_error.message
+                if catalog_warning:
+                    error_summary = "; ".join(
+                        message for message in (error_summary, catalog_warning) if message
+                    )
                 candidates[key] = RecoveryCandidate(
                     directory,
                     metadata.session_id,

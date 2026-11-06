@@ -165,6 +165,7 @@ class PendingIntent:
     intent: str
     publication_id: str | None = None
     source_kind: str = "session"
+    hashes: tuple[tuple[str, str], ...] | None = None
 
 
 def read_pending_intent(directory: Path, meeting_id: str | None) -> PendingIntent:
@@ -181,7 +182,7 @@ def read_pending_intent(directory: Path, meeting_id: str | None) -> PendingInten
     source_kind = pending.get("source_kind", "session")
     if (
         type(version) is not int
-        or version not in {1, 2}
+        or version not in {1, 2, 3}
         or pending.get("meeting_id") != meeting_id
         or not isinstance(intent, str)
         or intent not in {"ingest", "status"}
@@ -189,13 +190,70 @@ def read_pending_intent(directory: Path, meeting_id: str | None) -> PendingInten
         and (not isinstance(expected, str) or str(UUID(expected)) != expected)
         or intent == "status"
         and expected is None
-        or version == 2
+        or version in {2, 3}
         and (not isinstance(publication_id, str) or str(UUID(publication_id)) != publication_id)
         or not isinstance(source_kind, str)
         or source_kind not in {"session", "legacy_audio_only"}
     ):
         raise ValueError("Invalid pending catalog intent")
-    return PendingIntent(expected, intent, publication_id if version == 2 else None, source_kind)
+    hashes = pending.get("hashes") if version == 3 else None
+    if version == 3:
+        if (
+            not isinstance(hashes, dict)
+            or "session.json" not in hashes
+            or any(
+                not isinstance(name, str)
+                or not isinstance(digest, str)
+                or re.fullmatch(r"[0-9a-f]{64}", digest) is None
+                for name, digest in hashes.items()
+            )
+        ):
+            raise ValueError("Invalid pending catalog evidence seal")
+        validate_artifact_roles(directory, hashes)
+    return PendingIntent(
+        expected,
+        intent,
+        publication_id if version in {2, 3} else None,
+        source_kind,
+        tuple(sorted(hashes.items())) if hashes is not None else None,
+    )
+
+
+def publication_hashes(
+    directory: Path, metadata: SessionMetadata, *, staged_metadata: Path | None = None
+) -> dict[str, str]:
+    """Measure exactly the local evidence authorized for final catalog publication.
+
+    The writer supplies its own staged metadata, so the seal measures actual bytes,
+    including platform newline encoding, before replacing the final manifest.
+    """
+    declared_artifact_roles(metadata)
+    names = {"session.json", *metadata.output_files}
+    names.update(item.audio_file for item in metadata.capture_sources if item.audio_file)
+    if metadata.recoverable_audio:
+        names.add(metadata.recoverable_audio)
+    paths = {name: session_artifact_path(directory, name) for name in names}
+    for name in ("raw_transcript.txt", "transcript.txt", "segments.json"):
+        path = session_artifact_path(directory, name)
+        if path.exists():
+            paths[name] = path
+    if not metadata.recoverable_audio:
+        audio = session_artifact_path(directory, "audio.wav")
+        if audio.exists():
+            paths["audio.wav"] = audio
+    if staged_metadata is not None:
+        paths["session.json"] = staged_metadata
+    return {name: file_hash(path) for name, path in paths.items() if path.is_file()}
+
+
+def validate_pending_evidence(
+    directory: Path, metadata: SessionMetadata, pending: PendingIntent
+) -> None:
+    if pending.hashes is not None and (
+        metadata.status == "pending"
+        or publication_hashes(directory, metadata) != dict(pending.hashes)
+    ):
+        raise ValueError("Pending catalog evidence is uncommitted or changed; intent retained")
 
 
 def _milliseconds(value: Any) -> int | None:
