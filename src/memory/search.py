@@ -287,8 +287,7 @@ class SearchService:
         # rolls its transaction back before our finally-close discards the table.
         if suppression.suppressed_meeting_ids:
             library.execute(
-                "CREATE TEMP TABLE here_search_suppressed_meetings "
-                "(id TEXT PRIMARY KEY NOT NULL)"
+                "CREATE TEMP TABLE here_search_suppressed_meetings (id TEXT PRIMARY KEY NOT NULL)"
             )
             library.connection.executemany(
                 "INSERT INTO temp.here_search_suppressed_meetings(id) VALUES (?)",
