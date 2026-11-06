@@ -5,6 +5,7 @@
 > only after current-head received/responded Copilot, Windows CI and independent
 > review. Steps use checkbox syntax. **Status: in progress — query-core checkpoint,
 > 2026-11-06; UI attempts recorded, complete tasks/group/milestone acceptance pending.**
+> Bounded R50/R53 evidence checkpoint; complete tasks/group/milestone remain open.
 > Root issued GO
 > after M2 A merge `53712c5beedafc2d40e2abf10c13362a1c3c9f78` and contracts merge
 > `73d3cb384bd422de6899d8c7b761f3f3159ea3f1`. M3 front: `codex/m3-search`,
@@ -173,8 +174,9 @@ Frozen `5db071a2d034bda94ed1676d166bcce3aa7f7f0b` source/tests/config:
 `35efb958f45c9b107f3639fe018c6f0df42b3b79` /
 `7143d4deff5acb55e524baa5ee15c101bce9b3b5`. Mechanical sync into the existing docs
 worktree preserves these bytes; no runtime here. Coordinator released immediately
-after commands before reports/review; host now B. R50–R52 signatures are declared
-only, no accepted B5 API or early app/native adapter/stub/second service. Complete
+after commands before reports/review. At that checkpoint R50–R52 were declared
+only; later bounded R50 approval below supersedes that pending state only. No early
+app/native adapter/stub/second service. Complete
 Task1/Task2/group/M3 remain open: B5 guard/reindex/delete callback/equivalence,
 guarded 1k/100k p95<500ms/Qt<50ms, final integrated full/mypy, final B5 preview/global review/
 Copilot/CI/package/guarded merge/certification pending. No version bump.
@@ -203,9 +205,55 @@ no pytest counts/XML invented, timings are not p95/heartbeat. Coordinator releas
 immediately after EACH command before report/image inspection; root/B host now.
 Current E3 evidence is bounded 7/Ruff plus this populated synthetic preview only;
 no 33/44/mypy/full repeat, D1 result scopes unchanged. Final B5-integrated preview
-and broader gates remain pending; R50–R52 actual handoff held on root P2, no c9,
+and broader gates remain pending. At d700 R50 handoff was held on root P2; later
+scoped technical R50 acceptance is below, no direct c9 or later native import,
 stub/second service/native adapter or product/style/global-font/config/dependency
 change. Complete Task1/Task2/group/M3 remain open, no certification/version bump.
+### Bounded R50/R53 checkpoint — actual verified d8
+
+Exact fbe technical scope is R50/reindex/query after H1/H2 only, not Task5/delete/
+native/R52 acceptance. Merge 5bb preserves exact B source/canonical models+R46.
+Actual new guarded51 RED at 4df: 51F/0E/S/9.10s, XML51/internal8.922; producer
+prerequisites pass, reindex/no-op initially unreached. Same GREEN guard-only 75a→965
+then 51P/12.30s/XML12.251 at HEAD 965+ONLY formatter literal join; later D6 exact
+executed root be5/source bb4/tests 4a21 is not the invocation HEAD. Same Task1 reviewer
+SPEC/quality APPROVED bounded immutable D6, zero C/I/M; original e4 review unchanged.
+Real aliases/failclosed/Busy/one-context/close and sole B reindex/SECOND no-op now
+execute, 3 meetings/3 segments/partial evidence/pages/cursor equivalence; only
+missing-FTS capability simulated. TEMP connection-local/no main writes/JSON dep;
+full actual FTS/schema digest retained plus B fingerprint, costs not yet measured.
+
+R53 separate RED at d21:10F/1 override-control P/0E/S/2.40s, XML11/internal2.337,
+5 keyword TypeErrors + 5 missing-method AttributeErrors; trailing assertions unreached.
+After same disjoint source authors, actual clean d8/source 0bea/tests de961/config 7143
+passed 11/2.38s, XML11/internal2.344, two-file hygiene PASS/no edits. All callback/
+identity/canonical-error/zero-resource/readonly/actual same-memory/custom-root
+composition assertions complete; actual real report 1 meeting/2 segments, synthetic
+3/7 counts identity only. Separate unchanged-source regression, NO R53 repeat:
+228P/1 benchmark skip/38.53s, XML229/internal38.253=140 search+37 fallback+51 guard.
+Original177 now have current-source functional regression, not full/type/performance.
+Same T1 APPROVED R53/R50 interaction and same T2 APPROVED optional UI composition,
+bounded SPEC/quality at immutable `d8ec92b3d6aca9ec872b8f3d77d446f7b686f91a`, zero C/I/M.
+
+Scale c16→70af was test-only89-line addition,excluded/unbound from old 11/228;
+late notice/author timestamp never imply retrocoverage. Later first functional
+CONTROL 1P/4.09s, XML1/internal4.045 at HEAD 70af+ONLY staged safe import-sort/format.
+Subsequent 396 exact executed root E913/tests AE2 is not invocation HEAD; source0bea/
+config7143 unchanged. Real 220-ID/SQLite-variable-limit 64, full filtered first limit2
+listing/hybrid pages, three visible IDs/segments/continuations/closed readers pass.
+Complete-only fixture, not large-set partial/fallback/resource/performance proof.
+Initial I001/format findings retained as hygiene, not semantic RED; assertions intact.
+Scale bounded SAME-T1 review pending only new test/evidence,no full-task inference.
+
+Twenty-three separate pytest records preserve 17 old + 51 RED + 51 GREEN + R53 RED + 11 GREEN +
+regression 228 + scale CONTROL 1,preview 3 unchanged. Prior d8/de961 and HEAD965+format
+bindings remain exact; no 52 aggregate or run at post-release 396HEAD is invented.
+Coordinator GLOBAL RELEASE immediately after last command BEFORE XML/reports/
+review/commit; all 17 protected raw files unchanged. Benchmark helper/existing test
+and new UI benchmark assigned to two disjoint SAME authors are PREPARATION ONLY,
+no runtime/result/production/B changes. Guarded1k/100k p95/Qt, final types/full/UI/
+preview, delete ACK/native/R52, wider B/global/hosted/Copilot/CI/package/merge/
+certification/tasks/groups remain pending; no M3B regeneration or version bump.
 Composite checkboxes remain unchecked: no partial evidence closes their remaining
 clauses. Group/hosted gates, certification and a 0.4.0 bump are not claimed.
 

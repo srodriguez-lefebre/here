@@ -1,6 +1,7 @@
 # M3 search and library actions specification
 
-Status: in progress, query-core and UI checkpoint on 2026-11-06; Task 1, group A and M3
+Status: in progress; bounded R50/R53 evidence checkpoint, 2026-11-06. Complete
+Task 1, Task 2, group A and M3
 remain open. Root issued GO after the accepted M2 A and contract-documentation
 merges (ruling 35). The M3 front is `codex/m3-search` at
 `C:/Users/savar/.codex/worktrees/2710/here`, chat
@@ -152,8 +153,9 @@ are never relabeled as fresh E3 runs.
 Current source/tests/config are `e3ede58c32f5d848988b94dd8c4a5319512546c3` /
 `35efb958f45c9b107f3639fe018c6f0df42b3b79` /
 `7143d4deff5acb55e524baa5ee15c101bce9b3b5`. Coordinator released runtime immediately
-after commands, before reports/review; root now owns the host. R50–R52 are declared
-contracts/preparation, no accepted B5 API, stub, second service or native adapter;
+after commands, before reports/review. At that checkpoint R50–R52 were declared
+contracts only; later bounded R50 integration is recorded below. No stub, second
+service or native adapter was introduced;
 app.py is unchanged. Complete tasks/group/M3 remain open: real B5 guard/reindex/
 delete callback and equivalence, guarded 1k/100k p95<500ms/Qt<50ms, integrated full/
 final mypy, final B5-integrated preview/global review/hosted Copilot/CI/package/merge/certification
@@ -186,9 +188,66 @@ preview JSON records; these are not pytest cases/XML or p95/heartbeat measuremen
 Each command's coordinator release preceded report/image inspection; root/B owns
 the host. Product/style/global fonts/config/dependencies remain unchanged; sandbox
 temps are absent. Current E3 now has bounded 7/Ruff plus this preview checkpoint,
-no new 33/44/mypy/full. Real B5 R50–R52/reindex/aliases/delete callbacks remain held
-on root P2, no c9 import. Final integrated B5-source preview and all broader
+no new 33/44/mypy/full. At d700, real R50 handoff was held on root P2; the later
+R50 technical/scoped approval below supersedes that pending state only. No direct
+c9 or later native import. Final integrated B5-source preview and all broader
 Task1/Task2/group/M3/performance/full/final-mypy/hosted/certification gates stay open.
+### Bounded R50/R53 checkpoint — actual verified d8
+
+Root approved exact `fbe00e6583dc51bf78976ddd9834cda1f8581e1a` for R50/reindex/query
+only after H1/H2. Merge 5bb preserves four exact B source paths and canonical B
+models plus unchanged R46/Path; no R52/delete/native/Task5 acceptance. Fresh fbe
+mypy/compat/full remain pending; c9/D1 results retain their historical sources.
+Frozen guarded 500 first ran at 4df/query 034: 51F/0E/S/9.10s, XML51/internal8.922s,
+after real producer prerequisites. Reindex/no-op calls were initially UNREACHED.
+
+Same GREEN search-only 75a→965 consumes actual B context, SQL-before-LIMIT TEMP
+membership and framed B fingerprint while retaining full actual suppressed/
+nonmatching FTS/schema inputs. TEMP is connection-local, no persistent main writes,
+JSON dependency or second authority. Actual 51P/12.30s/XML12.251 ran HEAD 965 plus
+ONLY staged formatter literal join; post-release D6 has the exact executed tree,
+not a later-HEAD invocation. Tests unchanged; same Task1 reviewer bounded SPEC/
+quality APPROVED immutable D6, zero C/I/M. Real B reindex/SECOND no-op now reaches
+3 meetings/3 segments, partial evidence/page equivalence/cursor stability; only
+missing-FTS capability is simulated. Guard/alias/error/Busy/one-view/close are real.
+
+R53 independent RED at d21 remains 10F/1 routing-control P/0E/S/2.40s,
+XML11/internal2.337s: 5 keyword TypeErrors + 5 missing-method AttributeErrors; later
+callback/resource/composition assertions were unreached. After separate source
+preparation, exact clean `d8ec92b3d6aca9ec872b8f3d77d446f7b686f91a` source 0bea/
+tests de961/config 7143 passed 11/2.38s, XML11/internal2.344s. Two-file Ruff/format
+passed without edits. Callback/report/warning/error identity and zero own resources,
+optional readonly behavior/explicit query override complete. Both real compositions
+use the same injected MemoryService/custom root and reindex once, 1 meeting/2 segments.
+Synthetic 3/7 callback counts prove identity only, not SQL counts.
+
+A SECOND separate command at the SAME clean d8, without R53 repeat, passed
+228/1 default benchmark skip/38.53s, XML229/internal38.253s: 140 search+37 fallback+
+51 guarded. This supplies current-source original 177 and guard regression, not a
+restarted e4/D6 review, full suite, p95 or heartbeat. Same Task1 reviewer APPROVED
+R53 delta/R50 interaction and same Task2 reviewer APPROVED optional UI composition,
+both immutable d8, bounded SPEC/quality, zero C/I/M. Complete tasks remain open.
+
+Scale c16→70af was a separate test-only addition and NOT integrated/bound/published
+before the old 11/228 freeze/start; timestamp/late notice confer no retrocoverage.
+Later first functional CONTROL passes 1/4.09s, XML1/internal4.045 at HEAD 70af plus
+ONLY staged safe import-sort/format diff. Post-release 396 exact executed root E913/
+tests AE2 is not the invocation HEAD; source 0bea/config 7143 unchanged. Actual 220
+canonical suppressions, reader SQL-variable-limit 64, full first limit2 listing/
+hybrid pages, three visible IDs/segments,continuation and closed connections pass.
+Complete-only fixture, not a large-set partial/fallback matrix or p95/heartbeat.
+Initial I001/format failures are hygiene, not invented semantic RED; assertions
+unchanged. Same Task1 bounded new-control review remains pending, not full approval.
+
+Twenty-three separate pytest records retain all 17 old and preview 3 unchanged;
+old d8/testsde961 records are not replaced by scale's staged/396 content. Coordinator
+GLOBAL RELEASE immediately follows latest command before XML/report/review/commit;
+protected 17 raw bindings unchanged. Root's two disjoint benchmark-author assignments
+are preparation ONLY, no runtime/result or production/B edit. Guarded1k/100k p95/
+Qt including real guard/TEMP/lock/alias/digest/UI costs, current full/final-mypy/
+preview, real delete ACK/nonresurrection/native/R52, wider B/global/hosted/Copilot/
+CI/package/merge/certification/tasks/groups remain held. Original histories,
+criteria/DoD/version scopes unchanged; no 52 or later-head aggregate is invented.
 Commands, exact heads, artifacts and limits are recorded in
 `M3_SEARCH_EVIDENCE.json`; acceptance criteria below are unchanged. This is focused
 automatic evidence, no certification or task/group/milestone closure; no 0.4.0 bump.
@@ -489,9 +548,10 @@ The accepted A and contract-documentation merges permit the current independent
 query work. M3's own hosted gates and merge remain open. Search does not implement
 these inherited fixes, expose private producer handoffs, choose a retry API or
 issue provider/replay work. Frozen B model/error declarations are integrated.
-The isolated R48 read supplement and later accepted B4/title-consumer checkpoint
-retain the verification scopes recorded above; B5 guard/reindex and final
-integrated acceptance remain pending.
+The R48, accepted B4/title and later bounded R50 consumer checkpoints retain the
+verification scopes recorded above; complete B5 and final integrated acceptance
+remain pending. R53 facade/composition and R50 interaction are bounded-approved
+at their recorded d8 source; complete-task/integrated gates remain open.
 
 No playback, no citation target resolution, no CLI, no participant editing beyond
 what M2 already exposes, no provider call, no semantic search, no transcript text
