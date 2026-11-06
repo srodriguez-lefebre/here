@@ -71,9 +71,9 @@ parcial. B todavía no tiene writer UI. Processing continúa sin concesión.
 Cualquier handoff adicional se concede explícitamente. Migraciones/pyproject/uv.lock/versiones
 siguen seriales y requieren permiso de root. Global docs son root-only.
 
-Runtime ACTUAL: M3 posee ventana EXCLUSIVA para7 casos preparados del fix de
-presentación vacía5db071a y Ruff de MainWindow; B no tiene runtime. Luego B tiene
-READERS7 listos (incluye raíz vacía/primer uso) sobre read-fix29ACF356. No full,
+Runtime ACTUAL: B posee ventana EXCLUSIVA READERS7 (incluye raíz vacía/primer uso)
+sobre read-fix29ACF356. M3 liberó tras7P/1,92s y Ruff/format de MainWindow5db071a,
+sin cambios; continúa review/docs y preparación de preview sin runtime. No full,
 benchmark, build, uv o mypy repetido. Fuente B5 nativa permanece RED-first R52.
 M3 ya verificó44P/14,42s con título/Conflict/FTS B4 real, source75be486/srcd1bddf68,
 test-format ed8e5aa. Mypy79→78, cero diagnósticos nuevos; primer79→87 retenido.
@@ -94,7 +94,7 @@ entorno y siete privilegios symlink. Task4 ACEPTADA en local tras docs distintos
 96e8aed255a442acb14bbdff5c32877ec201c628, source/tests invariantes. Root autorizó a
 M3 consumir SOLO ese frozen B4, preservando DTOs/error canónico y sin lease libre
 de core. Edición real/FTS M3 espera pruebas de consumo; B5 guard/reindex pendientes.
-B5 RED WRITE-ONLY ya despachado después de aceptación; GREEN espera RED real.
+B5 core GREEN tiene RED real; solo el nuevo adapter nativo espera RED R52.
 
 B5 RED100 observado92F/3P/5S/47,39s, XML0E. Dos pases son controles válidos; el
 tercero era falso positivo de --yes por comando ausente. Un fallo era fixture sin
