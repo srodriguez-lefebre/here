@@ -2743,5 +2743,54 @@
       "review_report_final_sha256": "DF0466D8F29D54718B4AB1307C7134CB9F44342752DC1A66130B8CE007CCA694",
       "reviewer_assessment": "SAME T1 actualbudgetFAILconfirmed848.67978>500;boundedfunctional/controlqualityAPPROVALunchanged,Task1/M3NOTAPPROVED. No newdiagnosis/fix/runtime authorized."
     }
+  },
+  "pause_checkpoint": {
+    "status": "PAUSADO_POR_INSTRUCCION_EXPLICITA_DEL_USUARIO",
+    "recorded_utc": "2026-11-06T15:44:56.3756505Z",
+    "instruction": "commitea todo lo que tenes hasta ahora con mensaje de pausado y corta",
+    "all_runtime_and_source_grants_revoked": true,
+    "writers": "All available delegated roles completed/interrupted; earlier roles not active; no runtime processes found",
+    "primary_before_pause": "721352d427c2b615431befb88fb6c5b4bd0f1d45",
+    "primary_source": "12774a1e6702ab943934280d05d0de6897e8378d",
+    "ledger_run_count": 36,
+    "resume_point": {
+      "R63": "SOURCE_PREPARED fd7ba65/source64013/queryc4f948/rawC3E2; independent canonical-domain static review only. Hygiene, eight-control equality,10controls,240regression andp95 NOT_RUN onR63. Candidate still isolated from primary.",
+      "R63_pause_head": "fb8b787cdb6ce1fb7a6a66f7e7555e3143434538",
+      "R63_manifest": "C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN/r63-validation-manifest.json",
+      "R63_manifest_sha256": "67DC1E155AB63AD0ECDB31DFD719D7A7B718EC587DF492FA8361EADECD196AD3",
+      "manifest_rebind_required": "Manifest pins pre-pause fd7 head. Pause commit changes only history; bind current pause HEAD/tree and obtain fresh explicit grant before any execution. No automatic restart.",
+      "R61": "Functional eight-control matrix and separate10/240approved; original valid40 p95848.6797799909255>500FAILED remains preserved, no rerun. Task1/M3 open.",
+      "R52": "GUI test-only eea7714/two cases preserved at pause5b3a89b; NOT_RUN. Old author source lacks actual registration API. Exact backend handoff/assembly and new grant required before meaningful consumer RED; no default-root substitution or global constructor-count rule.",
+      "oracle": "Real v2 expected JSON11E2CF6B frozen08e15 remains tracked/unchanged in RED/GREEN; never regenerate to obtain a pass.",
+      "broader_gates": "Current combined-source/full/mypy/UI/native/B handoff/hosted/CI/merge/certification remain unclosed."
+    },
+    "assigned_worktrees": [
+      {
+        "path": "C:/Users/savar/.codex/worktrees/m3-search-green/here",
+        "branch": "codex/m3-search-green",
+        "pause_commit": "fb8b787cdb6ce1fb7a6a66f7e7555e3143434538"
+      },
+      {
+        "path": "C:/Users/savar/.codex/worktrees/m3-search-red/here",
+        "branch": "codex/m3-search-red",
+        "pause_commit": "7a080e5d38cec5d53782045cff77655750a26a5e"
+      },
+      {
+        "path": "C:/Users/savar/.codex/worktrees/m3-ui-implementation/here",
+        "branch": "codex/m3-ui-green",
+        "pause_commit": "275a48699f38ea6735cb4ce6b34aaf3a4558bcb8"
+      },
+      {
+        "path": "C:/Users/savar/.codex/worktrees/m3-ui-red/here",
+        "branch": "codex/m3-ui-red",
+        "pause_commit": "5b3a89b1abd89d85fbfd031da2e7d000933b1fa3"
+      },
+      {
+        "path": "C:/Users/savar/.codex/worktrees/m3-search-evidence/here",
+        "branch": "codex/m3-search-evidence",
+        "pause_commit": "fa45ba3bfb2d942e88d116652092b58a6e74239a"
+      }
+    ],
+    "preservation": "Existing source/tests already committed; clean branches receive pausado marker commits. Ignored logs/artifacts/fixtures/reports retained unstaged. No .env, secrets, private libraries, reset/discard/clean, push/PR/merge or global STATUS/DELIVERY edits."
   }
 }
