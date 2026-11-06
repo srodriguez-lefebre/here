@@ -1,7 +1,7 @@
 """Operation-owned catalog queries, safe FTS and literal keyset pagination.
 
 The canonical catalog read view owns suppression validation, the bounded catalog
-lock and the read transaction. Reindex facade delegation remains a separate handoff.
+lock and the read transaction. The optional maintenance callback owns reindex resources.
 """
 
 from __future__ import annotations
@@ -18,13 +18,14 @@ from dataclasses import replace
 from datetime import datetime, timezone
 from typing import Any, TypeVar
 
-from here.memory.database import LibraryConnection
+from here.memory.database import LibraryConnection, LibraryError
 from here.memory.models import (
     Meeting,
     MeetingPage,
     MeetingQuery,
     MeetingStatus,
     MeetingSummary,
+    ReindexReport,
     SearchCapabilities,
     SearchHit,
     SearchPage,
@@ -268,8 +269,20 @@ def _snippet(text: str, tokens: list[str]) -> str:
 
 
 class SearchService:
-    def __init__(self, connection_factory: Callable[[], LibraryConnection]) -> None:
+    def __init__(
+        self,
+        connection_factory: Callable[[], LibraryConnection],
+        *,
+        reindexer: Callable[[], ReindexReport] | None = None,
+    ) -> None:
         self._connection_factory = connection_factory
+        self._reindexer = reindexer
+
+    def reindex(self) -> ReindexReport:
+        reindexer = self._reindexer
+        if reindexer is None:
+            raise LibraryError("Library maintenance is unavailable for this search service")
+        return reindexer()
 
     @contextmanager
     def _snapshot(self) -> Iterator[tuple[LibraryConnection, SuppressionSnapshot]]:
