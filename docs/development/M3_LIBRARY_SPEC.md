@@ -45,9 +45,11 @@ editing/participant adapters; B5 owns deletion suppression R42 and reindex.
 Consume those accepted adapters without another persistence path, index writer
 or registry parser. Final integration cannot be claimed from fakes.
 
-Before the formal B contract PR/root dispatch, pin the frozen/reviewed M3 A PR head,
+The preparation contract PR may publish with these handoffs pending. Before root
+dispatch/execution, pin the frozen/reviewed M3 A PR head,
 query/page/Citation/CitationTarget definitions, structured errors, library/request
-hooks and B4/B5 action/guard adapters. The interfaces below are planned B contracts,
+hooks and B4/B5 action/guard adapters; accept any further contract-document changes
+before dispatch if the actual handoff changes a contract. The interfaces below are planned B contracts,
 not functions verified present in the merged M2 A source.
 
 R53 binds the formerly pending reindex facade, implemented/reviewed at frozen

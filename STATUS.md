@@ -84,8 +84,11 @@ Cualquier handoff adicional se concede explícitamente. Migraciones/pyproject/uv
 siguen seriales y requieren permiso de root. Global docs son root-only.
 
 Runtime del checkpoint: B posee ventana EXCLUSIVA para RED W1 (nuevo archivo4
-casos v1), tras el release completo M3. W2/W3 tienen briefs y autores RED nuevos
-en worktrees separados, solo preparación; publicar sus IDs/rutas al crearlos.
+casos v1), tras el release completo M3. W2/W3 tienen briefs y autores RED nuevos,
+solo preparación en worktrees separados sobre624be55: b5_w2_red en
+`C:/Users/savar/.codex/worktrees/b5-w2-red/here` (detached624 al crear),
+b5_w3_red en `C:/Users/savar/.codex/worktrees/b5-w3-red/here`, rama
+`codex/m2-b5-w3-red`. El ledger B registra bindings y ramas posteriores.
 M3 terminó10 controles R55 y240 de regresión, sin fallos; benchmark40 válido
 p95=902,413285ms FALLA500. Prepara perfil residual2 y observer sin ejecutarlos.
 B liberó full1
@@ -341,12 +344,13 @@ Core permite avanzar tras merge real M2 B, PR docs/handoff B5 y GO;
 claims/answers esperan M4 B y adapters sus contratos reales. Sin código/runtime
 portabilidad; reporte `m5-portability-contract-preparation-report.md` en ese worktree.
 
-M3 B preparación SPEC/PLAN lista en `m2-segments`, blobsb6ae4d8/c662440 tras deltas
+M3 B preparación SPEC/PLAN lista en `m2-segments`, blobs6ce254b/305a1f9 tras deltas
 aditivos R46/R47/R50,76 líneas R51/R52 y23 líneas R53. Preflight y scoped reviews independientes READY
 FOR PREPARATION, cero hallazgos,11 cláusulas/14 bloques completos preservados.
 Reportes `m3-library-preparation-review-report.md` y
 `m3-library-binding-delta-review-report.md`, `m3-library-r51-r52-binding-review-report.md`
-y `m3-library-r53-binding-review-report.md`;
+y `m3-library-r53-binding-review-report.md`; R56 aclara publicación documental
+anticipada, con todos los bindings/handoffs obligatorios antes del dispatch;
 Citation/offsets/Unicode, empty MeetingPage/InvalidInput.reason, guard READ,
 ACK/leases/fase durable/contexto explícito fijados; adaptadores
 reales B5/UI y PR docs final todavía pendientes. B puede arrancar sobre A revisado con PR abierto, tras contratos

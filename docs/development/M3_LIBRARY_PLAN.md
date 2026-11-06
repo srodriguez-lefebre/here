@@ -47,8 +47,10 @@ R35 leaves root sole owner of leases, integration and merges. Rebase B after A
 merges; this preparation starts no implementation or new chat/front.
 
 Use the accepted root M3_SEARCH/M2_LIFECYCLE documents at `73d3cb3`, not older
-prepared drafts. Root supplies the actual accepted M3 A source and exact signatures
-before the formal B maintenance PR and launch; future API names below are planned,
+prepared drafts. This preparation maintenance PR may publish with handoffs pending.
+Root supplies the actual accepted M3 A source, reviewed PR head and exact signatures
+before dispatch/execution, with further contract docs accepted first if that handoff
+changes a contract; future API names below are planned,
 not proof that those methods/types exist in M2 A. Fakes do not close integration.
 
 | Handoff / shared scope | Required owner or dependency |

@@ -796,6 +796,18 @@ Los rulings nuevos se escriben en español por el ruling 6.
     tamaño del lote y repetir sus controles/mediciones, manteniendo cobertura
     completa del corpus, invalidación segura y los presupuestos originales.
 
+56. **Ruling:** publicar la preparación documental de M3 B no inicia su ejecución.
+    Se aclaran las dos frases del draft que confundían el PR de preparación con
+    el dispatch. Antes del GO siguen siendo obligatorios el A congelado/revisado
+    con PR abierto, los heads/firmas y handoffs reales aceptados, los contratos
+    documentados y cualquier PR adicional si cambian. Se conserva el rebase tras
+    merge A; no se agrega un requisito de merge previo para empezar B. Ningún
+    criterio, bloque de tarea, cierre, presupuesto o gate de código/aceptación/
+    entrega se modifica. La publicación anticipada solo evita que el trabajo de
+    documentación espere innecesariamente; un contrato pendiente no se presenta
+    como productor aceptado. **Cost if wrong:** ajustar el documento y fijar sus
+    bindings antes del dispatch, sin iniciar implementación con supuestos abiertos.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings

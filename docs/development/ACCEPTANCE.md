@@ -30,6 +30,10 @@ must be synthetic; credentials and private conversations never enter evidence fi
 
 ## Checkpoint local B5 y performance M3 — 2026-11-06
 
+**Snapshot histórico anterior a mypy-v2 y a las corridas R55.** Los resultados
+posteriores aparecen en la tabla actual y STATUS; los pendientes de este bloque
+describen aquel momento y no anulan ni transfieren evidencia posterior.
+
 Este checkpoint registra corridas existentes, no una nueva ejecución de docs.
 Los nombres de la tabla son los stems reales de sus logs/XML, con fecha20261106.
 Los resultados son independientes: no se suman para inventar una suite completa.
