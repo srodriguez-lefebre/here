@@ -28,7 +28,7 @@ Suite Windows `42155415514`: **980 pasan/2 skips wheel/307,46 s**.
 Package Windows `42155415501`: success. Los dos smokes wheel omitidos en CI
 pasan por separado en el wheel fresco exacto: distribución4/7,51 s.
 
-## Tarea en curso: dos frentes separados, inicialización verificada
+## Tarea en curso: dos frentes separados en ejecución
 
 El PR de contratos [#22](https://github.com/srodriguez-lefebre/here/pull/22) se
 mergeó en `73d3cb384bd422de6899d8c7b761f3f3159ea3f1` a2026-11-06T03:59:54Z.
@@ -40,9 +40,8 @@ con `--merge --admin --match-head-commit 96f76dbbcb5ab4ba92866d9acf73c2673e140ee
 Esto acepta documentación; no implementa ni certifica búsqueda/ciclo de vida.
 
 Root creó los dos chats pedidos en el mismo proyecto, cada uno con worktree y
-rama propios. Git verificado por root: ambos clean en la base de contratos73d3cb3,
-con el merge A53712c5 como ancestro. Inicialización solamente; antes del GO no
-hay código/tests/docs nuevos ni suites/builds/proveedor ejecutados por los frentes.
+rama propios. Ambos se inicializaron clean en contratos73d3cb3 con A53712c5 como
+ancestro; hoy contienen el trabajo detallado debajo. No recrearlos ni reiniciarlos.
 
 Proyecto `local-e307e59e09194b354122137b16ef6d77`, host `local`; raíz original
 `C:/Users/savar/Documents/proyects/here` preservada. Root orquesta desde
@@ -62,22 +61,27 @@ Root conserva contratos, integración, global docs y todos los merges. No reinic
 trabajo previo ni duplicar fixtures. Monitorear los dos chats con wait_threads;
 pedidos de leases/handoffs se registran en su progreso/reporte local.
 
-Leases actuales: B posee memory repository/database/service/artifacts, controller/
-recovery y CLI; artifacts se concedió para estados version2 con compatibilidad1.
-M3 posee search.py/tests y UI enumerada; models.py DEVUELTO A B para R48 después
-de congelar DTOs M3 en5c9197a/integración42d147a, blob4680f29d.
-M3 puede integrar solo ese commit y errores canónicos0452945, no el service B4
-parcial. B todavía no tiene writer UI. Processing continúa sin concesión.
+Leases actuales: B posee models/repository/database/service, artifacts solo para
+estado2/compatibilidad1, recovery y CLI. DTOs R46/errores canónicos y B4 completos
+ya se integraron en M3; esto no concede un escritor libre de core al chat M3.
+M3 posee search.py/tests y UI enumerada. B no tiene writer UI; la futura línea
+app.py R52 espera API B verificada y RED consumidor, en la misma instancia/customroot.
+Controller tiene ahora un único writer separado b5_tail_green del chat B,
+controller.py solamente en el WT nativo566; GREEN principal tiene revocado ese
+archivo en todos los worktrees. Processing continúa sin concesión.
 Cualquier handoff adicional se concede explícitamente. Migraciones/pyproject/uv.lock/versiones
 siguen seriales y requieren permiso de root. Global docs son root-only.
 
-Runtime ACTUAL: B posee ventana EXCLUSIVA READERS7 (incluye raíz vacía/primer uso)
-sobre read-fix29ACF356. M3 liberó tras7P/1,92s y Ruff/format de MainWindow5db071a,
-sin cambios; continúa review/docs y preparación de preview sin runtime. No full,
-benchmark, build, uv o mypy repetido. Fuente B5 nativa permanece RED-first R52.
-M3 ya verificó44P/14,42s con título/Conflict/FTS B4 real, source75be486/srcd1bddf68,
-test-format ed8e5aa. Mypy79→78, cero diagnósticos nuevos; primer79→87 retenido.
-Foco legado33:30P/3F/10,44s por mensajes vacíos; sourcefix5db071a aún NOT_RUN.
+Runtime ACTUAL: B tiene grant EXCLUSIVO para RED H1/H2, dos nodos/nueve escenarios
+previstos en fuente c9f64c3 congelada; no son aún resultados. M3 liberó después de
+preview2 y no retiene procesos. Tail GREEN controller-only escribe en su WT sin
+runtime; review/docs y preparación de planes continúan en paralelo. No full,
+benchmark, build, uv o mypy simultáneo. Native RED34 ya observado y test-committed.
+READERS7 terminó7P/5,10s, incluido primer uso con raíz vacía. M3 verificó44P/14,42s
+con título/Conflict/FTS B4 real, source75be486/srcd1bddf68, test-format ed8e5aa.
+Mypy79→78, cero diagnósticos nuevos; primer79→87 retenido. Foco legado33:30P/3F/
+10,44s por mensajes vacíos; fix5db071a y foco7P/1,92s/Ruff/formato/scoped review
+aprobados. No trasladar44/mypy al nuevo sourceE3 como nueva corrida.
 La UI42P/review R1–R3 conservan su alcance previo; ningún grupo está cerrado.
 La validación corta de integridad del fixture M4 también terminó y liberó host:
 exit0/0,326s; sin here/proveedor/pytest. Sin full/mypy/build/benchmark/uv M3 aún.
@@ -93,8 +97,8 @@ FULL2 pasó1043P/9S/390,03s, XML1052/0F/0E/9S/interno389,952s en
 entorno y siete privilegios symlink. Task4 ACEPTADA en local tras docs distintos
 96e8aed255a442acb14bbdff5c32877ec201c628, source/tests invariantes. Root autorizó a
 M3 consumir SOLO ese frozen B4, preservando DTOs/error canónico y sin lease libre
-de core. Edición real/FTS M3 espera pruebas de consumo; B5 guard/reindex pendientes.
-B5 core GREEN tiene RED real; solo el nuevo adapter nativo espera RED R52.
+de core. Edición real/FTS M3 ya tiene44P; integración B5 guard/reindex pendiente.
+B5 core y adapter nativo tienen RED real; implementación final aún no aceptada.
 
 B5 RED100 observado92F/3P/5S/47,39s, XML0E. Dos pases son controles válidos; el
 tercero era falso positivo de --yes por comando ausente. Un fallo era fixture sin
@@ -106,15 +110,39 @@ como si fuera ese código. Fallo real de lectura que migraba bajo SQL Busy; fix
 serviceSHA29ACF3565A6E554C944194DB85673E9CDC6B378830375897B0C60CD10695A845,
 patchE6978215EE65CC29E268212D109BE6ED591A2B5416ABF0690343A035C384A18C.
 Caso único1P/2,89s/XML0F0E0S, source/tests congelados y host liberado. No llamarlo
-100 verde. Sin lint/mypy/full/review/interop B5 aún, ni handoff de service dirty.
+100 verde. READERS7 pasó7P/5,10s y foco guard/reindex34 pasó33P/1symlink skip/
+16,57s; Ruff/formato propios pasan, mypy fresco79→79 sin delta. No full/interop B5.
+Candidato técnico c9f64c3a65bf640196934e9c515ca158e0759ebf, cinco archivos fuente:
+review independiente CHANGES REQUESTED, H1/H2 Important/P2 abiertos. H1 probe FTS
+enmascara OperationalError de storage/Busy como FTS ausente; H2 registry I/O dentro
+de BEGIN IMMEDIATE en edición/status. READ BEGIN R50 sí es intencional. Mismos
+RED/GREEN/reviewer continúan fix acotado; no handoff c9 a M3 hasta re-review verde.
+Reporte task-5-handoff-review-report.md. Dos archivos RED H1/H2 listos y congelados;
+GREEN espera observar RED y su test-only commit antes de corregir ese alcance.
 
 RED nativo R52 tiene su worktree separado verificado:
 `C:/Users/savar/.codex/worktrees/m2-native-owner-red/here`, rama
-`codex/m2-native-owner-red`, base075e280; responsable b5_red del chat M2 B.
-Solo `tests/test_memory_native_owner.py`, fuente readonly, sin runtime hasta lease.
-GREEN B5 sigue en faab, cinco archivos propios; adapter nativo aún no implementado.
+`codex/m2-native-owner-red`, tests-only5667553213202655227d55f0e5fb6437e078018a.
+Corrida real34:27F/4P/3S/0E/20,75s; tests SHA4EA0AC6AD6160B679189ED2A2CD3CACD8AAD82C87B7E75E8B728890CEFA12EFA.
+Incluye tail existente que libera ownership canónico antes del cleanup nativo y
+dos guards destructivos reales; APIs ausentes/controles se clasifican aparte en
+task-5-native-red-report.md. No son34 fallos ni prueba de cleanup por API ausente.
+RED terminó/congeló archivo y pasó a H1/H2 en faab. Nuevo GREEN b5_tail_green
+solo controller.py en ese WT; principal conserva servicio/contexto/CLI/recovery
+en faab, sin controller. Tail/source R52 aún no aprobados; cero writer UI B.
 
-RED históricos y alcance, sin sumar sus resultados a corridas posteriores:
+M3 checkpoint primario docs d7009c724da4fb5eca01d8e28fcec56f6529bf3d, source
+e3ede58c32f5d848988b94dd8c4a5319512546c3, tests35efb958f45c9b107f3639fe018c6f0df42b3b79.
+Preview1 funcional pasa, visual no aprobada por glifos cuadrados. Probe sin here
+aisló QFontDatabase offscreen vacío. Preview2 con Segoe UI existente registrado
+solo en arnés pasa función y texto legible en capturas533x452/1100x800; root vio
+ambas. Conserva scroll/clipping de encabezado y combos, sin aprobación general
+de layout ni cambio de producto/config/font global. Scoped reviewer aprobó solo
+esa evidencia; docs distintos del checkpoint en curso. Tres corridas Qt separadas,
+no pytest/benchmark/DB/audio/red/proveedor. P95 real1000/100000 con guard+heartbeat,
+full/mypy/review integrada y gates hospedados de M3 siguen pendientes.
+
+Historia de corridas, no estado vigente ni resultados sumables:
 
 - B4:111 casos,47 fallan/64 pasan/0 errores/0 skips/76,66s; XML interno75,352s.
   59 controles A/M1 y5 controles de marker pasan; fallan APIs/efectos B4 ausentes.
@@ -217,12 +245,13 @@ Core permite avanzar tras merge real M2 B, PR docs/handoff B5 y GO;
 claims/answers esperan M4 B y adapters sus contratos reales. Sin código/runtime
 portabilidad; reporte `m5-portability-contract-preparation-report.md` en ese worktree.
 
-M3 B preparación SPEC/PLAN lista en `m2-segments`, blobsb47056b/dc8c440 tras delta
-aditivo49 líneas a11c2cf4/0e0a44f. Preflight y scoped delta-review independientes READY
+M3 B preparación SPEC/PLAN lista en `m2-segments`, blobs03207dd/9c177e5 tras deltas
+aditivos R46/R47/R50 y76 líneas R51/R52. Preflight y scoped reviews independientes READY
 FOR PREPARATION, cero hallazgos,11 cláusulas/14 bloques completos preservados.
 Reportes `m3-library-preparation-review-report.md` y
-`m3-library-binding-delta-review-report.md`; R46 Citation/offsets/fuente Unicode,
-R47 empty MeetingPage/InvalidInput.reason y R50 guard futuro fijados, adaptadores
+`m3-library-binding-delta-review-report.md` y `m3-library-r51-r52-binding-review-report.md`;
+Citation/offsets/Unicode, empty MeetingPage/InvalidInput.reason, guard READ,
+ACK/leases/fase durable/contexto explícito fijados; adaptadores
 reales B5/UI y PR docs final todavía pendientes. B puede arrancar sobre A revisado con PR abierto, tras contratos
 necesarios, y rebasear tras merge A: no agregar un bloqueo de merge más estricto.
 
@@ -248,7 +277,7 @@ en M3 integrado con fuente B5 exacta, sin duplicar búsqueda en B. Source B5 aú
 no aceptado; las nueve fronteras R42 y todos los gates siguen obligatorios.
 R52 fija contexto nativo explícito y lifetime canónico; review de callpaths reales
 `b5-native-owner-contract-review.md`. No registry durable de roots, ni autoridad
-por origins. Código del adapter espera RED suplementario, sin cambiar deadlines
+por origins. RED suplementario observado; código adapter espera GREEN/review, sin cambiar deadlines
 ni ubicación/retención/privacidad. Posible línea GUI es del writer M3 y espera API
 B verificada/RED consumidor; ninguna segunda instancia por defecto.
 
@@ -266,6 +295,6 @@ del arnés (whitelist tuple y stdout cp1252) conservados en
 Futuro RED inspecciona/consume al recibirlo UNA vez por root.
 Reporte `m4-synthetic-corpus-preparation-report.md` en ese worktree; corpus previos intactos.
 
-No hay bloqueo humano actual. Próxima acción: integrar B4 en M3 y ejecutar su mypy
-cuando esté listo; recoger readiness B5 RED para la siguiente ventana exclusiva.
+No hay bloqueo humano actual. Próxima acción: recoger RED H1/H2, corregir/revisar
+ese alcance y handoff verificado a M3, mientras segundo GREEN termina controller.
 Reanudar desde estos IDs/reportes sin recrear los chats ni repetir el catálogo A.
