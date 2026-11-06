@@ -716,6 +716,35 @@ Los rulings nuevos se escriben en español por el ruling 6.
     lifetime de leases antes de aceptar B5/M3; una autoridad durable más amplia
     sería otra decisión de §3, fuera de esta implementación mínima.
 
+53. **Ruling:** la fachada reindex pendiente de M3 delega al único mantenimiento
+    B5 mediante `SearchService(connection_factory, *, reindexer:
+    Callable[[], ReindexReport] | None = None)` y `reindex() -> ReindexReport`.
+    Es el adapter interno que SPEC/PLAN dejaron por fijar, no otro indexador ni
+    control nuevo de producto. El constructor conserva los callers de lectura y
+    almacena el callback sin ejecutarlo. Reindex llama exactamente una vez al
+    callback ligado a la instancia MemoryService real inyectada, retorna el MISMO
+    reporte R51 y propaga sus errores canónicos sin envolver/reintentar/recontar.
+    No usa factory, snapshot, conexión, lock, probe o migración propios, tampoco
+    antes de delegar. Sin callback, solo esa operación falla con LibraryError
+    existente; list/search/capabilities continúan disponibles. No confundir falta
+    de mantenimiento con FTS ausente, inferir raíz de una conexión ni fabricar
+    otro MemoryService. La composición real está en ApplicationUiAdapter de
+    `ui/contract.py`: conserva el backend query explícito y, cuando la memoria
+    inyectada soporta mantenimiento mediante capacidad opcional tipada separada,
+    liga el método de ESA misma instancia junto a su data_dir existente. No agregar
+    mantenimiento obligatorio a los protocolos de lectura ni exigirlo a fakes o
+    backends solo-lectura. El nombre privado del protocolo es decisión del autor.
+    RED independiente y archivo separado preceden implementación de la fachada:
+    ausencia actual del método, delegación única/identidad/errores/sin recursos,
+    composición real customroot y control solo-lectura. El suplemento guardado
+    congelado no se modifica durante su corrida. Equivalencia real B5 antes/
+    después/no-op, partial/fallback y generación R45 siguen siendo sus pruebas
+    propias, sin cache o writer nuevo de invalidación. Review estática independiente
+    READY en `search-reindex-facade-contract-review.md`; no es aceptación de código,
+    B5/R52/M3 ni cambio de DoD. No cambia dependencias, tráfico, settings, privacidad
+    o UX. **Cost if wrong:** corregir el adapter antes de aceptar M3, conservando
+    una sola autoridad de escritura y los callers de lectura existentes.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
