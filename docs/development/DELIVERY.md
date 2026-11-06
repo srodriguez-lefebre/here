@@ -753,8 +753,10 @@ Los rulings nuevos se escriben en español por el ruling 6.
     Debe ser un path/UUID/rol válido y no estar protegido por una operación prepared;
     el plan propio versión1, operation_id coincidente e inventario admitido se
     validan junto con TODOS los hijos/roles/paths antes de unlink. Unknowns, links,
-    subdirectorios, plan ausente/inválido o referencia de journal inconsistente se
-    retienen/reportan; un nombre UUID o una lista de hashes solos no dan autoridad.
+    subdirectorios, plan inválido o referencia de journal inconsistente se retienen/
+    reportan. Un plan ausente no autoriza borrar contenido; el housekeeping de un
+    directorio vacío conserva los guards/comportamiento A y no es este caso.
+    Un nombre UUID o una lista de hashes solos no dan autoridad.
     Los hashes son inventario de copia, no prueba criptográfica de commit/ownership;
     no se inventa re-hash de una copia que pudo interrumpirse. Esta rama interna
     sin journal no requiere meeting_id ni contexto nativo porque solo descarta
