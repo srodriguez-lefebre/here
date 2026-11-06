@@ -76,9 +76,13 @@ sin procesos. B posee ventana para mypy comparativo y UN full R49 corregido sobr
 4e1b2cead486563516b69e09fb45543ee85b53aa, clean y congelado, src4ca55bbe7e88ff59f79dee47e8740fef2253718e/
 testsbf4f471a87ad84df8ac41f8da375f8fd1025f42e; no build/uv ni mutación durante full.
 Mismo reviewer B4 aprobó R1 ADDRESSED/SPEC/quality, cero hallazgos; mypy actual79→79,
-multiset sin delta nuevo. FULL2 running sesión12192, sin resultado aún. UI sin
-runtime; review825f3e6 encontró refresh pendiente al volver de grabar a Biblioteca,
-mismo RED prepara esa regresión sin fix previo. Handoff B4 completo espera full/docs. Suplemento outcome RED2
+multiset sin delta nuevo. FULL2 terminó1043P/9S/390,03s, XML1052/0F/0E/9S/interno389,952s,
+logs `task-4-full-2.*`, HEAD/src/tests sin cambios y clean. Dos skips wheel sin
+entorno y siete privilegios symlink. Coordinador liberó host antes de docs; autor
+distinto finalizaTask4evidence. Handoff B4 completo espera aceptación docs.
+Runtime ahora M3 UI: RED4 preparado7044b12 contra source825f3e6, tres findings de
+review (refresh al volver, retry/error participantes, capture-controls busy); primero
+RED real, después mismo GREEN/foco42/Ruff. Sin full/mypy/build/benchmark M3 aún. Suplemento outcome RED2
 falló2/0E/3,05s; GREEN R1 pasó7/7/5,24s. RED R1 previo5F/0E/4,10s en87f9a302
 y ambos focos UI conservan sus fuentes/logs; R48 consumer asserts aún pendientes.
 No repetir full previo. Sin build/benchmark todavía. Cada coordinador libera la ventana
@@ -224,6 +228,6 @@ SHA256318E31615073D5DDC9B73937DA10A1DA7BA291A59F74497C1983533F6094D265.
 ni validación; futuro RED inspecciona/valida al recibirlo UNA vez por root.
 Reporte `m4-synthetic-corpus-preparation-report.md` en ese worktree; corpus previos intactos.
 
-No hay bloqueo humano actual. Próxima acción: recoger mypy/full B R49 y su scoped
-review; docs distintos y aceptarTask4 antes B5, habilitando handoff real a M3.
+No hay bloqueo humano actual. Próxima acción: cerrar docs/aceptarTask4 B y entregar
+su fuente real a M3; B5 RED empieza después, mientras M3 corrige findings de UI.
 Reanudar desde estos IDs/reportes sin recrear los chats ni repetir el catálogo A.
