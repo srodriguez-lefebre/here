@@ -71,13 +71,14 @@ parcial. B todavía no tiene writer UI. Processing continúa sin concesión.
 Cualquier handoff adicional se concede explícitamente. Migraciones/pyproject/uv.lock/versiones
 siguen seriales y requieren permiso de root. Global docs son root-only.
 
-Runtime ACTUAL: ventana condicional EXCLUSIVA M3 para corregir/verificar tipos,
-una vez congelado/listo. Primera comparación con B4 real compartido:79 baseline/
-87 candidato,9 diagnósticos nuevos y1 eliminado; nuevos solo UI, ninguno search.py.
-Fuente integrada c4cc8ca, B4 exacto y DTOs R46 preservados. Mismo GREEN corrige
-sus archivos UI sin silencios/B4; Ruff, nuevo mypy y foco42/consumidores título
-si listos, sin full/build/benchmark/uv. B5 RED escribe sin runtime. M3 anterior
-UI42P/13,37s y review R1–R3 aprobada conservan su fuente7e554f1/alcance.
+Runtime ACTUAL: M3 posee ventana EXCLUSIVA para7 casos preparados del fix de
+presentación vacía5db071a y Ruff de MainWindow; B no tiene runtime. Luego B tiene
+READERS7 listos (incluye raíz vacía/primer uso) sobre read-fix29ACF356. No full,
+benchmark, build, uv o mypy repetido. Fuente B5 nativa permanece RED-first R52.
+M3 ya verificó44P/14,42s con título/Conflict/FTS B4 real, source75be486/srcd1bddf68,
+test-format ed8e5aa. Mypy79→78, cero diagnósticos nuevos; primer79→87 retenido.
+Foco legado33:30P/3F/10,44s por mensajes vacíos; sourcefix5db071a aún NOT_RUN.
+La UI42P/review R1–R3 conservan su alcance previo; ningún grupo está cerrado.
 La validación corta de integridad del fixture M4 también terminó y liberó host:
 exit0/0,326s; sin here/proveedor/pytest. Sin full/mypy/build/benchmark/uv M3 aún.
 Cada coordinador libera inmediatamente al terminar los comandos, antes de reportes
@@ -94,6 +95,24 @@ entorno y siete privilegios symlink. Task4 ACEPTADA en local tras docs distintos
 M3 consumir SOLO ese frozen B4, preservando DTOs/error canónico y sin lease libre
 de core. Edición real/FTS M3 espera pruebas de consumo; B5 guard/reindex pendientes.
 B5 RED WRITE-ONLY ya despachado después de aceptación; GREEN espera RED real.
+
+B5 RED100 observado92F/3P/5S/47,39s, XML0E. Dos pases son controles válidos; el
+tercero era falso positivo de --yes por comando ausente. Un fallo era fixture sin
+speaker. Tres reparaciones test-only075e280d28805b87012c059a74b5d9f95b54aeb7,
+1654 líneas/3 archivos, se verificaron luego en M3 test-mergef3f06bc con B4 real
+intacto:3F/0E/3,44s, fallos correctos de B5 ausente; no repetir100 ni sumar runs.
+Primer GREEN B5:94P/1F/5S/82,78s sobre fuente candidata dirty documentada, no4ca55
+como si fuera ese código. Fallo real de lectura que migraba bajo SQL Busy; fix
+serviceSHA29ACF3565A6E554C944194DB85673E9CDC6B378830375897B0C60CD10695A845,
+patchE6978215EE65CC29E268212D109BE6ED591A2B5416ABF0690343A035C384A18C.
+Caso único1P/2,89s/XML0F0E0S, source/tests congelados y host liberado. No llamarlo
+100 verde. Sin lint/mypy/full/review/interop B5 aún, ni handoff de service dirty.
+
+RED nativo R52 tiene su worktree separado verificado:
+`C:/Users/savar/.codex/worktrees/m2-native-owner-red/here`, rama
+`codex/m2-native-owner-red`, base075e280; responsable b5_red del chat M2 B.
+Solo `tests/test_memory_native_owner.py`, fuente readonly, sin runtime hasta lease.
+GREEN B5 sigue en faab, cinco archivos propios; adapter nativo aún no implementado.
 
 RED históricos y alcance, sin sumar sus resultados a corridas posteriores:
 
@@ -226,7 +245,12 @@ R51 ya fija DTO DeletionResult/ReindexReport, categorías/fase durable, ACK fuer
 del lock/SQL y revalidación, purger privado en transacción y roles de temporales.
 Reporte `b5-result-hook-contract-review.md`; la interoperabilidad real se prueba
 en M3 integrado con fuente B5 exacta, sin duplicar búsqueda en B. Source B5 aún
-no implementado; las nueve fronteras R42 y todos los gates siguen obligatorios.
+no aceptado; las nueve fronteras R42 y todos los gates siguen obligatorios.
+R52 fija contexto nativo explícito y lifetime canónico; review de callpaths reales
+`b5-native-owner-contract-review.md`. No registry durable de roots, ni autoridad
+por origins. Código del adapter espera RED suplementario, sin cambiar deadlines
+ni ubicación/retención/privacidad. Posible línea GUI es del writer M3 y espera API
+B verificada/RED consumidor; ninguna segunda instancia por defecto.
 
 Mapa de cierre M2 listo: `m2-milestone-closure-readiness.md` coteja16 criterios y
 DoD, evidencia A y faltantes B/0.3, nueve fronteras R42 y protocolo build/smoke.
