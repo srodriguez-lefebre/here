@@ -71,9 +71,11 @@ parcial. B todavía no tiene writer UI. Processing continúa sin concesión.
 Cualquier handoff adicional se concede explícitamente. Migraciones/pyproject/uv.lock/versiones
 siguen seriales y requieren permiso de root. Global docs son root-only.
 
-Runtime ACTUAL: B4-R1 RED terminó5F/0E/4,10s en87f9a302, sin correcciones de
-harness, y su coordinador liberó el host. Ventana exclusiva ahora M3 UI38 casos
-con source846c53f/R48b3628a7/tests544b6e5; B GREEN escribe R49 sin runtime.
+Runtime ACTUAL: M3 liberó después de UI38 foco2,29P/9F/22,52s, sin procesos.
+B posee la ventana: suplemento outcome real RED2 falló2/0E/3,05s; GREEN R1
+pasó7/7/5,24s. Sigue selección afectada/Ruff/format; no full/build/mypy todavía. M3 escribe
+fixes causales de producto/harness sin runtime. RED R1 previo5F/0E/4,10s en87f9a302
+y ambos focos UI conservan sus fuentes/logs; R48 consumer asserts aún pendientes.
 No repetir full previo. Sin build/benchmark todavía. Cada coordinador libera la ventana
 con evidencia real; root la asigna al otro
 frente. Nunca dos tests/builds/mypy pesados en el host. Leer/escribir archivos
@@ -168,6 +170,13 @@ Preparación futura ya existente: `next-contracts-preparation-report.md`,
 Fixtures de memoria/búsqueda/playback/ZIPs siguen preservados en sus worktrees;
 su generación no certifica benchmark, seek o importador.
 
+M5 B preparación SPEC/PLAN congelada en `m2-segments`, blobs7904905/c77a3c6;
+8 cláusulas/14 bloques preservados y review independiente estática READY FOR
+PREPARATION, cero hallazgos, reporte `m5-portability-preparation-review-report.md`.
+Core permite avanzar tras merge real M2 B, PR docs/handoff B5 y GO;
+claims/answers esperan M4 B y adapters sus contratos reales. Sin código/runtime
+portabilidad; reporte `m5-portability-contract-preparation-report.md` en ese worktree.
+
 M3 B preparación SPEC/PLAN lista en `m2-segments`, blobs11c2cf4/0e0a44f.
 Preflight independiente READY FOR PREPARATION, cero hallazgos,11 cláusulas/14
 bloques completos de tareas preservados. Reporte `m3-library-preparation-review-report.md`;
@@ -191,6 +200,13 @@ snapshot de UUIDs y aliases exactos antes de LIMIT, fingerprint incluye IDs
 resueltos; caller abre/cierra. Parser único, sin nuevas migraciones o p95 relajado.
 No es implementación/aceptación B5; ambos frentes reciben API antes de integrarla.
 
-No hay bloqueo humano actual. Próxima acción: recoger foco UI M3 y liberar a
-B para GREEN R1; después re-review acotada y full corregido, sin reiniciar roles.
+Mapa de cierre M2 listo: `m2-milestone-closure-readiness.md` coteja16 criterios y
+DoD, evidencia A y faltantes B/0.3, nueve fronteras R42 y protocolo build/smoke.
+No exige máquina limpia antes de M5 ni convierte full B4 con R1 abierto en cierre.
+Fixture sintético M4 en preparación por catalog_group_fixes, único archivo nuevo
+`m2-preparation/here/tests/grounded_fixtures.py`; no consumir hasta freeze/root
+handoff, sin runtime ni API de producto y sin duplicar corpus existentes.
+
+No hay bloqueo humano actual. Próxima acción: recoger RED2/GREEN R1 de B,
+devolver host a UI M3; después re-review acotada y full B corregido, sin reiniciar roles.
 Reanudar desde estos IDs/reportes sin recrear los chats ni repetir el catálogo A.
