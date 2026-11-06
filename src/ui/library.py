@@ -7,9 +7,11 @@ from datetime import datetime, time, timezone
 
 from here.memory.models import (
     CitationTarget,
+    MeetingDetail,
     MeetingPatch,
     MeetingQuery,
     MeetingStatus,
+    MeetingSummary,
     SearchHit,
     SearchQuery,
 )
@@ -97,13 +99,13 @@ class LibraryView(QWidget):
         self._generation = 0
         self._detail_generation = 0
         self._participant_generation = 0
-        self._requests = {}
+        self._requests: dict[str, tuple[int, int]] = {}
         self._cursor = None
         self._query = MeetingQuery()
-        self._items = []
-        self._detail = None
+        self._items: list[MeetingSummary | SearchHit] = []
+        self._detail: MeetingDetail | None = None
         self._detail_notice = ""
-        self._speaker_names = {}
+        self._speaker_names: dict[tuple[str, str], str] = {}
         self._loading = False
 
         self._search = QLineEdit()
@@ -408,7 +410,10 @@ class LibraryView(QWidget):
         elif kind == "library-title":
             self._save.setEnabled(True)
             if isinstance(error, Conflict):
-                identity = self._detail.meeting.id
+                detail = self._detail
+                if detail is None:
+                    return
+                identity = detail.meeting.id
                 self._open_detail(identity)
                 self._detail_notice = "El título cambió. Revisá la versión actual antes de guardar."
                 self._detail_message.setText(self._detail_notice)

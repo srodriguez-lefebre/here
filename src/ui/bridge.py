@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import threading
+from dataclasses import dataclass
 
 from here.ui.contract import (
     ApplicationEvent,
@@ -48,6 +49,12 @@ class ApplicationEventBridge(QObject):
         unsubscribe()
 
 
+@dataclass
+class _JobOutcome:
+    value: object = None
+    error: Exception | None = None
+
+
 class BackgroundJobs(QObject):
     """Retain jobs until actual thread exit; all Qt delivery stays on the Qt thread."""
 
@@ -74,13 +81,13 @@ class BackgroundJobs(QObject):
             return None
         self._serial += 1
         request_id = self._serial
-        outcome = [None, None]
+        outcome = _JobOutcome()
 
         def work():
             try:
-                outcome[0] = operation()
+                outcome.value = operation()
             except Exception as exc:
-                outcome[1] = exc
+                outcome.error = exc
 
         worker = threading.Thread(target=work, name=f"here-ui-{kind}", daemon=True)
 
@@ -105,7 +112,7 @@ class BackgroundJobs(QObject):
                 continue
             del self._pending[request_id]
             if not self._closed:
-                self.finished.emit(request_id, kind, *outcome)
+                self.finished.emit(request_id, kind, outcome.value, outcome.error)
             self.idleChanged.emit()
             # Completion callbacks may submit replacement work. Publish the
             # resulting shared state after those callbacks, not a transient idle.

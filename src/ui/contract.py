@@ -8,7 +8,7 @@ transcription, persistence, or concrete controller implementations.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 from here.application import (
     ApplicationController,
@@ -36,6 +36,34 @@ from here.memory.models import (
     SearchQuery,
 )
 from here.memory.search import SearchService
+
+
+class _MemoryBackend(Protocol):
+    def get_meeting(self, meeting_id: str) -> MeetingDetail: ...
+
+    def list_participants(self, meeting_id: str | None = None) -> tuple[Participant, ...]: ...
+
+    def update_meeting(
+        self, meeting_id: str, patch: MeetingPatch, expected_version: int
+    ) -> MeetingDetail: ...
+
+
+class _QueryBackend(Protocol):
+    def list_meetings(self, query: MeetingQuery) -> MeetingPage: ...
+
+    def search(self, query: SearchQuery) -> SearchPage | MeetingPage: ...
+
+
+@runtime_checkable
+class _MemoryOwner(Protocol):
+    @property
+    def memory_service(self) -> _MemoryBackend: ...
+
+
+@runtime_checkable
+class _CatalogRoot(Protocol):
+    @property
+    def data_dir(self) -> Path: ...
 
 
 class VisualController(Protocol):
@@ -93,8 +121,8 @@ class ApplicationUiAdapter:
         *,
         diagnostics_service=None,
         recovery_service=None,
-        memory_service=None,
-        search_service=None,
+        memory_service: _MemoryBackend | None = None,
+        search_service: _QueryBackend | None = None,
     ) -> None:
         self._controller = controller
         self._output_dir = output_dir
@@ -103,20 +131,22 @@ class ApplicationUiAdapter:
         self._memory = memory_service
         self._search = search_service
 
-    def _memory_backend(self):
+    def _memory_backend(self) -> _MemoryBackend:
         # The controller's accepted R48 getter preserves injected/custom data roots.
         # Missing handoff is explicit; opening another default-root service is forbidden.
         backend = self._memory
-        if backend is None:
-            backend = getattr(self._controller, "memory_service", None)
-        if backend is None:
-            raise LibraryError("La biblioteca aún no está disponible. Reintentá más tarde.")
-        return backend
+        if backend is not None:
+            return backend
+        if isinstance(self._controller, _MemoryOwner):
+            return self._controller.memory_service
+        raise LibraryError("La biblioteca aún no está disponible. Reintentá más tarde.")
 
-    def _query_backend(self):
+    def _query_backend(self) -> _QueryBackend:
         if self._search is not None:
             return self._search
         memory = self._memory_backend()
+        if not isinstance(memory, _CatalogRoot):
+            raise LibraryError("El backend de consultas de biblioteca aún no está disponible.")
         return SearchService(lambda: open_library(memory.data_dir))
 
     def list_meetings(self, query: MeetingQuery) -> MeetingPage:
