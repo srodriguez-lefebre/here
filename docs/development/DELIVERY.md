@@ -825,6 +825,76 @@ Los rulings nuevos se escriben en español por el ruling 6.
     launcher y repetir solo el diagnóstico invalidado con nueva procedencia,
     conservando resultados y sin modificar producto, privacidad ni presupuestos.
 
+58. **Ruling:** la traza real R55 confirma contención propia entre las lecturas de
+    participantes, listado y búsqueda de la misma Biblioteca: la consulta vigente
+    termina Busy/Retry visible sin resultados. Se corrige su coordinación interna
+    de dispatch, conservando el último request/generation, descarte de callbacks
+    obsoletos, GUI no bloqueada, cierre y drain real de workers. No se amplía la
+    espera del lock, se debilita el guard ni se ocultan Busy externos/errores de
+    requests vigentes; Retry conserva su función. No hay pantalla, flujo público,
+    dependencia, proceso o setting nuevo. El RED público ya existente y la traza
+    justifican el fix; tests UI, ocho queries reales, review independiente y nueva
+    medición deben verificarlo. Sus tiempos instrumentados y gaps parciales no
+    aprueban50ms ni500ms. El UI GREEN trabaja en su worktree propio sin integrar
+    durante los bindings del diagnóstico query; cualquier integración espera su
+    release o rebind explícito. **Cost if wrong:** ajustar dispatch/cancelación
+    interna y repetir sus controles, manteniendo errores reales, ownership y los
+    presupuestos originales.
+
+59. **Ruling:** W3 y sus dos controles C5 se corrigen conservando ambos contratos.
+    Se fija el seam interno `MemoryService.recovery_read_view(directory,
+    declared_identity)`, context manager que devuelve la identidad resuelta real
+    (`str | None`), sin inventar padre/revisión ni otorgar autoridad sobre roots.
+    Usa el único parser B y una sola `.memory.lock`: valida primero todo registro
+    y todos los UUID directos pending/complete. Con cero pares de origen, aliases
+    vacíos están probados; una identidad conocida no depende de SQL innecesario.
+    Con cualquier par, conserva la resolución coherente de aliases SQL o falla
+    cerrado antes de audio/exposición. Un UUID de metadata o productor nativo
+    no exime de aliases. None/opacos conservan la resolución legado existente,
+    su ambigüedad/corrupción metadata-only y el control genuino sin catálogo ni
+    barreras; nunca se interpreta registro inválido como vacío.
+    El consumidor conserva los scopes de ownership existentes, revalida después
+    de adquirirlos y compara identidad resuelta/owner retenido antes de inspección.
+    El guard final mantiene la exclusión y, si necesaria, su vista SQL durante
+    audio/reconstrucción/construcción del candidato, incluso si create=False no
+    adquirió un owner-file ausente. No escapa un booleano desprotegido. Resolución
+    preliminar no autoriza audio. Se factoriza un primitivo privado ya locked,
+    sin nested public read view, segundo lock/BEGIN, parser o MemoryService.
+    Read scope no envuelve publish_memory/reconcile/provider ni otro writer;
+    su handoff usa leases reales retenidas y revalidación del writer existente.
+    Además catalog_read_view traduce fallos de SU setup, pero propaga intactos
+    ValueError/OSError/errores de dominio del caller después del yield, conservando
+    rollback/release. Service sigue con el GREEN principal; Recovery consume el
+    API congelado en su WT/archivo propio. Tests RED independientes deben cubrir
+    la matriz y lifetime, además de W3/C5 reales; no cambian expectativas.
+    **Cost if wrong:** ajustar seam/lifetime y sus callers antes del merge,
+    preservando supresión completa, errores reales y los guards de ownership.
+
+60. **Ruling:** W2 conserva el plan privado v1 de tres campos y sus assertions;
+    no agrega meeting_id, schema ni registro/inventario durable alternativo.
+    Con SQL utilizable, todo stage asociado a la reunión se valida por journal,
+    paths/plan/roles y R52 antes de purgar: se conserva ese journal o transfiere
+    su inventario validado al delete journal existente hasta terminar. Denegación,
+    unknown o inconsistencia conserva autoridad y pending/hidden.
+    En recuperación ya aceptada pending sin autoridad SQL utilizable para probar
+    el alcance, housekeeping R54 de copias privadas realmente no referenciadas
+    ocurre bajo la misma lock ANTES de completar. No necesita inventar asociación
+    stage→meeting para descartar copias que R54 ya autoriza. Si quedan restos que
+    no pueden excluirse con evidencia del alcance pendiente, se preservan/reportan
+    y esa recuperación no afirma complete; no se adjudican como owned ni se los
+    borra para resolver la duda. Se usa estado observable, no una supuesta historia
+    de pérdida de DB. No es rechazo global nuevo antes de aceptación ni regresión
+    automática de tombstones ya complete; SQL fiable que prueba un stage ajeno
+    conserva esa distinción. El costo conservador ante material inidentificable
+    es pending/diagnóstico, sin garantía inventada de finalización selectiva.
+    Todo cleanup B reutilizado mantiene preflight de TODOS los hijos/roles/paths
+    y la dependencia W1: WAV antes de session.json y prueba de publicación al final.
+    No basta mover un iterdir/unlink que pueda destruir primero su propia prueba;
+    prueba ya perdida no se reconstruye desde UUID/sufijo/hash u origen externo.
+    Tests intactos de SQL-loss/unknown/replay y controles A/W1 deben llegar a verde.
+    **Cost if wrong:** ajustar precedencia/límite de pending y repetir controles,
+    reteniendo incertidumbre y bytes desconocidos, sin ampliar autoridad de borrado.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
