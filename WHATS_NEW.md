@@ -36,6 +36,14 @@ both wheel smokes, using the unchanged product wheel. Final scoped independent
 review APPROVED source, fixture and docs `8845877`; GR1–GR3/GD1/GD2 are addressed.
 Hosted gates remain pending. M2 is unreleased; version 0.2.0 stays current.
 
+PR #21 Copilot corrections now restore earlier evidence after ordinary precommit
+callback rejection, keep the controller/default processor on one catalog, and
+show blocked completed publication through the existing recovery warning without
+offering another transcription. Source `c3cdf08` passes eight new cases and the
+325-case affected focus (one symlink skip). Full 5 passes 961/seven skips in
+371.80s with both wheel smokes. Independent final scoped review remains pending;
+the full4/approval above retain their previous-source scope.
+
 ## 0.2.0 — Windows M1 delivery
 
 - Production Qt desktop and recording overlay share the application controller.

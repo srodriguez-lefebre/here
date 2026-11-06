@@ -12,7 +12,7 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M1 | Provider/timestamps and diarization | Synthetic real-provider run and segment output inspected | Single/multiple-source TTS smokes passed; long transcription/diarization omitted by explicit user instruction |
 | M1 | Failure/crash/network/disconnection/disk-pressure recovery | Fault-injection plus bounded hardware run | PR12 faults, writer/publication process kills and helper-owner death passed; native recoverable saved failure passed; no repeated installed fault matrix claim; long run omitted by user |
 | M1 | Installed application opens, records and uninstalls | Fresh Windows installation and bundled-runtime smoke | Incorporated-source `1740b2d` local Windows 11 frozen GUI/CLI, Start launch, active-update refusal, reinstall/uninstall and data preservation passed; recording retains earlier source evidence; distribution peer review/clean hosted package CI/merge pending |
-| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | Tareas1–3 verificadas localmente y aceptadas técnicamente; full4 verde953/7/358,94 s y ambos smokes; review final APPROVED fuente7bfd/fixtureef70/docs8845877, GR1–GR3 ADDRESSED. CI/merge y B pendientes; sin cierre del grupo/hito |
+| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | Fuente actual c3cdf08 corrige C1–C3 de Copilot; GREEN 8 y afectado 325/1skip pasan; full 5 verde 961/7/371,80 s; review final pendiente. Aprobación/full4/CI339 históricos. CI del nuevo head/merge/B pendientes; sin cierre del grupo/hito |
 | M2 · criterio 2 | Grabación, archivo y retry comparten persistencia de aplicación | CLI delega a SessionProcessor, artefactos y fallos compatibles | Consolidación verificada en focos de tarea 2; integración de catálogo implementada en 7bfd0cb con foco final 26; full4 y review técnica final aceptados; CI pendiente |
 | M2 · criterios 6–7 | Segmentos nullable y pausa sin desplazar el WAV | Cinco recorridos con proveedor fake, procedencia y seek de marcas en WAV sintético | Verificados automáticamente en focos de tarea 2 y catálogo implementado en tarea 3; full4 y review técnica final aceptados; sin certificación de captura/proveedor |
 | M2 · criterio 8 | Migración transaccional, backup administrado y rechazo de esquema futuro | FK/integrity, rollback de DDL y snapshot SQLite API con WAL comprometido | Verificado automáticamente en local: M2A-T1-LOCK-GREEN-20261105 y M2A-T1-FINAL-20261105; CI del grupo pendiente |
@@ -29,6 +29,26 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | All | PR groups reviewed and merged | PR URLs, reviewed heads, comment dispositions, CI and merge SHAs | M2–M5 en ejecución por ruling 20; cada uno de los nueve grupos requiere review independiente, Copilot recibido/respondido y CI Windows verde sobre el head exacto antes del merge; M2 A pendiente |
 
 ## Current execution scope
+
+Checkpoint actual PR #21: fuente c3cdf08 integra C1/C2/C3 bajo R40, desde
+61fb8e2, con src b465d3198840f96d5d15a85eeb45e4312e4c4dec y tests
+293bc5038bae501dee07631704899e5f385e9025. RED independiente 5 fallos/3 controles
+pasan/8 casos/26,91 s; GREEN 8 pasan 9,77 s; afectado 325 pasan/1 symlink skip/
+141,36 s. Ruff/format 6 limpios, mypy comparativo339/current 79/79 sin nuevos.
+Full 5 pasa 961/7/371,80 s; review acotada final pendiente. C1–C3 provisionalmente ADDRESSED por inspección de fuente, sin veredicto final aún.
+La review/full4/CI previos conservan su fuente; no prueban el código nuevo.
+
+Probe fresco c3cdf08 de 2026-11-06T01:47:42.753122Z: 65 módulos iguales, no editable,
+schema 2/FTS5 y FK/integrity informados por root. Wheel SHA256
+`acbc092001eda20bcf980bf9d74d2c53c01698322641e9f8a9d313c34efec051`, sdist
+`f7d80d8612aa6e2de13662324c16f670baa5022a2ad4dfcd976df1e6847b33ab`.
+Full 5 comenzó solo a 2026-11-06T01:47:43.289345Z, logs/XML
+`.superpowers/m2a-integrated-final-5.*`: **961 pasan/7 skips/cero fallos en 371,80 s**.
+Lectura independiente de log/XML: 968 casos/0F/0E/7S/interno 371,710 s. Ambos smokes
+wheel CLI 3,747/GUI 2,978 s pasan sin failure/skip; root confirma exit0. Siete skips
+son privilegios symlink, no aprobaciones. CI Windows339 run 42142394863:958 pasan/2 skips wheel/250,79 s;
+package 42142395026 pasó sobre 339 solamente. Faltan respuestas a Copilot 5794475912,
+nueva solicitud/recepción en head corregido, CI exacto y merge guardado.
 
 La instrucción explícita del 2026-11-05 (ruling 20) autoriza implementar y entregar
 M2–M5 completos en nueve grupos, empezando por M2 A. No altera las definiciones de
@@ -424,7 +444,7 @@ R35 conserva prioridad: cerrar/mergear A y PRs docs de contratos antes de crear 
 dos chats de proyecto B/M3 A. IDs/ramas/worktrees/base mergeada/responsables pendientes;
 ninguno creado. Versión 0.2.0; meta final 1.0.0 y requisitos de calidad/privacidad intactos.
 
-### Checkpoint vigente 7bfd0cb — tanda única de fixes GR1–GR3
+### Checkpoint histórico 7bfd0cb — tanda única de fixes GR1–GR3
 
 Root `7bfd0cbf477a42aacc44b83b3d2da1e438801756` integra Green
 `ec55b9564d3af01247d3367675a340a361f6b6ef`. Lectura Git independiente confirma

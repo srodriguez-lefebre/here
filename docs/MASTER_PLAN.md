@@ -132,6 +132,10 @@ La corrección test-only `ef70f78` pasó foco13/24,82 s y full 4:953 pasan/7 ski
 358,94 s, ambos smokes wheel pasan con el mismo source/probe no editable exacto.
 Los fallos históricos permanecen. Tarea 3 aceptada técnicamente en local;
 grupo A e hito siguen abiertos hasta sus gates y alcance restantes.
+PR #21 recibió tres observaciones de Copilot sobre 3394149; R40 se implementó en
+c3cdf08 con 8 casos nuevos y foco afectado 325/1skip pasando. Full 5 pasa 961/7/371,80 s; review acotada
+de esa corrección está pendiente; aprobación/full4/CI anteriores conservan su
+fuente real. Aún faltan respuestas/nueva review Copilot/CI exacto/merge de A.
 El ciclo
 de vida/borrado y el cierre de M2 siguen pendientes; no cambia la versión a 0.3.0
 hasta cerrar el grupo B. Su PLAN ajustado se entrega antes en un PR de docs según

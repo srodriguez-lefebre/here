@@ -2,6 +2,11 @@
 
 Estado: **en ejecución desde el 2026-11-05**, por instrucción explícita del usuario
 (ruling 20, reemplaza ruling 15). Grupo actual A; el hito no está cerrado.
+Checkpoint actual de PR #21: fuente c3cdf08 integra correcciones R40/C1–C3 tras
+Copilot sobre 3394149. Ocho casos nuevos y foco 325/1skip pasan; full 5 pasa 961/7/
+371,80 s, ambos smokes wheel. Review independiente final del diff pendiente.
+La aprobación/full4/CI anteriores son históricos
+de la fuente previa; respuestas/nueva review Copilot/CI exacto/merge pendientes.
 El diseño detallado está en
 [`development/PRODUCT_DESIGN.md`](development/PRODUCT_DESIGN.md), secciones 2, 3 y 4,
 que es decisión tomada (ruling 3). Este plan no lo repite: fija alcance, orden, criterios
@@ -81,7 +86,7 @@ siete. Valen las cinco del diseño.
 
 | Grupo | Tareas del diseño | Documentos | Estado |
 |---|---|---|---|
-| A. Catálogo inmutable | 1 modelos, migraciones y repositorio · 2 segmentos y raw text en todos los recorridos · 3 ingestión, identidad y revisiones | `M2_CATALOG_SPEC.md`, `M2_CATALOG_PLAN.md` | tareas 1–3 verificadas localmente y aceptadas técnicamente; full4 verde953/7/358,94 s; review final APPROVED sobre fuente7bfd/fixtureef70/docs8845877; gates hospedados/merge pendientes |
+| A. Catálogo inmutable | 1 modelos, migraciones y repositorio · 2 segmentos y raw text en todos los recorridos · 3 ingestión, identidad y revisiones | `M2_CATALOG_SPEC.md`, `M2_CATALOG_PLAN.md` | C1–C3 corregidos en c3cdf08, foco 8/afectado 325+1skip pasan; full 5 verde 961/7/371,80 s; review final pendiente; aprobación/full4/CI339 históricos, gates del nuevo head/merge pendientes |
 | B. Ciclo de vida y borrado | 4 participantes, edición con `row_version`, reconciliación · 5 borrado transaccional y FTS | `M2_LIFECYCLE_SPEC.md`, `M2_LIFECYCLE_PLAN.md` | plan escrito, sin ejecutar |
 
 Orden obligatorio: A antes que B. Si al mergear A cambió la forma de

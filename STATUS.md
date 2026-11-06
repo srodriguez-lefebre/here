@@ -16,15 +16,21 @@ las definiciones de terminado y los tres niveles de evidencia. Versión vigente
 - Base histórica: `878e7d4`, v0.2.0; PR #20/ruling 19 mergeado en `763a891` e
   integrado. Grupo actual: `codex/m2-catalog`, worktree
   `C:/Users/savar/.codex/worktrees/m2-catalog/here`.
-- Fuente de producto integrada: `7bfd0cbf477a42aacc44b83b3d2da1e438801756`, equivalente
+- Fuente histórica previa a Copilot: `7bfd0cbf477a42aacc44b83b3d2da1e438801756`, equivalente
   a Green `ec55b9564d3af01247d3367675a340a361f6b6ef` tras la tanda única GR1–GR3.
   Src tree `2b4036f7deb905efb0a8836f378d267a066564b4`, tests tree
   `a4310416bd10dc922b49e010d8495a98bfdfd585`; source/config/scripts/workflows
   sin diferencias con Green. Integración no equivale a aceptación ni merge de A.
-- Head de ejecución `ef70f78cfc9c8f2910e77b2b2818ce2e6b4d71ae` añade solo el forwarding
+- Head histórico de full4 `ef70f78cfc9c8f2910e77b2b2818ce2e6b4d71ae` añade solo el forwarding
   de dos wrappers de `tests/test_capture_recovery.py`, desde autor
   `c3a3ccbcf2928502cbf0d0881fdfee3d7f86d84a`. Fuente idéntica a `7bfd0cb`; tests
   tree `30c88848b3cf42c9ce4443328e3c8e0100e2af44`, 114 assertions/cortes intactos.
+- Fuente actual integrada `c3cdf085c03718ca6a9d5db87ea0de28fa9652b0`, desde Green
+  `61fb8e2815887c19a1d6dc64572e5f469ec5cee9`: src tree
+  `b465d3198840f96d5d15a85eeb45e4312e4c4dec`, tests tree
+  `293bc5038bae501dee07631704899e5f385e9025`, iguales al worker. C1–C3 implementados
+  bajo R40, full 5 verde 961/7/371,80 s; review independiente final pendiente. Head publicado
+  de PR #21 sigue 339414913e790d48cd9baef22e4385eb780937ed.
 - Los nueve grupos se conservan: M2 A (`M2_CATALOG`, 1–3), M2 B
   (`M2_LIFECYCLE`, 4–5), M3 A (`M3_SEARCH`, 1–2), M3 B (`M3_LIBRARY`, 3–4),
   M4 A (`M4_GROUNDED`, 1–3), M4 B (`M4_PRODUCT`, 4–5), M5 A
@@ -43,7 +49,8 @@ las definiciones de terminado y los tres niveles de evidencia. Versión vigente
 
 `docs/development/M2_CATALOG_PLAN.md`, tarea 3. SPEC `M2_CATALOG_SPEC.md`; hito
 `docs/MILESTONE_2_PLAN.md`. Tarea 3 implementada, verificada automáticamente en
-local y aceptada por review técnica independiente. Grupo A espera gates hospedados/merge.
+local y aceptada por review técnica independiente en la fuente previa a Copilot.
+Correcciones C1–C3 actuales con full 5 verde 961/7/371,80 s; review final pendiente; grupo A sigue abierto.
 
 - Tarea 1: review independiente aceptada después del fix Busy. Foco 34 pasan/
   1 skip/4,70 s; full `M2A-T1-FINAL-20261105` 778 pasan/7 skips/173,68 s,
@@ -92,7 +99,7 @@ local y aceptada por review técnica independiente. Grupo A espera gates hospeda
   Sin hardware/proveedor ni certificación nueva. No procesos, protocolos, deadlines,
   dependencias o versión nuevos. Meta final M5/1.0.0 intacta.
 
-### Tanda integrada GR1–GR3 — checkpoint vigente
+### Tanda integrada GR1–GR3 — checkpoint histórico anterior a Copilot
 
 R38 implementado en `7bfd0cb`: todos los productores finales sellan marker 3 antes
 del replace de metadata, con token/padre/source kind/intent y hashes exactos del
@@ -134,16 +141,51 @@ Review técnica independiente final APPROVED: GR1–GR3/GD1/GD2 ADDRESSED, cero
 hallazgos técnicos abiertos. Reporte `group-fix-review-report.md`, docs revisados
 `8845877d75342d1c0f65f1a6674155c7439ab4ce`. Gates hospedados/merge pendientes.
 
+### Copilot PR #21 — checkpoint vigente c3cdf08
+
+Review 5794475912 COMMENTED recibida sobre 3394149 a 2026-11-06T01:21:05Z:
+C1 rollback de callback ordinario (`4488007346`), C2 catálogo compartido del
+procesador por defecto (`4488007374`) y C3 aviso de replay completed rechazado
+(`4488007407`). R40 implementado en tres fuentes/tres tests nuevos. Rollback
+conserva BaseException/proceso; default processor comparte el MemoryService real;
+replay completed rechazado deja candidato existente completed/can_retryFalse con
+aviso, sin sondear audio ni ofrecer proveedor. Controles successful/no-marker intactos.
+
+RED independiente: 5 fallos/3 controles pasan en 8 casos, 26,91 s secuenciales.
+GREEN 8 pasan 9,77 s; foco afectado 325 pasan/1 skip symlink/141,36 s en 15 archivos.
+Ruff/format 6 limpios; mypy canónico339/current 79/79 errores en 20 archivos/65 fuentes,
+mensajes nuevos {}; no base global limpia. Review independiente acotada de esta
+corrección en curso, sin aceptación todavía de C1–C3.
+
+Wheel/sdist nuevos y probe no editable de c3cdf08 pasan, 65 módulos byte-idénticos,
+schema 2/FTS5/FK/integrity. Full 5 empezó solo a 2026-11-06T01:47:43.289345Z,
+logs/XML `.superpowers/m2a-integrated-final-5.*`: **961 pasan/7 skips/cero fallos
+en 371,80 s**. Lectura independiente XML 968/0F/0E/7S/interno 371,710 s; ambos smokes
+wheel CLI 3,747/GUI 2,978 s pasan, root exit 0. Full4 y su
+review aprobada son históricos. CI Windows 339: 958 pasan/2 skips wheel/250,79 s,
+run 42142394863; package 42142395026 pasa solo sobre 339, no sobre el head corregido.
+
 ## Próxima acción obligatoria
 
-1. Tanda R38 y corrección test-only integradas; full 4 verde 953/7/358,94 s y ambos
-   smokes wheel verificados. Conservar full 3 fallido y foco 13/24,82 s pasando;
-   fuente/probe wheel 7bfd siguen exactos porque el diff es solo tests.
-   Conservar todos los fulls históricos sin reutilizarlos como resultado actual.
-2. Abrir PR de A con la review independiente final APPROVED y evidencia; GD3
-   Minor de frases antiguas se corrige en este registro rutinario, sin nueva review.
-3. Copilot sobre head exacto recibido/respondido y CI Windows verde;
-   merge guardado y ledger. Todavía no hay PR ni CI de A aprobados.
+1. Full 5 local verde; finalizar review independiente acotada de C1–C3 con docs/evidencia;
+   conservar todos los fulls históricos, CI339 y aprobación previa en su fuente real.
+2. PR de A abierto: [#21](https://github.com/srodriguez-lefebre/here/pull/21),
+   no borrador, contra main; evidencia y review independiente APPROVED en la
+   descripción. Head publicado `339414913e790d48cd9baef22e4385eb780937ed`.
+   Copilot recibido: review `5794475912`, COMMENTED sobre ese head a
+   2026-11-06T01:21:05Z. Tres observaciones confirmadas: rollback de excepción
+   del callback (`4488007346`), catálogo del procesador por defecto (`4488007374`)
+   y aviso de replay completed rechazado (`4488007407`). Correcciones integradas
+   c3cdf08, full 5 verde; pendientes de review final y respuestas en hilos.
+   No abrir un PR duplicado ni repetir la review/suite local ya aprobadas.
+3. Tras la aceptación del diff, responder cada hilo con el commit y pedir/recibir
+   Copilot en el nuevo head corregido.
+   Los tests Windows `42142394863` pasan 958/2 skips de wheel en 250,79 s y el
+   bundle `42142395026` pasa sobre 3394149; no sustituyen CI en un head corregido.
+   Luego verificar CI Windows verde en ese head exacto, merge guardado y ledger.
+   Gate Copilot/CI/merge de A pendientes; no están aprobados por evidencia local.
+   Este estado operativo local se incorpora al próximo PR de documentación tras
+   el merge, sin cambiar el head publicado durante su review.
 4. Después del merge A y de los PRs de docs de contratos necesarios, root crea
    dos chats de proyecto separados para M2 B y M3 A, con briefs completos y leases.
    No usar `8087e25` como base de merge futura: la SHA real aún es desconocida.
@@ -214,7 +256,7 @@ El resto conserva sus dependencias; no se inicia ningún frente en este checkpoi
 - Máquina limpia: pedir con protocolo cuando una fila la necesite. Dos horas:
   **omitida por ruling 5**, nunca aprobada. No cambiar ruleset/permisos ni usar datos privados.
 - Versiones y calidad/privacidad/aceptación/merges conservan sus requisitos.
-  No hay cierre M2 A/M2, hosted CI de grupo ni certificación nueva real.
+  No hay cierre M2 A/M2; CI hospedado del head corregido pendiente, sin certificación nueva real.
 - Para retomar: leer este STATUS, el ledger local
   `.superpowers/sdd/M2_CATALOG_PLAN/progress.md`, los reportes y git log; continuar
   los hallazgos de grupo y las verificaciones agregadas antes de crear los dos chats; no repetir

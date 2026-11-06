@@ -8,7 +8,7 @@
   "task_2_commit": "037fc036ef43467136bcf7b8e95c6f8395d1aa5e",
   "task_2_base_commit": "878e7d4b531d0b07599b373261279fbb6b440030",
   "task_2_integration_commit": "1cdaadb72f2ebee53ce3a7be2680a01d18de6ad2",
-  "evidence_level": "implemented_and_verified_automatically_local_full4_passed_independent_technical_review_approved_hosted_gates_pending",
+  "evidence_level": "copilot1_fixes_implemented_local_full5_passed_final_current_scoped_review_pending",
   "certified": false,
   "data_policy": "Temporary SQLite roots, authored synthetic PCM and transcripts, synthetic key; no private sessions or real .env.",
   "runs": [
@@ -195,11 +195,11 @@
     "handled_raw_io_rollback": "Restore previous bytes or remove fresh unpublished raw after metadata replace failure"
   },
   "task_3_progress": {
-    "state": "full4_passed_independent_technical_review_approved_hosted_gates_pending",
+    "state": "copilot1_fixes_integrated_full5_passed_final_current_scoped_review_pending",
     "candidate_suite_green": true,
-    "task_accepted": true,
+    "task_accepted": false,
     "fix_round": 3,
-    "open_findings_count": 0,
+    "open_findings_count": 3,
     "prior_red_passed": 18,
     "prior_red_failed": 31,
     "author_duration_seconds": 2.5,
@@ -210,7 +210,7 @@
     "combined_root_log": "task-3-complete-root-red.log",
     "candidate_base": "1cdaadb",
     "fixture_commit": "efb73a92ea89bc53318ce1a811eaf61129a76fbf",
-    "candidate_source_commit": "ec55b9564d3af01247d3367675a340a361f6b6ef",
+    "candidate_source_commit": "61fb8e2815887c19a1d6dc64572e5f469ec5cee9",
     "root_integrated": true,
     "hash_comparison_by_docs_author": "Read-only PowerShell Get-FileHash, no source execution",
     "stable_candidate_full_result": {
@@ -234,10 +234,10 @@
       "historical": true,
       "source_commit": "6c422f0b8671d2f736645abb6835d351783cbcc7"
     },
-    "independent_task_review": "task3_locally_implemented_automatically_verified_and_independently_technically_accepted",
+    "independent_task_review": "Prior source7bfd/fixtureef70/docs8845877 accepted; current Copilot C1-C3 fixes pending independent scoped verdict",
     "independent_whole_branch_review": "original_group_review_plus_single_scoped_re_review_final_approved_GR1_GR2_GR3_GD1_GD2_addressed",
-    "hosted_ci": "pending",
-    "copilot": "pending",
+    "hosted_ci": "3394149 Windows tests/package passed historically; corrected current head pending",
+    "copilot": "5794475912 COMMENTED on3394149; three confirmed observations corrected locally, replies/new received review pending",
     "historical_candidate_checkpoint": {
       "source_commit": "6c422f0b8671d2f736645abb6835d351783cbcc7",
       "fixture_commit": "efb73a92ea89bc53318ce1a811eaf61129a76fbf",
@@ -251,7 +251,7 @@
     },
     "initial_candidate_suite_green": true,
     "integrated_full_failures_count": 0,
-    "root_integration_commit": "7bfd0cbf477a42aacc44b83b3d2da1e438801756",
+    "root_integration_commit": "c3cdf085c03718ca6a9d5db87ea0de28fa9652b0",
     "root_integration_commits": [
       "1277e19",
       "3370483",
@@ -260,17 +260,19 @@
       "2a3a31e",
       "8087e25",
       "7bfd0cb",
-      "ef70f78"
+      "ef70f78",
+      "c3cdf08"
     ],
     "green_fix_commits": [
       "16263c4180aa13036a812110a6e98554f1a7c56f",
       "c28472b5bd651f4d7f7fe2f40449f5a23e325f67",
       "944e358b2908a127d4380afeb4d645522a869cb3",
       "4a3cb7ced77a73046098e20cb34aeb00af0e6f61",
-      "ec55b9564d3af01247d3367675a340a361f6b6ef"
+      "ec55b9564d3af01247d3367675a340a361f6b6ef",
+      "61fb8e2815887c19a1d6dc64572e5f469ec5cee9"
     ],
-    "src_tree": "2b4036f7deb905efb0a8836f378d267a066564b4",
-    "tests_tree": "a4310416bd10dc922b49e010d8495a98bfdfd585",
+    "src_tree": "b465d3198840f96d5d15a85eeb45e4312e4c4dec",
+    "tests_tree": "293bc5038bae501dee07631704899e5f385e9025",
     "root_green_src_tests_identical": true,
     "root_green_source_config_scripts_workflows_diff_empty": true,
     "round_2_red": {
@@ -291,11 +293,11 @@
     },
     "scoped_open_findings_count": 0,
     "whole_group_Important_findings_count": 0,
-    "current_execution_head": "ef70f78cfc9c8f2910e77b2b2818ce2e6b4d71ae",
-    "current_tests_tree": "30c88848b3cf42c9ce4443328e3c8e0100e2af44"
+    "current_execution_head": "c3cdf085c03718ca6a9d5db87ea0de28fa9652b0",
+    "current_tests_tree": "293bc5038bae501dee07631704899e5f385e9025"
   },
   "task_3_protocol": {
-    "source_state": "full4_passed_independent_technical_review_approved_hosted_gates_pending",
+    "source_state": "copilot1_fixes_integrated_full5_passed_final_current_scoped_review_pending",
     "rulings": [
       22,
       23,
@@ -406,7 +408,10 @@
     "missing_metadata_identity": "Canonical UUID guard precedes any journal join/probe; existing manifests keep optional/opaque identity",
     "final_evidence_seal": "Marker 3 hashes actual staged prospective session.json bytes and exact role-validated artifact inventory after subordinate publication, before final metadata replace; same publication token, expected parent, intent and source kind; hashing outside SQLite transactions",
     "uncertain_final_evidence": "Pending manifest or nonmatching final map cannot publish old/new result or remove intent; preserve source/marker bytes with warning, using existing RecoveryCandidate.error_summary for sealed pending discovery; no provider call",
-    "receipt_envelope_isolation": "Require receipt/mapping/list-of-object/hash shapes before attribute use and referenced reads; retain malformed meeting with identified warning, continue valid siblings and repeat reconcile/discovery/maintenance JSON"
+    "receipt_envelope_isolation": "Require receipt/mapping/list-of-object/hash shapes before attribute use and referenced reads; retain malformed meeting with identified warning, continue valid siblings and repeat reconcile/discovery/maintenance JSON",
+    "ordinary_precommit_rollback": "Ordinary Exception from precommit callback restores raw/segments/obsolete evidence before propagation; BaseException/process-kill unchanged; failed rollback retains backups and cause",
+    "controller_default_catalog": "Initialize actual controller MemoryService first and share it with default SessionProcessor, including injected root; explicit processor unchanged",
+    "completed_rejected_replay": "Retain rejection as completed RecoveryCandidate with can_retry=false and readable error_summary before retry-audio probe; existing UI disables provider retry; marker/source/prior revision preserved; successful/no-marker controls hidden"
   },
   "task_3_intermediate_evidence": {
     "scope_limit": "Distinct evolving-source focused runs, not summed and not stable final verification",
@@ -728,8 +733,8 @@
     "superseded_by": "task_3_fix_round_1_review"
   },
   "evidence_levels": {
-    "implemented": "Source7bfd plus fixtureef70 implemented, full4 passes953/7/358.94s; task3 independently technically accepted against docs8845877; GR1-GR3/GD1/GD2 addressed, group hosted gates/merge pending",
-    "verified_automatically": "Local synthetic RED/GREEN/foci/full4 and exact wheel/probe pass; independent technical review approved; hosted CI/Copilot/merge pending, no new certification",
+    "implemented": "Copilot C1-C3 fixes integratedc3cdf08; current full5 passes961/7/371.80s. Current independent final scoped verdict pending; old review approval stays source-scoped historical",
+    "verified_automatically": "RED5fail/3controls, GREEN8, affected325/1skip, six-file static/no-new typing, new exact65-file wheel/probe and full5 961passed/7symlinkskips/371.80s with both wheel smokes pass; corrected hosted gates pending",
     "certified": "No new hardware/provider/clean-install certification; wheel and synthetic checks are automatic local evidence; two-hour acceptance omitted by ruling5"
   },
   "capture_harness_correction": {
@@ -769,12 +774,13 @@
     "Original F1-F7, NB1 and NB2 addressed by independent scoped reviews; full2 source8087e25 940passed/7symlinkskips/325.09s and both wheel smokes remain historical, not evidence for new source.",
     "Original group review changes requested remains historical; single final scoped re-review APPROVED source7bfd/fixtureef70/docs8845877, GR1-GR3/GD1/GD2 ADDRESSED, current open0. GD3 minor stale ledger phrases corrected routinely, no additional review/runtime requested. Group accepted false until hosted gates.",
     "Current final group/recovery focus26/34.46s passes; earlier404/1skip/159.03s precedes only pending-v3 warning fix. Additional control RED1/5deselected/3.93s is against new candidate, not8087 baseline.",
-    "Current full4 on ef70f78 passes953/7symlinkskips/358.94s; XML960/0F/0E/7S/internal358.621s, both wheel smokes pass. Full3 failed8/945/7 remains historical with exact wrapper-only correction and13-case focus; no assertions/crash cutpoints changed.",
+    "Historical full4 on ef70f78 passes953/7symlinkskips/358.94s; XML960/0F/0E/7S/internal358.621s, both wheel smokes pass. Full3 failed8/945/7 remains historical with exact wrapper-only correction and13-case focus; no assertions/crash cutpoints changed.",
     "Marker3 exact pre-metadata seal implemented with marker1/2 readers, receipts2/3 and schema2; pending/unmatched evidence retained with warning, no old-result revision or automatic provider.",
     "Fresh exact wheel/sdist/probe65sourcefiles/schema2/FTS5 plus root-reported FK/integrity are local automatic evidence, not installer/hardware/provider certification.",
     "PR/current-head Copilot received/responded/Windows CI/guarded merge pending; no M2A acceptance or closure.",
     "R35 future chats/branches/worktrees/executors/real merged-A bases pending, none created; contract-doc PR merges required after A before dispatch.",
-    "No new process/protocol/deadline/dependency/version/DoD;0.2.0 current,0.3.0 at B/M2 close, final1.0.0 unchanged; two-hour acceptance omitted by ruling5."
+    "No new process/protocol/deadline/dependency/version/DoD;0.2.0 current,0.3.0 at B/M2 close, final1.0.0 unchanged; two-hour acceptance omitted by ruling5.",
+    "Copilot5794475912 on339 confirmed C1-C3; current sourcec3cdf08 full5 passes961/7/371.80s but final scoped verdict pending. Prior approval/full4/hosted CI339 do not approve or verify current fixes. Replies, new received Copilot and exact-head CI required before merge."
   ],
   "pr20": {
     "url": "https://github.com/srodriguez-lefebre/here/pull/20",
@@ -884,9 +890,9 @@
     "current_disposition": "All five failures covered in round-2 61-case focus and addressed by scoped review; later full2 passes, original failed result retained"
   },
   "task_3_integrated_distribution_probe": {
-    "run": "M2A-INTEGRATED-WHEEL-7bfd0cb",
-    "recorded_at_utc": "2026-11-05T21:43:49.472905-03:00",
-    "source_head": "7bfd0cbf477a42aacc44b83b3d2da1e438801756",
+    "run": "M2A-INTEGRATED-WHEEL-c3cdf08",
+    "recorded_at_utc": "2026-11-05T22:47:42.753122-03:00",
+    "source_head": "c3cdf085c03718ca6a9d5db87ea0de28fa9652b0",
     "python": "3.13.15",
     "platform": "Windows-11-10.0.26300-SP0",
     "package_version": "0.2.0",
@@ -896,20 +902,19 @@
     "schema_version": 2,
     "fts5": true,
     "artifact_sha256": {
-      "here-0.2.0-py3-none-any.whl": "e2f9c3ff09a5d5b41fcec9c35c1fab149294e9901f276e042bd2ce0bd12b0827",
-      "here-0.2.0.tar.gz": "499d9249202451e95dafb3718dd78f2004bc825659f5810659f401a5707e92ee"
+      "here-0.2.0-py3-none-any.whl": "acbc092001eda20bcf980bf9d74d2c53c01698322641e9f8a9d313c34efec051",
+      "here-0.2.0.tar.gz": "f7d80d8612aa6e2de13662324c16f670baa5022a2ad4dfcd976df1e6847b33ab"
     },
     "provider_used": false,
     "hardware_used": false,
-    "probe_file": ".superpowers/m2a-wheel-catalog-probe-7bfd0cb.json",
-    "build_artifact_directory": ".superpowers/m2a-final-dist-7bfd0cb",
+    "probe_file": ".superpowers/m2a-wheel-catalog-probe-c3cdf08.json",
+    "build_artifact_directory": ".superpowers/m2a-final-dist-c3cdf08",
     "fresh_wheel_and_sdist_build": "success",
     "off_repo_isolated_flag": "-I",
     "foreign_key_check": "empty, reported by root",
     "integrity_check": "ok, reported by root",
     "certification_claimed": false,
-    "observed_by_docs_author": "Read-only probe JSON and root evidence; no imports or execution",
-    "verified_unchanged_execution_head": "ef70f78cfc9c8f2910e77b2b2818ce2e6b4d71ae"
+    "observed_by_docs_author": "Read actual probe JSON and root supplied FK/integrity evidence; no imports/runtime"
   },
   "post_M2A_dispatch_ruling_35": {
     "instruction": "Finish and merge M2 A with every gate, then merge required contract documentation PRs before root creates two separate project chats",
@@ -1163,6 +1168,35 @@
       "integrity_check": "ok",
       "certification_claimed": false,
       "historical": true
+    },
+    {
+      "run": "M2A-INTEGRATED-WHEEL-7bfd0cb",
+      "recorded_at_utc": "2026-11-05T21:43:49.472905-03:00",
+      "source_head": "7bfd0cbf477a42aacc44b83b3d2da1e438801756",
+      "python": "3.13.15",
+      "platform": "Windows-11-10.0.26300-SP0",
+      "package_version": "0.2.0",
+      "source_files_equal": true,
+      "python_file_count": 65,
+      "editable": false,
+      "schema_version": 2,
+      "fts5": true,
+      "artifact_sha256": {
+        "here-0.2.0-py3-none-any.whl": "e2f9c3ff09a5d5b41fcec9c35c1fab149294e9901f276e042bd2ce0bd12b0827",
+        "here-0.2.0.tar.gz": "499d9249202451e95dafb3718dd78f2004bc825659f5810659f401a5707e92ee"
+      },
+      "provider_used": false,
+      "hardware_used": false,
+      "probe_file": ".superpowers/m2a-wheel-catalog-probe-7bfd0cb.json",
+      "build_artifact_directory": ".superpowers/m2a-final-dist-7bfd0cb",
+      "fresh_wheel_and_sdist_build": "success",
+      "off_repo_isolated_flag": "-I",
+      "foreign_key_check": "empty, reported by root",
+      "integrity_check": "ok, reported by root",
+      "certification_claimed": false,
+      "observed_by_docs_author": "Read-only probe JSON and root evidence; no imports or execution",
+      "verified_unchanged_execution_head": "ef70f78cfc9c8f2910e77b2b2818ce2e6b4d71ae",
+      "historical": true
     }
   ],
   "task_3_whole_group_review": {
@@ -1218,7 +1252,8 @@
       }
     ],
     "independent_technical_review_approved": true,
-    "group_accepted": false
+    "group_accepted": false,
+    "scope_limit": "Completed original group and scoped GR1-GR3 review on source7bfd/fixtureef70/docs8845877; current Copilot C1-C3 correction has its own pending scoped verdict"
   },
   "task_3_group_fix_wave": {
     "base": "8087e252112fd2e6de1efeff1d0f3f531d4be77d",
@@ -1296,7 +1331,8 @@
     "task_or_group_accepted": false,
     "certification_claimed": false,
     "task_locally_accepted": true,
-    "group_accepted": false
+    "group_accepted": false,
+    "historical": true
   },
   "task_3_integrated_full_3": {
     "name": "M2A-INTEGRATED-FULL3-7bfd0cb",
@@ -1409,7 +1445,8 @@
         "passed": true,
         "seconds": 2.634
       }
-    ]
+    ],
+    "historical": true
   },
   "independent_technical_review": {
     "approved": true,
@@ -1431,6 +1468,130 @@
     "new_actionable_source_defect": "none",
     "additional_review_or_runtime_requested": false,
     "group_accepted": false,
-    "hosted_gates": "pending"
+    "hosted_gates": "pending",
+    "historical": true,
+    "scope_limit": "Approved source7bfd/fixtureef70/docs8845877 only; not approval of new Copilot correction sourcec3cdf08"
+  },
+  "copilot_1_correction": {
+    "review_id": "5794475912",
+    "review_state": "COMMENTED",
+    "received_at_utc": "2026-11-06T01:21:05Z",
+    "published_reviewed_head": "339414913e790d48cd9baef22e4385eb780937ed",
+    "pr": "https://github.com/srodriguez-lefebre/here/pull/21",
+    "ruling": 40,
+    "green_commit": "61fb8e2815887c19a1d6dc64572e5f469ec5cee9",
+    "root_commit": "c3cdf085c03718ca6a9d5db87ea0de28fa9652b0",
+    "source_tree": "b465d3198840f96d5d15a85eeb45e4312e4c4dec",
+    "tests_tree": "293bc5038bae501dee07631704899e5f385e9025",
+    "source_tests_config_scripts_workflow_diff_to_worker": "empty",
+    "source_files": 3,
+    "new_independent_test_files": 3,
+    "observations": [
+      {
+        "id": "C1",
+        "inline": "4488007346",
+        "contract": "Ordinary callback exception rollback",
+        "state": "implemented_pending_independent_scoped_verdict",
+        "reply": "pending"
+      },
+      {
+        "id": "C2",
+        "inline": "4488007374",
+        "contract": "Default processor shares injected controller catalog",
+        "state": "implemented_pending_independent_scoped_verdict",
+        "reply": "pending"
+      },
+      {
+        "id": "C3",
+        "inline": "4488007407",
+        "contract": "Blocked completed publication warning without provider retry",
+        "state": "implemented_pending_independent_scoped_verdict",
+        "reply": "pending"
+      }
+    ],
+    "red": {
+      "failed": 5,
+      "passed": 3,
+      "cases": 8,
+      "summed_sequential_seconds": 26.91,
+      "report": "copilot-1-red-report.md"
+    },
+    "green": {
+      "passed": 8,
+      "failed": 0,
+      "seconds": 9.77,
+      "log": ".superpowers/copilot-1-green.txt"
+    },
+    "affected": {
+      "passed": 325,
+      "failed": 0,
+      "skipped": 1,
+      "seconds": 141.36,
+      "files": 15,
+      "log": ".superpowers/copilot-1-compatibility.txt",
+      "skip_reason": "Existing output-writer symlink WinError1314"
+    },
+    "quality": {
+      "ruff": "pass",
+      "format": "pass",
+      "files": 6,
+      "canonical_mypy_baseline_errors": 79,
+      "current_errors": 79,
+      "error_files": 20,
+      "source_files": 65,
+      "new_messages": {},
+      "globally_clean_claimed": false
+    },
+    "report": "copilot-1-implementation-report.md",
+    "independent_review": "Source-only provisional C1-C3 addressed/no new defects; final verdict awaits committed docs supplement and actual full5 evidence",
+    "new_copilot": "pending_request_and_receipt_after_corrections",
+    "exact_corrected_head_ci": "pending",
+    "group_accepted": false,
+    "certified": false
+  },
+  "task_3_integrated_full_5": {
+    "name": "M2A-INTEGRATED-FULL5-c3cdf08",
+    "source_head": "c3cdf085c03718ca6a9d5db87ea0de28fa9652b0",
+    "started_at_utc": "2026-11-06T01:47:43.289345Z",
+    "run_alone": true,
+    "state": "passed",
+    "passed": 961,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 7,
+    "seconds": 371.8,
+    "log": ".superpowers/m2a-integrated-final-5.txt",
+    "junit": ".superpowers/m2a-integrated-final-5.xml",
+    "noneditable_wheel_smokes_passed": 2,
+    "task_or_group_approval_implied": false,
+    "junit_tests": 968,
+    "junit_internal_seconds": 371.71,
+    "root_exit_code": 0,
+    "skip_reason": "Seven existing symlink-privilege cases",
+    "wheel_cases": [
+      {
+        "name": "cli_main",
+        "seconds": 3.747,
+        "passed": true
+      },
+      {
+        "name": "gui_main",
+        "seconds": 2.978,
+        "passed": true
+      }
+    ],
+    "observed_by_docs_author": "Read actual final log and parsed XML counts and both wheel-smoke nodes; no runtime execution"
+  },
+  "hosted_ci_339_history": {
+    "source_head": "339414913e790d48cd9baef22e4385eb780937ed",
+    "windows_test_run": "42142394863",
+    "passed": 958,
+    "skipped": 2,
+    "skip_reason": "Noneditable wheel environment absent",
+    "seconds": 250.79,
+    "package_run": "42142395026",
+    "package_state": "passed",
+    "historical": true,
+    "proves_corrected_source": false
   }
 }

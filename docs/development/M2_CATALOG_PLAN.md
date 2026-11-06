@@ -17,6 +17,14 @@
 
 **Goal:** Durable meeting identity, immutable transcript revisions and one
 application-owned persistence path, rebuildable from files and usable without a key.
+
+**Current PR #21 checkpoint:** Copilot `5794475912` on published `3394149`
+confirmed C1 ordinary callback rollback, C2 default-processor catalog composition
+and C3 blocked completed-replay visibility. R40 corrections are integrated as
+`c3cdf08` from `61fb8e2`; eight new cases pass 9.77s, affected 325/one symlink skip
+passes 141.36s. Full 5 passes 961/seven skips in 371.80s; independent scoped review is pending; the earlier
+full4/technical approval above apply to the previous source. Root must reply to
+each inline, obtain new Copilot and exact-head Windows CI before guarded merge.
 **Architecture:** SQLite catalog as authority for identity and relations; audio and
 transcript snapshots as immutable files under a managed root; staging plus an
 operations journal make file and database publication reconcilable after a crash.
@@ -275,7 +283,7 @@ Root full `M2A-INTEGRATED-FULL1-20261105`: **5 failed/920 passed/7 skipped in
 include new lock files; CLI sf.info stub lacks subtype; audio-only legacy retry
 requires missing session.json. Each awaits diagnosis/fix, with assertions intact.
 Both noneditable-wheel smokes pass. Fresh wheel/sdist and off-repo `-I` probe verify
-65 byte-identical Python files, schema2/FTS5/FK/integrity; local automatic evidence
+65 byte-identical Python files, schema 2/FTS5/FK/integrity; local automatic evidence
 only. New suite, re-review and whole-group approval remain required before PR gates.
 
 ### Historical source checkpoint after rounds 2/3
@@ -303,14 +311,14 @@ in 5.02s and final combined call in 2.72s, with cause unproven and no timeout ch
 Round-3 review `task-3-fix-3-review-report.md` marks NB2 ADDRESSED with no new
 Critical/Important breakage in its diff: capture UUID is checked before missing-
 metadata journal join/probe while opaque existing-manifest identity is preserved.
-Foci 3/2.40s and 27/20.86s; Ruff/format clean, mypy baseline/current79/79/no new.
+Foci 3/2.40s and 27/20.86s; Ruff/format clean, mypy baseline/current 79/79/no new.
 
 Full 2 started alone at 2026-11-06T00:01:58Z on root `8087e25`, log/XML
 `.superpowers/m2a-integrated-final-2.*`: **940 passed/7 skipped/zero failures in
 325.09s**, XML 947 cases/zero failures or errors/internal 325.029s. Both wheel
 smokes pass; seven skips need symlink privilege.
 Fresh wheel/sdist and off-repo noneditable `-I` probe on that source verify 65
-byte-identical Python files/schema2/FTS5/FK/integrity. Previous full/probes remain
+byte-identical Python files/schema 2/FTS5/FK/integrity. Previous full/probes remain
 historical. At that checkpoint, whole-group source review was in progress with three provisional
 Important paths: completed metadata before the first durable pending marker, and
 non-object receipt JSON aborting valid rebuild siblings, and accepted capture-failure

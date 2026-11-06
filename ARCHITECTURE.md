@@ -206,6 +206,19 @@ final scoped review is APPROVED. The earlier
 
 ## Catalog publication and local recovery (M2 A task 3)
 
+Current source `c3cdf08` adds the three PR #21 Copilot corrections under R40.
+Ordinary precommit `Exception` triggers the existing evidence rollback before
+propagation; `BaseException`/process-termination semantics remain unchanged and
+failed rollback retains backups/causal diagnostics. The controller constructs its
+MemoryService first and shares it with the default SessionProcessor, preserving
+explicit processors. A rejected completed-session replay yields an existing
+RecoveryCandidate (`status=completed`, `can_retry=False`, readable `error_summary`)
+before retry-audio inspection. Existing desktop controls show the warning and
+disable provider retry; successful/no-marker completed controls stay hidden.
+Eight new cases pass and affected focus 325/one symlink skip passes. Current full 5
+passes 961/seven symlink skips in 371.80s, both wheel smokes passing. Final scoped
+review remains pending; earlier approval/full4 apply to the previous source.
+
 `MemoryService.ingest_session(session_dir, *, revision_of=None)` interprets v1
 artifacts without modifying the origin. Known artifact roles and explicit WAV
 references are validated before referenced files are opened, hashed or probed;

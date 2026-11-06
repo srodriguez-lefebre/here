@@ -198,6 +198,15 @@ Current evidence and pending hosted CI/Copilot/merge gates are tracked
 in [STATUS.md](STATUS.md).
 The packaged 0.2.0 delivery above retains its recorded M1 scope.
 
+PR [#21](https://github.com/srodriguez-lefebre/here/pull/21) received three Copilot
+observations on `3394149`. Corrections are integrated in `c3cdf08`: ordinary
+precommit callback errors restore prior evidence; the default processor shares
+the controller's catalog; completed sessions with blocked local publication show
+an existing recovery warning with provider retry disabled. Eight new cases pass,
+and the affected focus passes 325/one symlink skip. Prior full4/technical approval
+and Windows CI belong to the previous source. Full 5 passes 961/seven symlink skips in 371.80s; scoped review of
+these corrections remain pending, followed by replies/new Copilot/exact-head CI.
+
 ## Audio Diagnostics
 
 Windows audio devices can be inspected without using an API key:

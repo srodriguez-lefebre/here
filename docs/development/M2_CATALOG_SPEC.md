@@ -22,6 +22,18 @@ acceptance criteria: `../MILESTONE_2_PLAN.md`.
 
 ## Intent
 
+Current PR #21 correction source is `c3cdf08` (Green `61fb8e2`) under R40.
+C1 restores previous raw/segments/obsolete evidence for ordinary callback failure
+before propagating the original exception, retaining failed-rollback backups;
+BaseException/process termination is unchanged. C2 shares the controller's actual
+MemoryService with its default processor, including custom roots, while preserving
+explicit processors. C3 exposes rejected completed local publication through an
+existing nonretryable RecoveryCandidate and readable warning, without audio probes,
+provider retry or a new UI flow. Successful/no-marker controls remain unchanged.
+Eight new cases and affected 325/one symlink skip pass; full 5 passes 961/seven skips
+in 371.80s, both wheel smokes passing. Final scoped independent review remains
+pending. Prior technical approval/full4 are historical for source 339.
+
 Give every recorded meeting a durable identity, an immutable transcript revision
 history and one application-owned persistence path, so that M3 can search and seek
 and M4 can cite without reading folder names. The catalog must be rebuildable from

@@ -433,6 +433,44 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Cost if wrong:** ajustar rollback, composición e informe de recovery con
     los mismos datos/contratos; preservar audio, evidencia anterior y avisos reales.
 
+41. **Ruling:** M3 obtiene los hits parciales opt-in mediante una rama SQL literal
+    de solo lectura sobre segmentos de la revisión activa parcial. El índice
+    persistente sigue conteniendo solo revisiones activas completas, mantenido por
+    A/B5. Con FTS disponible, sus hits BM25 se combinan con la rama parcial literal
+    de rank uniforme 0; sin FTS, ambas ramas usan el fallback literal de rank 0.
+    Se consultan los mismos campos autorizados, se escapan también los comodines
+    de LIKE y se aplican visibilidad/filtros antes de cursor/LIMIT. R39 ordena la
+    unión, cuyo cursor incluye modo/backend e include_partial. Snippets de texto
+    real acotados y badge/timing reales; reindexado no altera la rama parcial ni
+    crea otro escritor. Es precisión del opt-in y fallback ya aprobados, con
+    verificación de equivalencia pendiente en B/M3. **Cost if wrong:** ajustar la
+    consulta literal/ranking y sus tests antes del cierre M3, preservando BM25,
+    la visibilidad por defecto y la evidencia de origen.
+
+42. **Ruling:** B conserva la misma supresión mínima ya definida por
+    `deleted_origins` en un registro versionado bajo `<data_dir>/.deletions/`,
+    fuera del árbol que se purga: UUID, pares de origen normalizado/huella y
+    control pending/complete. Este registro no guarda texto, audio, títulos,
+    participantes ni credenciales. Su replace/flush durable, después de validar
+    la confirmación, propiedad real e inventario, es el punto de aceptación del
+    borrado y precede a la primera transacción delete. Desde ahí cualquier Busy,
+    fallo de archivos o backups se informa pending; la supresión ya aceptada se
+    aplica antes de exponer filas, reimportar o reconstruir recibos/FTS, incluso
+    si el catálogo SQL se perdió. Los lectores B/M3 comparten ese guard antes de
+    LIMIT y la UI invalida callbacks anteriores de su operación de borrado.
+    Reconcile restaura supresión/orígenes y estado delete antes del rebuild
+    normal; recibos sobrevivientes sirven solo para probar inventario de limpieza.
+    Registro inválido/inaccesible falla la exposición de catálogo de forma cerrada
+    con error recuperable, sin autorizar una purga inferida. Desconocidos se
+    conservan y mantienen pending. Solo tras verificar archivos, DB/WAL y backups
+    se marca complete durable; el tombstone mínimo sigue reconstruyendo
+    `deleted_origins`. Otra identidad/origen explícito con igual audio sigue
+    permitido. Se extiende el journal/reconcile existente, mismo data_dir y misma
+    política de borrado/supresión, con un solo escritor y sin proceso nuevo.
+    **Cost if wrong:** ajustar barrera/guards y recuperación de inventario antes
+    de implementar/certificar B, conservando supresión y evidencia incierta;
+    nunca declarar purga completa por un registro pendiente o solo por un UUID.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
@@ -1429,3 +1467,47 @@ verdict update. No additional review/runtime is requested. Docs lease released.
 Root may open the M2 A PR; Copilot received/responded, exact-head Windows CI,
 guarded merge and ledger remain pending. Group A/M2 are not closed or certified;
 version0.2.0 and R35 future-chat/contract-doc gates remain unchanged. No new ruling.
+
+## 2026-11-06 — PR #21 Copilot correction wave 1 integrated; full5 in progress
+
+Copilot review5794475912 COMMENTED on published3394149 at01:21:05Z confirmed
+C1 rollback (inline4488007346), C2 shared default catalog (4488007374) and C3
+blocked completed replay warning (4488007407). R40 corrections are integrated in
+c3cdf085c03718ca6a9d5db87ea0de28fa9652b0 from61fb8e2815887c19a1d6dc64572e5f469ec5cee9;
+source b465d3198840f96d5d15a85eeb45e4312e4c4dec, tests293bc5038bae501dee07631704899e5f385e9025,
+identical to worker. Three source files/three new independent tests, no other product
+contract/version/schema/dependency/deadline change. Existing R41/R42 next-contract
+planning rulings remain intact; neither is implemented by this correction.
+
+Ordinary precommit Exception restores previous evidence before propagating;
+BaseException/process termination unchanged, failed rollback retains backup/cause.
+Default SessionProcessor shares the controller's actual MemoryService/custom root;
+explicit processors retain contract. Rejected completed local replay becomes an
+existing completed/can_retryFalse recovery warning before retry-audio probes;
+metadata/marker/prior revision remain, no provider retry or new UI flow. Successful
+replay/no-marker controls unchanged. Independent scoped verdict C1-C3 is pending.
+
+Independent RED8 cases:5 failed/3 controls passed, sequential26.91s. GREEN8 passed
+9.77s; affected15-file focus325 passed/1 symlink skip/141.36s. Ruff/format6 pass;
+canonical mypy339/current79 errors/20 files/65 sources, no new diagnostics{}. Report
+copilot-1-implementation-report.md and RED report/logs retained in local ledger.
+Docs read exact raw bot comments, actual source diff/reports/probe; no runtime.
+
+Fresh c3cdf08 wheel/sdist/probe at2026-11-06T01:47:42.753122Z:65 source files equal,
+noneditable/schema2/FTS5; FK/integrity root-reported. Wheel SHA256
+acbc092001eda20bcf980bf9d74d2c53c01698322641e9f8a9d313c34efec051; sdist
+f7d80d8612aa6e2de13662324c16f670baa5022a2ad4dfcd976df1e6847b33ab.
+Full5 started alone2026-11-06T01:47:43.289345Z, .superpowers/m2a-integrated-final-5.*:
+**961 passed,7 symlink skips,0 failures in371.80s**, root exit0. Docs independently
+read final log/parsed XML:968 cases/0 failures/0 errors/7 skips/internal371.710s.
+Both wheel CLI3.747s/GUI2.978s pass with no failure/skip nodes. Current source-only
+scoped inspection provisionally marks C1-C3 addressed/no new defects; final
+technical verdict awaits committed docs supplement and actual full5 evidence. Prior independent approval/full4 and hosted Windows339 remain
+historical. CI42142394863 on339 passed958/2wheel skips/250.79s; package42142395026
+passed, proving339 only. Published PR head is still339, not localc3cdf08.
+
+Root still must receive final current scoped acceptance, reply each inline, request
+and receive Copilot on corrected head and get exact-head Windows CI before guarded
+merge. No A/M2 close/certification/version change or future-chat creation. Two-hour
+acceptance remains omitted by ruling5. R35 ordering and all historical failed
+full1/full3/diagnostics/timeout plus full2/full4 scope remain unchanged.
