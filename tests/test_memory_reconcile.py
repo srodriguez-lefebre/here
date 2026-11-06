@@ -311,3 +311,153 @@ def test_pending_marker_rejects_extra_authority_while_valid_sibling_replays(
     assert memory.show(OTHER_MEETING_ID)["revisions"][0]["raw_text"] == TRANSCRIPT_TEXT
     (candidate,) = [item for item in candidates if item.session_dir == bad.directory]
     assert not candidate.can_retry and candidate.error_summary
+
+
+def test_r48_get_meeting_uses_one_coherent_snapshot_across_external_sqlite_commit(
+    tmp_path, monkeypatch
+):
+    from here.memory.database import LibraryConnection
+    from here.memory.models import MeetingPatch
+
+    root = tmp_path / "data"
+    memory = MemoryService(root)
+    source = make_session(tmp_path / "r48-source", meeting_id=MEETING_ID)
+    assert memory.ingest_session(source.directory).status == "inserted"
+    memory.update_meeting(
+        MEETING_ID,
+        MeetingPatch(title="Before coherent read"),
+        expected_version=memory.show(MEETING_ID)["meeting"]["row_version"],
+    )
+    person = memory.add_participant("Before participant")
+    memory.link_participant(MEETING_ID, person.id, role="before role")
+    shown = memory.show(MEETING_ID)
+    revision = shown["meeting"]["active_revision_id"]
+    speaker_key = shown["segments"][0]["speaker_key"]
+    memory.assign_speaker(MEETING_ID, speaker_key, person.id, scope=revision)
+    attempted = []
+    committed = []
+
+    def external_commit():
+        with closing(sqlite3.connect(root / "library.sqlite3", timeout=0)) as writer:
+            writer.execute("BEGIN IMMEDIATE")
+            writer.execute(
+                "UPDATE meetings SET title='After coherent read',row_version=row_version+1 "
+                "WHERE id=?",
+                (MEETING_ID,),
+            )
+            writer.execute(
+                "UPDATE participants SET display_name='After participant' WHERE id=?", (person.id,)
+            )
+            writer.execute(
+                "UPDATE meeting_participants SET role='after role' WHERE meeting_id=?",
+                (MEETING_ID,),
+            )
+            writer.execute(
+                "UPDATE speaker_assignments SET participant_id=NULL WHERE meeting_id=?",
+                (MEETING_ID,),
+            )
+            writer.execute(
+                "UPDATE audio_assets SET status='corrupt' WHERE meeting_id=?", (MEETING_ID,)
+            )
+            writer.commit()
+        committed.append(True)
+
+    execute = LibraryConnection.execute
+
+    def interpose_read(library, sql, parameters=()):
+        cursor = execute(library, sql, parameters)
+        statement = " ".join(sql.lower().split())
+        domain_tables = (
+            "meetings",
+            "participants",
+            "meeting_participants",
+            "speaker_assignments",
+            "audio_assets",
+            "transcript_revisions",
+            "segments",
+            "revision_audio_assets",
+        )
+        if (
+            not attempted
+            and statement.startswith("select ")
+            and any(
+                f"from {table}" in statement or f"join {table}" in statement
+                for table in domain_tables
+            )
+        ):
+            attempted.append(True)
+            try:
+                external_commit()
+            except sqlite3.OperationalError as error:
+                # BEGIN IMMEDIATE is also coherent: it may serialize the writer.
+                # Do not require a nonblocking implementation the contract never promised.
+                assert "locked" in str(error).lower(), str(error)
+        return cursor
+
+    with monkeypatch.context() as patch:
+        patch.setattr(LibraryConnection, "execute", interpose_read)
+        detail = memory.get_meeting(MEETING_ID)
+    assert attempted, "External SQL fault must be interposed at an actual domain read"
+    if not committed:
+        external_commit()
+    assert _rows(root, "SELECT title FROM meetings") == [("After coherent read",)]
+    assert (
+        len(detail.participants)
+        == len(detail.participant_links)
+        == len(detail.speaker_assignments)
+        == 1
+    )
+    observed = (
+        detail.meeting.title,
+        detail.participants[0].display_name,
+        detail.participant_links[0].role,
+        detail.speaker_assignments[0].participant_id,
+        detail.audio_assets[0].status,
+    )
+    assert observed in {
+        ("Before coherent read", "Before participant", "before role", person.id, "available"),
+        ("After coherent read", "After participant", "after role", None, "corrupt"),
+    }, f"get_meeting returned a torn catalog snapshot: {observed}"
+
+
+@pytest.mark.parametrize("injected", [False, True], ids=["default-root", "injected-custom-root"])
+def test_r48_controller_exposes_read_only_actual_memory_service_and_real_catalog(
+    tmp_path,
+    monkeypatch,
+    injected,
+):
+    from here.application.controller import HereApplicationController
+    from here.application.models import ApplicationState
+
+    default_root = tmp_path / "default-root"
+    custom_root = tmp_path / "custom-root"
+    monkeypatch.setenv("HERE_DATA_DIR", str(default_root))
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("Reading controller memory_service started capture or live processing")
+
+    supplied = MemoryService(custom_root) if injected else None
+    controller = HereApplicationController(
+        memory_service=supplied, capture_factory=forbidden, live_factory=forbidden
+    )
+    exposed = controller.memory_service
+    assert isinstance(exposed, MemoryService)
+    if injected:
+        assert exposed is supplied
+    assert controller.memory_service is exposed
+    source = make_session(tmp_path / "r48-source", meeting_id=MEETING_ID)
+    assert exposed.ingest_session(source.directory).status == "inserted"
+    expected_root = custom_root if injected else default_root
+    assert exposed.data_dir == expected_root.absolute()
+    assert _rows(expected_root, "SELECT id FROM meetings") == [(MEETING_ID,)]
+    assert exposed.get_meeting(MEETING_ID).meeting.id == MEETING_ID
+    person = exposed.add_participant("Controller-visible explicit person")
+    exposed.link_participant(MEETING_ID, person.id, role="observer")
+    assert exposed.list_participants(MEETING_ID) == (person,)
+    assert controller.snapshot.state == ApplicationState.IDLE
+    assert not controller.snapshot.has_active_work
+    with pytest.raises(AttributeError):
+        controller.memory_service = exposed
+    assert controller.memory_service is exposed
+    if injected:
+        assert not (default_root / "library.sqlite3").exists()

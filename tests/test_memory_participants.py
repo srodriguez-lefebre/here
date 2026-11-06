@@ -423,3 +423,194 @@ def test_edited_audio_only_publication_rebuild_preserves_null_dates_and_source_k
     assert after["revision_audio_assets"] == before["revision_audio_assets"]
     assert after["meeting"]["started_at"] is after["meeting"]["completed_at"] is None
     assert _rows(root, "SELECT COUNT(*) FROM ingest_sources WHERE revision_id IS NULL") == [(1,)]
+
+
+def test_r48_participant_reads_distinguish_empty_global_and_per_meeting_membership(
+    catalog, tmp_path
+):
+    _root, memory, _source = catalog
+    assert memory.list_participants() == ()
+    assert memory.list_participants(MEETING_ID) == ()
+    unlinked = memory.add_participant("Unlinked synthetic person")
+    first = memory.add_participant("First linked synthetic person")
+    second = memory.add_participant("Second linked synthetic person")
+    other = make_session(tmp_path / "r48-other", meeting_id=OTHER_MEETING_ID)
+    assert memory.ingest_session(other.directory).status == "inserted"
+    memory.link_participant(MEETING_ID, first.id, role="chair")
+    memory.link_participant(OTHER_MEETING_ID, second.id)
+    global_people = memory.list_participants()
+    assert isinstance(global_people, tuple)
+    assert all(isinstance(person, models.Participant) for person in global_people)
+    assert {person.id: person.display_name for person in global_people} == {
+        unlinked.id: "Unlinked synthetic person",
+        first.id: "First linked synthetic person",
+        second.id: "Second linked synthetic person",
+    }
+    assert memory.list_participants(MEETING_ID) == (first,)
+    assert memory.list_participants(OTHER_MEETING_ID) == (second,)
+
+
+def test_r48_get_meeting_preserves_typed_exact_audio_revision_and_empty_attribution(catalog):
+    _root, memory, _source = catalog
+    before = memory.show(MEETING_ID)
+    detail = memory.get_meeting(MEETING_ID)
+    assert isinstance(detail, models.MeetingDetail)
+    assert isinstance(detail.meeting, models.Meeting)
+    assert asdict(detail.meeting) == before["meeting"]
+    for name, expected_key, model in (
+        ("audio_assets", "audio_assets", models.AudioAsset),
+        ("revisions", "revisions", models.TranscriptRevision),
+        ("segments", "segments", models.Segment),
+        ("revision_audio_assets", "revision_audio_assets", models.RevisionAudioAsset),
+    ):
+        values = getattr(detail, name)
+        assert isinstance(values, tuple) and all(isinstance(value, model) for value in values)
+        assert sorted((asdict(value) for value in values), key=lambda value: str(value)) == sorted(
+            before[expected_key],
+            key=lambda value: str(value),
+        )
+    assert detail.participants == detail.participant_links == detail.speaker_assignments == ()
+    assert isinstance(detail.warnings, tuple)
+
+
+def test_r48_get_meeting_exposes_roles_and_nullable_request_assignments_as_typed_tuples(catalog):
+    root, memory, _source = catalog
+    first = memory.add_participant("Explicit first person")
+    second = memory.add_participant("Explicit second person")
+    memory.add_participant("Unlinked person excluded from meeting detail")
+    memory.link_participant(MEETING_ID, first.id, role="chair")
+    memory.link_participant(MEETING_ID, second.id)
+    before = memory.show(MEETING_ID)
+    revision_id = before["meeting"]["active_revision_id"]
+    first_key, second_key = [segment["speaker_key"] for segment in before["segments"]]
+    memory.assign_speaker(MEETING_ID, first_key, first.id, scope=revision_id)
+    # Schema2 permits a stored explicitly nullable assignment; reading cannot
+    # turn its equal provider label into the first request's participant.
+    with closing(sqlite3.connect(root / "library.sqlite3")) as connection:
+        connection.execute(
+            "INSERT INTO speaker_assignments VALUES (?,?,?,NULL)",
+            (MEETING_ID, revision_id, second_key),
+        )
+        connection.commit()
+    detail = memory.get_meeting(MEETING_ID)
+    assert isinstance(detail.participants, tuple)
+    assert set(detail.participants) == {first, second}
+    assert isinstance(detail.participant_links, tuple)
+    link_type = getattr(models, "MeetingParticipant")
+    assert all(isinstance(link, link_type) for link in detail.participant_links)
+    assert {
+        (link.meeting_id, link.participant_id, link.role) for link in detail.participant_links
+    } == {
+        (MEETING_ID, first.id, "chair"),
+        (MEETING_ID, second.id, None),
+    }
+    assignment_type = getattr(models, "SpeakerAssignment")
+    assert isinstance(detail.speaker_assignments, tuple)
+    assert all(isinstance(item, assignment_type) for item in detail.speaker_assignments)
+    assert {
+        (item.meeting_id, item.revision_id, item.speaker_key, item.participant_id)
+        for item in detail.speaker_assignments
+    } == {
+        (MEETING_ID, revision_id, first_key, first.id),
+        (MEETING_ID, revision_id, second_key, None),
+    }
+    assert [asdict(segment) for segment in detail.segments] == before["segments"]
+
+
+def test_r48_detached_immutable_read_snapshot_survives_subsequent_real_writes(catalog):
+    from dataclasses import FrozenInstanceError
+
+    _root, memory, _source = catalog
+    person = memory.add_participant("Original explicit person")
+    memory.link_participant(MEETING_ID, person.id, role="original role")
+    show = memory.show(MEETING_ID)
+    revision = show["meeting"]["active_revision_id"]
+    key = show["segments"][0]["speaker_key"]
+    memory.assign_speaker(MEETING_ID, key, person.id, scope=revision)
+    snapshot = memory.get_meeting(MEETING_ID)
+    participants = memory.list_participants(MEETING_ID)
+    retained = asdict(snapshot)
+    memory.link_participant(MEETING_ID, person.id, role="new role")
+    memory.assign_speaker(MEETING_ID, key, None, scope=revision)
+    memory.update_meeting(
+        MEETING_ID,
+        models.MeetingPatch(title="After snapshot"),
+        expected_version=memory.show(MEETING_ID)["meeting"]["row_version"],
+    )
+    memory.add_participant("Later global participant")
+    assert asdict(snapshot) == retained
+    assert participants == (person,)
+    assert snapshot.participant_links[0].role == "original role"
+    assert snapshot.speaker_assignments[0].participant_id == person.id
+    current = memory.get_meeting(MEETING_ID)
+    assert current.meeting.title == "After snapshot"
+    assert current.participant_links[0].role == "new role"
+    assert current.speaker_assignments == ()
+    for value, field_name in (
+        (snapshot, "participants"),
+        (snapshot.meeting, "title"),
+        (snapshot.participants[0], "display_name"),
+        (snapshot.participant_links[0], "role"),
+        (snapshot.speaker_assignments[0], "participant_id"),
+    ):
+        with pytest.raises(FrozenInstanceError):
+            setattr(value, field_name, None)
+
+
+def test_r48_detail_old_positional_constructor_keeps_warnings_before_new_tuple_defaults(catalog):
+    _root, memory, _source = catalog
+    existing = memory.link_participant(MEETING_ID, memory.add_participant("Linked person").id)
+    warnings = ("Synthetic existing positional warning",)
+    detail = models.MeetingDetail(
+        existing.meeting,
+        existing.audio_assets,
+        existing.revisions,
+        existing.segments,
+        existing.revision_audio_assets,
+        warnings,
+    )
+    assert detail.meeting is existing.meeting
+    assert detail.audio_assets == existing.audio_assets
+    assert detail.revisions == existing.revisions
+    assert detail.segments == existing.segments
+    assert detail.revision_audio_assets == existing.revision_audio_assets
+    assert detail.warnings == warnings
+    assert detail.participants == detail.participant_links == detail.speaker_assignments == ()
+
+
+def test_r48_missing_meeting_read_raises_canonical_not_found_without_fabricating_rows(catalog):
+    root, memory, _source = catalog
+    before = _snapshot(root), _files(root)
+    with pytest.raises(service_module.NotFound):
+        memory.get_meeting(OTHER_MEETING_ID)
+    assert (_snapshot(root), _files(root)) == before
+
+
+@pytest.mark.parametrize("kind", ["link", "assignment"])
+def test_r48_new_link_and_assignment_dtos_preserve_default_role_and_nullable_identity(kind):
+    from dataclasses import FrozenInstanceError
+
+    if kind == "link":
+        link = getattr(models, "MeetingParticipant")(MEETING_ID, OTHER_MEETING_ID)
+        assert asdict(link) == {
+            "meeting_id": MEETING_ID,
+            "participant_id": OTHER_MEETING_ID,
+            "role": None,
+        }
+        with pytest.raises(FrozenInstanceError):
+            link.role = "inferred role"
+    else:
+        assignment = getattr(models, "SpeakerAssignment")(
+            MEETING_ID,
+            "33333333-3333-4333-8333-333333333333",
+            '["synthetic-request-1", "speaker_0"]',
+            None,
+        )
+        assert asdict(assignment) == {
+            "meeting_id": MEETING_ID,
+            "revision_id": "33333333-3333-4333-8333-333333333333",
+            "speaker_key": '["synthetic-request-1", "speaker_0"]',
+            "participant_id": None,
+        }
+        with pytest.raises(FrozenInstanceError):
+            assignment.participant_id = OTHER_MEETING_ID
