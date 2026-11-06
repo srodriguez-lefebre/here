@@ -77,9 +77,7 @@ class _Factory:
     def __call__(self):
         database = importlib.import_module("here.memory.database")
         library = database.open_library(self.root)
-        observed = _ObservedConnection(
-            library.connection, self.calls, self.trace, self.after_read
-        )
+        observed = _ObservedConnection(library.connection, self.calls, self.trace, self.after_read)
         self.after_read = None
         library.connection = observed
         self.connections.append(observed)
@@ -131,8 +129,17 @@ def _open_catalog(root, corpus=None):
     return library, repo
 
 
-def _publish(repo, number, *, date=None, title="Synthetic", texts=("needle",),
-             partial=False, status="completed", timing=None):
+def _publish(
+    repo,
+    number,
+    *,
+    date=None,
+    title="Synthetic",
+    texts=("needle",),
+    partial=False,
+    status="completed",
+    timing=None,
+):
     models = importlib.import_module("here.memory.models")
     meeting_id = _identity(number)
     revision_id = _identity(number + 100000)
@@ -141,15 +148,22 @@ def _publish(repo, number, *, date=None, title="Synthetic", texts=("needle",),
         id=meeting_id, title=title, started_at=date, status=models.MeetingStatus(status)
     )
     revision = models.TranscriptRevision(
-        id=revision_id, meeting_id=meeting_id, revision_number=1, raw_text=raw,
-        provider="synthetic", model="authored", origin="import",
+        id=revision_id,
+        meeting_id=meeting_id,
+        revision_number=1,
+        raw_text=raw,
+        provider="synthetic",
+        model="authored",
+        origin="import",
         content_hash=hashlib.sha256(raw.encode()).hexdigest(),
         status="partial" if partial else "complete",
     )
     segments = tuple(
         models.Segment(
             id=_identity(number * 1000 + ordinal + 1000000),
-            revision_id=revision_id, ordinal=ordinal, text=text,
+            revision_id=revision_id,
+            ordinal=ordinal,
+            text=text,
             **(timing or {}),
         )
         for ordinal, text in enumerate(texts)
@@ -218,9 +232,7 @@ def test_user_tokens_are_normalized_and_quoted_without_fts_operators(raw, normal
     assert search.build_fts_expression(raw) == expression
 
 
-@pytest.mark.parametrize(
-    "text", ["cafe", "ÁRBOL", "AI", "NEAR", "OR", "-x", "title:x", '"quote']
-)
+@pytest.mark.parametrize("text", ["cafe", "ÁRBOL", "AI", "NEAR", "OR", "-x", "title:x", '"quote'])
 def test_actual_fts_accepts_accents_case_short_and_operator_looking_tokens(catalog, text):
     _, models = _api()
     root, _, _, corpus = catalog
@@ -251,9 +263,9 @@ def test_match_and_filters_are_bound_in_unexpanded_sql(catalog):
     factory = _Factory(root)
     service = search.SearchService(factory)
     raw = "rawsentinel' OR 1=1 -- title:x"
-    service.search(models.SearchQuery(
-        text=raw, participant_id=corpus.filter_case["participant_id"]
-    ))
+    service.search(
+        models.SearchQuery(text=raw, participant_id=corpus.filter_case["participant_id"])
+    )
     assert factory.calls, "Observe actual SQL, not the expanded SQLite trace"
     assert any("MATCH" in sql.upper() and parameters for sql, parameters, _ in factory.calls)
     for sql, _, _ in factory.calls:
@@ -277,16 +289,24 @@ def test_filters_apply_before_global_limit_for_fifty_matches_and_five_survivors(
     _, models = _api()
     root, _, _, corpus = catalog
     case = corpus.filter_case
-    query = models.SearchQuery(**{key: case[key] for key in (
-        "text", "from_utc", "to_utc", "statuses", "participant_id", "limit"
-    )})
+    query = models.SearchQuery(
+        **{
+            key: case[key]
+            for key in ("text", "from_utc", "to_utc", "statuses", "participant_id", "limit")
+        }
+    )
     page = _service(root).search(query)
     assert {hit.segment_id for hit in page.items} == set(case["filtered_segment_ids"])
     assert page.next_cursor is None
-    listed = _service(root).list_meetings(models.MeetingQuery(
-        from_utc=case["from_utc"], to_utc=case["to_utc"], statuses=case["statuses"],
-        participant_id=case["participant_id"], limit=10,
-    ))
+    listed = _service(root).list_meetings(
+        models.MeetingQuery(
+            from_utc=case["from_utc"],
+            to_utc=case["to_utc"],
+            statuses=case["statuses"],
+            participant_id=case["participant_id"],
+            limit=10,
+        )
+    )
     assert {item.meeting.id for item in listed.items} == {
         corpus.meeting_id(i) for i in range(45, 50)
     }
@@ -301,7 +321,8 @@ def test_search_never_exposes_historical_deleting_or_default_partial_hits(catalo
     assert [hit.segment_id for hit in page.items] == [case["active_complete_segment_id"]]
     partial = service.search(models.SearchQuery(text=case["text"], include_partial=True))
     assert {hit.segment_id for hit in partial.items} == {
-        case["active_complete_segment_id"], case["partial_segment_id"]
+        case["active_complete_segment_id"],
+        case["partial_segment_id"],
     }
     assert {hit.segment_id for hit in partial.items if hit.partial} == {case["partial_segment_id"]}
     historical = models.SearchQuery(text=case["historical_only_text"], include_partial=True)
@@ -320,13 +341,18 @@ def test_listing_keyset_handles_ties_nulls_insert_delete_and_reservation(tmp_pat
         _publish(repo, 3, date="2026-01-02T00:00:00+00:00")
         _publish(repo, 4)
         with repo.transaction():
-            repo.insert_meeting(models.Meeting(
-                id=_identity(5), status=models.MeetingStatus.PROCESSING
-            ))
-            repo.insert_ingest_source(models.IngestSource(
-                id=_identity(900), origin_path="synthetic/audio-only", origin_fingerprint="a" * 64,
-                meeting_id=_identity(5), revision_id=None,
-            ))
+            repo.insert_meeting(
+                models.Meeting(id=_identity(5), status=models.MeetingStatus.PROCESSING)
+            )
+            repo.insert_ingest_source(
+                models.IngestSource(
+                    id=_identity(900),
+                    origin_path="synthetic/audio-only",
+                    origin_fingerprint="a" * 64,
+                    meeting_id=_identity(5),
+                    revision_id=None,
+                )
+            )
         service = _service(root)
         first = service.list_meetings(models.MeetingQuery(limit=2))
         assert [row.meeting.id for row in first.items] == [_identity(1), _identity(2)]
@@ -345,9 +371,12 @@ def test_listing_keyset_handles_ties_nulls_insert_delete_and_reservation(tmp_pat
         assert reservation.started_at is None
         assert reservation.active_revision_id is None
         assert reservation.completed_at is None
-        assert library.execute(
-            "SELECT count(*) FROM transcript_revisions WHERE meeting_id=?", (reservation.id,)
-        ).fetchone()[0] == 0
+        assert (
+            library.execute(
+                "SELECT count(*) FROM transcript_revisions WHERE meeting_id=?", (reservation.id,)
+            ).fetchone()[0]
+            == 0
+        )
     finally:
         library.close()
 
@@ -358,7 +387,9 @@ def test_date_bounds_are_inclusive_exclusive_and_exclude_unknown_dates(tmp_path,
     library, repo = _open_catalog(tmp_path)
     try:
         dates = (
-            None, "2026-01-01T00:00:00+00:00", "2026-01-02T00:00:00+00:00",
+            None,
+            "2026-01-01T00:00:00+00:00",
+            "2026-01-02T00:00:00+00:00",
             "2026-01-03T00:00:00+00:00",
         )
         for number, date in enumerate(dates, 1):
@@ -413,7 +444,8 @@ def _malformed_envelope(cursor, path, value):
     else:
         key_positions = (
             {"rank": 0, "null": 1, "date": 2, "meeting_id": 3, "segment_id": 4}
-            if payload[2] == "search" else {"null": 0, "date": 1, "meeting_id": 2}
+            if payload[2] == "search"
+            else {"null": 0, "date": 1, "meeting_id": 2}
         )
         payload[field_positions[path[0]]][key_positions[path[1]]] = value
     # Deliberately permit NaN/Infinity in malformed JSON numeric payloads; the
@@ -466,7 +498,8 @@ def test_private_cursor_payload_rejects_invalid_types_null_date_version_and_orde
     service = search.SearchService(factory)
     query = (
         models.SearchQuery(text=COHORT_TOKEN, limit=2)
-        if operation == "search" else models.MeetingQuery(limit=2)
+        if operation == "search"
+        else models.MeetingQuery(limit=2)
     )
     first = getattr(service, operation)(query)
     assert first.next_cursor
@@ -480,20 +513,23 @@ def test_private_cursor_payload_rejects_invalid_types_null_date_version_and_orde
     ), "Malformed key payload must be rejected before generation/page SQL"
 
 
-@pytest.mark.parametrize(("key", "value"), [
-    ("rank", float("nan")),
-    ("rank", float("inf")),
-    ("rank", float("-inf")),
-    ("rank", True),
-    ("rank", False),
-    ("rank", "0"),
-    ("rank", None),
-    ("rank", []),
-    ("segment_id", None),
-    ("segment_id", True),
-    ("segment_id", 1),
-    ("segment_id", []),
-])
+@pytest.mark.parametrize(
+    ("key", "value"),
+    [
+        ("rank", float("nan")),
+        ("rank", float("inf")),
+        ("rank", float("-inf")),
+        ("rank", True),
+        ("rank", False),
+        ("rank", "0"),
+        ("rank", None),
+        ("rank", []),
+        ("segment_id", None),
+        ("segment_id", True),
+        ("segment_id", 1),
+        ("segment_id", []),
+    ],
+)
 def test_private_search_cursor_rejects_nonfinite_rank_and_wrong_key_types_before_sql(
     catalog, key, value
 ):
@@ -526,9 +562,14 @@ def test_search_cursor_is_bound_to_normalized_query_filters_and_route(catalog, c
     query = models.SearchQuery(text=COHORT_TOKEN, limit=2)
     first = service.search(query)
     assert first.next_cursor
-    change = {"text": "another", "statuses": ("failed",), "participant_id": "other",
-              "from_utc": "2025-01-01T00:00:00+00:00", "to_utc": "2027-01-01T00:00:00+00:00",
-              "include_partial": True}[changed]
+    change = {
+        "text": "another",
+        "statuses": ("failed",),
+        "participant_id": "other",
+        "from_utc": "2025-01-01T00:00:00+00:00",
+        "to_utc": "2027-01-01T00:00:00+00:00",
+        "include_partial": True,
+    }[changed]
     with pytest.raises(_invalid_input()):
         service.search(replace(query, cursor=first.next_cursor, **{changed: change}))
 
@@ -556,9 +597,7 @@ def test_equal_fts_ranks_continue_through_date_id_segment_ties_and_null_dates(tm
     _, models = _api()
     library, repo = _open_catalog(tmp_path)
     try:
-        newest = _publish(
-            repo, 1, date="2026-01-03T00:00:00+00:00", texts=("needle", "needle")
-        )
+        newest = _publish(repo, 1, date="2026-01-03T00:00:00+00:00", texts=("needle", "needle"))
         tied = _publish(repo, 2, date="2026-01-03T00:00:00+00:00")
         older = _publish(repo, 3, date="2026-01-02T00:00:00+00:00")
         null_first = _publish(repo, 4, texts=("needle", "needle"))
@@ -570,7 +609,11 @@ def test_equal_fts_ranks_continue_through_date_id_segment_ties_and_null_dates(tm
         assert len({row[0] for row in ranks}) == 1
         hits = _search_all(_service(tmp_path), models.SearchQuery(text="needle", limit=1))
         assert [hit.segment_id for hit in hits] == [
-            *newest[2], *tied[2], *older[2], *null_first[2], *null_last[2]
+            *newest[2],
+            *tied[2],
+            *older[2],
+            *null_first[2],
+            *null_last[2],
         ]
     finally:
         library.close()
@@ -584,9 +627,9 @@ def test_listing_cursor_is_bound_to_filters_and_cannot_be_used_for_search(catalo
     first = service.list_meetings(models.MeetingQuery(limit=2))
     assert first.next_cursor
     with pytest.raises(_invalid_input()):
-        service.list_meetings(models.MeetingQuery(
-            limit=2, statuses=("failed",), cursor=first.next_cursor
-        ))
+        service.list_meetings(
+            models.MeetingQuery(limit=2, statuses=("failed",), cursor=first.next_cursor)
+        )
     with pytest.raises(_invalid_input()):
         service.search(models.SearchQuery(text=COHORT_TOKEN, cursor=first.next_cursor))
 
@@ -597,9 +640,9 @@ def test_equivalent_normalized_query_can_continue_the_same_search(catalog):
     _, models = _api()
     service = _service(catalog[0])
     first = service.search(models.SearchQuery(text=COHORT_TOKEN, limit=2))
-    second = service.search(models.SearchQuery(
-        text=f" \t{COHORT_TOKEN}\n", limit=2, cursor=first.next_cursor
-    ))
+    second = service.search(
+        models.SearchQuery(text=f" \t{COHORT_TOKEN}\n", limit=2, cursor=first.next_cursor)
+    )
     assert len(second.items) == 2
     assert {hit.segment_id for hit in first.items}.isdisjoint(
         hit.segment_id for hit in second.items
@@ -614,19 +657,24 @@ def test_hybrid_has_one_global_bm25_then_literal_null_keyset_without_index_mutat
             repo, 1, date="2026-01-01T00:00:00+00:00", texts=("needle", "needle extra")
         )
         partial_new = _publish(
-            repo, 2, date="2026-01-03T00:00:00+00:00", partial=True,
+            repo,
+            2,
+            date="2026-01-03T00:00:00+00:00",
+            partial=True,
             texts=("needle", "needle"),
         )
         partial_old = _publish(repo, 3, date="2026-01-02T00:00:00+00:00", partial=True)
         partial_null = _publish(repo, 4, partial=True)
         index_sql = "SELECT * FROM segments_fts ORDER BY segment_id"
         before = [tuple(row) for row in library.execute(index_sql)]
-        hits = _search_all(_service(tmp_path), models.SearchQuery(
-            text="needle", include_partial=True, limit=2
-        ))
+        hits = _search_all(
+            _service(tmp_path), models.SearchQuery(text="needle", include_partial=True, limit=2)
+        )
         assert {hit.segment_id for hit in hits[:2]} == set(complete[2])
         assert [hit.segment_id for hit in hits[2:]] == [
-            *partial_new[2], *partial_old[2], *partial_null[2]
+            *partial_new[2],
+            *partial_old[2],
+            *partial_null[2],
         ]
         assert [hit.partial for hit in hits] == [False, False, True, True, True, True]
         assert [tuple(row) for row in library.execute(index_sql)] == before
@@ -653,7 +701,8 @@ def _mutate_corpus(root, corpus, mutation, target_index=60):
             elif mutation == "indexed_title":
                 library.execute(
                     "UPDATE meetings SET title='new unrelated title',"
-                    "row_version=row_version+1 WHERE id=?", (target,)
+                    "row_version=row_version+1 WHERE id=?",
+                    (target,),
                 )
                 library.execute(
                     "UPDATE segments_fts SET title='new unrelated title' WHERE meeting_id=?",
@@ -671,13 +720,15 @@ def _mutate_corpus(root, corpus, mutation, target_index=60):
                 library.execute(
                     "INSERT INTO segments_fts SELECT m.id,r.id,s.id,s.text,m.title FROM meetings m "
                     "JOIN transcript_revisions r ON r.id=m.active_revision_id "
-                    "JOIN segments s ON s.revision_id=r.id WHERE m.id=?", (target,)
+                    "JOIN segments s ON s.revision_id=r.id WHERE m.id=?",
+                    (target,),
                 )
             elif mutation == "index_only":
                 # Deliberately change rank inputs without changing catalog metadata.
                 library.execute(
                     "UPDATE segments_fts SET text='unrelated changed index length "
-                    "words words words' WHERE meeting_id=?", (target,)
+                    "words words words' WHERE meeting_id=?",
+                    (target,),
                 )
             else:
                 raise AssertionError(f"Unknown controlled mutation: {mutation}")
@@ -685,10 +736,19 @@ def _mutate_corpus(root, corpus, mutation, target_index=60):
         library.close()
 
 
-@pytest.mark.parametrize("mutation", [
-    "nonmatching_insert", "nonmatching_delete", "indexed_title", "date", "status",
-    "filter_relation", "active_revision", "index_only",
-])
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "nonmatching_insert",
+        "nonmatching_delete",
+        "indexed_title",
+        "date",
+        "status",
+        "filter_relation",
+        "active_revision",
+        "index_only",
+    ],
+)
 @pytest.mark.parametrize("include_partial", [False, True])
 def test_whole_corpus_change_rejects_old_rank_before_returning_a_page(
     catalog, mutation, include_partial
@@ -761,7 +821,8 @@ def test_generation_and_page_share_one_explicit_short_read_snapshot(catalog):
     page = search.SearchService(factory).search(models.SearchQuery(text="synthetic", limit=2))
     assert page.items
     selects = [
-        (sql, active) for sql, _, active in factory.calls
+        (sql, active)
+        for sql, _, active in factory.calls
         if sql.lstrip().upper().startswith(("SELECT", "WITH"))
     ]
     assert selects
@@ -797,8 +858,12 @@ def test_snippets_preserve_plain_text_and_only_measured_or_absent_timing(tmp_pat
     _, models = _api()
     library, repo = _open_catalog(tmp_path)
     try:
-        measured = _publish(repo, 1, texts=("<script>needle</script> literal evidence",),
-                            timing={"start_ms": 0, "end_ms": 1234, "timing_source": "provider"})
+        measured = _publish(
+            repo,
+            1,
+            texts=("<script>needle</script> literal evidence",),
+            timing={"start_ms": 0, "end_ms": 1234, "timing_source": "provider"},
+        )
         absent = _publish(repo, 2, partial=True, texts=("x" * 200 + " needle " + "y" * 200,))
         hits = _search_all(
             _service(tmp_path), models.SearchQuery(text="needle", include_partial=True)

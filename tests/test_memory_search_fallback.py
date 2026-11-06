@@ -19,7 +19,9 @@ from test_memory_search import (
     _publish,
     _search_all,
     _service,
-    catalog,  # noqa: F401 -- imported pytest fixture, shared setup has one author
+)
+from test_memory_search import (
+    catalog as catalog,  # Explicit fixture re-export; shared setup has one author.
 )
 
 
@@ -44,10 +46,16 @@ def test_missing_fts_keeps_listing_filters_and_degraded_search_usable(catalog, m
     listed = service.list_meetings(models.MeetingQuery(limit=10))
     assert len(listed.items) == 10
     case = corpus.filter_case
-    page = service.search(models.SearchQuery(
-        text=COHORT_TOKEN, from_utc=case["from_utc"], to_utc=case["to_utc"],
-        statuses=case["statuses"], participant_id=case["participant_id"], limit=10,
-    ))
+    page = service.search(
+        models.SearchQuery(
+            text=COHORT_TOKEN,
+            from_utc=case["from_utc"],
+            to_utc=case["to_utc"],
+            statuses=case["statuses"],
+            participant_id=case["participant_id"],
+            limit=10,
+        )
+    )
     assert page.degraded is True
     assert {hit.segment_id for hit in page.items} == set(case["filtered_segment_ids"])
     assert page.next_cursor is None
@@ -63,17 +71,20 @@ def test_literal_routes_escape_wildcards_and_match_tokens_across_title_and_text(
     try:
         # Partial route is literal even with FTS; a title token AND text token
         # must match the same segment, not require both in one field.
-        actual = _publish(repo, 1, title=f"titlemarker {literal}", texts=("bodymarker",),
-                          partial=not missing_fts)
-        _publish(repo, 2, title="titlemarker ordinary", texts=("bodymarker",),
-                 partial=not missing_fts)
-        _publish(repo, 3, title=f"titlemarker {literal}", texts=("unrelated",),
-                 partial=not missing_fts)
+        actual = _publish(
+            repo, 1, title=f"titlemarker {literal}", texts=("bodymarker",), partial=not missing_fts
+        )
+        _publish(
+            repo, 2, title="titlemarker ordinary", texts=("bodymarker",), partial=not missing_fts
+        )
+        _publish(
+            repo, 3, title=f"titlemarker {literal}", texts=("unrelated",), partial=not missing_fts
+        )
         if missing_fts:
             _force_literal(monkeypatch)
-        page = _service(tmp_path).search(models.SearchQuery(
-            text=f"titlemarker {literal} bodymarker", include_partial=True
-        ))
+        page = _service(tmp_path).search(
+            models.SearchQuery(text=f"titlemarker {literal} bodymarker", include_partial=True)
+        )
         assert [hit.segment_id for hit in page.items] == list(actual[2])
         assert page.items[0].snippet == "bodymarker"
         assert page.items[0].partial is (not missing_fts)
@@ -105,28 +116,29 @@ def test_fallback_global_rank_zero_orders_by_date_id_segment_across_null_boundar
     library, repo = _open_catalog(tmp_path)
     try:
         older = _publish(repo, 1, date="2026-01-01T00:00:00+00:00")
-        newest = _publish(repo, 2, date="2026-01-03T00:00:00+00:00", partial=True,
-                          texts=("needle", "needle"))
+        newest = _publish(
+            repo, 2, date="2026-01-03T00:00:00+00:00", partial=True, texts=("needle", "needle")
+        )
         tied = _publish(repo, 3, date="2026-01-03T00:00:00+00:00")
         unknown = _publish(repo, 4, partial=True, texts=("needle", "needle"))
         _force_literal(monkeypatch)
-        hits = _search_all(_service(tmp_path), models.SearchQuery(
-            text="needle", include_partial=True, limit=2
-        ))
-        assert [hit.segment_id for hit in hits] == [
-            *newest[2], *tied[2], *older[2], *unknown[2]
-        ]
+        hits = _search_all(
+            _service(tmp_path), models.SearchQuery(text="needle", include_partial=True, limit=2)
+        )
+        assert [hit.segment_id for hit in hits] == [*newest[2], *tied[2], *older[2], *unknown[2]]
         assert [hit.partial for hit in hits] == [True, True, False, False, True, True]
     finally:
         library.close()
 
 
-@pytest.mark.parametrize("bounds,expected", [
-    ({"from_utc": "2026-01-02T00:00:00+00:00"}, [4, 3]),
-    ({"to_utc": "2026-01-03T00:00:00+00:00"}, [3, 2]),
-    ({"from_utc": "2026-01-02T00:00:00+00:00",
-      "to_utc": "2026-01-03T00:00:00+00:00"}, [3]),
-])
+@pytest.mark.parametrize(
+    "bounds,expected",
+    [
+        ({"from_utc": "2026-01-02T00:00:00+00:00"}, [4, 3]),
+        ({"to_utc": "2026-01-03T00:00:00+00:00"}, [3, 2]),
+        ({"from_utc": "2026-01-02T00:00:00+00:00", "to_utc": "2026-01-03T00:00:00+00:00"}, [3]),
+    ],
+)
 def test_literal_date_bounds_match_fts_rules_and_exclude_nulls(
     tmp_path, monkeypatch, bounds, expected
 ):
@@ -134,15 +146,17 @@ def test_literal_date_bounds_match_fts_rules_and_exclude_nulls(
     library, repo = _open_catalog(tmp_path)
     try:
         dates = (
-            None, "2026-01-01T00:00:00+00:00", "2026-01-02T00:00:00+00:00",
+            None,
+            "2026-01-01T00:00:00+00:00",
+            "2026-01-02T00:00:00+00:00",
             "2026-01-03T00:00:00+00:00",
         )
         for number, date in enumerate(dates, 1):
             _publish(repo, number, date=date, partial=number % 2 == 0)
         _force_literal(monkeypatch)
-        page = _service(tmp_path).search(models.SearchQuery(
-            text="needle", include_partial=True, **bounds
-        ))
+        page = _service(tmp_path).search(
+            models.SearchQuery(text="needle", include_partial=True, **bounds)
+        )
         assert [hit.meeting_id for hit in page.items] == [_identity(i) for i in expected]
     finally:
         library.close()
@@ -160,15 +174,24 @@ def test_literal_visibility_excludes_historical_deleting_and_unselected_partial(
     assert [hit.segment_id for hit in ordinary.items] == [case["active_complete_segment_id"]]
     opted = service.search(models.SearchQuery(text=case["text"], include_partial=True))
     assert {hit.segment_id for hit in opted.items} == {
-        case["active_complete_segment_id"], case["partial_segment_id"]
+        case["active_complete_segment_id"],
+        case["partial_segment_id"],
     }
     assert {hit.segment_id for hit in opted.items if hit.partial} == {case["partial_segment_id"]}
 
 
-@pytest.mark.parametrize("mutation", [
-    "nonmatching_insert", "nonmatching_delete", "indexed_title", "date", "status",
-    "filter_relation", "active_revision",
-])
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "nonmatching_insert",
+        "nonmatching_delete",
+        "indexed_title",
+        "date",
+        "status",
+        "filter_relation",
+        "active_revision",
+    ],
+)
 @pytest.mark.parametrize("include_partial", [False, True])
 def test_literal_search_also_rejects_whole_corpus_generation_changes(
     catalog, monkeypatch, mutation, include_partial

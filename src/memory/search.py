@@ -97,8 +97,12 @@ def _validated(query: _Query) -> _Query:
 
 def _scope(query: MeetingQuery | SearchQuery) -> list[object]:
     return [
-        query.text, query.from_utc, query.to_utc, list(query.statuses),
-        query.participant_id, query.include_partial,
+        query.text,
+        query.from_utc,
+        query.to_utc,
+        list(query.statuses),
+        query.participant_id,
+        query.include_partial,
     ]
 
 
@@ -158,8 +162,14 @@ def _decode(cursor: object, kind: str, scope: list[object]) -> list[Any] | None:
                 raise ValueError("Invalid generation")
         return payload
     except (
-        ValueError, TypeError, KeyError, IndexError, UnicodeError,
-        binascii.Error, OverflowError, RecursionError,
+        ValueError,
+        TypeError,
+        KeyError,
+        IndexError,
+        UnicodeError,
+        binascii.Error,
+        OverflowError,
+        RecursionError,
     ) as error:
         raise InvalidInput("Malformed or mismatched cursor") from error
 
@@ -214,10 +224,7 @@ def _date_keyset(keys: list[Any], parameters: list[object], *, search: bool) -> 
         parameters.extend(tie_parameters)
         return f"({date_column} IS NULL AND ({tie}))"
     parameters.extend((date, date, *tie_parameters))
-    return (
-        f"({date_column} IS NULL OR {date_column} < ? OR "
-        f"({date_column} = ? AND ({tie})))"
-    )
+    return f"({date_column} IS NULL OR {date_column} < ? OR ({date_column} = ? AND ({tie})))"
 
 
 def _snippet(text: str, tokens: list[str]) -> str:
@@ -230,7 +237,8 @@ def _snippet(text: str, tokens: list[str]) -> str:
     source_positions = []
     for position, character in enumerate(text):
         pieces = "".join(
-            piece for piece in unicodedata.normalize("NFD", character.casefold())
+            piece
+            for piece in unicodedata.normalize("NFD", character.casefold())
             if not unicodedata.combining(piece)
         )
         folded.append(pieces)
@@ -239,7 +247,8 @@ def _snippet(text: str, tokens: list[str]) -> str:
     found = []
     for token in tokens:
         folded_token = "".join(
-            piece for piece in unicodedata.normalize("NFD", token.casefold())
+            piece
+            for piece in unicodedata.normalize("NFD", token.casefold())
             if not unicodedata.combining(piece)
         )
         match = searchable.find(folded_token) if folded_token else -1
@@ -322,10 +331,16 @@ class SearchService:
         next_cursor = None
         if len(rows) > normalized.limit:
             last = items[-1].meeting
-            next_cursor = _encode([
-                "here-search", 1, "list", scope, _LIST_ORDER,
-                [int(last.started_at is None), last.started_at, last.id],
-            ])
+            next_cursor = _encode(
+                [
+                    "here-search",
+                    1,
+                    "list",
+                    scope,
+                    _LIST_ORDER,
+                    [int(last.started_at is None), last.started_at, last.id],
+                ]
+            )
         return MeetingPage(tuple(items), next_cursor)
 
     @staticmethod
@@ -340,31 +355,43 @@ class SearchService:
         """
         digest = hashlib.sha256()
         sources = [
-            ("meetings", "SELECT id,title,started_at,status,active_revision_id,row_version "
-             "FROM meetings ORDER BY id"),
-            ("relations", "SELECT meeting_id,participant_id,role FROM meeting_participants "
-             "ORDER BY meeting_id,participant_id"),
+            (
+                "meetings",
+                "SELECT id,title,started_at,status,active_revision_id,row_version "
+                "FROM meetings ORDER BY id",
+            ),
+            (
+                "relations",
+                "SELECT meeting_id,participant_id,role FROM meeting_participants "
+                "ORDER BY meeting_id,participant_id",
+            ),
         ]
         if indexed:
-            sources.append((
-                "fts-schema",
-                "SELECT sql FROM sqlite_master WHERE type='table' AND name='segments_fts'",
-            ))
-            sources.append((
-                "fts",
-                "SELECT meeting_id,revision_id,segment_id,text,title "
-                "FROM segments_fts ORDER BY meeting_id,revision_id,segment_id,text,title",
-            ))
+            sources.append(
+                (
+                    "fts-schema",
+                    "SELECT sql FROM sqlite_master WHERE type='table' AND name='segments_fts'",
+                )
+            )
+            sources.append(
+                (
+                    "fts",
+                    "SELECT meeting_id,revision_id,segment_id,text,title "
+                    "FROM segments_fts ORDER BY meeting_id,revision_id,segment_id,text,title",
+                )
+            )
         allowed = "('complete','partial')" if partial else "('complete')"
-        sources.append((
-            "active",
-            "SELECT m.id,r.id,r.status,s.id,s.ordinal,s.text,s.start_ms,"
-            "s.end_ms,s.timing_source FROM meetings m JOIN transcript_revisions r "
-            "ON r.meeting_id=m.id AND r.id=m.active_revision_id "
-            "LEFT JOIN segments s ON s.revision_id=r.id WHERE r.status IN "
-            + allowed
-            + " ORDER BY m.id,r.id,s.ordinal,s.id",
-        ))
+        sources.append(
+            (
+                "active",
+                "SELECT m.id,r.id,r.status,s.id,s.ordinal,s.text,s.start_ms,"
+                "s.end_ms,s.timing_source FROM meetings m JOIN transcript_revisions r "
+                "ON r.meeting_id=m.id AND r.id=m.active_revision_id "
+                "LEFT JOIN segments s ON s.revision_id=r.id WHERE r.status IN "
+                + allowed
+                + " ORDER BY m.id,r.id,s.ordinal,s.id",
+            )
+        )
         for name, sql in sources:
             digest.update(name.encode("ascii") + b"\x00")
             for row in library.execute(sql):
@@ -376,14 +403,9 @@ class SearchService:
         return digest.hexdigest()
 
     @staticmethod
-    def _branch(
-        query: SearchQuery, *, fts: bool, partial: bool, parameters: list[object]
-    ) -> str:
+    def _branch(query: SearchQuery, *, fts: bool, partial: bool, parameters: list[object]) -> str:
         if fts:
-            projection = (
-                "bm25(segments_fts) AS rank,"
-                "snippet(segments_fts,3,'','','',24) AS excerpt"
-            )
+            projection = "bm25(segments_fts) AS rank,snippet(segments_fts,3,'','','',24) AS excerpt"
             source = (
                 "segments_fts JOIN meetings m ON m.id=segments_fts.meeting_id "
                 "JOIN transcript_revisions r ON r.meeting_id=m.id "
@@ -403,26 +425,41 @@ class SearchService:
         return (
             "SELECT " + projection + ",m.id AS meeting_id,r.id AS revision_id,"
             "s.id AS segment_id,m.title,m.started_at,s.start_ms,s.end_ms,s.timing_source,"
-            "s.text,r.status='partial' AS partial FROM " + source + " WHERE " + match
-            + " AND r.status='" + ("partial" if partial else "complete") + "' AND " + where
+            "s.text,r.status='partial' AS partial FROM "
+            + source
+            + " WHERE "
+            + match
+            + " AND r.status='"
+            + ("partial" if partial else "complete")
+            + "' AND "
+            + where
         )
 
     def search(self, query: SearchQuery) -> SearchPage | MeetingPage:
         normalized = _validated(query)
         if not normalized.text:
-            return self.list_meetings(MeetingQuery(
-                text="", from_utc=normalized.from_utc, to_utc=normalized.to_utc,
-                statuses=normalized.statuses, participant_id=normalized.participant_id,
-                limit=normalized.limit, cursor=normalized.cursor,
-                include_partial=normalized.include_partial,
-            ))
+            return self.list_meetings(
+                MeetingQuery(
+                    text="",
+                    from_utc=normalized.from_utc,
+                    to_utc=normalized.to_utc,
+                    statuses=normalized.statuses,
+                    participant_id=normalized.participant_id,
+                    limit=normalized.limit,
+                    cursor=normalized.cursor,
+                    include_partial=normalized.include_partial,
+                )
+            )
         scope = _scope(normalized)
         cursor = _decode(normalized.cursor, "search", scope)
         with self._snapshot() as library:
             capability = self._capabilities(library)
             indexed = capability.fts_available
-            route = ("hybrid" if normalized.include_partial else "fts") if indexed else (
-                "literal-partial" if normalized.include_partial else "literal")
+            route = (
+                ("hybrid" if normalized.include_partial else "fts")
+                if indexed
+                else ("literal-partial" if normalized.include_partial else "literal")
+            )
             if cursor is not None and cursor[6] != route:
                 raise InvalidInput("Cursor backend changed; restart the query")
             generation = self._generation(
@@ -437,8 +474,7 @@ class SearchService:
             # Materialization keeps FTS auxiliary functions inside their MATCH
             # context. It also prevents branch-local LIMITs from losing global hits.
             sql = (
-                "WITH complete AS MATERIALIZED (" + complete
-                + "), hits AS (SELECT * FROM complete"
+                "WITH complete AS MATERIALIZED (" + complete + "), hits AS (SELECT * FROM complete"
             )
             if normalized.include_partial:
                 sql += " UNION ALL " + self._branch(
@@ -459,22 +495,38 @@ class SearchService:
         tokens = normalized.text.split()
         items = tuple(
             SearchHit(
-                meeting_id=row["meeting_id"], revision_id=row["revision_id"],
-                segment_id=row["segment_id"], snippet=_snippet(row["excerpt"], tokens),
-                title=row["title"], started_at=row["started_at"], start_ms=row["start_ms"],
-                end_ms=row["end_ms"], timing_source=row["timing_source"], partial=bool(row["partial"]),
+                meeting_id=row["meeting_id"],
+                revision_id=row["revision_id"],
+                segment_id=row["segment_id"],
+                snippet=_snippet(row["excerpt"], tokens),
+                title=row["title"],
+                started_at=row["started_at"],
+                start_ms=row["start_ms"],
+                end_ms=row["end_ms"],
+                timing_source=row["timing_source"],
+                partial=bool(row["partial"]),
             )
             for row in rows[: normalized.limit]
         )
         next_cursor = None
         if len(rows) > normalized.limit:
             last = rows[normalized.limit - 1]
-            next_cursor = _encode([
-                "here-search", 1, "search", scope, _SEARCH_ORDER,
+            next_cursor = _encode(
                 [
-                    last["rank"], int(last["started_at"] is None), last["started_at"],
-                    last["meeting_id"], last["segment_id"],
-                ],
-                route, generation,
-            ])
+                    "here-search",
+                    1,
+                    "search",
+                    scope,
+                    _SEARCH_ORDER,
+                    [
+                        last["rank"],
+                        int(last["started_at"] is None),
+                        last["started_at"],
+                        last["meeting_id"],
+                        last["segment_id"],
+                    ],
+                    route,
+                    generation,
+                ]
+            )
         return SearchPage(items, next_cursor, not indexed)
