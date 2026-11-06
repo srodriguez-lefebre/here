@@ -625,6 +625,55 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Cost if wrong:** ajustar el adaptador interno antes del handoff, preservando
     una única autoridad de supresión y snapshot coherente de cada página.
 
+51. **Ruling:** se fijan los defaults internos B5 tras revisar su propuesta
+    a9b785a7 y el contrato independiente, sin cambiar R42/R50 ni el DoD. En models,
+    valores frozen/slots `DeletionResult(status,meeting_id=None,reason='',warnings=(),
+    error_category=None)` y `ReindexReport(indexed_meetings=0,indexed_segments=0,
+    warnings=())`. Status es completed/pending/rejected; categorías existentes
+    invalid_input/conflict/io/None. Reason usa códigos fijos invalid_input,
+    not_found, conflict, busy, hook_failed, purge_failed, io o cleanup_pending,
+    nunca texto de excepción/contenido para interpretar. InvalidInput/NotFound/
+    Conflict/Busy previos a aceptación mantienen errores tipados y exits2/3/4;
+    un resultado rejected tiene categoría explícita. Cualquier fallo ordinario
+    tras barrera durable válida, incluso de una invocación anterior, produce
+    pending con UUID canónico, reason y categoría io/exit4, nunca rejected ni
+    NotFound por faltar filas SQL. Solo purga completa verificada y complete
+    durable permiten completed/exit0. Registro inválido falla cerrado; no prueba
+    rechazo de un intento posiblemente aceptado. Muertes de proceso conservan
+    intención durable para replay. Reindex cuenta filas FTS realmente insertadas
+    y sus reuniones distintas después de commit; excluye suprimidas/históricas/
+    partial. Sin FTS devuelve0/0 y FtsUnavailable existente; otros errores de
+    storage/Busy siguen tipados, sin aparentar éxito parcial.
+    `before_delete: list[Callable[[str],None]]` termina sincrónicamente la
+    liberación, no solo encola una señal. Se invoca sin transacción ni lock de
+    catálogo que el GUI pueda necesitar; luego se adquieren locks existentes y
+    se revalidan identidad, ownership, fase e inventario antes de nueva barrera.
+    Tras fallo/ACK se consulta la fase actual para cubrir aceptación concurrente.
+    El adaptador Qt futuro debe hacer stop/unload/invalidate de cargas en su hilo
+    y esperar ACK acotado desde el worker, sin bloquear el hilo Qt ni tocar player
+    desde el worker; su timeout concreto se fija al implementar ese adaptador.
+    `_derived_row_purgers: list[Callable[[MemoryRepository,str],None]]` es registro
+    privado de código confiable: corre en orden al inicio de la transacción SQL
+    de cleanup final, antes de perder relaciones y retirar core/FTS. Usa esa misma
+    conexión, solo SQL, sin commit/BEGIN/rollback/otra conexión/I/O/proveedor;
+    fallo revierte juntos core/derivados y deja pending/replay idempotente.
+    El registro privado es `.deletions/<uuid-canónico>.json` con solo
+    schema_version1, meeting_id, origins de pares origin_path/origin_fingerprint
+    y phase pending/complete. Inventario queda en pending_operations/proof A,
+    nunca inferido del UUID/registro. El temp conocido conserva el rol del writer
+    existente `.<uuid>.json.<token-mkstemp>.stage`: regular seguro, metadata-only,
+    no se lee como barrera ni cambia visibilidad o autoridad antes del replace.
+    Solo su writer limpia el temp propio probado; stale se retiene/reporta.
+    Entradas finales corruptas/unsafe/inaccesibles o desconocidas fallan cerrado,
+    sin purga inferida ni fallback vacío. Se valida versión/tipos/UUID del nombre
+    y contenido, pares/fase y encoding canónico. La equivalencia real de páginas
+    con búsqueda M3 se verifica en su rama integrada con la fuente B5 exacta;
+    B prueba productor/SQL/guard, sin duplicar/vendorear búsqueda. Ambos registran
+    ese resultado como interoperabilidad separada de sus CI/artefactos, antes de
+    aceptar B5/grupos. Estas decisiones y su review son estáticas, no funcionalidad
+    B5/M3/M4 aprobada. **Cost if wrong:** adaptar los contratos y sus callers antes
+    del handoff, preservando fase durable, locks, privacidad y todos los gates.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
