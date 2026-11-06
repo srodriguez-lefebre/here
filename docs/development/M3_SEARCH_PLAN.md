@@ -5,7 +5,7 @@
 > only after current-head received/responded Copilot, Windows CI and independent
 > review. Steps use checkbox syntax. **Status: in progress — query-core checkpoint,
 > 2026-11-06; UI attempts recorded, complete tasks/group/milestone acceptance pending.**
-> R55 functional checkpoint approved/p95 FAILED, UI diagnostic FAILED; complete tasks/group/milestone remain open.
+> R58 bounded UI/50ms checkpoint approved, query p95 FAILED; complete tasks/group/milestone remain open.
 > Root issued GO
 > after M2 A merge `53712c5beedafc2d40e2abf10c13362a1c3c9f78` and contracts merge
 > `73d3cb384bd422de6899d8c7b761f3f3159ea3f1`. M3 front: `codex/m3-search`,
@@ -367,7 +367,37 @@ observed wall/CPU2642.9028/2562.5ms,control3438.416/3046.875ms. Inclusive phases
 and quantized CPU are not subtracted or used to infer host cause. See canonical
 R57 diagnosis addendum/summary and READY/manifests pinned in JSON; no equality
 with205 or result/digest cache. GLOBAL RELEASE preceded postchecks/analysis.
-Existing p95902.413285>500 remains FAILED; no source fix/B transfer is authorized.
+Existing p95902.413285>500 remains FAILED. That diagnostic supplied no source
+fix/B transfer authorization; the later separate R61 source GO is recorded below.
+
+### R58 worker verification — bounded approval and mechanical integration
+
+At clean author-worker `2b66246198965eaca7a3df5d326837f4851b8942`, source
+`12774a1e6702ab943934280d05d0de6897e8378d`/tests a2ac/config7143, two-file
+Ruff/check-format passed without edits; unchanged UI44 passed16.36s/XML16.294.
+The original UNINSTRUMENTED eight-query gate then passed1/23.56s/XML22.725:
+8SearchPages/8render-drains,IDs3–10,errors[],workersdrained;1788ticks,
+1790points/1789gaps,complete8941.6032ms window,max8.9216ms<50. Final strict
+assertion reached and passed. Exact raw points/gaps remain in canonical
+`r58-ui-measurements-1.json`; no gap table is duplicated here.
+
+This pass belongs only to that source/context. Primary31e9/sourcee198 is not the
+invocation. SAME Task2 FINAL bounded review APPROVED,no C/I/Minor. Root then
+mechanically integrated ONLYlibrary/bridge62+ as38cff90dba7bd2914e44491ec60e8cf58771a2f4,
+source12774/tests a2ac/config7143. ALL83Gitblobs match executed2b; rawEOL-only
+differences are models/library/search_fixtures, normalized identical. Neither
+83rawidentity nor invocation at38 is claimed.
+All83 worker raw bindings remain unchanged; disclosed same-blob models/fixture
+LFprimary/CRLFworker differences were preserved. GLOBAL RELEASE immediately after
+session66172 exit preceded analysis/docs/Git; R57marker/DB unchanged.
+Coordination is auxiliary(participants/detail)↔page only: page↔page,title/read,
+cross-view and external ownership remain outside; actual Busy/Retry is retained.
+31 separate records preserve all29 prior and preview3; no completeTask2/group/
+hardware/types/full acceptance. Query p95902.413285>500 remains FAILED;
+DF1ADA69 proposal is historical; current proposalA315/source-freeze addendum
+records root-authorized isolated R61ab837 SOURCE_PREPARED/NOT_RUN, not integrated.
+Independent byte/digest controls are preparing; no byte proof, speedup,500ms
+acceptance or B wait is claimed.
 
 ## Dependencies and handoff during execution
 
