@@ -80,7 +80,7 @@
     "git_blob": "7af42340f44fab36316abfc3be130112d5e72df2",
     "transfer_commit": "bf0785e598380703d9c915c6d8f63ca12157283e",
     "provenance": "Transferred once by root, preserved without regeneration. SHA256 binds executed parent-worktree bytes; Git blob binds tracked content.",
-    "large_fixture_status": "NOT_RUN: opt-in 1,000 meetings/100,000 segments benchmark skipped; small synthetic DB cases actually exercised."
+    "large_fixture_status": "Actual guarded1,000 meetings/100,000 segments setup and validation completed in both first performance runs. Query valid40 p95 budget FAILED; UI flow Busy/zero completed queries,heartbeat INCOMPLETE. Historical default skips remain unchanged."
   },
   "artifact_root": "C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN",
   "environment": {
@@ -686,6 +686,68 @@
       "content_equivalent_subsequent_commit": "396791794d828f29146cb744f83f5ef67232d64d",
       "executed_tree": "e9135b5cee0b0448fa504bfaf59bc3bb35bdb788",
       "scope": "First functional execution PASS CONTROL, never semantic RED. Actual220 canonical suppressedIDs and SQLite variable limit64,full filtered listing/hybrid pages and closed readers,complete-only fixture. Not large-set partial/fallback matrix,universal resource/p95/heartbeat proof. Not a subsequent396HEAD invocation; no retrocoverage of prior d8/11/228."
+    },
+    {
+      "name": "M3A-GUARDED-QUERY-PERFORMANCE-FIRST",
+      "head": "0c4098a0d77d3ea057ccaa34e7d5fb586a6bf381",
+      "source_tree": "0bea8879682c59f3aa5b7dbede9eba1ec78760f0",
+      "tests_tree": "13c5f8c06be88b4260b03151a18be3dd416e4855",
+      "config_blob": "7143d4deff5acb55e524baa5ee15c101bce9b3b5",
+      "workdir": "C:/Users/savar/.codex/worktrees/2710/here",
+      "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -m pytest -vv tests/test_memory_search_benchmark.py::test_warm_search_p95_with_actual_corpus_generation_and_visibility_guard -o 'markers=slow: opt-in synthetic search benchmark' -o junit_family=xunit1 --junitxml=C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN/guarded-query-perf-1.xml",
+      "exit_code": 1,
+      "collected": 1,
+      "selected": 1,
+      "passed": 0,
+      "failed": 1,
+      "setup_errors": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "duration_seconds": 72.7,
+      "xml_cases": 1,
+      "xml_internal_seconds": 72.625,
+      "log": "guarded-query-perf-1.log",
+      "xml": "guarded-query-perf-1.xml",
+      "bindings": "guarded-query-perf-1-bindings.json",
+      "exits": "guarded-query-perf-1-exit.json",
+      "log_sha256": "A878362B4E67B997407250F2E0A9E4FA46A7F15ECF22B250AB970CC53E0EF817",
+      "xml_sha256": "9AA16A3B9F710A24C8B76EDF1BFB296A41133556B157ABFEF0AE728A0AEBDC2A",
+      "report": "guarded-performance-first-run-report.md",
+      "working_tree_changes": "HEAD0c4098a plus ONLY staged mechanical formatter delta in the three performance preparation files; no source/assertion/scenario/fixture/config/threshold edit",
+      "content_equivalent_subsequent_commit": "ec800c271b6a5dafd2ab269dd7cc28edba42db5d",
+      "executed_tree": "89c628f569eeef03236ce29c5194f0c46d722815",
+      "scope": "VALID complete40-sample performance budget FAILURE after correct setup,5 warmups and40 exact-result calls; inclusive p95 1303.4825949995138ms exceeds unchanged <500ms. All real guard/generation/page/close costs included. Not invocation at later ec800 HEAD."
+    },
+    {
+      "name": "M3A-GUARDED-UI-PERFORMANCE-FIRST",
+      "head": "0c4098a0d77d3ea057ccaa34e7d5fb586a6bf381",
+      "source_tree": "0bea8879682c59f3aa5b7dbede9eba1ec78760f0",
+      "tests_tree": "13c5f8c06be88b4260b03151a18be3dd416e4855",
+      "config_blob": "7143d4deff5acb55e524baa5ee15c101bce9b3b5",
+      "workdir": "C:/Users/savar/.codex/worktrees/2710/here",
+      "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -m pytest -vv tests/test_ui_library_benchmark.py::test_real_guarded_library_query_render_and_worker_drain_keep_all_gaps_below_fifty_ms -o 'markers=slow: opt-in synthetic search benchmark' -o junit_family=xunit1 --junitxml=C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN/guarded-performance-ui-1.xml",
+      "exit_code": 1,
+      "collected": 1,
+      "selected": 1,
+      "passed": 0,
+      "failed": 1,
+      "setup_errors": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "duration_seconds": 16.17,
+      "xml_cases": 1,
+      "xml_internal_seconds": 16.137,
+      "log": "guarded-performance-ui-1.log",
+      "xml": "guarded-performance-ui-1.xml",
+      "bindings": "guarded-performance-ui-1-bindings.json",
+      "exits": "guarded-performance-ui-1-exit.json",
+      "log_sha256": "758ED09007E5A85C61C5127B23294C357F842BACC484F4218918DB6F6B23EAA4",
+      "xml_sha256": "4717B2819988961F5D7B7CE06EDDC6BC0511CB857D709D4E3919FB84AE0BAF59",
+      "report": "guarded-performance-first-run-report.md",
+      "working_tree_changes": "HEAD0c4098a plus ONLY staged mechanical formatter delta in the three performance preparation files; no source/assertion/scenario/fixture/config/threshold edit",
+      "content_equivalent_subsequent_commit": "ec800c271b6a5dafd2ab269dd7cc28edba42db5d",
+      "executed_tree": "89c628f569eeef03236ce29c5194f0c46d722815",
+      "scope": "Actual flow FAILURE at assert-not-errors: Busy library-page requests3/4,0 SearchPage callbacks/0 completed-rendered queries of8.115 ticks/578.164ms/max11.2069ms are PARTIAL diagnostic ONLY; strict50ms final assertion UNREACHED,heartbeat INCOMPLETE. Workers drained. No inferred product/harness cause or invocation at later ec800 HEAD."
     }
   ],
   "lint_checkpoint": {
@@ -740,19 +802,19 @@
     "stage_scope": "Historical initial source-preparation report only, before later UI attempts; see ui_execution_checkpoint."
   },
   "remaining_gates": [
-    "Bounded R50 real integration and currentd8 guarded51 pass; first scale220IDs/SQLlimit64 CONTROL now1P with complete-only filtered listing/hybrid pages and closed readers. Scale bounded review pending; wider large-set route/resource/performance/full/native/delete acceptance not inferred.",
+    "Bounded R50 real integration and currentd8 guarded51 pass; first scale220IDs/SQLlimit64 CONTROL now1P with complete-only filtered listing/hybrid pages and closed readers. Scale bounded control/evidence/docs review APPROVED, D1 addressed; wider large-set route/resource/performance/full/native/delete acceptance not inferred.",
     "Real sole B reindex/page/partial/fallback/SECOND-noop evidence is complemented by actualR53 GREEN11 and bounded T1/T2 approvals atd8. Callback/composition checkpoint is approved; complete Task1/Task2/B5 and final integration/performance/type/full gates remain held.",
     "Accepted B496e8 producer integrated; actual current/stale title/version/evidence/FTS consumers and truthful UI types approved at D1/ed8. Historical44/no-new-mypy does not constitute fresh E3 or final B5-integrated acceptance.",
     "Implemented UI fixes, D1 types/title and bounded E3 display/preview checkpoints approved at their scopes. Final B5-integrated preview, broader layout/accessibility, complete Task2 and integrated verification/global/hosted gates remain pending.",
-    "Guarded 1,000/100,000 warm p95 below 500ms including final digest/guard work; actual Qt heartbeat no event-loop block above 50ms, under root exclusive runtime grant.",
+    "Guarded1,000/100,000 query p95 FAILED at1303.482595ms versus<500ms. UI heartbeat INCOMPLETE due Busy/zero completed queries; partial11.2069ms gap is not a pass. Preserve thresholds/actual costs; static diagnoses only until a new root runtime grant.",
     "Actual current-source original177+guard51 regression now228P/1benchmarkskip atd8. Final integrated full/no-new-mypy/UI/preview remain pending; c9/D1 historical type results not transferred to freshfbe/current0bea.",
     "Complete same Task1 assessment and task docs/evidence; root global integration docs only when capacity ready; Task2 and later single global review.",
     "Received/responded current-head Copilot, exact-head Windows CI/package as required, PR and guarded root merge. No M3 hosted gate has started in this checkpoint."
   ],
   "not_run": {
-    "large_corpus_benchmark": "NOT_RUN (SKIPPED by default in focused runs)",
-    "guarded_p95": "NOT_RUN",
-    "qt_heartbeat": "Guarded 1,000/100,000 corpus heartbeat NOT_RUN; small synthetic UI cases/probe do not establish this budget.",
+    "large_corpus_benchmark": "EXECUTED FAILED: actual guarded1,000 meetings/100,000 segments query1F/valid40 p95 budget failure; separate UI1F/flow incomplete. Historical focused runs still retain their default benchmark skips.",
+    "guarded_p95": "FAILED: valid40 inclusive p95 1303.4825949995138ms versus unchanged <500ms, actual HEAD0c4098a+staged3-file format/source0bea/tests13c5/config7143.",
+    "qt_heartbeat": "INCOMPLETE: Busy requests3/4,0 SearchPage callbacks/0 completed queries of8;115ticks/578.164ms/max11.2069ms is partial diagnostic only. Final strict50ms assertion UNREACHED; no heartbeat pass.",
     "real_B4_R48_B5_integration": "Historical B4/R48 consumers retain their source scope. R50 actual guard/real-B-reindex checkpoint is bounded-approved at D6; R53 facade/composition and R50 interaction are bounded-approved at d8 with actual 11 passes and a separate 228-pass/1-benchmark-skip regression. Complete B5/UI delete ACK/native/R52/current full/types remain PENDING; no complete task/group approval.",
     "ui_source_green": "Historical UI42 and D1 UI44, E3 bounded7/Ruff and bounded synthetic preview evidence only; no full latest-source UI44 repeat or final B5 integration.",
     "full_suite": "NOT_RUN",
@@ -1182,20 +1244,20 @@
     "stage_scope": "Historical7e UI42/fix approval and5a81 static integration; later D1 types/title and E3 display checkpoints supersede its pending B4/mypy preparation state without changing original evidence."
   },
   "current_integrated_checkpoint": {
-    "frozen_main": "d8ec92b3d6aca9ec872b8f3d77d446f7b686f91a",
-    "docs_sync_merge": "ce48e52190335b92c0c7ff21488bf8ade68366a6",
+    "frozen_main": "ec800c271b6a5dafd2ab269dd7cc28edba42db5d",
+    "docs_sync_merge": "dc642fbe262694346db6bcdb6f774427782d996a",
     "source_tree": "0bea8879682c59f3aa5b7dbede9eba1ec78760f0",
-    "tests_tree": "de961afd917e9785010232d9cc850a0d2500f307",
+    "tests_tree": "13c5f8c06be88b4260b03151a18be3dd416e4855",
     "config_blob": "7143d4deff5acb55e524baa5ee15c101bce9b3b5",
     "query_blob": "70e8075217a6dd908fc6d41246829b68dfc00095",
     "ui_contract_blob": "10b5665aeac6aad2da3731058dfe414f1b241c6b",
-    "stage": "BOUNDED_R50_R53_APPROVED_CURRENT_REGRESSION_AND_SCALE_CONTROL_VERIFIED_SCALE_REVIEW_PENDING",
-    "latest_source_evidence": "Two separate direct clean d8/tests de961 invocations: 11 R53 passes, then 228 query/fallback/guard passes with 1 benchmark skip; two-file hygiene PASS/no edits and bounded T1/T2 approvals at immutable d8. Later scale CONTROL passed once at HEAD70af plus ONLY staged safe import-sort/format, actual source0bea/tests ae2f9d455535876d8244f1c2abd647f32c4d4542. Post-release396791794d828f29146cb744f83f5ef67232d64d is equivalent executed content, NOT an invocation at396HEAD. Scale scoped review remains pending; earlier d8/de961 bindings unchanged.",
+    "stage": "BOUNDED_FUNCTIONAL_APPROVALS_GUARDED_P95_FAILED_UI_HEARTBEAT_INCOMPLETE",
+    "latest_source_evidence": "Historical actual d8/de96111+228/1skip and later scale70af+stagedformat1P retain separate bindings; scale/evidence/docs scoped APPROVED after D1 correction at fcdd579. Latest TWO separate performance invocations at HEAD0c4098a plus ONLY staged3-file mechanical format/source0bea/tests13c5/config7143: query1F72.70s,valid40 p95 1303.482595>500ms; UI1F16.17s,Busy3/4,zero completed queries,heartbeat INCOMPLETE. Postrelease ec800 entire tree equals executed89c628f,NOT invocationecHEAD. No source fix or performance approval.",
     "task1_task2_group_milestone": "OPEN",
     "certified": false,
-    "current_parent_test_only_head": "396791794d828f29146cb744f83f5ef67232d64d",
-    "current_parent_test_only_tests_tree": "ae2f9d455535876d8244f1c2abd647f32c4d4542",
-    "current_parent_delta_scope": "Post-release396 is exact scale executed-tree commit of only test style diff; source0bea/config7143 unchanged. Scale invocation HEAD70af+staged mechanical diff,not396. Prior11/228 remain d8/de961."
+    "current_parent_test_only_head": "ec800c271b6a5dafd2ab269dd7cc28edba42db5d",
+    "current_parent_test_only_tests_tree": "13c5f8c06be88b4260b03151a18be3dd416e4855",
+    "current_parent_delta_scope": "Performance preparation plus exact executed3-file formatter content at ec800; source0bea/config7143 unchanged. Actual two invocations HEAD0c4098a+stagedformat,not ec800. Earlier d8/de961 and scale70af+format/396 records unchanged."
   },
   "B4_types_title_checkpoint": {
     "accepted_B4": "96e8aed255a442acb14bbdff5c32877ec201c628",
@@ -1686,7 +1748,7 @@
       "R53_in_this_run": false
     },
     "meaningful_evidence": "Actual pending/complete IDs and exact aliases suppressed before keyset/LIMIT across listing/empty/FTS/hybrid/literal; registry/alias-only generation changes and retained actual suppressed/nonmatching whole-FTS/schema digest; real malformed/denied/unsafe registry and held-lock Busy, one real B context/transaction/owned close. Direct actual B reindex and SECOND no-op reached,3 meetings/3 segments, partial evidence/pages preserved and cursor stable after first rebuild. Missing FTS is capability simulation ONLY; B guard/reindex real.",
-    "resource_design": "Connection-local TEMP primary-key membership with one bound ID per executemany; no main catalog writes/persistent schema/JSON dependency/second parser/indexer. Static algorithm avoids growing page placeholder count, but large-ID executable proof and resource/latency guarantees NOT_RUN; TEMP tuple/setup/index/lookup plus lock/registry/alias/full digest costs belong in later p95/Qt measurement.",
+    "resource_design": "Connection-local TEMP primary-key membership with one bound ID per executemany; no main writes/persistent schema/JSON dependency/second parser/indexer. Actual220-ID/SQLlimit64 CONTROL bounded-approved,not wider large-set matrix/resource proof. Later actual1k/100k measurement includes TEMP/lock/registry/alias/full-digest costs and FAILS p95; UI heartbeat incomplete. No cost driver established by profiling.",
     "hygiene": {
       "scope": "search.py ONLY",
       "initial_check": "PASS",
@@ -1728,12 +1790,12 @@
   },
   "documentation_checkpoint": {
     "status": "FROZEN_BOUNDED_EVIDENCE_CHECKPOINT_READY_FOR_PARENT_INTEGRATION",
-    "source_freeze": "d8ec92b3d6aca9ec872b8f3d77d446f7b686f91a",
-    "report": "guarded-search-docs-preparation-report.md",
+    "source_freeze": "ec800c271b6a5dafd2ab269dd7cc28edba42db5d",
+    "report": "guarded-performance-docs-checkpoint-report.md",
     "runtime": "NONE; root/B owns host",
     "no_M3B_regeneration": "Existing root M3B SPEC03207dd/PLAN9c177e5 remains owned by root; no duplicate preparation or start",
-    "recording_cutoff": "Canonical R50/R53 RED/GREEN/regression and same T1/T2 scoped approvals plus first scale CONTROL1P included as23separate pytest records. Scale review pending; performance/full/types/preview/native/hosted/tasks/groups held.",
-    "future_preparation": "Root assigned two disjoint existing queryRED/UIRED benchmark preparations,helper/existing benchmark and new UI benchmark only. Preparation/no runtime/results/acceptance; no production/B source change."
+    "recording_cutoff": "25 separate pytest records:23 prior unchanged plus actual query performance1F/valid40 budget failure and UI performance1F/heartbeat INCOMPLETE. Entire preview3 unchanged. Bounded scale/evidence/docs APPROVED,D1 addressed; complete tasks/groups and remaining gates held.",
+    "future_preparation": "First real performance runs are recorded separately as FAILED/INCOMPLETE. SAME query/UI authors now prepare static cost/Busy diagnoses only; no source fix, extra runtime or acceptance inferred."
   },
   "R53_facade_checkpoint": {
     "status": "BOUNDED_SPEC_QUALITY_APPROVED_WITH_ACTUAL_GREEN_AND_CURRENT_REGRESSION",
@@ -1797,7 +1859,7 @@
       "scoped_reviews": "Same Task1 R53/R50 interaction and same Task2 optional UI composition APPROVED bounded SPEC/quality at immutabled8, zero confirmed C/I/M.",
       "reported_design": "Optional stored callback/direct return or canonical unsupported LibraryError; same-instance optional typed maintenance with existing data_dir, explicit query override/read protocols unchanged. Authors report R50 body unchanged; source preparation is not runtime proof."
     },
-    "pending": "Scale control now first-pass1P with bounded new-control review pending; broader large-set/resource/performance,current types/full/UI/preview,delete ACK/native,final/global/hosted and complete tasks/groups remain held.",
+    "pending": "R53 bounded approvals and scale control/evidence/docs approval retain their scopes. Guarded p95 FAILED,UI heartbeat INCOMPLETE; broader large-set/resources,current types/full/UI/preview,delete ACK/native,final/global/hosted and complete tasks/groups remain held.",
     "reports": [
       "search-reindex-red-preparation-report.md",
       "search-reindex-red-run-report.md",
@@ -1877,7 +1939,7 @@
     "stage_scope": "Historical pre-hygiene preparation/integration. Its NOT_RUN/1824/rawAF71 describe that earlier phase only; later first functional CONTROL recorded separately,still excluded from old11/228."
   },
   "suppression_scale_control_checkpoint": {
-    "status": "BOUNDED_AUTOMATIC_FUNCTIONAL_CONTROL_PASS_REVIEW_PENDING",
+    "status": "BOUNDED_AUTOMATIC_FUNCTIONAL_CONTROL_AND_EVIDENCE_DOCS_APPROVED",
     "run": "M3A-SUPPRESSION-SCALE-FUNCTIONAL-CONTROL",
     "actual_invocation_HEAD": "70af9b986ec06126bc86b12fc7ad0e5ad08d5396",
     "only_staged_delta": "Safe imported-helper ordering+Ruff mechanical format of the new test ONLY; no assertion/scenario/expected value/source/fixture/config change",
@@ -1908,9 +1970,147 @@
       ],
       "exits": "search-suppression-scale-hygiene-1-exit.json"
     },
-    "review": "PENDING same Task1 bounded new-test/evidence supplement; no original R50/core/R53 source review restart or full-task approval",
+    "review": "SAME Task1 bounded scale-control/evidence/docs supplement APPROVED at docsfcdd579; initial Minor D1/two stale current strings preserved in report, final D1 ADDRESSED/no remaining C/I/Minor. No core/R50/R53/global review restart or complete Task1 approval. Report search-suppression-scale-review-report.md.",
     "release": "GLOBAL RELEASE immediately after command BEFORE XML/report/review/commit;17 protected raw files/newfile/executed tree revalidated unchanged",
     "report": "search-suppression-scale-control-report.md",
     "retrospective_coverage": "Explicitly excluded/unbound from prior d8/11/228; later pass does not modify their source/test/accounting records."
+  },
+  "guarded_performance_checkpoint": {
+    "status": "QUERY_BUDGET_FAILED_UI_HEARTBEAT_INCOMPLETE",
+    "report": "guarded-performance-first-run-report.md",
+    "actual_head": "0c4098a0d77d3ea057ccaa34e7d5fb586a6bf381",
+    "staged_delta": "ONLY3-file mechanical format; no edits between query and UI",
+    "executed_root": "89c628f569eeef03236ce29c5194f0c46d722815",
+    "source_tree": "0bea8879682c59f3aa5b7dbede9eba1ec78760f0",
+    "tests_tree": "13c5f8c06be88b4260b03151a18be3dd416e4855",
+    "config_blob": "7143d4deff5acb55e524baa5ee15c101bce9b3b5",
+    "postrelease_equivalent_commit": "ec800c271b6a5dafd2ab269dd7cc28edba42db5d",
+    "invocation_at_postrelease_HEAD": false,
+    "environment": "Shared CPython3.13.15/pytest9.1.1/PySide6+Qt6.11.2; offscreen/synthetic key/absent env/bytecode disabled/benchmark opt-in1/xunit1; no provider key/PYTHONPATH/network/private data",
+    "query_metrics": {
+      "machine": "Windows-11-10.0.26300-SP0",
+      "processor": "AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",
+      "logical_cpus": "16",
+      "python": "3.13.15",
+      "physical_meetings": "1000",
+      "physical_segments": "100000",
+      "fts_documents": "98901",
+      "registry_records": "220",
+      "suppressed_ids": "221",
+      "setup_seconds": 14.176559400002589,
+      "warmups_ms": [
+        1270.354699998279,
+        1235.9501999962959,
+        1243.5614999994868,
+        1257.2259000007762,
+        1308.401700000104
+      ],
+      "raw_samples_ms": [
+        1246.3795000003302,
+        1257.1534000016982,
+        1268.8756999996258,
+        1261.2703000049805,
+        1258.1401000061305,
+        1302.6482999994187,
+        1268.712899996899,
+        1251.3316000040504,
+        1241.4028999992297,
+        1258.6383000016212,
+        1272.5362999990466,
+        1326.9198999987566,
+        1256.9371999998111,
+        1265.9023000014713,
+        1247.8956000049948,
+        1256.8938000040362,
+        1280.7715000017197,
+        1303.1145999993896,
+        1290.7028000045102,
+        1300.9259000027669,
+        1261.0270000004675,
+        1260.7008999984828,
+        1274.7459999955026,
+        1245.44330000208,
+        1259.4853999980842,
+        1266.389699994761,
+        1282.6189999977942,
+        1278.6393000060343,
+        1269.6177999969223,
+        1271.82719999837,
+        1241.7053999961354,
+        1272.671500002616,
+        1310.4745000018738,
+        1260.0826999987476,
+        1287.8360000031535,
+        1263.894399999117,
+        1255.7644999978947,
+        1281.2506999980542,
+        1279.2040999993333,
+        1272.9366999992635
+      ],
+      "sample_count": 40,
+      "p95_ms": 1303.4825949995138,
+      "recomputed_p95_ms": 1303.4825949995138,
+      "min_ms": 1241.4028999992297,
+      "median_ms": 1267.55129999583,
+      "max_ms": 1326.9198999987566,
+      "budget_ms": 500,
+      "classification": "VALID_FULL40_BUDGET_FAILURE"
+    },
+    "ui_metrics": {
+      "tick_count": 115,
+      "max_gap_ms": 11.2069,
+      "window_ms": 578.164,
+      "inputs": [
+        "syntheticcohortneedle"
+      ],
+      "dispatches_ns": [
+        56063646520000
+      ],
+      "callbacks": [],
+      "render_drains": [],
+      "completed_request_ids": [],
+      "delivered_search_count": 0,
+      "errors": [
+        [
+          3,
+          "library-page",
+          "Busy",
+          "Local job is busy; retry after its owner completes"
+        ],
+        [
+          4,
+          "library-page",
+          "Busy",
+          "Local job is busy; retry after its owner completes"
+        ]
+      ],
+      "drained": "True",
+      "classification": "INCOMPLETE_REAL_FLOW_BUSY_NOT_HEARTBEAT_ACCEPTANCE"
+    },
+    "metrics_artifact": "guarded-performance-measurements-1.json",
+    "metrics_sha256": "E392F748DC96EEE486C8E106012C183E5EDFE16889331CBD39B4D286488229EA",
+    "raw_binding_count": 79,
+    "raw_binding_validation": "All79 unchanged before UI and after GLOBAL RELEASE; both commands same immutable input. Shared corpus E911 unchanged.",
+    "hygiene": {
+      "initial_check_exit": 0,
+      "initial_format_check_exit": 1,
+      "action": "Mechanical format ONLY3 preparation files",
+      "final_check_exit": 0,
+      "final_format_check_exit": 0,
+      "initial_exits": "guarded-performance-initial-hygiene-exit.json",
+      "final_exits": "guarded-performance-final-hygiene-exit.json",
+      "logs": [
+        "guarded-performance-ruff-check-1.log",
+        "guarded-performance-ruff-format-check-1.log",
+        "guarded-performance-ruff-format-1.log",
+        "guarded-performance-ruff-check-2.log",
+        "guarded-performance-ruff-format-check-2.log"
+      ],
+      "inherited_warning": "top-level pyproject select deprecation retained"
+    },
+    "continuation": "Root explicit budget-only query failure condition satisfied after valid setup5+40; UI continuation on SAME source with NO edits. No competing verification during quiet exclusive grant.",
+    "release": "Coordinator GLOBAL RELEASE immediately after final UI process/session ended BEFORE XML/metrics/analysis/report/review/commit; no M3 reservation/process remains.",
+    "diagnosis": "SAME source/query and UI test authors STATIC preparation only. Query cost driver and Busy current-versus-obsolete request timeline not yet established; new runtime grant needed. Qt warnings retained,not established cause; no source/harness fix or ignored Busy/relaxed thresholds.",
+    "approval_limits": "Bounded R50/R53/scale approvals do not approve performance. Query gate FAILED/UI heartbeat INCOMPLETE; final full/types/UI/preview/native/R52/delete/hosted/global/tasks/group/certification remain open."
   }
 }

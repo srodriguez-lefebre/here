@@ -5,7 +5,7 @@
 > only after current-head received/responded Copilot, Windows CI and independent
 > review. Steps use checkbox syntax. **Status: in progress — query-core checkpoint,
 > 2026-11-06; UI attempts recorded, complete tasks/group/milestone acceptance pending.**
-> Bounded R50/R53 evidence checkpoint; complete tasks/group/milestone remain open.
+> Guarded query performance FAILED/UI heartbeat INCOMPLETE; complete tasks/group/milestone remain open.
 > Root issued GO
 > after M2 A merge `53712c5beedafc2d40e2abf10c13362a1c3c9f78` and contracts merge
 > `73d3cb384bd422de6899d8c7b761f3f3159ea3f1`. M3 front: `codex/m3-search`,
@@ -221,7 +221,7 @@ SPEC/quality APPROVED bounded immutable D6, zero C/I/M; original e4 review uncha
 Real aliases/failclosed/Busy/one-context/close and sole B reindex/SECOND no-op now
 execute, 3 meetings/3 segments/partial evidence/pages/cursor equivalence; only
 missing-FTS capability simulated. TEMP connection-local/no main writes/JSON dep;
-full actual FTS/schema digest retained plus B fingerprint, costs not yet measured.
+full actual FTS/schema digest retained plus B fingerprint; later measured costs below.
 
 R53 separate RED at d21:10F/1 override-control P/0E/S/2.40s, XML11/internal2.337,
 5 keyword TypeErrors + 5 missing-method AttributeErrors; trailing assertions unreached.
@@ -243,19 +243,51 @@ config7143 unchanged. Real 220-ID/SQLite-variable-limit 64, full filtered first 
 listing/hybrid pages, three visible IDs/segments/continuations/closed readers pass.
 Complete-only fixture, not large-set partial/fallback/resource/performance proof.
 Initial I001/format findings retained as hygiene, not semantic RED; assertions intact.
-Scale bounded SAME-T1 review pending only new test/evidence,no full-task inference.
+Scale SAME-T1 bounded control/evidence/docs supplement APPROVED, D1 addressed at
+fcdd579; initial Minor retained as history, no full-task inference.
 
-Twenty-three separate pytest records preserve 17 old + 51 RED + 51 GREEN + R53 RED + 11 GREEN +
+At that functional checkpoint, 23 separate pytest records preserved 17 old + 51 RED + 51 GREEN + R53 RED + 11 GREEN +
 regression 228 + scale CONTROL 1,preview 3 unchanged. Prior d8/de961 and HEAD965+format
 bindings remain exact; no 52 aggregate or run at post-release 396HEAD is invented.
 Coordinator GLOBAL RELEASE immediately after last command BEFORE XML/reports/
-review/commit; all 17 protected raw files unchanged. Benchmark helper/existing test
-and new UI benchmark assigned to two disjoint SAME authors are PREPARATION ONLY,
-no runtime/result/production/B changes. Guarded1k/100k p95/Qt, final types/full/UI/
+review/commit; all 17 protected raw files unchanged. The benchmark helper/existing test and new UI benchmark were preparation ONLY
+at that stage; their first actual results are recorded below, no production/B changes. Guarded1k/100k p95/Qt, final types/full/UI/
 preview, delete ACK/native/R52, wider B/global/hosted/Copilot/CI/package/merge/
 certification/tasks/groups remain pending; no M3B regeneration or version bump.
 Composite checkboxes remain unchecked: no partial evidence closes their remaining
 clauses. Group/hosted gates, certification and a 0.4.0 bump are not claimed.
+
+### First guarded performance checkpoint — query FAILED / UI INCOMPLETE
+
+Actual HEAD0c4098a plus ONLY staged3-file mechanical formatter delta executed two
+separate nodes on unchanged source0bea/tests13c5/config7143. Executed entire root
+89c628f equals post-release `ec800c271b6a5dafd2ab269dd7cc28edba42db5d`, not an invocation
+at ec800HEAD. Initial check0/format-check1; only format3, final check/format0.
+All79 raw bindings were unchanged before UI and post-release; no assertion, fixture,
+source/config/threshold or between-command edit. Full exact bindings/commands in JSON.
+
+Query 1F/72.70s, XML1/0E/S/internal72.625: valid setup5 warmups plus40 complete
+correct public queries, inclusive p95 **1303.482595ms > required <500ms**. Real
+1,000 meetings/100,000 segments/98,901 FTS documents,220 B records/221 resolved IDs
+including alias/44 visible hits. Windows11 AMD64 Family25 Model80/16 CPUs,
+Python3.13.15; setup14.1765594s outside warm intervals. All actual lock/registry/
+alias/TEMP/full digest/page/DTO/close work included. Budget FAILED; cost driver not
+profiled or fixed. Root's budget-only condition allowed the same-source UI node.
+
+UI 1F/16.17s, XML1/0E/S/internal16.137: canonical Busy library-page requests3/4,
+zero SearchPage callbacks/zero completed or rendered queries of8. Final50ms assert
+UNREACHED.115 ticks/578.164ms/max11.2069ms are partial diagnostic ONLY, heartbeat
+INCOMPLETE. Owned workers drained; retained Qt warnings do not establish cause.
+SAME authors prepare static cost/Busy timeline diagnoses; no source/harness fix,
+ignored Busy, relaxed threshold or new runtime concession is inferred.
+
+25 separate pytest records preserve all prior23 and entire preview3. Scale/evidence/
+docs supplement APPROVED with D1 addressed, without broad/source/performance review
+restart. GLOBAL RELEASE immediately after final UI command BEFORE XML/metrics/
+analysis/reports/review/style commit. Current full/final types/UI/preview, wider
+B5/delete ACK/nonresurrection/native/R52/global/hosted/Copilot/CI/package/merge,
+certification/Task1/Task2/group/M3 remain open. Thresholds, acceptance/task checklists,
+Closing/M3B overlap and version remain unchanged; docs-role runtime0.
 
 ## Dependencies and handoff during execution
 

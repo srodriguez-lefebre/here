@@ -1,6 +1,6 @@
 # M3 search and library actions specification
 
-Status: in progress; bounded R50/R53 evidence checkpoint, 2026-11-06. Complete
+Status: in progress; guarded performance FAILED/UI INCOMPLETE checkpoint, 2026-11-06. Complete
 Task 1, Task 2, group A and M3
 remain open. Root issued GO after the accepted M2 A and contract-documentation
 merges (ruling 35). The M3 front is `codex/m3-search` at
@@ -237,13 +237,14 @@ canonical suppressions, reader SQL-variable-limit 64, full first limit2 listing/
 hybrid pages, three visible IDs/segments,continuation and closed connections pass.
 Complete-only fixture, not a large-set partial/fallback matrix or p95/heartbeat.
 Initial I001/format failures are hygiene, not invented semantic RED; assertions
-unchanged. Same Task1 bounded new-control review remains pending, not full approval.
+unchanged. Same Task1 bounded scale-control/evidence/docs supplement is APPROVED;
+initial Minor D1 is preserved and addressed at fcdd579, not full-task approval.
 
-Twenty-three separate pytest records retain all 17 old and preview 3 unchanged;
+At that functional checkpoint, 23 separate pytest records retained all 17 old and preview 3 unchanged;
 old d8/testsde961 records are not replaced by scale's staged/396 content. Coordinator
 GLOBAL RELEASE immediately follows latest command before XML/report/review/commit;
-protected 17 raw bindings unchanged. Root's two disjoint benchmark-author assignments
-are preparation ONLY, no runtime/result or production/B edit. Guarded1k/100k p95/
+protected 17 raw bindings unchanged. The two benchmark-author preparations were
+unrun at that stage; their first actual results are recorded below. Guarded1k/100k p95/
 Qt including real guard/TEMP/lock/alias/digest/UI costs, current full/final-mypy/
 preview, real delete ACK/nonresurrection/native/R52, wider B/global/hosted/Copilot/
 CI/package/merge/certification/tasks/groups remain held. Original histories,
@@ -251,6 +252,47 @@ criteria/DoD/version scopes unchanged; no 52 or later-head aggregate is invented
 Commands, exact heads, artifacts and limits are recorded in
 `M3_SEARCH_EVIDENCE.json`; acceptance criteria below are unchanged. This is focused
 automatic evidence, no certification or task/group/milestone closure; no 0.4.0 bump.
+
+### First guarded performance checkpoint — query FAILED / UI INCOMPLETE
+
+Two separate authorized commands ran at actual HEAD
+`0c4098a0d77d3ea057ccaa34e7d5fb586a6bf381` plus ONLY staged mechanical format of
+three performance preparation files. Executed root
+`89c628f569eeef03236ce29c5194f0c46d722815`, source
+`0bea8879682c59f3aa5b7dbede9eba1ec78760f0`, tests
+`13c5f8c06be88b4260b03151a18be3dd416e4855`, config 7143 are fixed for BOTH commands.
+Post-release `ec800c271b6a5dafd2ab269dd7cc28edba42db5d` has that exact entire tree;
+it is not the invocation HEAD. Initial Ruff check passed/format check failed;
+format-only three-file delta then passed both checks. No assertions, source,
+fixture, config, thresholds or between-command input changed; all 79 raw bindings
+were unchanged before UI and after release.
+
+Query: 1F/0P/0E/S in 72.70s, XML1/internal72.625s. Correct setup and five warmups
+preceded all 40 exact-result public calls. Inclusive p95 **1303.482595ms exceeds
+unchanged <500ms**: a valid measured budget failure. Windows11/AMD64 Family25
+Model80/16 logical CPUs/Python3.13.15; 1,000 meetings/100,000 segments/98,901 FTS
+documents, 220 real B records/221 resolved suppressed IDs including alias, 44
+ordered visible hits. Setup14.1765594s is outside warm intervals; every public
+call includes actual lock/registry/alias/TEMP/full generation/page/DTO/owned close.
+The cost driver is not yet established by profiling; no optimization is claimed.
+
+Root's explicit budget-only condition permitted the second unchanged-source UI
+command. It failed 1F/0P/0E/S in 16.17s, XML1/internal16.137s, at assert-not-errors:
+canonical Busy for library-page requests 3 and 4, **zero SearchPage callbacks and
+zero completed/rendered queries of eight**. Workers drained. Timer 115 ticks over
+578.164ms/max11.2069ms is PARTIAL diagnostic evidence only; the strict final50ms
+assertion was UNREACHED. Heartbeat is INCOMPLETE, not passed. Missing-font/Qt
+warnings remain; current/obsolete request ownership and observer overlap need
+diagnosis, with no product/harness cause or correction established.
+
+These two failed test records bring the ledger to 25; all prior 23 and entire
+preview3 are unchanged. Coordinator GLOBAL RELEASE immediately followed the final
+UI command, BEFORE XML/metrics/analysis/report/review/style commit. This docs role
+ran no runtime. Same authors prepare static cost/Busy diagnoses only; extra runtime
+requires a new root grant. Scale-control/evidence/docs approval (D1 addressed)
+does not approve performance. Final full/types/UI/B5-integrated preview,
+delete ACK/nonresurrection/native/R52/global/hosted/task/group/M3 gates remain open;
+no criterion, threshold, certification or version change.
 
 ## Intent
 
