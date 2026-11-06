@@ -37,6 +37,7 @@ from here.memory.service import FtsUnavailable, InvalidInput, catalog_read_view,
 _LIST_ORDER = "date-desc-null-last/id-asc"
 _SEARCH_ORDER = "rank-asc/date-desc-null-last/id-asc/segment-asc"
 _ROUTES = {"fts", "hybrid", "literal", "literal-partial"}
+_GENERATION_BATCH_ROWS = 256
 _Query = TypeVar("_Query", MeetingQuery, SearchQuery)
 
 
@@ -389,7 +390,9 @@ class SearchService:
         actual catalog eligibility, relations and selected branch evidence. No
         cached token or connection-local counter substitutes for this snapshot.
         """
-        digest = hashlib.sha256()
+        digest = hashlib.sha256(
+            f"here-search-corpus-v2/batch{_GENERATION_BATCH_ROWS}\x00".encode("ascii")
+        )
         sources = [
             (
                 "meetings",
@@ -430,12 +433,20 @@ class SearchService:
         )
         for name, sql in sources:
             digest.update(name.encode("ascii") + b"\x00")
-            for row in library.execute(sql):
+            cursor = library.execute(sql)
+            # Fixed row batches retain every ordered cell without a JSON encoder
+            # and frame per row. Working state never grows to the whole corpus.
+            while rows := cursor.fetchmany(_GENERATION_BATCH_ROWS):
                 encoded = json.dumps(
-                    tuple(row), ensure_ascii=False, separators=(",", ":"), allow_nan=False
+                    [tuple(row) for row in rows],
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                    allow_nan=False,
                 ).encode("utf-8")
                 digest.update(len(encoded).to_bytes(8, "big"))
                 digest.update(encoded)
+            # Positive-length JSON frames cannot collide with this source boundary.
+            digest.update(b"\x00" * 8)
         encoded_suppression = json.dumps(
             ("here-search-suppression-v1", suppression.fingerprint), separators=(",", ":")
         ).encode("utf-8")
