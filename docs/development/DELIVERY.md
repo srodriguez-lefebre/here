@@ -526,6 +526,42 @@ Los rulings nuevos se escriben en español por el ruling 6.
     interna antes de cerrar M3, conservando resultados completos, guards de borrado
     y la paginación de listado ya definida.
 
+46. **Ruling:** para el handoff de modelos B/M3 se fijan defaults internos del
+    SPEC sin cambiar funciones de producto. `MeetingQuery.text` filtra título;
+    `SearchQuery.text` consulta texto. Fechas de query son strings ISO aware,
+    validadas/canonizadas a UTC por el servicio; bounds nulos conservan su sentido.
+    Ambos usan limit50, cursorNone, filtros vacíos e include_partialFalse; el opt-in
+    de parciales rige listado y búsqueda como ya exige el hito. `MeetingPage.items`
+    contiene `MeetingSummary(meeting, audio_available=False, partial=False)`, sin
+    copiar ni inventar campos de Meeting; los tests acceden a `item.meeting.id`.
+    Se aceptan los demás campos propuestos en el reporte M3 `shared-dto-request.md`
+    para SearchHit/SearchPage/SearchCapabilities/CitationTarget, como dataclasses
+    frozen/slots, con tuples inmutables. Disponibilidad se deriva de enlaces de
+    revisión/estado registrado, no de recencia ni lectura de archivos por la UI.
+    Se declara también `Citation(meeting_id, revision_id, segment_id, quote=None,
+    start_char=None, end_char=None)`, solo referencia; el resolver M3 B verificará
+    texto/offsets y ruta desde memoria. Target no resuelve ni autoriza audio en M3 A.
+    `InvalidInput` canónico se expone desde memory.service, con razón estructurada
+    keyword `reason` por defecto invalid_input; B define una sola clase y M3 la
+    reutiliza, en particular corpus_changed. La factory retorna LibraryConnection
+    nueva por operación y el consumidor la cierra. Models se entrega temporalmente
+    tras congelar B4 y observar RED M3; ningún segundo writer, tipo duplicado o
+    migración para este handoff. **Cost if wrong:** adaptar campos/serialización y
+    callers antes de aceptar M3, sin rebajar los contratos de consulta, citas,
+    borrado o fechas desconocidas.
+
+47. **Ruling:** la query vacía normalizada de `SearchService.search` delega a
+    `list_meetings` con los mismos filtros, límite y cursor; retorna MeetingPage,
+    mientras una búsqueda no vacía retorna SearchPage. Se explicita la anotación
+    interna `SearchPage | MeetingPage`: no se fabrica un SearchHit/segmento para
+    representar una reunión, no se ejecuta MATCH vacío ni se amplía visibilidad.
+    La UI sigue despachando texto vacío al listado. Su cursor fecha/ID conserva
+    continuidad y queda fuera de la generación de búsqueda R45. Default completo
+    y opt-in de revisión activa parcial siguen como el SPEC, sin inventar una
+    revisión para reservas. Es precisión del flujo vacío ya acordado en §3 del
+    diseño, no un comando o pantalla nuevo. **Cost if wrong:** adaptar anotaciones
+    y despacho de consumidores conservando los dos DTOs, filtros y aceptación.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings

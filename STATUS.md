@@ -56,22 +56,44 @@ Proyecto `local-e307e59e09194b354122137b16ef6d77`, host `local`; raíz original
 
 Briefs completos de cada frente en `.superpowers/m2b-front-brief.md` y
 `m3a-front-brief.md`: objetivo, SPEC/PLAN, bases reales, archivos/leases,
-dependencias, límites y DoD. Root completa metadatos y entrega GO a cada chat;
+dependencias, límites y DoD. Metadatos completos y GO entregados a ambos chats;
 cada ejecutor usa subagentes RED/GREEN/review independiente/docs por tarea.
 Root conserva contratos, integración, global docs y todos los merges. No reiniciar
 trabajo previo ni duplicar fixtures. Monitorear los dos chats con wait_threads;
 pedidos de leases/handoffs se registran en su progreso/reporte local.
 
-Leases tras GO: B posee memory models/repository/database/service, controller/
-recovery y CLI; M3 posee search.py/tests de búsqueda y sus archivos UI enumerados,
-porque B todavía no tiene writer UI. Cualquier handoff de models, artifacts,
-processing o UI se concede explícitamente. Migraciones/pyproject/uv.lock/versiones
+Leases actuales: B posee memory repository/database/service/artifacts, controller/
+recovery y CLI; artifacts se concedió para estados version2 con compatibilidad1.
+M3 posee search.py/tests, UI enumerada y TEMPORALMENTE models.py tras su RED;
+B congeló models en246faec y no escribe hasta devolución expresa antes de B5.
+M3 puede integrar solo ese commit y errores canónicos0452945, no el service B4
+parcial. B todavía no tiene writer UI. Processing continúa sin concesión.
+Cualquier handoff adicional se concede explícitamente. Migraciones/pyproject/uv.lock/versiones
 siguen seriales y requieren permiso de root. Global docs son root-only.
 
-Runtime: ventana inicial reservada para pytest RED de B4, activa al entregar GO;
-M3 prepara sus tests/archivos sin ejecutarlos hasta concesión. Ningún full/build/
-mypy pesado compartido. Cada rol libera la ventana con evidencia real; root la
-asigna al otro frente. Leer/editar archivos autorizados sí puede seguir en paralelo.
+Runtime ACTUAL: B4 GREEN/focos/Ruff/mypy comparativo concedido; sin full/build
+todavía. M3 liberó su RED y escribe GREEN propio sin nuevas corridas hasta otra
+concesión. Cada rol libera la ventana con evidencia real; root la asigna al otro
+frente. Nunca dos tests/builds/mypy pesados en el host. Leer/escribir archivos
+autorizados y preparación documental sí puede seguir en paralelo.
+
+RED observados, sin aceptación nueva de tareas:
+
+- B4:111 casos,47 fallan/64 pasan/0 errores/0 skips/76,66s; XML interno75,352s.
+  59 controles A/M1 y5 controles de marker pasan; fallan APIs/efectos B4 ausentes.
+  Prueba inicial43F/63P se conserva; corrección de un supuesto de formato JSON,
+  sin cambiar intención/autoridad, previa a implementar. Test-only9d311a9.
+- M3 Task1 público:111 fallan por módulo ausente/1 benchmark omitido/66 casos
+  privados diferidos/6,91s, fuente test-only3d6a6ac; XML112/111F/0E/1S.
+  UI:2 fallan/8 pasan/3,31s, fuente3becc79;16 casos de widgets pendientes de DTOs.
+  No presentar preparaciones/deselecciones como tests aprobados.
+
+Leér reportes de progreso canónicos para pedidos de lease y resultados (además
+de wait_threads): `faab/here/.superpowers/sdd/M2_LIFECYCLE_PLAN/progress.md` y
+`2710/here/.superpowers/sdd/M3_SEARCH_PLAN/progress.md`, bajo la raíz de worktrees.
+R46 fija los defaults de DTOs/errores compartidos; R47 define empty-search→MeetingPage
+con filtros intactos. Antes de UI GREEN completar RED real con los DTOs. El marker
+slow se registrará por root en el próximo cambio serial de metadatos/versionado.
 
 M3 consulta el catálogo A; título real espera contrato B4 aceptado y reindex/
 supresión real espera B5. R45 exige generación de búsqueda coherente, rechazo
@@ -123,9 +145,16 @@ conservan alcance en DELIVERY/ACCEPTANCE/evidence y sus logs; no se relabelan.
 Preparación futura ya existente: `next-contracts-preparation-report.md`,
 `parallel-contracts-review-report.md`, `lifecycle-plan-preparation-report.md`,
 `m3-plan-preparation-report.md`; briefs `.superpowers/m2b-front-brief.md` y
-`m3a-front-brief.md`, pendientes de completar con bases y asignaciones reales.
+`m3a-front-brief.md`, ya completos y entregados a los chats.
 Fixtures de memoria/búsqueda/playback/ZIPs siguen preservados en sus worktrees;
 su generación no certifica benchmark, seek o importador.
+
+M3 B preparación SPEC/PLAN lista en `m2-segments`, blobs11c2cf4/0e0a44f.
+Preflight independiente READY FOR PREPARATION, cero hallazgos,11 cláusulas/14
+bloques completos de tareas preservados. Reporte `m3-library-preparation-review-report.md`;
+bind final a Citation/offsets R46, empty return R47 y adaptadores reales B4/B5/UI
+todavía pendiente. B puede arrancar sobre A revisado con PR abierto, tras contratos
+necesarios, y rebasear tras merge A: no agregar un bloqueo de merge más estricto.
 
 Fixture real de actualización 0.2.0 ya descargado una vez desde el workflow M1
 42102224714/artifact13450512413: `.superpowers/m5-upgrade-baseline-0.2.0/`.
@@ -137,6 +166,6 @@ No se leyó el `.env` real ni audio/biblioteca privados. Smokes opt-in futuros u
 solo HERE_PROVIDER_SMOKE_KEY y texto/audio sintéticos según ruling19, sin imprimir
 ni persistir la credencial. Máquina Windows limpia: pedir al necesitar la fila,
 con protocolo escrito. Prueba de dos horas: **omitida por ruling 5**, nunca aprobada.
-No hay bloqueo humano actual. Próxima acción: entregar los GO completos a ambos
-chats, activar RED B4 y coordinar el RED M3 siguiente y los handoffs compartidos.
+No hay bloqueo humano actual. Próxima acción: recoger GREEN/focos B4, su release
+de runtime y el commit de DTOs M3; alternar focos, revisar y coordinar B5 después.
 Reanudar desde estos IDs/reportes sin recrear los chats ni repetir el catálogo A.
