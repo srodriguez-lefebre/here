@@ -471,6 +471,22 @@ Los rulings nuevos se escriben en español por el ruling 6.
     de implementar/certificar B, conservando supresión y evidencia incierta;
     nunca declarar purga completa por un registro pendiente o solo por un UUID.
 
+43. **Ruling:** la observación `4488285573` de la nueva review de Copilot
+    `5794829768` se corrige dentro del mismo aviso de R40. Un manifiesto de sesión
+    válido con marcador pendiente malformado conserva sesión, marcador y audio y
+    produce un candidato de advertencia no reintentable, con mensaje acotado y sin
+    reproducir el contenido inválido. El fallo se captura solo en la validación
+    local del marcador, preservando ownership y rechazo de rutas inseguras; los
+    vecinos válidos siguen su replay y nunca se invoca al proveedor. No se inventa
+    un padre/token para reparar el marcador. Tests RED independientes, foco de
+    recovery/compatibilidad, wheel nuevo y ambos smokes locales preceden a la
+    publicación. La suite completa sobre la fuente corregida se verifica en CI
+    Windows offscreen del head exacto antes del merge; el full local 5 queda
+    histórico de c3cdf08. Se mantienen cobertura y los cuatro gates, sin repetir
+    otro full local del mismo head además del full obligatorio de CI. **Cost if
+    wrong:** ajustar la clasificación de errores/advertencia y su cobertura,
+    manteniendo evidencia incierta y el botón de proveedor deshabilitado.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
