@@ -921,6 +921,36 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Costo si falla:** retirar este cambio de representación o corregirlo y
     repetir equivalencia/regresiones; conservar todos los inputs y el presupuesto.
 
+62. **2026-11-06 — El replay de recuperación transfiere exclusión al writer antes
+    de tocar evidencia o reescribir el marker.** Un intent válido None/opaco puede
+    sobrevivir sin mapping; un claim no-op no prueba un lease. Se fija
+    `MemoryService.recovery_publication(directory, declared_identity,
+    *, expected_identity) -> ContextManager[None]` como scope interno writer del
+    MISMO servicio/root, después de salir del read guard. Antes de cualquier
+    validación de sello/material o escritura del publisher, obtiene una sola
+    `.memory.lock`, relee metadata/intent mínimos y revalida registro, aliases,
+    identidad y padres/reservas reales con el parser/resolver existentes. Compara
+    con la identidad cuyas leases reales retuvo el consumidor; un nuevo target
+    o dueño no cubierto se rechaza tipado para revalidar, sin efectos previos.
+    La comparación no es autoridad de ownership. Si sigue realmente unmapped,
+    conserva la exclusión hasta terminar publicación y cleanup del marker;
+    no inventa UUID/padre ni hace prepare_retry automático para este replay.
+    El publisher conserva sus checks/rechazos de padre, reserva, hashes e import.
+    Sus operaciones memory reutilizan un primitivo privado ya locked, acotado a
+    este scope/instancia: no segundo parser/lock/conexión/BEGIN ni repo/SQL expuesto
+    al consumidor. Ninguna transacción READ queda abierta durante FS/writer;
+    las transacciones SQL breves existentes y leases reales aplicables se conservan,
+    sin reacquirir recursivamente las ya retenidas. No es read scope alrededor de
+    un writer/proveedor. El consumidor deriva intent/revision/status frescos dentro
+    del scope, usando el publisher existente; processing.py conserva su lease
+    cerrado salvo necesidad concreta demostrada y asignada por root. No se agrega
+    warning deshabilitante, nueva política de ownership ni otra DoD. Productor
+    service y consumidor recovery tienen escritores distintos; RED independiente
+    de las intercalaciones mapping/owner/delete precede a GREEN y sus reviews.
+    Los 40 pases/review del reader R59 siguen válidos solo para ese scope previo.
+    **Costo si falla:** conservar intent y bytes, corregir el handoff y repetir
+    sus controles; nunca aceptar un rechazo SQL tardío como exclusión previa.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
