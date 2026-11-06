@@ -132,7 +132,7 @@ def catalog(tmp_path):
                           transcript_text=CANARY,
                           segments=[{"text": CANARY, "start": 0.0, "end": 1.0,
                                      "speaker": "speaker_0", "speaker_scope": "b5-request"}])
-    memory = MemoryService(tmp_path / "data")
+    memory = MemoryService(tmp_path / "data", sessions_root=tmp_path / "sessions")
     assert memory.ingest_session(source.directory).status == "inserted"
     return memory, source
 
@@ -286,7 +286,7 @@ def test_same_fingerprint_different_legacy_origin_gets_new_identity_after_delete
     source = make_session(tmp_path / "legacy")
     duplicate = tmp_path / "explicit-copy"
     shutil.copytree(source.directory, duplicate)
-    memory = MemoryService(tmp_path / "data")
+    memory = MemoryService(tmp_path / "data", sessions_root=tmp_path / "sessions")
     first = memory.ingest_session(source.directory)
     assert first.status == "inserted"
     fingerprint = _rows(memory.data_dir, "SELECT origin_fingerprint FROM ingest_sources")[0][0]
@@ -305,7 +305,7 @@ def test_complete_tombstone_survives_db_loss_and_restored_old_receipts(catalog, 
     _assert_result(_delete(memory), "completed")
     shutil.copytree(old_tree, memory.data_dir / "meetings", dirs_exist_ok=True)
     _lose_database(memory.data_dir, tmp_path)
-    rebuilt = MemoryService(memory.data_dir)
+    rebuilt = MemoryService(memory.data_dir, sessions_root=memory.data_dir.parent / "sessions")
     _hidden(rebuilt)
     rebuilt.reconcile()
     assert _rows(memory.data_dir, "SELECT origin_fingerprint FROM deleted_origins") == origins
@@ -314,7 +314,7 @@ def test_complete_tombstone_survives_db_loss_and_restored_old_receipts(catalog, 
 
 
 def test_audio_a_b_a_exact_links_survive_rebuild_then_all_history_is_deleted(tmp_path):
-    memory = MemoryService(tmp_path / "data")
+    memory = MemoryService(tmp_path / "data", sessions_root=tmp_path / "sessions")
     sources = []
     hashes = []
     for index in range(3):
@@ -340,13 +340,13 @@ def test_audio_a_b_a_exact_links_survive_rebuild_then_all_history_is_deleted(tmp
     assert ids[0] == ids[2] != ids[1]
     assert [assets[identity]["sha256"] for identity in ids] == hashes
     _lose_database(memory.data_dir, tmp_path)
-    memory = MemoryService(memory.data_dir)
+    memory = MemoryService(memory.data_dir, sessions_root=memory.data_dir.parent / "sessions")
     memory.reconcile()
     assert sorted(memory.show(MEETING_ID)["revision_audio_assets"], key=lambda x: x["revision_id"]) == (
         sorted(links, key=lambda x: x["revision_id"]))
     _assert_result(_delete(memory), "completed")
     _lose_database(memory.data_dir, tmp_path)
-    memory = MemoryService(memory.data_dir)
+    memory = MemoryService(memory.data_dir, sessions_root=memory.data_dir.parent / "sessions")
     memory.reconcile()
     _assert_purged(memory)
     assert all(source.audio.exists() for source in sources)
@@ -853,7 +853,7 @@ def test_rows_and_files_gone_but_managed_residue_failure_stays_pending(catalog, 
 _CRASH_SCRIPT = r"""
 import os, runpy, socket, sys, types
 from pathlib import Path
-repo, root, boundary = map(str, sys.argv[1:])
+repo, root, boundary, sessions_root = map(str, sys.argv[1:])
 package = types.ModuleType('here')
 package.__path__ = [str(Path(repo) / 'src')]
 sys.modules['here'] = package
@@ -864,7 +864,7 @@ socket.socket.connect = forbidden
 namespace = runpy.run_path(str(Path(repo) / 'tests' / 'test_memory_delete.py'))
 import pytest
 with pytest.MonkeyPatch.context() as monkeypatch:
-    memory = namespace['MemoryService'](Path(root))
+    memory = namespace['MemoryService'](Path(root), sessions_root=Path(sessions_root))
     namespace['_install_fault'](monkeypatch, Path(root), boundary, crash=True)
     memory.delete_meeting(namespace['MEETING_ID'])
 raise AssertionError('B5 child failed to reach requested crash boundary')
@@ -882,12 +882,15 @@ def test_subprocess_crash_restart_obeys_r42_acceptance_and_never_resurrects(
     env = dict(os.environ)
     env["HERE_ENV_FILE"] = str(tmp_path / "absent.env")
     env["HERE_DATA_DIR"] = str(memory.data_dir)
+    env["TRANSCRIPTIONS_DIR"] = str(tmp_path / "sessions")
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     env["OPENAI_API_KEY"] = "synthetic-test-key"
     env.pop("HERE_PROVIDER_SMOKE_KEY", None)
+    env.pop("HERE_WHEEL_PYTHON", None)
     process = subprocess.run(
         [sys.executable, "-c", _CRASH_SCRIPT, str(Path(__file__).resolve().parents[1]),
-         str(memory.data_dir), boundary], env=env, capture_output=True, text=True, timeout=25,
+         str(memory.data_dir), boundary, str(tmp_path / "sessions")],
+        env=env, capture_output=True, text=True, timeout=25,
         creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
     )
     assert process.returncode == 73, process.stdout + process.stderr
@@ -900,7 +903,7 @@ def test_subprocess_crash_restart_obeys_r42_acceptance_and_never_resurrects(
         assert memory.show(MEETING_ID) is not None
     if lose_database:
         _lose_database(memory.data_dir, tmp_path)
-    restarted = MemoryService(memory.data_dir)
+    restarted = MemoryService(memory.data_dir, sessions_root=memory.data_dir.parent / "sessions")
     if accepted:
         _hidden(restarted)
     restarted.reconcile()
@@ -989,7 +992,7 @@ def test_restore_old_backup_cannot_expose_or_rebuild_pending_deleted_meeting(cat
     _lose_database(memory.data_dir, tmp_path)
     shutil.copyfile(copy, memory.data_dir / "library.sqlite3")
     assert _rows(memory.data_dir, "SELECT status FROM meetings") == [("completed",)]
-    restored = MemoryService(memory.data_dir)
+    restored = MemoryService(memory.data_dir, sessions_root=memory.data_dir.parent / "sessions")
     _hidden(restored)
     assert restored.ingest_session(source.directory).status == "rejected"
     restored.reconcile()
@@ -1005,7 +1008,7 @@ def test_reconcile_restores_origin_tombstone_before_existing_receipt_rebuild(cat
     origin = _origin(memory.data_dir)
     _record(memory.data_dir, origins=[origin])
     _lose_database(memory.data_dir, tmp_path)
-    restored = MemoryService(memory.data_dir)
+    restored = MemoryService(memory.data_dir, sessions_root=memory.data_dir.parent / "sessions")
     rebuild = MemoryService._rebuild
     calls = []
     def inspect_before_rebuild(self, repo, *args, **kwargs):
@@ -1165,7 +1168,7 @@ def test_concurrent_acceptance_during_hook_is_rechecked_and_never_reported_rejec
     memory, _ = catalog
     unknown = memory.data_dir / "meetings" / MEETING_ID / "unknown.txt"
     unknown.write_bytes(b"pending cleanup")
-    competing = MemoryService(memory.data_dir)
+    competing = MemoryService(memory.data_dir, sessions_root=memory.data_dir.parent / "sessions")
     def release(identity):
         _assert_result(competing.delete_meeting(identity), "pending")
         if hook_fails:
@@ -1209,9 +1212,11 @@ def test_prior_barrier_with_missing_sql_rows_keeps_canonical_pending_on_repeated
         hits = _install_fault(faults, memory.data_dir, "before-complete")
         _assert_result(_delete(memory), "pending")
         assert _rows(memory.data_dir, "SELECT id FROM meetings") == []
-        _assert_result(_delete(MemoryService(memory.data_dir)), "pending")
+        _assert_result(_delete(MemoryService(
+            memory.data_dir, sessions_root=memory.data_dir.parent / "sessions")), "pending")
         assert len(hits) >= 2
-    _assert_result(_delete(MemoryService(memory.data_dir)), "completed")
+    _assert_result(_delete(MemoryService(
+        memory.data_dir, sessions_root=memory.data_dir.parent / "sessions")), "completed")
     _assert_purged(memory)
 
 

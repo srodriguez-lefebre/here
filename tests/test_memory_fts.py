@@ -32,7 +32,7 @@ def no_provider(monkeypatch):
 
 @pytest.fixture
 def index_catalog(tmp_path):
-    memory = MemoryService(tmp_path / "data")
+    memory = MemoryService(tmp_path / "data", sessions_root=tmp_path / "sessions")
     previous = None
     for name, identity, text, partial in (
         ("old", MEETING_ID, "Obsolete historical copper", False),
@@ -124,7 +124,7 @@ def test_reindex_invalid_registry_never_clears_existing_index(index_catalog):
 
 def test_missing_fts_preserves_typed_warning_and_does_not_block_delete_or_reindex(tmp_path, monkeypatch):
     monkeypatch.setattr(service_module, "fts_available", lambda connection: False)
-    memory = MemoryService(tmp_path / "data")
+    memory = MemoryService(tmp_path / "data", sessions_root=tmp_path / "sessions")
     source = make_session(tmp_path / "origin", meeting_id=MEETING_ID)
     ingest = memory.ingest_session(source.directory)
     assert ingest.status == "inserted"
@@ -161,7 +161,7 @@ class _SecureDeleteConnection:
 def test_delete_probes_fts_secure_delete_and_leaves_no_sqlite_wal_backup_token_residue(
     tmp_path, monkeypatch, forced_unavailable
 ):
-    memory = MemoryService(tmp_path / "data")
+    memory = MemoryService(tmp_path / "data", sessions_root=tmp_path / "sessions")
     source = make_session(tmp_path / "origin", meeting_id=MEETING_ID,
                           transcript_text=CANARY, segments=[{"text": CANARY}])
     assert memory.ingest_session(source.directory).status == "inserted"

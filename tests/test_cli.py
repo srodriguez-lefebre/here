@@ -32,6 +32,7 @@ def lifecycle_cli(tmp_path, monkeypatch):
     root = tmp_path / "data"
     monkeypatch.setenv("HERE_DATA_DIR", str(root))
     monkeypatch.setenv("HERE_ENV_FILE", str(tmp_path / "absent.env"))
+    monkeypatch.setenv("TRANSCRIPTIONS_DIR", str(tmp_path / "sessions"))
 
     def forbidden(*args, **kwargs):
         pytest.fail("Lifecycle CLI allocated provider/network work")

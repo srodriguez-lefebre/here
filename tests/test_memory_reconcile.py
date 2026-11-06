@@ -139,7 +139,7 @@ def test_held_owner_skips_status_and_prepared_operation_then_residual_file_allow
     tmp_path,
 ):
     root = tmp_path / "data"
-    memory = MemoryService(root)
+    memory = MemoryService(root, sessions_root=tmp_path / "sessions")
     source = make_session(tmp_path / "source", meeting_id=MEETING_ID)
     assert memory.ingest_session(source.directory).status == "inserted"
     with closing(sqlite3.connect(root / "library.sqlite3")) as connection:
@@ -197,7 +197,7 @@ def test_unsafe_owner_path_is_skipped_without_treating_work_as_stale(tmp_path):
 
 def test_reconcile_reports_completed_reverted_and_unsafe_sibling_idempotently(tmp_path):
     root = tmp_path / "data"
-    memory = MemoryService(root)
+    memory = MemoryService(root, sessions_root=tmp_path / "sessions")
     source = make_session(tmp_path / "source", meeting_id=MEETING_ID)
     assert memory.ingest_session(source.directory).status == "inserted"
     complete_id = _rows(root, "SELECT id FROM pending_operations")[0][0]
