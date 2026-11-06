@@ -403,6 +403,108 @@
       "xml": "task-2-review-focus-1.xml",
       "report": "task-2-review-fix-report.md",
       "scope": "Exact clean WORKER 7e invocation, all four new regressions and both actual R48 read consumers pass. NOT a run at parent 5a81; no full/B4 mutation/B5/performance/task/group acceptance."
+    },
+    {
+      "name": "M3A-B4-TITLE-UI44",
+      "head": "75be486d0eca3b24d46959a6294bb4c89381244c",
+      "source_tree": "d1bddf68d55c354064e8e5a9e5d8fbbf3eeacf93",
+      "tests_tree": "26bc7fe92c8f7f097f01ba6d3994f49d8adf93c9",
+      "config_blob": "7143d4deff5acb55e524baa5ee15c101bce9b3b5",
+      "workdir": "C:/Users/savar/.codex/worktrees/2710/here",
+      "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -m pytest -vv tests/test_ui_library.py tests/test_ui_lifecycle.py --junitxml=C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN/task-2-b4-title-focus-1.xml",
+      "exit_code": 0,
+      "collected": 44,
+      "selected": 44,
+      "passed": 44,
+      "failed": 0,
+      "setup_errors": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "duration_seconds": 14.42,
+      "xml_cases": 44,
+      "xml_internal_seconds": 14.385,
+      "log": "task-2-b4-title-focus-1.log",
+      "xml": "task-2-b4-title-focus-1.xml",
+      "report": "b4-title-types-verification-report.md",
+      "scope": "Actual current/stale title consumers use public ingest_session and actual nondegraded FTS. Ran HEAD75 plus ONLY pinned test formatter diff, not later ed8 HEAD; all prior42 retained. D1 evidence, not fresh E3 result.",
+      "working_tree_changes": "ONLY test formatter parentheses around unchanged stale-title lambda; source/config exactly75.",
+      "content_equivalent_subsequent_commit": "ed8e5aa709858bf6814d350195e7ae89ad788ed4",
+      "bindings_artifact": "task-2-b4-preverification-bindings.json"
+    },
+    {
+      "name": "B5-REPAIRED-BASELINE-THREE-NODES",
+      "head": "f3f06bc0f025adff59bc500ee1b73a24b7953a28",
+      "source_tree": "d1bddf68d55c354064e8e5a9e5d8fbbf3eeacf93",
+      "tests_tree": "35efb958f45c9b107f3639fe018c6f0df42b3b79",
+      "config_blob": "7143d4deff5acb55e524baa5ee15c101bce9b3b5",
+      "workdir": "C:/Users/savar/.codex/worktrees/2710/here",
+      "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -m pytest -vv tests/test_memory_delete.py::test_derived_purgers_keep_order_same_transaction_and_relationships_until_final_core_delete tests/test_memory_delete.py::test_reconcile_restores_origin_tombstone_before_existing_receipt_rebuild tests/test_cli.py::test_memory_delete_cli_requires_yes_without_touching_rows_or_owned_files --junitxml=C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN/b5-repaired-baseline-1.xml",
+      "exit_code": 1,
+      "collected": 3,
+      "selected": 3,
+      "passed": 0,
+      "failed": 3,
+      "setup_errors": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "duration_seconds": 3.44,
+      "xml_cases": 3,
+      "xml_internal_seconds": 3.387,
+      "log": "b5-repaired-baseline-1.log",
+      "xml": "b5-repaired-baseline-1.xml",
+      "report": "b5-repaired-baseline-report.md",
+      "scope": "Expected B5 RED on accepted B4: speaker assignment precondition passes then absent _derived_row_purgers; readable deleted_origins=[]; delete --help fails absent command. Not M3 regression, no corrected100 aggregate, no B5 source edit or hook/confirmation success."
+    },
+    {
+      "name": "M3A-LEGACY-UI33-RED",
+      "head": "f3f06bc0f025adff59bc500ee1b73a24b7953a28",
+      "source_tree": "d1bddf68d55c354064e8e5a9e5d8fbbf3eeacf93",
+      "tests_tree": "35efb958f45c9b107f3639fe018c6f0df42b3b79",
+      "config_blob": "7143d4deff5acb55e524baa5ee15c101bce9b3b5",
+      "workdir": "C:/Users/savar/.codex/worktrees/2710/here",
+      "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -m pytest -vv tests/test_background_jobs.py tests/test_desktop_controls.py tests/test_ui_contract_adapter.py tests/test_ui_entrypoint.py tests/test_memory_warning_ui.py tests/test_config_paths.py::test_production_gui_opens_without_key_or_provider 'tests/test_recording_imports.py::test_local_import_does_not_initialize_portaudio[here.entrypoints]' 'tests/test_recording_imports.py::test_local_import_does_not_initialize_portaudio[here.ui.gui]' tests/test_copilot_recovery_warning.py::test_completed_replay_rejection_is_visible_and_cannot_offer_provider_retry --junitxml=C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN/legacy-ui-focus-1.xml",
+      "exit_code": 1,
+      "collected": 33,
+      "selected": 33,
+      "passed": 30,
+      "failed": 3,
+      "setup_errors": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "duration_seconds": 10.44,
+      "xml_cases": 33,
+      "xml_internal_seconds": 9.406,
+      "log": "legacy-ui-focus-1.log",
+      "xml": "legacy-ui-focus-1.xml",
+      "report": "legacy-ui-failure-report.md",
+      "scope": "Genuine compatibility regression: empty RuntimeError/OSError diagnostic and ValueError retry text. Nonempty/whitespace controls pass. Distinct from expected B5 RED; not relabeled33 GREEN.",
+      "import_binding": "Parent conftest maps local source; actual child imports use verified same-source candidate75 projection after all67 raw module checks. See legacy-ui-preflight-bindings.json and selection report."
+    },
+    {
+      "name": "M3A-LEGACY-DISPLAY-BOUNDED-GREEN7",
+      "head": "5db071a2d034bda94ed1676d166bcce3aa7f7f0b",
+      "source_tree": "e3ede58c32f5d848988b94dd8c4a5319512546c3",
+      "tests_tree": "35efb958f45c9b107f3639fe018c6f0df42b3b79",
+      "config_blob": "7143d4deff5acb55e524baa5ee15c101bce9b3b5",
+      "workdir": "C:/Users/savar/.codex/worktrees/2710/here",
+      "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -m pytest -vv tests/test_desktop_controls.py::test_background_diagnostic_error_is_visible tests/test_desktop_controls.py::test_background_retry_error_preserves_visible_selection tests/test_ui_lifecycle.py::test_real_worker_recovery_failure_still_displays_an_ordinary_error tests/test_ui_lifecycle.py::test_background_jobs_preserves_structured_catalog_errors_on_qt_thread --junitxml=C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN/legacy-ui-display-focus-1.xml",
+      "exit_code": 0,
+      "collected": 7,
+      "selected": 7,
+      "passed": 7,
+      "failed": 0,
+      "setup_errors": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "duration_seconds": 1.92,
+      "xml_cases": 7,
+      "xml_internal_seconds": 1.862,
+      "log": "legacy-ui-display-focus-1.log",
+      "xml": "legacy-ui-display-focus-1.xml",
+      "report": "legacy-ui-display-verification-report.md",
+      "scope": "Exact E3/HEAD5db bounded display repair: same3 RED,2 nonempty/whitespace controls, discovery error and structured exception identity/reason/Qt-thread. No33/44/mypy/full/B5 repeat or new child projection. E3 receives only7-case/one-file Ruff evidence.",
+      "bindings_artifact": "legacy-ui-display-preverification-bindings.json",
+      "command_exits_artifact": "legacy-ui-display-command-exits.json"
     }
   ],
   "lint_checkpoint": {
@@ -459,10 +561,10 @@
   "remaining_gates": [
     "Accepted sole B5 R42 coherent suppression snapshot in reads and R45 generation; typed fail-closed invalid/inaccessible registry; suppression in SQL before cursor/LIMIT, including pending barrier when SQL hide failed and surviving receipts after DB loss/rebuild.",
     "Accepted sole B5 reindex facade, missing-FTS reporting, complete-only/include_partial before-after equivalence, actual no-op generation equivalence and changed-input cursor rejection.",
-    "Actual B4 update_meeting optimistic row_version/title-index consistency remains pending. R48 temporary-catalog read consumers now complete all focused assertions, but this does not accept complete B4 or guarded B5/full integration.",
-    "Implemented UI findings T2-R1/R2/R3 are ADDRESSED and same-reviewer scoped checkpoint approved. Real B4/B5 integration, delete notification/invalidation, final integrated full/mypy/preview/global review and complete Task2/group acceptance remain pending.",
+    "Accepted B496e8 producer integrated; actual current/stale title/version/evidence/FTS consumers and truthful UI types approved at D1/ed8. Historical44/no-new-mypy does not constitute fresh E3 or final B5-integrated acceptance.",
+    "UI R1/R2/R3 remain ADDRESSED; same reviewer also approves D1 typing/title consumers and bounded E3 empty-error display fix. Complete Task2 requires B5 integration, final full/mypy/preview/global/hosted gates.",
     "Guarded 1,000/100,000 warm p95 below 500ms including final digest/guard work; actual Qt heartbeat no event-loop block above 50ms, under root exclusive runtime grant.",
-    "Full offscreen suite and mypy baseline comparison/no new touched-file errors at eventual integrated head; appropriate checks for later relevant edits.",
+    "Final integrated full offscreen suite and no-new-mypy comparison remain pending on eventual integrated source. Exact D1 comparison79→78 with zero added records is verified; E3 only has bounded7/Ruff, no new44/mypy scan.",
     "Complete same Task1 assessment and task docs/evidence; root global integration docs only when capacity ready; Task2 and later single global review.",
     "Received/responded current-head Copilot, exact-head Windows CI/package as required, PR and guarded root merge. No M3 hosted gate has started in this checkpoint."
   ],
@@ -470,10 +572,10 @@
     "large_corpus_benchmark": "NOT_RUN (SKIPPED by default in focused runs)",
     "guarded_p95": "NOT_RUN",
     "qt_heartbeat": "Guarded 1,000/100,000 corpus heartbeat NOT_RUN; small synthetic UI cases/probe do not establish this budget.",
-    "real_B4_R48_B5_integration": "R48 real read consumers FOCUSED_AUTOMATIC_VERIFIED at focus5/6; B4 mutation/title-index and B5 guard/reindex/deletion integration NOT_RUN/PENDING.",
-    "ui_source_green": "FOCUSED_AUTOMATIC_GREEN_ONLY: 42 pass at exact worker 7e and scoped implemented UI checkpoint approved; no complete Task2/group or new parent-head runtime.",
+    "real_B4_R48_B5_integration": "B4 accepted source and real current/stale title/version/FTS UI consumers FOCUSED_AUTOMATIC_VERIFIED at D1/ed8; B5 guarded exposure/reindex/delete callback still NOT_ACCEPTED/PENDING.",
+    "ui_source_green": "Historical UI42 then UI44 at recorded D1 context; latest E3 bounded7 GREEN and scoped approval only. No full latest-source UI44 repeat.",
     "full_suite": "NOT_RUN",
-    "mypy_delta": "NOT_RUN",
+    "mypy_delta": "D1 verified79→78/zero added records/errors; initial79→87 failure retained. Final E3/eventual B5-integrated comparison PENDING, no E3 scan.",
     "build_install": "NOT_RUN",
     "provider_smoke": "NOT_RUN",
     "global_review": "NOT_STARTED",
@@ -481,7 +583,7 @@
     "certification": "NOT_RUN",
     "two_hour_recording": "OMITTED under ruling 5, never approved"
   },
-  "runtime_coordination": "Coordinator explicitly RELEASED latest runtime immediately after verification commands BEFORE reports/scoped re-review/parent integration; root ACKed reserved host. No M3 process remains; docs role uses static PowerShell JSON/XML/Git only, no imports/tests/probes/lint/Python.",
+  "runtime_coordination": "Coordinator RELEASED immediately after latest seven-case/Ruff commands, BEFORE reports/review; root now B. Docs role performs mechanical Git sync plus static PowerShell JSON/XML/Git only, no runtime/import/tests/lint/mypy/build/uv/network.",
   "invariants": "No acceptance/DoD, product flow, dependency, schema, privacy or retention changes. No new hardware/provider/clean-install certification, no milestone closure or 0.4.0 bump.",
   "technical_supplements": [
     {
@@ -521,7 +623,7 @@
   ],
   "ui_execution_checkpoint": {
     "recorded_on": "2026-11-06",
-    "status": "FOCUSED_AUTOMATIC_VERIFIED_APPROVED_IMPLEMENTED_UI_CHECKPOINT",
+    "status": "SCOPED_UI_B4_TYPES_AND_LEGACY_APPROVALS_COMPLETE_TASK_OPEN",
     "report": "task-2-focused-green-report.md",
     "source_worker": "C:/Users/savar/.codex/worktrees/m3-ui-implementation/here",
     "branch": "codex/m3-ui-green",
@@ -591,7 +693,7 @@
         "scope": "Post-release commit of formatter-only six-file diff after focus6; all nine executed blobs match. No test assertions/scenarios changed."
       }
     ],
-    "limits": "Latest42 focused automatic worker run and same-reviewer approval establish implemented UI/R48 read checkpoint only. Real B4 mutations and B5 guard/reindex/delete event, integrated full/mypy/preview/global/hosted/performance/certification and complete Task2/group gates remain open. e4d query proof unchanged.",
+    "limits": "Prior UI42, actual D1 UI44/no-new-mypy and bounded E3 display scopes are distinct; full final UI/B5/performance/integrated full/mypy/preview/hosted/certification remain pending. Coree4 proof unchanged.",
     "historical_prepared_worker": {
       "head": "2389a7f191bd41baf1fc173b8d87c2ea26dacb1f",
       "status": "SOURCE_AND_TEST_PREPARED_NOT_RUN",
@@ -682,7 +784,8 @@
     "scope": "Future B-owned catalog_read_view(library), existing bounded lock before sole read transaction, immutable ordered suppression IDs/fingerprint; actual handoff and real RED precede dependent search changes.",
     "dependent_product_source_written": false,
     "runtime": "NOT_RUN",
-    "acceptance": "PENDING; contract/static preparation does not establish B5 implementation or M3 integration"
+    "acceptance": "PENDING; contract/static preparation does not establish B5 implementation or M3 integration",
+    "later_declarations": "Root R51/R52 declared only; r50-integration-preparation.md records exact ownership/native-context limits. No accepted B5 API, early app.py composition delta, stub, second MemoryService or native adapter."
   },
   "ui_lint_checkpoint": {
     "execution_state": "HEAD887 plus formatter diff, before focus6 and before post-release825 commit",
@@ -891,6 +994,303 @@
     },
     "latest_release": "Coordinator released immediately after final verification commands, BEFORE reports/scoped re-review/parent integration; root ACKed reserved host. No M3 process remains.",
     "next_integrated_verification": "Preparing one coherent integrated-candidate/baseline mypy request only; NO scans yet. Integrated full/mypy and final preview remain NOT_RUN/PENDING.",
-    "held_obligations": "Complete Task2/group open. Actual B4 title/version/FTS source handoff awaits root acceptance/docs and real integration. B5 guard/delete event/sole reindex/fallback and no-op equivalence pending. Guarded1k/100k p95/heartbeat, integrated full/mypy/preview/global docs/final review, hosted Copilot/CI/package/guarded merge and certification unchanged. Coree4 proof remains at its own exact source."
+    "held_obligations": "Complete Task2/group open. Actual B4 title/version/FTS source handoff awaits root acceptance/docs and real integration. B5 guard/delete event/sole reindex/fallback and no-op equivalence pending. Guarded1k/100k p95/heartbeat, integrated full/mypy/preview/global docs/final review, hosted Copilot/CI/package/guarded merge and certification unchanged. Coree4 proof remains at its own exact source.",
+    "stage_scope": "Historical7e UI42/fix approval and5a81 static integration; later D1 types/title and E3 display checkpoints supersede its pending B4/mypy preparation state without changing original evidence."
+  },
+  "current_integrated_checkpoint": {
+    "frozen_main": "5db071a2d034bda94ed1676d166bcce3aa7f7f0b",
+    "docs_sync_merge": "018c521a4d4bd08078a91fc1373652745c8b41b3",
+    "source_tree": "e3ede58c32f5d848988b94dd8c4a5319512546c3",
+    "tests_tree": "35efb958f45c9b107f3639fe018c6f0df42b3b79",
+    "config_blob": "7143d4deff5acb55e524baa5ee15c101bce9b3b5",
+    "query_blob": "034624cb10cd5b85c67a742fdb45950d66c3bc6a",
+    "main_window_blob": "c8c0d61ce4f936c6fa80dce41cc6f033ffea630a",
+    "latest_source_evidence": "Only bounded7-case GREEN and MainWindow Ruff/format on E3; D1 UI44/no-new-mypy and previous42/core177 retain their own source bindings",
+    "task1_task2_group_milestone": "OPEN",
+    "certified": false
+  },
+  "B4_types_title_checkpoint": {
+    "accepted_B4": "96e8aed255a442acb14bbdff5c32877ec201c628",
+    "integration": "c4cc8ca33ed4506cc5c4588c136133a024ce8656",
+    "models_preserved": "7ac51f614e272d57479823fbcbb056844a924ca6",
+    "backend_service_exact": "cfccae5a806e36dcb897099348bc0002c5eafa8c",
+    "integration_scope": "Exact accepted B4 backend/CLI/tests; mechanical conflicts preserve canonical models plus R46 and exact incoming service, no dirty B5 source.",
+    "title_tests": {
+      "original_RED_author_commit": "4e5869f83d7c33be885d6d97770b6ec0a673329c",
+      "main_integration": "adb0b70a5a27cbe8f43406e2df6ee3173287bc11",
+      "fixture": "Existing make_session through public MemoryService.ingest_session and actual nondegraded FTS; repository activation alone is NOT indexed publication",
+      "observed_title_RED": "No failing title run claimed; independently authored consumer supplement first actually passes in44-case focus",
+      "verified_paths": "Current save increments actual version once, preserves evidence and updates title FTS; stale save gets real Conflict, reloads concurrent title, no overwrite/retry/additional increment; injected custom root/no default DB."
+    },
+    "types_fix": {
+      "own": "e5ff86b15390846f48d8e5318d10a99f46e9f939",
+      "main": "75be486d0eca3b24d46959a6294bb4c89381244c",
+      "source_tree": "d1bddf68d55c354064e8e5a9e5d8fbbf3eeacf93",
+      "scope": "Truthful private backend/getter/root protocols, structured worker result/error storage and canonical state/None guard; no casts/Any suppression/ignore/config/B4/model/query/assertion edits."
+    },
+    "UI44": {
+      "run": "M3A-B4-TITLE-UI44",
+      "invocation_HEAD": "75be486d0eca3b24d46959a6294bb4c89381244c",
+      "only_uncommitted_diff": "Test-only formatter parentheses around unchanged Conflict-test lambda",
+      "bindings": "task-2-b4-preverification-bindings.json",
+      "post_release_content_commit": "ed8e5aa709858bf6814d350195e7ae89ad788ed4",
+      "source_tree": "d1bddf68d55c354064e8e5a9e5d8fbbf3eeacf93",
+      "tests_tree": "26bc7fe92c8f7f097f01ba6d3994f49d8adf93c9",
+      "config_blob": "7143d4deff5acb55e524baa5ee15c101bce9b3b5",
+      "invocation_at_ed8": false
+    },
+    "review": {
+      "reviewer": "/root/task2_review",
+      "head": "ed8e5aa709858bf6814d350195e7ae89ad788ed4",
+      "verdict": "APPROVED scoped UI typing and real B4 title-consumer checkpoint",
+      "report": "task-2-types-b4-review-report.md",
+      "critical": 0,
+      "important": 0,
+      "minor": 0,
+      "complete_task_group_merge_approval": false
+    },
+    "reports": [
+      "b4-full-integration-report.md",
+      "mypy-initial-comparison-report.md",
+      "b4-title-types-verification-report.md"
+    ],
+    "lint": {
+      "files": 9,
+      "result": "PASS;9 already formatted after ONLY test formatter diff",
+      "logs": [
+        "task-2-types-ruff-check-1.log",
+        "task-2-types-ruff-check-2.log",
+        "task-2-types-ruff-format-check-1.log",
+        "task-2-types-ruff-format-apply.log",
+        "task-2-types-ruff-format-check-2.log"
+      ],
+      "source_bytes_changed": false,
+      "warning": "Inherited root-only select deprecation retained"
+    }
+  },
+  "mypy_comparisons": {
+    "preflight": {
+      "artifact": "mypy-preflight-1.json",
+      "phase": "Projection CRLF canonical-vs-raw check",
+      "exit_code": 1,
+      "source_scans_started": 0,
+      "cause": "Windows git archive CRLF bytes differ from canonical text blob; normalized blob matches; helper corrected only, no source analysis or suppression."
+    },
+    "context": {
+      "baseline": "96e8aed255a442acb14bbdff5c32877ec201c628",
+      "config_blob": "7143d4deff5acb55e524baa5ee15c101bce9b3b5",
+      "config_raw_sha256": "AB0CD315D429899D6364CB31C8370FDA6AE24A737A55EBB1124C5DE561FD6B6F",
+      "python": "CPython3.13.15",
+      "mypy": "2.3.1 compiled",
+      "baseline_modules": 65,
+      "candidate_modules": 67,
+      "normalization": "Exact path/severity/full-message/code multiset; only snapshot prefix and diagnostic line/column normalized",
+      "baseline_provenance": "mypy-baseline-provenance.json",
+      "raw_manifest_policy": "Canonical Git blob plus raw SHA256 per projected module/config; actual baseline65 raw bytes/provenance and same tool/config context rechecked before reuse, as recorded by verifier."
+    },
+    "initial": {
+      "candidate": "adb0b70a5a27cbe8f43406e2df6ee3173287bc11",
+      "source_tree": "9f053379c34defaa9a3bfa92e46afac26274190a",
+      "baseline_errors": 79,
+      "candidate_errors": 87,
+      "added_records": 9,
+      "added_errors": 9,
+      "removed_records": 1,
+      "removed_errors": 1,
+      "wrapper_exit": 1,
+      "raw_mypy_exits": [
+        1,
+        1
+      ],
+      "result": "FAILED_NEW_ERRORS; removed error does not cancel additions",
+      "run_records": [
+        {
+          "label": "baseline",
+          "revision": "96e8aed255a442acb14bbdff5c32877ec201c628",
+          "modules": 65,
+          "projection": "C:\\Users\\savar\\AppData\\Local\\Temp\\here-m3-mypy-1834039c-9e55-4927-b1c6-825998cc6375\\baseline",
+          "config_raw_sha256": "AB0CD315D429899D6364CB31C8370FDA6AE24A737A55EBB1124C5DE561FD6B6F",
+          "args": [
+            "-m",
+            "mypy",
+            "--config-file",
+            "C:\\Users\\savar\\AppData\\Local\\Temp\\here-m3-mypy-1834039c-9e55-4927-b1c6-825998cc6375\\baseline\\pyproject.toml",
+            "--cache-dir",
+            "C:\\Users\\savar\\AppData\\Local\\Temp\\here-m3-mypy-1834039c-9e55-4927-b1c6-825998cc6375\\baseline-cache",
+            "-p",
+            "here"
+          ],
+          "exit": 1,
+          "log": "C:\\Users\\savar\\.codex\\worktrees\\2710\\here\\.superpowers\\sdd\\M3_SEARCH_PLAN\\mypy-baseline.log"
+        },
+        {
+          "label": "candidate",
+          "revision": "adb0b70a5a27cbe8f43406e2df6ee3173287bc11",
+          "modules": 67,
+          "projection": "C:\\Users\\savar\\AppData\\Local\\Temp\\here-m3-mypy-1834039c-9e55-4927-b1c6-825998cc6375\\candidate",
+          "config_raw_sha256": "AB0CD315D429899D6364CB31C8370FDA6AE24A737A55EBB1124C5DE561FD6B6F",
+          "args": [
+            "-m",
+            "mypy",
+            "--config-file",
+            "C:\\Users\\savar\\AppData\\Local\\Temp\\here-m3-mypy-1834039c-9e55-4927-b1c6-825998cc6375\\candidate\\pyproject.toml",
+            "--cache-dir",
+            "C:\\Users\\savar\\AppData\\Local\\Temp\\here-m3-mypy-1834039c-9e55-4927-b1c6-825998cc6375\\candidate-cache",
+            "-p",
+            "here"
+          ],
+          "exit": 1,
+          "log": "C:\\Users\\savar\\.codex\\worktrees\\2710\\here\\.superpowers\\sdd\\M3_SEARCH_PLAN\\mypy-candidate.log"
+        }
+      ],
+      "immutable_artifacts": [
+        "initial-mypy-baseline.log",
+        "initial-mypy-candidate.log",
+        "initial-mypy-baseline-manifest.json",
+        "initial-mypy-candidate-manifest.json",
+        "initial-mypy-baseline-diagnostics.json",
+        "initial-mypy-candidate-diagnostics.json",
+        "initial-mypy-runs.json",
+        "initial-mypy-comparison.json",
+        "initial-mypy-delta.txt"
+      ]
+    },
+    "verified": {
+      "candidate": "75be486d0eca3b24d46959a6294bb4c89381244c",
+      "source_tree": "d1bddf68d55c354064e8e5a9e5d8fbbf3eeacf93",
+      "baseline_errors": 79,
+      "candidate_errors": 78,
+      "added_records": 0,
+      "added_errors": 0,
+      "removed_records": 4,
+      "removed_errors": 1,
+      "removed_notes": 3,
+      "wrapper_exit": 0,
+      "raw_candidate_exit": 1,
+      "baseline_rescanned": false,
+      "candidate_scans": 1,
+      "result": "PASS_NO_NEW_DIAGNOSTIC_RECORDS_FOR_EXACT_D1_NOT_GLOBALLY_CLEAN",
+      "helper": "run-mypy-comparison.ps1",
+      "parameters": [
+        "-Candidate 75be486d0eca3b24d46959a6294bb4c89381244c",
+        "-Baseline 96e8aed255a442acb14bbdff5c32877ec201c628",
+        "-ReuseInitialBaseline"
+      ],
+      "run_records": [
+        {
+          "label": "baseline",
+          "revision": "96e8aed255a442acb14bbdff5c32877ec201c628",
+          "modules": 65,
+          "projection": "C:\\Users\\savar\\AppData\\Local\\Temp\\here-m3-mypy-1834039c-9e55-4927-b1c6-825998cc6375\\baseline",
+          "config_raw_sha256": "AB0CD315D429899D6364CB31C8370FDA6AE24A737A55EBB1124C5DE561FD6B6F",
+          "args": [
+            "-m",
+            "mypy",
+            "--config-file",
+            "C:\\Users\\savar\\AppData\\Local\\Temp\\here-m3-mypy-1834039c-9e55-4927-b1c6-825998cc6375\\baseline\\pyproject.toml",
+            "--cache-dir",
+            "C:\\Users\\savar\\AppData\\Local\\Temp\\here-m3-mypy-1834039c-9e55-4927-b1c6-825998cc6375\\baseline-cache",
+            "-p",
+            "here"
+          ],
+          "exit": 1,
+          "log": "C:\\Users\\savar\\.codex\\worktrees\\2710\\here\\.superpowers\\sdd\\M3_SEARCH_PLAN\\initial-mypy-baseline.log",
+          "reused": true
+        },
+        {
+          "label": "candidate",
+          "revision": "75be486d0eca3b24d46959a6294bb4c89381244c",
+          "modules": 67,
+          "projection": "C:\\Users\\savar\\AppData\\Local\\Temp\\here-m3-mypy-aa98d6c3-7633-45ba-8c2f-f038b2180e46\\candidate",
+          "config_raw_sha256": "AB0CD315D429899D6364CB31C8370FDA6AE24A737A55EBB1124C5DE561FD6B6F",
+          "args": [
+            "-m",
+            "mypy",
+            "--config-file",
+            "C:\\Users\\savar\\AppData\\Local\\Temp\\here-m3-mypy-aa98d6c3-7633-45ba-8c2f-f038b2180e46\\candidate\\pyproject.toml",
+            "--cache-dir",
+            "C:\\Users\\savar\\AppData\\Local\\Temp\\here-m3-mypy-aa98d6c3-7633-45ba-8c2f-f038b2180e46\\candidate-cache",
+            "-p",
+            "here"
+          ],
+          "exit": 1,
+          "log": "C:\\Users\\savar\\.codex\\worktrees\\2710\\here\\.superpowers\\sdd\\M3_SEARCH_PLAN\\mypy-candidate.log"
+        }
+      ],
+      "immutable_artifacts": [
+        "verified-mypy-candidate.log",
+        "verified-mypy-candidate-manifest.json",
+        "verified-mypy-candidate-diagnostics.json",
+        "verified-mypy-runs.json",
+        "verified-mypy-comparison.json",
+        "verified-mypy-delta.txt",
+        "mypy-follow-up-console.log"
+      ],
+      "limits": "Existing78 inherited errors/raw exit1 retained. E3/final integrated mypy not run; D1 result not transferred."
+    }
+  },
+  "B5_repaired_baseline": {
+    "test_only_commit": "075e280d28805b87012c059a74b5d9f95b54aeb7",
+    "test_parent": "96e8aed255a442acb14bbdff5c32877ec201c628",
+    "main_integration": "f3f06bc0f025adff59bc500ee1b73a24b7953a28",
+    "bindings": "b5-repaired-baseline-test-bindings.json",
+    "run": "B5-REPAIRED-BASELINE-THREE-NODES",
+    "classification": "EXPECTED_B5_RED_NOT_M3_REGRESSION",
+    "reached": [
+      "Speaker fixture precondition passes then absent _derived_row_purgers; hook body/order not exercised.",
+      "Readable deleted_origins=[] exposes missing restore-before-rebuild; prior IndexError gone.",
+      "delete --help exits2 No such command delete; old missing-command false positive prevented, no deletion/confirmation success."
+    ],
+    "not_claimed": "No100-case repeat/corrected100 aggregate, no B5 source/fixture/test edits, no B5 lease/GREEN/interoperability/performance acceptance."
+  },
+  "legacy_display_checkpoint": {
+    "failure": {
+      "head": "f3f06bc0f025adff59bc500ee1b73a24b7953a28",
+      "source_tree": "d1bddf68d55c354064e8e5a9e5d8fbbf3eeacf93",
+      "run": "M3A-LEGACY-UI33-RED",
+      "report": "legacy-ui-failure-report.md",
+      "preflight_bindings": "legacy-ui-preflight-bindings.json",
+      "selection": "legacy-ui-runtime-selection.md",
+      "actual_failures": "Blank RuntimeError/OSError diagnostics and ValueError retry; real M3 compatibility regression, no assertion changes; nonempty/whitespace messages pass."
+    },
+    "fix": {
+      "own": "7c9f6d4b44954b7e4d2918f3ed9db9726b463744",
+      "main": "5db071a2d034bda94ed1676d166bcce3aa7f7f0b",
+      "source_tree": "e3ede58c32f5d848988b94dd8c4a5319512546c3",
+      "file": "src/ui/main_window.py",
+      "blob": "c8c0d61ce4f936c6fa80dce41cc6f033ffea630a",
+      "insertions": 8,
+      "deletions": 4,
+      "semantics": "Display-only str(error) or type(error).__name__, error is not None; preserve every nonempty character and original structured Exception/.reason transport",
+      "tests_changed": false,
+      "app_changed": false
+    },
+    "bounded_verification": {
+      "run": "M3A-LEGACY-DISPLAY-BOUNDED-GREEN7",
+      "bindings": "legacy-ui-display-preverification-bindings.json",
+      "exits": "legacy-ui-display-command-exits.json",
+      "selection": "legacy-ui-display-followup-selection.md",
+      "report": "legacy-ui-display-verification-report.md",
+      "coverage": "Same3 RED+2 nonempty/whitespace controls+discovery+structured identity/reason/Qt thread",
+      "ruff_check_exit": 0,
+      "format_check_exit": 0,
+      "pytest_exit": 0,
+      "format_result": "1 file already formatted; no edits",
+      "ruff_logs": [
+        "legacy-ui-display-ruff-check-1.log",
+        "legacy-ui-display-ruff-format-1.log"
+      ],
+      "not_repeated": "No33/44/mypy/full/B5/child projection/build/uv repeat. Current E3 evidence is7-case/Ruff only."
+    },
+    "review": {
+      "reviewer": "/root/task2_review",
+      "head": "5db071a2d034bda94ed1676d166bcce3aa7f7f0b",
+      "verdict": "APPROVED bounded empty-exception presentation repair",
+      "report": "legacy-ui-display-review-report.md",
+      "critical": 0,
+      "important": 0,
+      "minor": 0,
+      "scope": "MainWindow-only+8/-4; no original UI/query/B4 producer re-review or complete task/group approval"
+    }
   }
 }

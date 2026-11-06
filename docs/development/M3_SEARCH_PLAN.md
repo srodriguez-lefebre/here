@@ -84,11 +84,12 @@ B4 mutations/snapshots. Parent search.py is unchanged from e4d; its 177 passes a
 APPROVED CORE review remain bound to e4d. Root reports an isolated probe and
 XML122 without failures. Initial post-handoff M3 runtime was NOT_RUN; subsequent
 focus5/6 establish focused synthetic R48 read-consumer evidence, with changes
-requested by the independent UI review. This is not complete B4 acceptance. B4 title/
-version/index behavior, coherent shared B5 R42 suppression, sole reindex facade
+requested at that stage by the independent UI review. Later accepted B4/title
+consumer evidence below supersedes its earlier pending state. Coherent shared B5
+R42 suppression, sole reindex facade
 and real before-after/no-op equivalence remain pending.
 Small synthetic cases do not establish the guarded 1,000/100,000 p95
-or Qt heartbeat. Full suite, mypy delta and subsequent relevant checks remain open.
+or Qt heartbeat. Full suite, final integrated mypy and subsequent relevant checks remain open.
 Final four-file Ruff check/format passed at e4d after mechanical formatting and an
 explicit same-fixture re-export; no assertions/scenarios were weakened.
 
@@ -126,21 +127,59 @@ worker `7e554f17ff6e3b89ae95786aa81edec3696b30d4` then passed all 42 cases in
 
 Same `/root/task2_review` scoped 825..7e returns **APPROVED IMPLEMENTED UI CHECKPOINT**:
 R1/R2/R3 ADDRESSED, no new confirmed Critical/Important/Minor. Complete Task 2/group
-remain open. Parent `5a81c046a5c8550c609aa0a1d2191c8c97fc41ae` now integrates
+remain open. Historical parent `5a81c046a5c8550c609aa0a1d2191c8c97fc41ae` integrates
 all nine exact UI and three R48 backend blobs, with search.py still reviewed e4d.
 Parent source/tests trees are `ae2b4209b4466278a840bb6c8c0b5194071c941c` /
 `7c1f2559162a71633e60734eed334eaa2f8baaf5`. This proves bounded UI/DTO contract
 equivalence; the 42-case invocation ran at worker 7e, not parent 5a81. No integrated
-full/mypy scan follows from it; the coherent-baseline request is only preparation.
+full/mypy scan follows from it; that stage only prepared the later D1 comparison.
 
 Coordinator released runtime immediately after the latest verification commands,
 before reports/scoped review/parent integration; root ACKed the reserved host.
-This docs stage has no imports/tests/probes/lint/runtime grant. R50 remains
-preparation only, without dependent product source or B5 acceptance. B4 mutations,
-B5 guard/reindex/
-delete notification, guarded p95/heartbeat, full/mypy and final hosted/group gates
-remain pending. `M3_SEARCH_EVIDENCE.json` binds commands, heads, nine executed blobs,
-review findings and retained failures. Core e4d proof/review remains unchanged.
+This docs stage has no imports/tests/probes/lint/runtime grant. The latest integrated
+B4/types/legacy checkpoint below preserves the earlier source scopes and held gates.
+
+### Current integrated checkpoint — frozen 5db071a
+
+Accepted B4 96e8 was integrated as c4cc8ca with exact backend and canonical model 7ac
+plus unchanged R46. Independent title tests own 4e5869f/main adb0b70 use actual public
+ingest_session and FTS. Initial mypy 79→87 adds 9/removes 1 errors; the earlier CRLF
+preflight started zero scans. Same-GREEN truthful types e5ff86b/main 75be486 change
+only contract/bridge/library, no suppression/config/B4/model/query edit. Verified
+comparison reuses revalidated actual 96e8 baseline 65 (raw bytes/provenance, matching
+Python 3.13.15/mypy 2.3.1/config 7143), scans changed candidate 67 once, and reports
+79→78 errors, ZERO added records/errors, four removed (one error/three notes).
+Raw exit 1 is inherited; wrapper 0 is the no-new-errors result for exact D1 only.
+
+UI 44 including both actual current/stale title→version/evidence/FTS paths passes
+14.42s/XML internal 14.385s at HEAD75 plus ONLY pinned test formatter diff. Post-release
+ed8e5aa matches executed D1/tests 26bc/config 7143; it was not the invocation HEAD.
+Same reviewer APPROVED the scoped typing/B4 title-consumer checkpoint at ed8.
+
+Frozen B test-only 075 integrated f3f06bc: three repaired nodes actually fail 3/3.44s
+(XML 3/internal 3.387s) for absent B5 purge hook/tombstone restore/delete command;
+speaker precondition now passes and CLI help prevents the old false positive.
+Separate expected B5 RED, not M3 regression or a corrected 100 aggregate. Legacy 33
+at actual f3/D1 instead finds genuine blank-error regression: 3F/30P/10.44s,
+XML 33/internal 9.406s. Same GREEN MainWindow-only 7c9f6d4→5db071a changes display
+fallback, preserves nonempty characters/structured identity/reason, no tests.
+Exact clean 5db/E3 bounded follow-up: 7P/1.92s, XML 7/internal 1.862s; one-file
+Ruff/format pass without edits. Same reviewer APPROVED the bounded display fix.
+No 33/44/mypy repeat; E3 receives only seven-case/Ruff evidence from this window.
+
+Frozen `5db071a2d034bda94ed1676d166bcce3aa7f7f0b` source/tests/config:
+`e3ede58c32f5d848988b94dd8c4a5319512546c3` /
+`35efb958f45c9b107f3639fe018c6f0df42b3b79` /
+`7143d4deff5acb55e524baa5ee15c101bce9b3b5`. Mechanical sync into the existing docs
+worktree preserves these bytes; no runtime here. Coordinator released immediately
+after commands before reports/review; host now B. R50–R52 signatures are declared
+only, no accepted B5 API or early app/native adapter/stub/second service. Complete
+Task1/Task2/group/M3 remain open: B5 guard/reindex/delete callback/equivalence,
+guarded 1k/100k p95<500ms/Qt<50ms, final integrated full/mypy, preview/global review/
+Copilot/CI/package/guarded merge/certification pending. No version bump.
+`M3_SEARCH_EVIDENCE.json` retains exact commands/SHAs/artifacts and calibration;
+all prior history, core e4 proof/review and acceptance/task blocks remain unchanged.
+
 Composite checkboxes remain unchecked: no partial evidence closes their remaining
 clauses. Group/hosted gates, certification and a 0.4.0 bump are not claimed.
 

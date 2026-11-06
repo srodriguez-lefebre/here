@@ -59,8 +59,9 @@ from reviewed e4d. This supplement does not extend e4d's runs/review to the new
 integration. Root reports an isolated probe and XML122 without failures. At that
 handoff checkpoint M3 consumer runtime was NOT_RUN; later focus5/6 below establish
 focused synthetic R48 read-consumer evidence, with the UI review requesting fixes.
-This is not complete B4 acceptance. B4 update/version/title-index behavior and
-B5's coherent R42 guard and sole reindex/before-after/no-op equivalence remain pending. No
+That narrow checkpoint did not accept B4 mutations; the later accepted B4/title
+checkpoint below supersedes that pending state. B5's coherent R42 guard and sole
+reindex/before-after/no-op equivalence remain pending. No
 alternate parser, authority or rebuild is added.
 
 Historical UI RED/setup errors and focus1/2 failures remain at their original heads.
@@ -105,16 +106,58 @@ integration `5a81c046a5c8550c609aa0a1d2191c8c97fc41ae` matches all nine UI and
 three R48 backend blobs; its source/tests trees and equivalence are recorded in
 JSON. The 42-case invocation ran in worker 7e, never at parent 5a81. Parent search.py
 still matches reviewed e4d; neither prior core nor UI run transfers to a new full
-integrated run. Integrated mypy/baseline preparation has performed no scan yet.
+integrated run. At that stage mypy was preparation only; the later D1 comparison
+and its limits are recorded below.
 
 Coordinator released the latest runtime immediately after verification commands,
 before reports/scoped review/parent integration; root ACKed the reserved host.
-This docs role has no runtime/import/lint grant. R50 remains preparation without
-dependent product source/real B5 acceptance. Real B4 mutations, B5 guard/reindex/
-delete notification,
-guarded 1,000/100,000 p95/heartbeat, full suite, mypy delta and final task/group/
-hosted gates remain open. Small synthetic UI cases supply no large-corpus budget
-or new certification. Query-core e4d proof/review above remains unchanged.
+This docs role has no runtime/import/lint grant. Small synthetic UI cases supply
+no large-corpus budget or new certification; query-core e4d proof/review remains
+unchanged. The later integrated checkpoint below records B4, mypy and the bounded
+legacy repair without transferring earlier results to new source bytes.
+
+### Current integrated checkpoint — frozen 5db071a
+
+Accepted B4 `96e8aed255a442acb14bbdff5c32877ec201c628` was integrated mechanically
+as `c4cc8ca`, preserving the canonical models plus R46 and exact accepted backend.
+Two independent real title-consumer tests use public ingest_session and actual FTS,
+not repository activation. Initial mapped mypy at `adb0b70` found 79→87 errors,
+nine added/one removed; the CRLF preflight stopped BEFORE any scan. Both failures
+are preserved. Truthful UI types in own `e5ff86b`/main `75be486` then produced
+79→78 errors, zero added records/errors and four removed records (one error/three
+notes). Actual baseline 96e8's 65-module evidence/raw bytes/tool/config context was
+revalidated and reused; only the changed 67-module candidate was rescanned, using
+Python 3.13.15/mypy 2.3.1/config 7143d4de. Raw mypy exit 1 reflects inherited errors;
+comparison wrapper exit 0 proves this exact-source no-new-errors checkpoint.
+
+UI 44 passed in 14.42s (XML internal 14.385s) at HEAD75 plus ONLY the pinned test formatter
+diff; post-release `ed8e5aa` matches executed D1 source/test/config content, not a
+later-HEAD invocation. Both current/stale title paths verify actual version,
+evidence and FTS behavior without overwrite/retry or default-root DB. The same
+reviewer APPROVED this scoped typing/B4-title checkpoint at ed8, with no findings.
+
+Frozen test-only B5 repairs integrated as `f3f06bc` leave source D1 unchanged:
+three expected B5 failures/3.44s (XML 3/internal 3.387s) are absent purge hook, readable
+missing tombstone restoration and absent delete command; no false confirmation
+pass or corrected 100-case aggregate. They are separate from legacy 33 at f3:
+three genuine empty-exception display failures/30 passes/10.44s (XML 33/internal 9.406s).
+Same GREEN's MainWindow-only `7c9f6d4`→`5db071a2d034bda94ed1676d166bcce3aa7f7f0b`
+changes display fallback only, preserving nonempty text and structured exceptions.
+The bounded E3 follow-up passed seven cases/1.92s (XML 7/internal 1.862s), plus one-file
+Ruff/format without edits. Same reviewer APPROVED this bounded presentation fix.
+No 33/44/mypy repeat occurred; E3 has seven-case/Ruff evidence only, never D1's
+UI 44/no-new-mypy results relabeled as fresh E3 runs.
+
+Current source/tests/config are `e3ede58c32f5d848988b94dd8c4a5319512546c3` /
+`35efb958f45c9b107f3639fe018c6f0df42b3b79` /
+`7143d4deff5acb55e524baa5ee15c101bce9b3b5`. Coordinator released runtime immediately
+after commands, before reports/review; root now owns the host. R50–R52 are declared
+contracts/preparation, no accepted B5 API, stub, second service or native adapter;
+app.py is unchanged. Complete tasks/group/M3 remain open: real B5 guard/reindex/
+delete callback and equivalence, guarded 1k/100k p95<500ms/Qt<50ms, integrated full/
+final mypy, preview/global review/hosted Copilot/CI/package/merge/certification
+remain pending. No criteria/checklist/version change is made.
+
 Commands, exact heads, artifacts and limits are recorded in
 `M3_SEARCH_EVIDENCE.json`; acceptance criteria below are unchanged. This is focused
 automatic evidence, no certification or task/group/milestone closure; no 0.4.0 bump.
@@ -414,9 +457,10 @@ safeguards, not implement another recovery flow.
 The accepted A and contract-documentation merges permit the current independent
 query work. M3's own hosted gates and merge remain open. Search does not implement
 these inherited fixes, expose private producer handoffs, choose a retry API or
-issue provider/replay work. Frozen B model/error declarations are integrated;
-the isolated R48 read supplement is available, while real M3 consumer verification,
-B4 mutations and B5 guard/reindex acceptance remain pending.
+issue provider/replay work. Frozen B model/error declarations are integrated.
+The isolated R48 read supplement and later accepted B4/title-consumer checkpoint
+retain the verification scopes recorded above; B5 guard/reindex and final
+integrated acceptance remain pending.
 
 No playback, no citation target resolution, no CLI, no participant editing beyond
 what M2 already exposes, no provider call, no semantic search, no transcript text
