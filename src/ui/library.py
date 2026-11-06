@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import replace
 from datetime import datetime, time, timezone
 
@@ -38,6 +39,7 @@ from PySide6.QtWidgets import (
 )
 
 _NO_DATE = QDate(1900, 1, 1)
+_AUXILIARY_READS = frozenset({"library-participants", "library-detail"})
 _STATUS_LABELS = {
     MeetingStatus.RECORDING: "Grabando",
     MeetingStatus.PROCESSING: "Procesando",
@@ -100,6 +102,8 @@ class LibraryView(QWidget):
         self._detail_generation = 0
         self._participant_generation = 0
         self._requests: dict[str, tuple[int, int]] = {}
+        self._read_workers: dict[int, str] = {}
+        self._pending_reads: dict[str, tuple[Callable[[], object], int]] = {}
         self._cursor = None
         self._query = MeetingQuery()
         self._items: list[MeetingSummary | SearchHit] = []
@@ -231,6 +235,7 @@ class LibraryView(QWidget):
         self._participant.currentIndexChanged.connect(self._query_changed)
         self._partial.toggled.connect(self._query_changed)
         self._jobs.finished.connect(self._finished)
+        self._jobs.settled.connect(self._read_settled)
 
     @staticmethod
     def _date_control(name):
@@ -250,9 +255,61 @@ class LibraryView(QWidget):
             self.refresh()
 
     def _submit(self, kind, operation, generation):
+        if self._closed:
+            return
+        if kind == "library-page" and not self._auxiliary_running():
+            # Preserve latest-page responsiveness while an older PAGE is running.
+            # This intentionally does not serialize page/page backend operations.
+            self._pending_reads.pop(kind, None)
+            self._start_read(kind, operation, generation)
+        elif kind == "library-page" or kind in _AUXILIARY_READS:
+            self._pending_reads[kind] = (operation, generation)
+            self._dispatch_pending_reads()
+        else:
+            self._start_job(kind, operation, generation)
+
+    def _start_job(self, kind, operation, generation):
         request = self._jobs.submit(kind, operation)
         if request is not None:
             self._requests[kind] = (request, generation)
+        return request
+
+    def _start_read(self, kind, operation, generation):
+        request = self._start_job(kind, operation, generation)
+        if request is not None:
+            self._read_workers[request] = kind
+
+    def _auxiliary_running(self):
+        return any(kind in _AUXILIARY_READS for kind in self._read_workers.values())
+
+    def _read_generation(self, kind):
+        if kind == "library-participants":
+            return self._participant_generation
+        if kind == "library-detail":
+            return self._detail_generation
+        return self._generation
+
+    def _dispatch_pending_reads(self):
+        if self._closed or self._auxiliary_running():
+            return
+        page = self._pending_reads.pop("library-page", None)
+        if page is not None:
+            operation, generation = page
+            if generation == self._generation:
+                self._start_read("library-page", operation, generation)
+                return
+        if self._read_workers:
+            return
+        while self._pending_reads:
+            kind = next(iter(self._pending_reads))
+            operation, generation = self._pending_reads.pop(kind)
+            if generation == self._read_generation(kind):
+                self._start_read(kind, operation, generation)
+                return
+
+    def _read_settled(self, request):
+        if self._read_workers.pop(request, None) is not None:
+            self._dispatch_pending_reads()
 
     def _load_participants(self):
         if self._closed:
@@ -578,6 +635,7 @@ class LibraryView(QWidget):
 
     def shutdown(self):
         self._closed = True
+        self._pending_reads.clear()
         self._generation += 1
         self._debounce.stop()
         self.close_detail()

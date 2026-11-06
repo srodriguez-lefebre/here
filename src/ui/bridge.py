@@ -59,6 +59,7 @@ class BackgroundJobs(QObject):
     """Retain jobs until actual thread exit; all Qt delivery stays on the Qt thread."""
 
     finished = Signal(int, str, object, object)
+    settled = Signal(int)
     busyChanged = Signal(bool)
     idleChanged = Signal()
 
@@ -113,6 +114,9 @@ class BackgroundJobs(QObject):
             del self._pending[request_id]
             if not self._closed:
                 self.finished.emit(request_id, kind, outcome.value, outcome.error)
+            # Internal scheduling ownership ends only after actual worker exit,
+            # including when shutdown suppresses result/error delivery.
+            self.settled.emit(request_id)
             self.idleChanged.emit()
             # Completion callbacks may submit replacement work. Publish the
             # resulting shared state after those callbacks, not a transient idle.
