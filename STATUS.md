@@ -47,6 +47,14 @@ tipográfica respondida4491036067/hilo resuelto. CI42196684370:980P/2skips wheel
 277,06s; package42196683781 success sobre13f. Merge guardado, ledger root1f3d0ec.
 Sin source/tests/config/version nuevos; no valida B5/M3 por arrastre.
 
+PR documental [#24](https://github.com/srodriguez-lefebre/here/pull/24) mergeado
+3e76a207cf828b50b8e07cbd8136830b38fea80b a2026-11-06T12:52:24Z. Head3e2f6bff768de0a36b7b6f6704f5b36a9637ae90,
+review independiente APPROVED/R1–R2 ADDRESSED. Copilot5800249014 recibido12:45:47Z
+tras solicitud12:43:20Z, sin observaciones. CI42219811270:980P/2skips wheel/326,90s;
+package42219811401 success, ambos head exacto. Merge commit guardado y ledger
+en DELIVERY. SPEC/PLAN M3 B preparados y R53–56 publicados; no GO de ejecución.
+Los checks validan fuente A sin cambios, no el producto B/M3 aún no mergeado.
+
 Root creó los dos chats pedidos en el mismo proyecto, cada uno con worktree y
 rama propios. Ambos se inicializaron clean en contratos73d3cb3 con A53712c5 como
 ancestro; hoy contienen el trabajo detallado debajo. No recrearlos ni reiniciarlos.
@@ -54,9 +62,10 @@ ancestro; hoy contienen el trabajo detallado debajo. No recrearlos ni reiniciarl
 Proyecto `local-e307e59e09194b354122137b16ef6d77`, host `local`; raíz original
 `C:/Users/savar/Documents/proyects/here` preservada. Root orquesta desde
 `C:/Users/savar/.codex/worktrees/m2-catalog/here`, rama
-`codex/m3-library-contracts`, con base de contratos73d3cb3 y mainc4d79b2 integrado.
+`codex/m3-library-contracts`, con base de contratos73d3cb3 y main3e76a20 integrado.
 La rama anterior `codex/m2b-m3a-orchestration` preserva sus checkpoints hasta883e3cd.
-Esta rama prepara el PR documental de contratos de M3 B; no inicia su implementación.
+Esta rama publicó el PR24 de contratos de M3 B; conserva ahora su anotación posterior
+al merge. No inicia la implementación B.
 
 | Frente / responsable ejecutor | Chat ID | Rama | Worktree | Base |
 |---|---|---|---|---|

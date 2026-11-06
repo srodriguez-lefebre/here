@@ -2154,3 +2154,36 @@ Merge commitc4d79b2759cb857094f5fa22adf5b1ad2865f69b at2026-11-06T09:47:58Z.
 This closes the records PR only. M2 B/M3 A, actual native/guarded interoperability,
 milestone versions, final suites and certification remain open. No gate or DoD
 changed; two hours stays **omitida por ruling 5**.
+
+## 2026-11-06 — M3 B preparation/contracts PR #24 merged
+
+PR [#24](https://github.com/srodriguez-lefebre/here/pull/24) publishes the prepared
+M3 B SPEC/PLAN, R53–56 and source-bound coordination/acceptance records. It changes
+six documentation files only. Independent reviewer parallel_contracts_review
+APPROVED final head3e2f6bff768de0a36b7b6f6704f5b36a9637ae90; publication/dispatch
+R1 and historical-checkpoint R2 ADDRESSED, no open findings. All11 acceptance
+criteria,14 full task blocks and Closing requirements remain; no M3 B dispatch.
+
+Copilot was requested on that exact head at2026-11-06T12:43:20Z. Actual bot review
+5800249014 COMMENTED at12:45:47Z recommends approval/no open issues. There were
+zero inline observations, so no reply/fix loop was necessary. Exact-head Windows
+CI42219811270 succeeded:980 passed/two installed-wheel environment skips/326.90s;
+Windows package42219811401 succeeded. Source5c66169c0a93a8f0606a011bd9570bbdd9137903,
+testsfb958d021eaf7d149c00a3a1be174e36fbef2a1c and config7143d4d remain identical to
+main/A. These checks do not validate unmerged B/M3 product changes.
+
+Root verified non-draft/main/exact head, independent verdict, received bot review,
+zero observations and both completed successful Windows runs before invoking
+`gh pr merge 24 --merge --admin --match-head-commit 3e2f6bff768de0a36b7b6f6704f5b36a9637ae90`.
+Merge3e76a207cf828b50b8e07cbd8136830b38fea80b at2026-11-06T12:52:24Z.
+Raw reviews/comments/checks/run metadata and complete CI log are retained as
+`.superpowers/m3-library-contracts-pr24-*`; the independent report is
+`m3-library-contracts-pr-review-report.md` under the root SDD reports.
+
+This closes documentation only. B whole-review W1/W2/W3, successful full, final
+types/docs/native/consumer integration and product delivery remain open. M3's
+valid R55 p95902.413285ms still fails500ms and UI heartbeat is incomplete.
+No new hardware/provider/clean-install certification or version change;0.2.0
+remains current. Two hours stays **omitida por ruling 5**, never passed. M3 B GO
+still requires the actual reviewed/open-A-PR handoff and accepted contracts;
+early M5 B still waits for actual M2 B merge.
