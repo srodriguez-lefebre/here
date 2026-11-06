@@ -487,6 +487,20 @@ Los rulings nuevos se escriben en español por el ruling 6.
     wrong:** ajustar la clasificación de errores/advertencia y su cobertura,
     manteniendo evidencia incierta y el botón de proveedor deshabilitado.
 
+44. **Ruling:** la observación `4488473222` de Copilot `5795057762` se corrige
+    preservando R33/R40/R43. Si el catálogo no permite resolver ownership de un
+    manifiesto legado válido con ID ausente u opaco, discovery devuelve solo su
+    advertencia de biblioteca no reintentable, con texto fijo acotado. No inspecciona
+    audio, materializa, inventa UUID/padre, modifica fuente o catálogo corrupto,
+    ni llama al proveedor. El fallo de resolución de catálogo se distingue del
+    lock de un dueño real activo y de un rechazo de ruta; esos guards siguen
+    impidiendo inspección/mutación. Se prueban corrupción SQLite real, identidad
+    legada y controles sanos/owner activo con RED independiente y review del diff.
+    La verificación completa mantiene la ruta R43: focos y wheel/smokes locales,
+    suite completa Windows en el head exacto y Copilot nuevo recibido/respondido
+    antes del merge. **Cost if wrong:** ajustar clasificación/advertencia y sus
+    lectores, conservando evidencia incierta y bloqueo de toda acción sin ownership.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
