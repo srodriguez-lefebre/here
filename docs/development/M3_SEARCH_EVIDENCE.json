@@ -270,7 +270,7 @@
   "remaining_gates": [
     "Accepted sole B5 R42 coherent suppression snapshot in reads and R45 generation; typed fail-closed invalid/inaccessible registry; suppression in SQL before cursor/LIMIT, including pending barrier when SQL hide failed and surviving receipts after DB loss/rebuild.",
     "Accepted sole B5 reindex facade, missing-FTS reporting, complete-only/include_partial before-after equivalence, actual no-op generation equivalence and changed-input cursor rejection.",
-    "Actual B4 update_meeting optimistic row_version/title-index consistency and R48 get_meeting/list_participants canonical immutable participant/link/assignment payloads plus same injected controller MemoryService/custom root; model/error handoffs do not establish these.",
+    "Actual B4 update_meeting optimistic row_version/title-index consistency and real M3 R48 UI/backend consumer verification remain pending. Isolated coherent get_meeting/list_participants and shared injected-controller getter handoff is technically available in the separate supplement; root-reported probe does not establish consumer acceptance.",
     "Real UI adapters, current-only request/corpus_changed restart, debounce/close-detail/conflict behavior, queued pre-delete callback invalidation and accessibility/themes; focused UI GREEN and independent review.",
     "Guarded 1,000/100,000 warm p95 below 500ms including final digest/guard work; actual Qt heartbeat no event-loop block above 50ms, under root exclusive runtime grant.",
     "Full offscreen suite and mypy baseline comparison/no new touched-file errors at eventual integrated head; appropriate checks for later relevant edits.",
@@ -293,5 +293,40 @@
     "two_hour_recording": "OMITTED under ruling 5, never approved"
   },
   "runtime_coordination": "Both M3 windows explicitly RELEASED; root assigned B GREEN R48/full next. No runtime grant or runtime execution for this documentation stage.",
-  "invariants": "No acceptance/DoD, product flow, dependency, schema, privacy or retention changes. No new hardware/provider/clean-install certification, no milestone closure or 0.4.0 bump."
+  "invariants": "No acceptance/DoD, product flow, dependency, schema, privacy or retention changes. No new hardware/provider/clean-install certification, no milestone closure or 0.4.0 bump.",
+  "technical_supplements": [
+    {
+      "name": "R48_ISOLATED_READ_HANDOFF",
+      "recorded_on": "2026-11-06",
+      "status": "TECHNICAL_HANDOFF_AVAILABLE_CONSUMER_VERIFICATION_PENDING",
+      "authorization": "Root expressly authorized isolated read-only R48 handoff; not global B4 acceptance.",
+      "original_commit": "e0d083ae2aebb0ef1b1d428f6b3beba42ac9030f",
+      "parent_integration_commit": "7d925472fedb6d71bc2ab64dd6cb2256b2801277",
+      "ui_worktree_sync_commit": "b3628a705fde1afb69690bb72a0960829615d575",
+      "models_blob_in_parent_and_ui": "7ac51f614e272d57479823fbcbb056844a924ca6",
+      "original_scope": {
+        "files": [
+          "src/application/controller.py",
+          "src/memory/models.py",
+          "src/memory/service.py"
+        ],
+        "insertions": 125,
+        "controller_getter_lines": 5,
+        "model_lines": 18,
+        "service_lines": 102,
+        "behavior": "Canonical coherent get_meeting/list_participants DTO reads and read-only access to the SAME injected MemoryService. No B4 mutations or snapshots."
+      },
+      "integration_note": "Parent mechanically resolved model append conflict preserving exact R48 and unchanged R46 declarations; UI sync follows source-only 846c53f.",
+      "parent_query_blob": "034624cb10cd5b85c67a742fdb45950d66c3bc6a",
+      "parent_query_change_vs_frozen_e4d": "NONE; source/test trees and all prior run/review bindings above remain the original e4d checkpoint, not new integration results.",
+      "root_reported_probe": "Root reports isolated probe against base and XML122 without failures. This is root-reported handoff evidence, not a local M3 execution or consumer acceptance.",
+      "M3_local_after_handoff": {
+        "runtime": "NOT_RUN",
+        "import": "NOT_RUN",
+        "lint": "NOT_RUN",
+        "real_backend_UI_consumer_tests": "NOT_RUN"
+      },
+      "limits": "No attribution of 177 passes or APPROVED CORE to 7d925/b3628. UI remains SOURCE_PREPARED/runtime0; actual R48 consumer verification, B4 mutation/title-index/version acceptance, B5 R42/reindex, full/mypy/performance and final gates remain pending."
+    }
+  ]
 }

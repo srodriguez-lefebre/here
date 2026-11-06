@@ -72,10 +72,20 @@ same assessment after actual remaining integrations/evidence; no global review
 or final Task 1 approval is recorded.
 
 Frozen R46 DTO/model/error handoffs are integrated and models returned to B.
-Only the independent query/list/filter/FTS/hybrid/literal/cursor core is covered;
-real B4/R48 backend and title/version/index behavior, coherent shared B5 R42
-suppression, the sole reindex facade and real before/after/no-op equivalence are
-pending. Small synthetic cases do not establish the guarded 1,000/100,000 p95
+Only the independent query/list/filter/FTS/hybrid/literal/cursor core is covered.
+The later isolated R48 read supplement is available at original
+`e0d083ae2aebb0ef1b1d428f6b3beba42ac9030f`, parent
+`7d925472fedb6d71bc2ab64dd6cb2256b2801277` and UI-worktree sync
+`b3628a705fde1afb69690bb72a0960829615d575`; models blob is
+`7ac51f614e272d57479823fbcbb056844a924ca6` in both consumers. It adds coherent
+canonical detail/participant reads and the same injected controller getter, no
+B4 mutations/snapshots. Parent search.py is unchanged from e4d; its 177 passes and
+APPROVED CORE review remain bound to e4d. Root reports an isolated probe and
+XML122 without failures; M3 local runtime/import/lint and actual UI/backend
+consumer tests after handoff are NOT_RUN. Real R48 consumer acceptance, B4 title/
+version/index behavior, coherent shared B5 R42 suppression, sole reindex facade
+and real before-after/no-op equivalence remain pending.
+Small synthetic cases do not establish the guarded 1,000/100,000 p95
 or Qt heartbeat. Full suite, mypy delta and subsequent relevant checks remain open.
 Final four-file Ruff check/format passed at e4d after mechanical formatting and an
 explicit same-fixture re-export; no assertions/scenarios were weakened.

@@ -47,11 +47,20 @@ normalization, bound queries, R39 keysets, R41 hybrid/literal routes and R45
 snapshot/generation behavior. It does not establish lifecycle-integrated reads.
 
 R46's frozen DTOs and canonical B model/error handoffs are integrated; the models
-lease is returned to B. R47/R48 declarations below remain governing. Actual B4
-update/version/title-index behavior and R48 backend reads/detail relations/shared
-controller access still await accepted handoff; B5's coherent R42 guard and sole
-reindex facade/equivalence are not integrated. No-op reindex generation equivalence
-also awaits the real operation. No alternate parser, authority or rebuild is added.
+lease is returned to B. R47/R48 declarations below remain governing. A subsequent
+isolated R48 technical read handoff is now available: original
+`e0d083ae2aebb0ef1b1d428f6b3beba42ac9030f`, parent integration
+`7d925472fedb6d71bc2ab64dd6cb2256b2801277`, UI-worktree sync
+`b3628a705fde1afb69690bb72a0960829615d575`. It supplies canonical coherent detail/
+participant reads and the shared injected controller getter; it includes no B4
+mutations/snapshots. Parent/UI models agree at blob
+`7ac51f614e272d57479823fbcbb056844a924ca6`; the parent's query source is unchanged
+from reviewed e4d. This supplement does not extend e4d's runs/review to the new
+integration. Root reports an isolated probe and XML122 without failures; M3 local
+runtime/import/lint and real UI/backend consumer verification remain NOT_RUN.
+B4 update/version/title-index behavior, real R48 consumer acceptance, B5's coherent
+R42 guard and sole reindex/before-after/no-op equivalence remain pending. No
+alternate parser, authority or rebuild is added.
 
 UI RED observed two failures/eight passes, then two failures/eight passes/26 setup
 errors after DTO handoff: absent LibraryView prevented all 26 widget assertions.
@@ -360,7 +369,8 @@ The accepted A and contract-documentation merges permit the current independent
 query work. M3's own hosted gates and merge remain open. Search does not implement
 these inherited fixes, expose private producer handoffs, choose a retry API or
 issue provider/replay work. Frozen B model/error declarations are integrated;
-real B4/R48 actions and B5 guard/reindex still await accepted contracts.
+the isolated R48 read supplement is available, while real M3 consumer verification,
+B4 mutations and B5 guard/reindex acceptance remain pending.
 
 No playback, no citation target resolution, no CLI, no participant editing beyond
 what M2 already exposes, no provider call, no semantic search, no transcript text
