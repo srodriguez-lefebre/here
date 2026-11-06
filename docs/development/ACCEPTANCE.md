@@ -12,12 +12,12 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M1 | Provider/timestamps and diarization | Synthetic real-provider run and segment output inspected | Single/multiple-source TTS smokes passed; long transcription/diarization omitted by explicit user instruction |
 | M1 | Failure/crash/network/disconnection/disk-pressure recovery | Fault-injection plus bounded hardware run | PR12 faults, writer/publication process kills and helper-owner death passed; native recoverable saved failure passed; no repeated installed fault matrix claim; long run omitted by user |
 | M1 | Installed application opens, records and uninstalls | Fresh Windows installation and bundled-runtime smoke | Incorporated-source `1740b2d` local Windows 11 frozen GUI/CLI, Start launch, active-update refusal, reinstall/uninstall and data preservation passed; recording retains earlier source evidence; distribution peer review/clean hosted package CI/merge pending |
-| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | C4 integrado 56af525:GREEN 8/afectado 124 y distribución4 pasan; review final/suite Windows completa exact-head pendientes bajo R43. Full5CDF/CI_D23 históricos. Grupo/merge/B abiertos; sin certificación |
+| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | C5 implementado c59ae33:GREEN6/afectado169/distribución4 verificados automáticamente en local; review final y suite Windows completa exact-head pendientes bajo R43/R44. CI5b974/2 histórico. Grupo/merge/B abiertos; sin certificación |
 | M2 · criterio 2 | Grabación, archivo y retry comparten persistencia de aplicación | CLI delega a SessionProcessor, artefactos y fallos compatibles | Consolidación verificada en focos de tarea 2; integración de catálogo implementada en 7bfd0cb con foco final 26; full4 y review técnica final aceptados; CI pendiente |
 | M2 · criterios 6–7 | Segmentos nullable y pausa sin desplazar el WAV | Cinco recorridos con proveedor fake, procedencia y seek de marcas en WAV sintético | Verificados automáticamente en focos de tarea 2 y catálogo implementado en tarea 3; full4 y review técnica final aceptados; sin certificación de captura/proveedor |
 | M2 · criterio 8 | Migración transaccional, backup administrado y rechazo de esquema futuro | FK/integrity, rollback de DDL y snapshot SQLite API con WAL comprometido | Verificado automáticamente en local: M2A-T1-LOCK-GREEN-20261105 y M2A-T1-FINAL-20261105; CI del grupo pendiente |
 | M2 · criterio 14 | Busy tipado y acotado, sin trabajo de proveedor/archivos en transacción | Segunda conexión real con bloqueo de escritura y EXCLUSIVE sobre lecturas | Base verificada en tarea1 y publicación implementada en tarea 3, con focos de recuperación Busy; full4 y review técnica final aceptados; CI pendiente |
-| M2 · criterio 15 | Suite completa en CI de Windows sin credencial real ni display | Corrida hospedada sobre el head exacto del PR M2 A | Pendiente; M2A-T1-FINAL-20261105 es local y no cierra esta fila |
+| M2 · criterio 15 | Suite completa en CI de Windows sin credencial real ni display | Corrida hospedada sobre el head exacto del PR M2 A | Pendiente para C5; CI5b42151367541 pasa974/2 skips wheel/349,23 s solo sobre5b. No cierra la fila del nuevo head corregido |
 | M2 | Deletion clears managed memory without resurrection | DB/FTS/files/answers/backup inspection after restart | Open |
 | M3 | Listing/filter/search and original moment navigation | End-to-end Qt selection and seek plus real WAV marker playback | Open |
 | M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | Open |
@@ -30,7 +30,34 @@ must be synthetic; credentials and private conversations never enter evidence fi
 
 ## Current execution scope
 
-C4 actual 56af525 desde 0a28842, src a17ec107c212d62e1984bb1cede094b579db5137 y
+C5 actual implementado c59ae331ebf124400ef3e476e5f0fcc029e83999 desdee8bd181:
+src5c66169c0a93a8f0606a011bd9570bbdd9137903 y testsfb958d021eaf7d149c00a3a1be174e36fbef2a1c.
+R44 conserva metadata legada visible con aviso fijo no reintentable cuando falla
+resolver ownership, sin leer material sensible ni inferir identidad; dueño real y
+paths inseguros siguen bloqueados y materialize falla cerrado. Review final de
+fuente/docs pendiente. Verificado automáticamente en local por las corridas siguientes,
+con datos sintéticos; sin certificación nueva ni cierre de A/M2.
+
+| Corrida nombrada | Resultado observado | Alcance y límites |
+|---|---|---|
+| M2A-COPILOT3-RED-20261106 | 2 fallos/3 controles pasan en10,98 s; ambigüedad adicional1 fallo/2,95 s | Seis casos distintos sobre5b, tres RED/tres PASS en dos corridas; corrupción SQLite real None/opaco y origen ambiguo FK-válido. No fue un único run de seis |
+| M2A-COPILOT3-GREEN-20261106 | 6 pasan/4,24 s | Metadata/bytes intactos, cero probes protegidos, stale materialize y guard real del adapter; sin catálogo y lock OS mapeado real como controles |
+| M2A-COPILOT3-AFFECTED-20261106 | 169 pasan/114,05 s, cero skips | Diecisiete archivos de recuperación/ownership/controller/UI/capture faults; no suite completa |
+| M2A-COPILOT3-WHEEL-c59ae33 | Probe65 fuentes iguales, no editable/schema2/FTS5; distribución4 pasan/7,51 s | XML4/0F0E0S/interno7,456; CLI3,996/GUI2,757/mutex0,007/path0,559. FK/integrity correctos informados por root; no instalación limpia |
+
+Ruff/format2 limpios; mypy canónico5b/current79/79 en65 fuentes/20 archivos, sin
+mensajes nuevos; la base global no está limpia. Probe de2026-11-06T03:08:14.816511Z:
+`.superpowers/m2a-wheel-catalog-probe-c59ae33.json`; logs/XML
+`.superpowers/m2a-copilot-3-wheel-smokes.log`/`.xml`. Wheel SHA256
+`2c49dd9d896ce4b46d932bddc2f58cfb09380c7a22fe6d0d6a1f2e2f2c096de5`;
+sdist `952b4706e290bc8e9134e61def5dadc09b341edf311ca136c46923ba8b7ee9a4`.
+Docs leyó logs/probe y parseó XML; no ejecutó runtime. R43/R44 mantienen la suite
+completa obligatoria en Windows CI del nuevo head antes del merge, sin full local7
+duplicado. CI5b42151367541 pasa974/2 wheel skips/349,23 s y package42151367491 pasa:
+históricos para C5. Copilot5795057762 sobre5b confirmó C4 y abrió C5/4488473222;
+C5 aún no respondido/publicado, nueva review recibida y CI exacto pendientes.
+
+Checkpoint histórico C4 56af525 desde 0a28842, src a17ec107c212d62e1984bb1cede094b579db5137 y
 tests c6a29f96af9ffc1e0c488ca73a430ef9a99b86b6. RED 6 fallan/2 controles pasan/
 6,69 s; GREEN 8/8,18 s, afectado 124/90,52 s sin skips. Ruff/format 2 limpios y
 mypy D23/current 79/79 sin nuevos. Probe fresco no editable 65 archivos iguales,
@@ -39,11 +66,12 @@ schema 2/FTS5 y FK/integrity informados por root. Distribución4 pasan 7,44 s, X
 Wheel SHA256 `cdc99d7b0b76bdce2d8c606edb7adabcd335984be4fc0bce000690648a5bc37a`;
 sdist `df30e3ffc9aa4e33d4b5b995f982d1c52097541ff1633b0035ee00074d686eb3`.
 Logs `.superpowers/m2a-copilot-2-wheel-smokes.*`, probe 56af525 de 02:26:03.485121Z.
-Review final pendiente. R43 conserva el gate de suite completa: Windows CI sobre
+Review final APPROVED con docs58176ce; C4 reply4488439090/hilo resuelto y confirmado
+por Copilot5795057762; suite5b completa pasa974/2/349,23 s. R43 conserva el gate de suite completa: Windows CI sobre
 el head exacto nuevo antes del merge; no duplicar con local full6. Full5CDF y
 CI_D23 (966 pasan/2 wheel skips/331,02 s,42147566672; package42147566683 pasa)
-son históricos. Copilot 5794829768 sobre D23 resolvió C1–C3 y abrió C4; aún faltan
-respuesta C4/nueva review recibida/CI exacto/merge. Sin cierre ni certificación.
+son históricos. Copilot 5794829768 sobre D23 resolvió C1–C3 y abrió C4, después
+resuelto como se registra arriba. Sin cierre ni certificación.
 
 Checkpoint histórico PR #21: fuente c3cdf08 integra C1/C2/C3 bajo R40, desde
 61fb8e2, con src b465d3198840f96d5d15a85eeb45e4312e4c4dec y tests

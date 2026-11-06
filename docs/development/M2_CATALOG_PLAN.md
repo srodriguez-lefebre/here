@@ -18,14 +18,28 @@
 **Goal:** Durable meeting identity, immutable transcript revisions and one
 application-owned persistence path, rebuildable from files and usable without a key.
 
-**Current PR #21 checkpoint:** Copilot 5794829768 COMMENTED on D23 resolves C1–C3
+**Current PR #21 checkpoint:** Copilot5795057762 COMMENTED on5b at02:42:41Z confirms
+C4 resolved and adds C5/inline4488473222. R44 sourcec59ae33 frome8bd181 preserves
+valid legacy metadata as a bounded nonretryable warning if catalog ownership
+cannot be resolved, before marker/error/audio/native inspection. Real owner/path
+guards and stale materialization remain fail-closed, with no invented identity or
+source/DB mutation. Independent RED six distinct cases:3 failures/3 controls across
+two sequential runs (13.93s summed); GREEN6/4.24s; affected169/114.05s, no skips;
+Ruff/format2 clean, canonical mypy79/79 without new messages. Fresh65-file byte-equal
+noneditable probe and distribution4/7.51s pass, including both installed-wheel smokes.
+Final scoped source/docs verdict, C5 reply, newly received Copilot and complete
+exact-head Windows suite/package CI remain pending before guarded merge. R43/R44
+require that complete CI gate; no duplicate local full7, new certification or closure.
+
+**Historical C4 checkpoint:** Copilot 5794829768 COMMENTED on D23 resolves C1–C3
 and adds C4/inline 4488285573. R43 correction 56af525 from 0a28842 catches marker-data
 ValueError locally, re-raises UnsafeSessionPath, and retains a bounded nonretryable
 warning before WAV probing. RED 6 fail/2 controls in6.69s; GREEN 8 in 8.18s;
 affected 124 in 90.52s, no skips. Fresh65-file noneditable probe and 4 distribution
-cases pass, including both installed-wheel smokes. Scoped final verdict pending.
-R43 assigns the mandatory current complete suite to exact-head Windows CI before
-merge; no duplicate local full6. ReplyC4/new received Copilot/newhead CI/merge pending.
+cases pass, including both installed-wheel smokes. Scoped final verdict APPROVED
+with docs58176ce. Reply4488439090 resolves C4; newly received Copilot5795057762
+confirms that resolution. CI5b974/two wheel skips/349.23s and package pass for5b
+only, historical for C5. No duplicate local full6 was run.
 
 **Historical PR #21 checkpoint:** Copilot `5794475912` on published `3394149`
 confirmed C1 ordinary callback rollback, C2 default-processor catalog composition

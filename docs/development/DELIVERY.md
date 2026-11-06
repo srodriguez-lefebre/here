@@ -1592,3 +1592,51 @@ verdict update. No further local runtime/review requested. R43 still requires th
 COMPLETE Windows suite/package on the actual corrected published head before
 merge, plus newly received/responded Copilot. No localfull6, group/milestone close
 or real certification is asserted by this scoped technical approval.
+
+## 2026-11-06 — Copilot C5 integrated; current full-suite hosted gate pending
+
+Review5795057762 COMMENTED on5b515e8844cc0d135461517dd55e907b65845c4d at
+02:42:41Z confirms C4 resolved and adds C5/inline4488473222. C4 reply4488439090
+and threadPRRT_kwDORsQx4M60We91 are resolved. Complete Windows CI5b42151367541
+passes974/two wheel-environment skips/349.23s and package42151367491 passes;
+these results prove5b only and remain historical for the new C5 correction.
+
+R44 was committed4375247 before implementation. Rootc59ae331ebf124400ef3e476e5f0fcc029e83999
+integratese8bd181f12fcfc25b8d66365689823552fa4e50b: src5c66169c0a93a8f0606a011bd9570bbdd9137903,
+testsfb958d021eaf7d149c00a3a1be174e36fbef2a1c, identical to worker. Only recovery.py
+and one new independently authored test change. Actual retry_parent LibraryError
+or ambiguous-origin ValueError becomes a private signal; discovery keeps already
+validated legacy metadata visible with its real identity/status/duration and a
+fixed bounded nonretryable warning. It inspects no marker/error/audio/native
+material for that warning and changes no source/catalog bytes. Actual owner-busy
+and unsafe-path guards remain strict; stale materialize fails closed. No invented
+UUID/parent/proof, provider call, repair, schema/dependency/version/deadline change.
+
+Independent RED: initial five cases2 failed/3 controls passed10.98s, then one real
+ambiguous-origin case1 failed2.95s on the same frozen5b baseline. Six distinct cases,
+three RED/three PASS across two sequential runs (13.93s summed), not one six-case
+run. The first five-case prefix stayed byte-identical. Final test SHA256
+F7308104984F667919810A10F4575C01AE9B7F4D0B554A6D34468643CBD45696.
+GREEN6 pass4.24s; affected17-file focus169 pass114.05s, zero failures/skips.
+Ruff/format2 clean; canonical mypy5b/current79 errors/20 files/65 sources in both,
+new touched messages{}. Reportscopilot-3-red-report.md/copilot-3-implementation-report.md
+and raw logs remain in the local ledger. RED/GREEN files/runtime released.
+
+Fresh wheel/sdist and noneditable probe c59ae33 at2026-11-06T03:08:14.816511Z:
+65 Python files byte-equal, schema2/FTS5; FK/integrity passed as reported by root.
+Wheel SHA2562c49dd9d896ce4b46d932bddc2f58cfb09380c7a22fe6d0d6a1f2e2f2c096de5;
+sdist952b4706e290bc8e9134e61def5dadc09b341edf311ca136c46923ba8b7ee9a4.
+Distribution file4 pass7.51s, XML4/0F0E0S/internal7.456s: installed CLI3.996s,
+GUI2.757s, mutex0.007s and inherited-path0.559s. Docs read actual probe/stdout and
+parsed XML, without runtime. Logs .superpowers/m2a-copilot-3-wheel-smokes.log/.xml.
+
+Implementation and covered automatic local verification exist; final scoped
+independent source/docs verdict is pending this committed supplement. R43/R44
+require the COMPLETE exact-head Windows suite and package CI before merge; no
+duplicate localfull7 or waiver. Published PR21 remains5b; C5 is not yet replied or
+published, and new received/responded Copilot/current-head CI/guarded merge remain
+pending. Full5CDF and every failed historical run retain their actual scope.
+No group/M2 closure, real hardware/provider/clean-install certification, new ruling
+or version bump. Two-hour acceptance is omitted by ruling5. R35 still requires A
+merge plus required contract-doc PR merges before the two project chats; none
+created, future IDs/branches/worktrees/responsibles remain pending.

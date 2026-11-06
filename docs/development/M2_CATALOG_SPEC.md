@@ -22,14 +22,27 @@ acceptance criteria: `../MILESTONE_2_PLAN.md`.
 
 ## Intent
 
-Current C4 correction source is `56af525` (Green `0a28842`) under R43. Malformed
+Current C5 source is `c59ae33` (Green `e8bd181`) under R44. Only actual catalog
+ownership lookup errors (LibraryError or ambiguous-origin ValueError) become a
+private signal. Validated legacy metadata remains visible as a fixed bounded
+nonretryable warning without inspecting marker/error/audio/native material,
+changing source/catalog bytes or inventing identity/parent. Actual OwnershipBusy
+and UnsafeSessionPath guards remain strict; stale materialization fails closed.
+Independent RED covers six distinct cases (three failures/three controls across
+two runs); GREEN6/4.24s, affected169/114.05s and fresh installed-wheel distribution4/
+7.51s pass. Final scoped source/docs review and mandatory exact-head complete
+Windows CI remain pending under R43/R44. No duplicate local full7 is run; no new
+hardware/provider/clean-install certification or group closure is claimed.
+
+Historical C4 correction source is `56af525` (Green `0a28842`) under R43. Malformed
 marker ValueError is handled only around `read_pending_intent`; UnsafeSessionPath
 is re-raised. A valid session retains its real identity/status as an existing
 nonretryable warning candidate before WAV inspection, with fixed bounded text
 that echoes no payload/path. Bytes, owners, valid siblings and ordinary failed
 retry controls are preserved. Local8-case GREEN,124-case affected focus and fresh
-installed-wheel smokes pass. Final scoped review and mandatory complete Windows
-CI on the corrected exact head remain pending. No duplicate local full6 is run.
+installed-wheel smokes pass. Final scoped review APPROVED with docs58176ce;
+Windows CI5b passes974/two wheel skips/349.23s. Copilot5795057762 confirms C4
+resolved and opens C5 above. Those passes prove5b, not corrected C5 source.
 
 Historical PR #21 correction source was `c3cdf08` (Green `61fb8e2`) under R40.
 C1 restores previous raw/segments/obsolete evidence for ordinary callback failure

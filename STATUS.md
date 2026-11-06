@@ -1,6 +1,6 @@
 # Estado de here
 
-Actualizado: 2026-11-05. Leé CLAUDE.md primero. Historial y rulings:
+Actualizado: 2026-11-06. Leé CLAUDE.md primero. Historial y rulings:
 `docs/development/DELIVERY.md`.
 
 ## Objetivo vigente
@@ -31,11 +31,16 @@ las definiciones de terminado y los tres niveles de evidencia. Versión vigente
   `293bc5038bae501dee07631704899e5f385e9025`, iguales al worker. C1–C3 implementados
   bajo R40, full5 verde961/7/371,80 s. Copilot 5794829768 sobre D23 confirmó C1–C3
   resueltos; respuestas4488243766/4488243915/4488244052, hilos resueltos.
-- Fuente actual 56af5253a8eec498c594bd6f1e1e456ad69f9453 desde Green
+- Fuente histórica C4 56af5253a8eec498c594bd6f1e1e456ad69f9453 desde Green
   0a28842e9ac0a9f670a5e800077bf0fce8ae9e6d: src a17ec107c212d62e1984bb1cede094b579db5137,
   tests c6a29f96af9ffc1e0c488ca73a430ef9a99b86b6, iguales al worker. C4 implementado
-  bajo R43, review independiente final pendiente. PR #21 publicado todavía en
-  d23b83d70b1a3da7fe0a3c579f1f34b109e2d5a3; C4 aún sin respuesta/publicación.
+  bajo R43 y review independiente final APPROVED con docs58176ce. C4 respondido
+  en4488439090/hilo resuelto; Copilot5795057762 sobre5b confirmó su resolución.
+- Fuente actual C5 c59ae331ebf124400ef3e476e5f0fcc029e83999 desde Green
+  e8bd181f12fcfc25b8d66365689823552fa4e50b: src5c66169c0a93a8f0606a011bd9570bbdd9137903,
+  testsfb958d021eaf7d149c00a3a1be174e36fbef2a1c, iguales al worker. R44 implementado;
+  review final del diff/docs pendiente. PR21 sigue publicado en5b515e8; C5 aún sin
+  respuesta/publicación ni Copilot/CI del nuevo head.
 - Los nueve grupos se conservan: M2 A (`M2_CATALOG`, 1–3), M2 B
   (`M2_LIFECYCLE`, 4–5), M3 A (`M3_SEARCH`, 1–2), M3 B (`M3_LIBRARY`, 3–4),
   M4 A (`M4_GROUNDED`, 1–3), M4 B (`M4_PRODUCT`, 4–5), M5 A
@@ -55,8 +60,9 @@ las definiciones de terminado y los tres niveles de evidencia. Versión vigente
 `docs/development/M2_CATALOG_PLAN.md`, tarea 3. SPEC `M2_CATALOG_SPEC.md`; hito
 `docs/MILESTONE_2_PLAN.md`. Tarea 3 implementada, verificada automáticamente en
 local y aceptada por review técnica independiente en la fuente previa a Copilot.
-C1–C3 resueltos por Copilot sobre D23; C4 actual verificado por focos/package local,
-review final y suite Windows completa del head corregido pendientes. Grupo A abierto.
+C1–C4 resueltos por Copilot; C5 implementado y verificado automáticamente en focos y
+package locales. Review final del diff/docs y suite Windows completa del head corregido
+pendientes. Sin certificación nueva; grupo A abierto.
 
 - Tarea 1: review independiente aceptada después del fix Busy. Foco 34 pasan/
   1 skip/4,70 s; full `M2A-T1-FINAL-20261105` 778 pasan/7 skips/173,68 s,
@@ -173,23 +179,52 @@ run 42142394863; package 42142395026 pasa solo sobre 339, no sobre el head corre
 
 ## Próxima acción obligatoria
 
-1. C4 integrado 56af525; review independiente final APPROVED para fuente/docs
-   58176ce (`copilot-2-review-report.md`), sin defectos importantes abiertos.
-   Focos/package locales pasan. No local full6: R43 exige suite Windows completa en el
-   head exacto corregido antes del merge, además de packageCI.
-2. PR #21 sigue abierto/publicado en d23b83d70b1a3da7fe0a3c579f1f34b109e2d5a3.
+1. C5 integrado c59ae33; RED independiente de seis casos distintos: tres fallos/tres
+   controles pasan en dos corridas secuenciales (13,93 s sumados). GREEN6/4,24 s y
+   foco afectado169/114,05 s sin skips. Fuente/tests congelados; runtime de GREEN
+   liberado. Review independiente del diff/docs pendiente (`copilot-3-review-report.md`).
+   No local full7: R43/R44 exigen suite Windows completa en el head exacto corregido
+   antes del merge, además de packageCI.
+2. PR #21 sigue abierto/publicado en 5b515e8844cc0d135461517dd55e907b65845c4d.
    Copilot 5794829768 COMMENTED2026-11-06T02:09:04Z resolvió C1–C3 y abrió C4
-   inline 4488285573. Responder C4 con SHA corregida alcanzable, publicar y pedir/
-   recibir nueva review Copilot sobre el head real. C4 aún no respondido.
+   inline 4488285573. C4 fue respondido en reply `4488439090` con commit56af525;
+   hilo `PRRT_kwDORsQx4M60We91` resuelto. Se pidió otra review Copilot sobre 5b515e8;
+   review recibida `5795057762`, COMMENTED sobre 5b515e8 a 2026-11-06T02:42:41Z,
+   confirma C4 resuelto y abre C5 (`4488473222`): catálogo corrupto oculta sesiones
+   legadas cuando falla resolver ownership. R44 implementado; RED independiente
+   `catalog_red` en m2-copilot-red-3 y GREEN `catalog_group_fixes` en
+   m2-copilot-fix-3 terminaron y liberaron archivos/runtime. Ambos parten de5b515e8;
+   no reiniciar ni duplicar su trabajo. No contar reviews propias como Copilot.
 3. CI_D23 es histórico: tests42147566672,966 pasan/2 skips wheel/331,02 s;
-   package42147566683 pasa. No prueba56af525. Esperar suite/package Windows verde
-   del nuevo head exacto, todas las observaciones respondidas y review independiente
-   final; recién entonces merge guardado y ledger. No se omite ningún gate.
+   package42147566683 pasa. No prueba56af525. CI actual5b: suite `42151367541` y
+   bundle `42151367491`, ambos success sobre 5b515e8; suite974 pasan/2 skips wheel/
+   349,23 s. Son históricos para C5. Finalizar review independiente y responder C5
+   con el commit publicado; pedir/recibir Copilot otra vez y
+   verificar la suite completa/package en el nuevo head exacto antes del merge.
+   Los pases 5b quedan históricos para la corrección nueva. Ningún gate se omite.
 4. Después del merge A y PRs docs de contratos necesarios, root crea chats separados
    M2 B/M3 A con rama/worktree y brief sobre merge real. Ningún chat creado;
-   borradores futuros/rulings R39–R43 se conservan, sin implementación adelantada.
+   borradores futuros/rulings R39–R44 se conservan, sin implementación adelantada.
 
-### C4 — evidencia local actual
+### C5 — evidencia automática local actual
+
+Solo recovery.py y un test independiente nuevo cambian. El fallo de retry_parent
+por LibraryError o ambigüedad ValueError produce aviso fijo acotado no reintentable
+con metadata validada e identidad/estado/duración reales. Antes de ese aviso no se
+inspeccionan marker, error, audio ni material nativo; no se cambia fuente/DB ni se
+inventa padre/UUID. OwnershipBusy/UnsafeSessionPath siguen propagándose y materialize
+falla cerrado. Controles sin catálogo y dueño mapeado real conservan su conducta.
+Ruff/format2 limpios; mypy canónico5b/current79/79 en65 fuentes/20 archivos, sin nuevos.
+
+Probe fresco no editable c59ae33 de2026-11-06T03:08:14.816511Z:65 fuentes iguales,
+schema2/FTS5/FK/integrity correctos. Distribución4 pasan7,51 s, XML4/0F0E0S/interno7,456;
+wheel CLI3,996/GUI2,757, mutex0,007/path0,559 pasan. Logs/XML
+`.superpowers/m2a-copilot-3-wheel-smokes.*`; hashes en el probe y ACCEPTANCE.
+Evidencia implementada y verificada automáticamente en local; review final y suite
+CI del head nuevo pendientes, sin certificación de hardware/proveedor/instalación.
+Full5CDF y CI5b conservan sus fuentes históricas; no hay full local7 ni merge de A.
+
+### C4 — evidencia local histórica de56af525
 
 Solo recovery.py y un nuevo test cambian; src a17ec107c212d62e1984bb1cede094b579db5137,
 tests c6a29f96af9ffc1e0c488ca73a430ef9a99b86b6. ValueError del marker se maneja
@@ -199,7 +234,8 @@ siblings y controles de retry válido intactos. RED 6/2controles/6,69 s; GREEN 8
 afectado 124/90,52 s sin skips, Ruff/format 2 limpios y mypy 79/79 sin nuevos.
 Probe56af525 fresco 65 archivos iguales/no editable/schema 2/FTS5/FK/integrity;
 distribución4 PASS7,44 s (XML 4/0F0E0S/interno 7,314), ambos wheel CLI 3,928/GUI 2,748
-pasan. Review final y suite completa CI actual pendientes. Full5CDF previo conserva
+pasan. Review final APPROVED con docs58176ce y CI5b completo pasa974/2/349,23 s;
+Copilot5795057762 confirma C4 resuelto. Full5CDF previo conserva
 961/7/371,80 s en su fuente; no se relabela como resultado de56af525.
 ## Dos frentes futuros — ruling 35, todavía pendientes
 
