@@ -114,6 +114,11 @@ class HereApplicationController:
         self._last_level_emitted = 0.0
 
     @property
+    def memory_service(self) -> MemoryService:
+        """Expose the actual application-owned catalog, including a custom root."""
+        return self._memory
+
+    @property
     def snapshot(self) -> ApplicationSnapshot:
         with self._lock:
             return self._snapshot

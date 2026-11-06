@@ -32,10 +32,14 @@ from here.memory.models import (
     AudioAsset,
     IngestSource,
     Meeting,
+    MeetingDetail,
+    MeetingParticipant,
     MeetingStatus,
+    Participant,
     PendingOperation,
     RevisionAudioAsset,
     Segment,
+    SpeakerAssignment,
     TranscriptRevision,
 )
 from here.memory.repository import MemoryRepository
@@ -1211,6 +1215,104 @@ class MemoryService:
             owner = self._owners.pop(meeting_id, None)
             if owner:
                 owner.close()
+
+    @staticmethod
+    def _identity(identity: str) -> None:
+        if not _is_uuid(identity):
+            raise InvalidInput("Use a canonical UUID")
+
+    @staticmethod
+    def _meeting(repo: MemoryRepository, meeting_id: str) -> Meeting:
+        meeting = repo.get_meeting(meeting_id)
+        if meeting is None:
+            raise NotFound("Meeting does not exist")
+        if meeting.status == MeetingStatus.DELETING:
+            raise Conflict("Meeting deletion is pending")
+        return meeting
+
+    @staticmethod
+    def _detail(
+        repo: MemoryRepository, meeting_id: str, warnings: tuple[object, ...] = ()
+    ) -> MeetingDetail:
+        meeting = MemoryService._meeting(repo, meeting_id)
+        revisions = tuple(
+            TranscriptRevision(**dict(row))
+            for row in repo.library.execute(
+                "SELECT * FROM transcript_revisions WHERE meeting_id=? ORDER BY revision_number",
+                (meeting_id,),
+            )
+        )
+        return MeetingDetail(
+            meeting,
+            tuple(
+                AudioAsset(**dict(row))
+                for row in repo.library.execute(
+                    "SELECT * FROM audio_assets WHERE meeting_id=? ORDER BY id", (meeting_id,)
+                )
+            ),
+            revisions,
+            tuple(segment for revision in revisions for segment in repo.get_segments(revision.id)),
+            tuple(
+                link
+                for revision in revisions
+                for link in repo.get_revision_audio_assets(revision.id)
+            ),
+            warnings,
+            tuple(
+                Participant(**dict(row))
+                for row in repo.library.execute(
+                    "SELECT p.* FROM participants p JOIN meeting_participants l "
+                    "ON p.id=l.participant_id WHERE l.meeting_id=? ORDER BY p.id",
+                    (meeting_id,),
+                )
+            ),
+            tuple(
+                MeetingParticipant(**dict(row))
+                for row in repo.library.execute(
+                    "SELECT * FROM meeting_participants WHERE meeting_id=? ORDER BY participant_id",
+                    (meeting_id,),
+                )
+            ),
+            tuple(
+                SpeakerAssignment(**dict(row))
+                for row in repo.library.execute(
+                    "SELECT * FROM speaker_assignments WHERE meeting_id=? "
+                    "ORDER BY revision_id,speaker_key",
+                    (meeting_id,),
+                )
+            ),
+        )
+
+    @contextmanager
+    def _read_operation(self) -> Iterator[MemoryRepository]:
+        """Materialize detached values from one explicit SQLite read snapshot."""
+        with self._operation() as repo:
+            repo.library.execute("BEGIN")
+            try:
+                yield repo
+            finally:
+                repo.connection.rollback()
+
+    def get_meeting(self, meeting_id: str) -> MeetingDetail:
+        self._identity(meeting_id)
+        with self._read_operation() as repo:
+            warnings = (repo.library.storage_warning,) if repo.library.storage_warning else ()
+            return self._detail(repo, meeting_id, warnings)
+
+    def list_participants(self, meeting_id: str | None = None) -> tuple[Participant, ...]:
+        if meeting_id is not None:
+            self._identity(meeting_id)
+        with self._read_operation() as repo:
+            if meeting_id is None:
+                rows = repo.library.execute("SELECT * FROM participants ORDER BY id")
+            else:
+                self._meeting(repo, meeting_id)
+                rows = repo.library.execute(
+                    "SELECT p.* FROM participants p JOIN meeting_participants l "
+                    "ON p.id=l.participant_id WHERE l.meeting_id=? ORDER BY p.id",
+                    (meeting_id,),
+                )
+            return tuple(Participant(**dict(row)) for row in rows)
 
     def show(self, meeting_id: str) -> dict[str, object] | None:
         with self._operation() as repo:

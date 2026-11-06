@@ -124,6 +124,21 @@ class Participant:
 
 
 @dataclass(frozen=True, slots=True)
+class MeetingParticipant:
+    meeting_id: str
+    participant_id: str
+    role: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class SpeakerAssignment:
+    meeting_id: str
+    revision_id: str
+    speaker_key: str
+    participant_id: str | None
+
+
+@dataclass(frozen=True, slots=True)
 class MeetingDetail:
     meeting: Meeting
     audio_assets: tuple[AudioAsset, ...] = ()
@@ -131,6 +146,9 @@ class MeetingDetail:
     segments: tuple[Segment, ...] = ()
     revision_audio_assets: tuple[RevisionAudioAsset, ...] = ()
     warnings: tuple[object, ...] = ()
+    participants: tuple[Participant, ...] = ()
+    participant_links: tuple[MeetingParticipant, ...] = ()
+    speaker_assignments: tuple[SpeakerAssignment, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
