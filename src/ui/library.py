@@ -262,7 +262,7 @@ class LibraryView(QWidget):
             text=text,
             from_utc=self._bound(self._from),
             to_utc=self._bound(self._to),
-            statuses=(status,) if status is not None else (),
+            statuses=(MeetingStatus(status),) if status is not None else (),
             participant_id=self._participant.currentData(),
             include_partial=self._partial.isChecked(),
         )
