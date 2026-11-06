@@ -1310,17 +1310,26 @@ class MemoryService:
                         _remove_tree(self.data_dir, relative)
                     except (OSError, ValueError) as exc:
                         warnings.append(str(exc))
+            state_operations: list[PendingOperation] = []
             with repo.transaction():
                 for row in active_rows:
                     if row[0] not in live:
                         self._change_status(repo, row[0], MeetingStatus.INTERRUPTED)
+                        state_operations.append(self._state_operation(repo, row[0]))
                         marked.append(RecoveryOutcome(row[0], "Unowned work marked interrupted"))
-            for row in active_rows:
-                if row[0] not in live:
-                    try:
-                        self._write_state(repo, row[0])
-                    except (OSError, ValueError, LibraryError) as exc:
-                        warnings.append(str(exc))
+            for operation in state_operations:
+                try:
+                    self._reconcile_operation(repo, operation)
+                    completed.append(
+                        RecoveryOutcome(operation.id, "Committed state snapshot completed")
+                    )
+                except (OSError, ValueError, LibraryError) as exc:
+                    warnings.append(str(exc))
+                    skipped.append(
+                        RecoveryOutcome(
+                            operation.id, "Committed state snapshot pending local recovery"
+                        )
+                    )
             for row in repo.library.execute("SELECT * FROM audio_assets").fetchall():
                 if row["meeting_id"] in live:
                     continue
@@ -1379,9 +1388,13 @@ class MemoryService:
     def set_status(self, meeting_id: str, status: str) -> None:
         status = MeetingStatus(status)
         with self._operation() as repo:
+            operation = None
             with repo.transaction():
                 self._change_status(repo, meeting_id, status)
-            self._write_state(repo, meeting_id)
+                if repo.get_meeting(meeting_id) is not None:
+                    operation = self._state_operation(repo, meeting_id)
+            if operation is not None:
+                self._reconcile_operation(repo, operation)
 
     def begin_processing(self, meeting_id: str) -> None:
         """Own the local processing lifetime, preserving any prior active evidence."""
@@ -1456,8 +1469,14 @@ class MemoryService:
                         "rejected", meeting_id, ("Revision conflict: stale outcome",)
                     )
                 self._change_status(repo, meeting_id, MeetingStatus(status))
-            self._write_state(repo, meeting_id)
-        return IngestResult("unchanged", meeting_id)
+                operation = self._state_operation(repo, meeting_id)
+            warnings: tuple[object, ...] = ()
+            try:
+                self._reconcile_operation(repo, operation)
+            except Exception:
+                # Only housekeeping can fail after the status/event transaction commits.
+                warnings = ("Status saved; local snapshot recovery pending",)
+        return IngestResult("unchanged", meeting_id, warnings)
 
     def finish_capture(self, meeting_id: str, *, discard: bool = False) -> None:
         try:
