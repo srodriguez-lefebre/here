@@ -215,6 +215,52 @@
       "xml": "task-1-focus-2.xml",
       "report": "task-1-focused-green-report.md",
       "scope": "Final frozen query core after mechanical style/import changes. No full-suite, B integration, UI, performance or certification acceptance."
+    },
+    {
+      "name": "M3A-T2-UI-FOCUS1",
+      "head": "544b6e5f5b62942e0e103fa67359a66a74c0d566",
+      "source_tree": "bdb5b1a50cc6914cf474442d7835969157a1212f",
+      "tests_tree": "07cba7238f9c19d01a018d73de7c2cf96d56e40a",
+      "workdir": "C:/Users/savar/.codex/worktrees/m3-ui-implementation/here",
+      "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -m pytest -vv tests/test_ui_library.py tests/test_ui_lifecycle.py --junitxml=C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN/task-2-focus-1.xml",
+      "exit_code": 1,
+      "collected": 38,
+      "selected": 38,
+      "passed": 25,
+      "failed": 13,
+      "setup_errors": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "duration_seconds": 64.47,
+      "xml_cases": 38,
+      "xml_internal_seconds": 63.142,
+      "log": "task-2-focus-1.log",
+      "xml": "task-2-focus-1.xml",
+      "report": "task-2-focused-green-report.md",
+      "scope": "All old 26 widget cases now reach assertions; ten lifecycle cases pass. Two real R48 cases stop waiting for transcript before roster/speaker/target assertions. No R48 consumer or Task2 acceptance. Initial artifacts unchanged."
+    },
+    {
+      "name": "M3A-T2-UI-FOCUS2",
+      "head": "3957a7ce9754c76388bd42c1a1580334015a107d",
+      "source_tree": "b16a3d8fd425cbf0b0fac3f285e2672b673e2d30",
+      "tests_tree": "eb79de8be1e7a074327ab93fa39aa6ccaefec991",
+      "workdir": "C:/Users/savar/.codex/worktrees/m3-ui-implementation/here",
+      "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -m pytest -vv tests/test_ui_library.py tests/test_ui_lifecycle.py --junitxml=C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN/task-2-focus-2.xml",
+      "exit_code": 1,
+      "collected": 38,
+      "selected": 38,
+      "passed": 29,
+      "failed": 9,
+      "setup_errors": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "duration_seconds": 22.52,
+      "xml_cases": 38,
+      "xml_internal_seconds": 18.005,
+      "log": "task-2-focus-2.log",
+      "xml": "task-2-focus-2.xml",
+      "report": "task-2-focused-green-report.md",
+      "scope": "Eight failures are missing QModelIndex argument in list-model text helper; one status-filter positive wait times out. Both actual R48 cases stop at helper exception before roster/speaker/target assertions. Ten lifecycle cases pass; no semantic R48/UI acceptance."
     }
   ],
   "lint_checkpoint": {
@@ -265,7 +311,8 @@
     "runtime_count": 0,
     "parent_integrated": false,
     "report": "task-2-green-source-report.md",
-    "limits": "Not UI GREEN, no real B4/R48/B5 adapter acceptance; all 26 widget assertions still require actual execution."
+    "limits": "Original source stage had runtime zero. Subsequent focus1/focus2 reached all old 26 widget assertions with failures retained; no UI GREEN or real B4/R48/B5 acceptance. Latest prepared worker is separately NOT_RUN.",
+    "stage_scope": "Historical initial source-preparation report only, before later UI attempts; see ui_execution_checkpoint."
   },
   "remaining_gates": [
     "Accepted sole B5 R42 coherent suppression snapshot in reads and R45 generation; typed fail-closed invalid/inaccessible registry; suppression in SQL before cursor/LIMIT, including pending barrier when SQL hide failed and surviving receipts after DB loss/rebuild.",
@@ -280,9 +327,9 @@
   "not_run": {
     "large_corpus_benchmark": "NOT_RUN (SKIPPED by default in focused runs)",
     "guarded_p95": "NOT_RUN",
-    "qt_heartbeat": "NOT_RUN",
-    "real_B4_R48_B5_integration": "NOT_RUN",
-    "ui_source_green": "NOT_RUN",
+    "qt_heartbeat": "Guarded 1,000/100,000 corpus heartbeat NOT_RUN; small synthetic UI cases/probe do not establish this budget.",
+    "real_B4_R48_B5_integration": "PENDING: R48 real UI consumer cases attempted but blocked before semantic assertions; B4 mutation/title-index and B5 guard/reindex integration NOT_RUN.",
+    "ui_source_green": "ATTEMPTED_NOT_GREEN: focus1 13F/25P, focus2 9F/29P; latest prepared worker 2389a7f NOT_RUN.",
     "full_suite": "NOT_RUN",
     "mypy_delta": "NOT_RUN",
     "build_install": "NOT_RUN",
@@ -292,7 +339,7 @@
     "certification": "NOT_RUN",
     "two_hour_recording": "OMITTED under ruling 5, never approved"
   },
-  "runtime_coordination": "Both M3 windows explicitly RELEASED; root assigned B GREEN R48/full next. No runtime grant or runtime execution for this documentation stage.",
+  "runtime_coordination": "M3 coordinator explicitly RELEASED UI runtime window after focus2 process exited; root ACKed rotation to B. No M3 test/probe process remains from that window. No tests/probes/lint/full/mypy/build/benchmark/uv in this documentation stage.",
   "invariants": "No acceptance/DoD, product flow, dependency, schema, privacy or retention changes. No new hardware/provider/clean-install certification, no milestone closure or 0.4.0 bump.",
   "technical_supplements": [
     {
@@ -326,7 +373,81 @@
         "lint": "NOT_RUN",
         "real_backend_UI_consumer_tests": "NOT_RUN"
       },
-      "limits": "No attribution of 177 passes or APPROVED CORE to 7d925/b3628. UI remains SOURCE_PREPARED/runtime0; actual R48 consumer verification, B4 mutation/title-index/version acceptance, B5 R42/reindex, full/mypy/performance and final gates remain pending."
+      "limits": "No attribution of 177 passes or APPROVED CORE to 7d925/b3628. UI remains SOURCE_PREPARED/runtime0; actual R48 consumer verification, B4 mutation/title-index/version acceptance, B5 R42/reindex, full/mypy/performance and final gates remain pending.",
+      "state_at_recording": "Historical pre-UI-runtime handoff state. Later two actual R48 consumer attempts are in UI focus1/focus2; neither reaches roster/speaker/target assertions or establishes acceptance."
     }
-  ]
+  ],
+  "ui_execution_checkpoint": {
+    "recorded_on": "2026-11-06",
+    "status": "IN_PROGRESS_NOT_GREEN",
+    "report": "task-2-focused-green-report.md",
+    "source_worker": "C:/Users/savar/.codex/worktrees/m3-ui-implementation/here",
+    "branch": "codex/m3-ui-green",
+    "evidence_boundary": "UI runs are separate from frozen e4d query-core runs/review; UI worker uses the read-only preformat query source, not e4d execution attribution.",
+    "real_R48_consumer_tests": {
+      "original_commit": "2b504c8e411c26685c2e805264f56d3a4a9c0879",
+      "worker_integration_commit": "544b6e5f5b62942e0e103fa67359a66a74c0d566",
+      "status": "ATTEMPTED_BLOCKED_BEFORE_ROSTER_SPEAKER_TARGET_ASSERTIONS",
+      "acceptance": "PENDING",
+      "scope": "Actual temporary SQLite, injected custom-root MemoryService/controller/UI adapter. No B4 mutation or B5 behavior accepted."
+    },
+    "probe": {
+      "script": "task-2-event-probe.py",
+      "log": "task-2-event-probe.log",
+      "command": null,
+      "command_note": "Exact invocation not reproduced in checkpoint report; original script/log preserved. No invocation invented.",
+      "scope": "Single short synthetic Qt event/focus probe after focus1 before fixes; no concurrent runtime",
+      "exit_code": 0,
+      "duration_seconds": 3.33,
+      "jobs_busy_at_end": false,
+      "observations": "Bare double-click emitted only cellPressed; Enter activated. Unset QDateEdit trapped Tab. Not guarded corpus heartbeat, benchmark or acceptance."
+    },
+    "correction_sequence": [
+      {
+        "role": "GREEN source",
+        "commit": "4a33d6df6078f7d6f325aa740662dc1a13ed9edc",
+        "scope": "Temporary double-click routing plus date traversal fix; present in focus2, not accepted as final double-click solution."
+      },
+      {
+        "role": "Independent RED tests",
+        "original_commit": "84e2f9de4a0e323cf25de1b0ed1d20e53d506250",
+        "worker_integration_commit": "3957a7ce9754c76388bd42c1a1580334015a107d",
+        "scope": "Exactly two positive-result waits for status/participant rows; existing waits, scenarios and assertions retained."
+      },
+      {
+        "role": "GREEN source",
+        "commit": "fbd852d59d62b5ebbced84a78709a7c7dcc020b9",
+        "scope": "Removed product double-click workaround after independent Qt event-sequence diagnosis; date traversal fix preserved.",
+        "runtime": "NOT_RUN"
+      },
+      {
+        "role": "Independent RED tests",
+        "original_commit": "6b92d9e0d3dd80eba9652a636ac1881b2a8e9761",
+        "worker_integration_commit": "2389a7f191bd41baf1fc173b8d87c2ea26dacb1f",
+        "scope": "Explicit QModelIndex in list-model helper and valid initial press/release before QTest double-click; scenarios/semantic assertions retained.",
+        "runtime": "NOT_RUN"
+      }
+    ],
+    "latest_prepared_worker": {
+      "head": "2389a7f191bd41baf1fc173b8d87c2ea26dacb1f",
+      "status": "SOURCE_AND_TEST_PREPARED_NOT_RUN",
+      "source_tree": "74d5d07cf67446487e6503ea6b836ea8e54438e4",
+      "tests_tree": "02995c7fb8150e46f5205bdab4e585986c99694a",
+      "library_source_blob": "08970c88929d36b92df5e3ba2ef3513f03ff3c09",
+      "library_test_blob": "0627e0f7cd451c3d9e1a4c09c22bbab153ffd9b5",
+      "runtime": "NOT_RUN",
+      "lint": "NOT_RUN",
+      "acceptance": "PENDING; no prior run result attributed to this head"
+    },
+    "limits": "Historical setup errors remain historical; all prior 26 widget cases now reach assertions. Focus1/focus2 failures retained. Real R48 semantic consumers, UI GREEN/review, real B4/B5 integration, guarded p95/heartbeat, full/mypy and hosted/group gates remain pending."
+  },
+  "R50_preparation": {
+    "status": "PREPARATION_ONLY",
+    "report": "r50-integration-preparation.md",
+    "ruling": "Root DELIVERY ruling 50, orchestration 9d5ea1f",
+    "scope": "Future B-owned catalog_read_view(library), existing bounded lock before sole read transaction, immutable ordered suppression IDs/fingerprint; actual handoff and real RED precede dependent search changes.",
+    "dependent_product_source_written": false,
+    "runtime": "NOT_RUN",
+    "acceptance": "PENDING; contract/static preparation does not establish B5 implementation or M3 integration"
+  }
 }

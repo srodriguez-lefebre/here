@@ -4,7 +4,8 @@
 > review, then independent agent review. Root coordinates file leases and merges
 > only after current-head received/responded Copilot, Windows CI and independent
 > review. Steps use checkbox syntax. **Status: in progress — query-core checkpoint,
-> 2026-11-06; complete Task 1/group/milestone acceptance pending.** Root issued GO
+> 2026-11-06; UI attempts recorded, complete tasks/group/milestone acceptance pending.**
+> Root issued GO
 > after M2 A merge `53712c5beedafc2d40e2abf10c13362a1c3c9f78` and contracts merge
 > `73d3cb384bd422de6899d8c7b761f3f3159ea3f1`. M3 front: `codex/m3-search`,
 > `C:/Users/savar/.codex/worktrees/2710/here`, chat
@@ -81,8 +82,9 @@ The later isolated R48 read supplement is available at original
 canonical detail/participant reads and the same injected controller getter, no
 B4 mutations/snapshots. Parent search.py is unchanged from e4d; its 177 passes and
 APPROVED CORE review remain bound to e4d. Root reports an isolated probe and
-XML122 without failures; M3 local runtime/import/lint and actual UI/backend
-consumer tests after handoff are NOT_RUN. Real R48 consumer acceptance, B4 title/
+XML122 without failures. Initial post-handoff M3 runtime was NOT_RUN; subsequent
+UI attempts below still do not establish R48 consumer acceptance. No new UI lint
+result is recorded. Real R48 consumer acceptance, B4 title/
 version/index behavior, coherent shared B5 R42 suppression, sole reindex facade
 and real before-after/no-op equivalence remain pending.
 Small synthetic cases do not establish the guarded 1,000/100,000 p95
@@ -90,13 +92,31 @@ or Qt heartbeat. Full suite, mypy delta and subsequent relevant checks remain op
 Final four-file Ruff check/format passed at e4d after mechanical formatting and an
 explicit same-fixture re-export; no assertions/scenarios were weakened.
 
-Task 2 RED is retained at its own exact heads: initially 2 failures/8 passes;
-post-DTO 2 failures/8 passes/26 setup errors because LibraryView was absent.
-Those 26 widget assertions were not reached. UI source `846c53f` is only
-SOURCE_PREPARED, runtime zero and not parent-integrated at this checkpoint;
-UI GREEN/review and actual B integrations remain pending. Both M3 runtime windows
-were released; root currently owns allocation to B, and this docs stage has no
-runtime grant. `M3_SEARCH_EVIDENCE.json` binds commands, heads and actual artifacts.
+Task 2's original RED results remain unchanged: 2 failures/8 passes, then
+2 failures/8 passes/26 absent-LibraryView setup errors. Later focus1 at exact
+`544b6e5f5b62942e0e103fa67359a66a74c0d566` ran 38 cases: 13 failed/25 passed,
+zero errors/skips/64.47s (XML internal 63.142s). Focus2 at exact
+`3957a7ce9754c76388bd42c1a1580334015a107d` ran 38 cases: nine failed/29 passed,
+zero errors/skips/22.52s (XML internal 18.005s). All old 26 widget cases now reach
+assertions; both real R48 cases remain blocked before roster/speaker/target checks
+(first transcript wait, later list-model helper exception). Focus2 has eight
+helper exceptions and one status-filter positive-wait timeout. Ten lifecycle
+cases pass in each run; no UI GREEN, R48 or complete Task 2 acceptance follows.
+
+The synthetic event/focus probe exited zero/3.33s with jobs idle. RED's two
+positive-result waits preceded focus2; subsequent model-parent/click-sequence
+corrections and GREEN's removal of the temporary double-click workaround retain
+the original scenarios/assertions and date traversal fix. Latest prepared worker
+`2389a7f191bd41baf1fc173b8d87c2ea26dacb1f` remains NOT_RUN, source tree
+`74d5d07cf67446487e6503ea6b836ea8e54438e4`, tests tree
+`02995c7fb8150e46f5205bdab4e585986c99694a`. No result is attributed to that head.
+
+Coordinator explicitly released the UI runtime window after focus2; root ACKed
+B's next window. This docs stage has no runtime grant. R50 preparation report
+exists without dependent product source or actual B5 integration acceptance.
+`M3_SEARCH_EVIDENCE.json` binds commands, heads, corrections and actual artifacts.
+UI GREEN/review, B4/B5 integration, full/mypy, guarded p95/heartbeat and final gates
+remain pending; small synthetic Qt cases do not establish the large-corpus budget.
 Composite checkboxes remain unchecked: no partial evidence closes their remaining
 clauses. Group/hosted gates, certification and a 0.4.0 bump are not claimed.
 

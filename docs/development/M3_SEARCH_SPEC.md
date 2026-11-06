@@ -1,6 +1,6 @@
 # M3 search and library actions specification
 
-Status: in progress, query-core checkpoint on 2026-11-06; Task 1, group A and M3
+Status: in progress, query-core and UI checkpoint on 2026-11-06; Task 1, group A and M3
 remain open. Root issued GO after the accepted M2 A and contract-documentation
 merges (ruling 35). The M3 front is `codex/m3-search` at
 `C:/Users/savar/.codex/worktrees/2710/here`, chat
@@ -56,19 +56,41 @@ participant reads and the shared injected controller getter; it includes no B4
 mutations/snapshots. Parent/UI models agree at blob
 `7ac51f614e272d57479823fbcbb056844a924ca6`; the parent's query source is unchanged
 from reviewed e4d. This supplement does not extend e4d's runs/review to the new
-integration. Root reports an isolated probe and XML122 without failures; M3 local
-runtime/import/lint and real UI/backend consumer verification remain NOT_RUN.
+integration. Root reports an isolated probe and XML122 without failures. At that
+handoff checkpoint M3 consumer runtime was NOT_RUN; later UI attempts below do not
+establish R48 consumer acceptance. No new UI lint result is recorded.
 B4 update/version/title-index behavior, real R48 consumer acceptance, B5's coherent
 R42 guard and sole reindex/before-after/no-op equivalence remain pending. No
 alternate parser, authority or rebuild is added.
 
-UI RED observed two failures/eight passes, then two failures/eight passes/26 setup
-errors after DTO handoff: absent LibraryView prevented all 26 widget assertions.
-UI source `846c53fec27620d98727c45d9bfff4d0da4d37ea` is SOURCE_PREPARED only,
-runtime zero and not integrated into this frozen query checkpoint. UI GREEN,
-real B adapters/deletion callback invalidation, guarded 1,000/100,000 p95 and Qt
-heartbeat, full suite, mypy delta, final task/group review and M3 hosted gates are
-pending. The benchmark skip supplies no large-corpus or performance result.
+Historical UI RED retains two failures/eight passes, then two failures/eight
+passes/26 absent-LibraryView setup errors. Later worker focus1 at exact
+`544b6e5f5b62942e0e103fa67359a66a74c0d566` ran 38 cases: 13 failed/25 passed,
+zero errors/skips, 64.47s (XML internal 63.142s). Focus2 at exact
+`3957a7ce9754c76388bd42c1a1580334015a107d` ran 38 cases: nine failed/29 passed,
+zero errors/skips, 22.52s (XML internal 18.005s). All old 26 widget cases now reach
+assertions. Both real R48 cases stop before roster/speaker/target assertions:
+first while waiting for transcript, then at the list-model text helper exception.
+Eight focus2 failures expose that helper's missing QModelIndex; the remaining
+status-filter positive wait times out. These are failed attempts, no UI GREEN or
+R48 consumer acceptance. Ten lifecycle cases pass in both runs.
+
+The short synthetic event/focus probe exited zero in 3.33s with jobs idle; it
+observed incomplete bare-double-click delivery and unset-date Tab trapping, not
+large-corpus responsiveness. RED added only two positive-result waits for focus2,
+then corrected the model helper and valid click sequence. GREEN temporarily
+routed double clicks and fixed date traversal, then removed the double-click
+workaround while preserving the date fix. Latest prepared worker
+`2389a7f191bd41baf1fc173b8d87c2ea26dacb1f` is NOT_RUN; source/test bindings and
+exact correction commits are in the evidence JSON. Historical failures remain.
+
+The coordinator explicitly released the UI runtime window and root acknowledged
+rotation to B; docs preparation has no runtime grant. R50 integration preparation
+exists only as the assigned report: no dependent product source or actual B5
+handoff acceptance. UI GREEN/review, real B4/B5 adapters/deletion invalidation,
+guarded 1,000/100,000 p95 and Qt heartbeat, full suite, mypy delta, final task/group
+review and M3 hosted gates remain pending. The core benchmark skip supplies no
+large-corpus or performance result; small synthetic Qt cases do not close it.
 Commands, exact heads, artifacts and limits are recorded in
 `M3_SEARCH_EVIDENCE.json`; acceptance criteria below are unchanged. This is focused
 automatic evidence, no certification or task/group/milestone closure; no 0.4.0 bump.
