@@ -716,6 +716,98 @@ Los rulings nuevos se escriben en español por el ruling 6.
     lifetime de leases antes de aceptar B5/M3; una autoridad durable más amplia
     sería otra decisión de §3, fuera de esta implementación mínima.
 
+53. **Ruling:** la fachada reindex pendiente de M3 delega al único mantenimiento
+    B5 mediante `SearchService(connection_factory, *, reindexer:
+    Callable[[], ReindexReport] | None = None)` y `reindex() -> ReindexReport`.
+    Es el adapter interno que SPEC/PLAN dejaron por fijar, no otro indexador ni
+    control nuevo de producto. El constructor conserva los callers de lectura y
+    almacena el callback sin ejecutarlo. Reindex llama exactamente una vez al
+    callback ligado a la instancia MemoryService real inyectada, retorna el MISMO
+    reporte R51 y propaga sus errores canónicos sin envolver/reintentar/recontar.
+    No usa factory, snapshot, conexión, lock, probe o migración propios, tampoco
+    antes de delegar. Sin callback, solo esa operación falla con LibraryError
+    existente; list/search/capabilities continúan disponibles. No confundir falta
+    de mantenimiento con FTS ausente, inferir raíz de una conexión ni fabricar
+    otro MemoryService. La composición real está en ApplicationUiAdapter de
+    `ui/contract.py`: conserva el backend query explícito y, cuando la memoria
+    inyectada soporta mantenimiento mediante capacidad opcional tipada separada,
+    liga el método de ESA misma instancia junto a su data_dir existente. No agregar
+    mantenimiento obligatorio a los protocolos de lectura ni exigirlo a fakes o
+    backends solo-lectura. El nombre privado del protocolo es decisión del autor.
+    RED independiente y archivo separado preceden implementación de la fachada:
+    ausencia actual del método, delegación única/identidad/errores/sin recursos,
+    composición real customroot y control solo-lectura. El suplemento guardado
+    congelado no se modifica durante su corrida. Equivalencia real B5 antes/
+    después/no-op, partial/fallback y generación R45 siguen siendo sus pruebas
+    propias, sin cache o writer nuevo de invalidación. Review estática independiente
+    READY en `search-reindex-facade-contract-review.md`; no es aceptación de código,
+    B5/R52/M3 ni cambio de DoD. No cambia dependencias, tráfico, settings, privacidad
+    o UX. **Cost if wrong:** corregir el adapter antes de aceptar M3, conservando
+    una sola autoridad de escritura y los callers de lectura existentes.
+
+54. **Ruling:** R52 no revoca la autoridad de staging propio que A ya estableció
+    en R23/R30 ni cambia su retención. Manteniendo la misma `.memory.lock` que
+    serializa toda preparación/publicación/reconcile, un orphan pre-journal bajo
+    `<data_dir>/.staging/<operation_uuid>` conserva la limpieza de su registro
+    `.publication.json` y copias descartables del protocolo mediante los guards A.
+    Debe ser un path/UUID/rol válido y no estar protegido por una operación prepared;
+    el plan propio versión1, operation_id coincidente e inventario admitido se
+    validan junto con TODOS los hijos/roles/paths antes de unlink. Unknowns, links,
+    subdirectorios, plan inválido o referencia de journal inconsistente se retienen/
+    reportan. Un plan ausente no autoriza borrar contenido; el housekeeping de un
+    directorio vacío conserva los guards/comportamiento A y no es este caso.
+    Un nombre UUID o una lista de hashes solos no dan autoridad.
+    Los hashes son inventario de copia, no prueba criptográfica de commit/ownership;
+    no se inventa re-hash de una copia que pudo interrumpirse. Esta rama interna
+    sin journal no requiere meeting_id ni contexto nativo porque solo descarta
+    staging privado no comprometido: no toca fuente original, captura, destino/
+    revisión comprometidos, estado, backups o memoria de otra operación. No se
+    equipara operation_id con meeting_id ni se deducen raíces de origen/manifest.
+    Paths con journal/identidad y cleanup meeting-owned/native conservan R52 y sus
+    leases; no están exentos por esta aclaración. Errores de unlink se reportan con
+    sus restos, sin fingir una transacción multi-file. El análisis independiente
+    `r52-owned-staging-contract-analysis.md` verificó lock/plan/roles y el intervalo
+    real entre plan y journal en96e8aed/edf7d48. El caso A before-stage mantiene
+    exit73 y TODAS sus assertions, incluida ausencia final de staging; la revisión
+    estática no es su corrida. El fix requiere primero ese RED real sobre el
+    candidato R52, luego GREEN y review independiente acotada, sin omitir el caso
+    ni tocar la definición de terminado. **Cost if wrong:** corregir ese límite
+    conservando la exclusión de publicación y retención de roles desconocidos;
+    ninguna ampliación a fuentes nativas o datos comprometidos queda autorizada.
+
+55. **Ruling:** el perfil real de M3 identifica la generación completa y sus
+    serializaciones por fila como coste dominante; se admite agrupar su encoding
+    canónico en lotes internos fijos de256 filas. Se conservan TODOS los SELECT,
+    campos, órdenes, documentos FTS reales, esquema, elegibilidad, relaciones,
+    evidencia activa completa/parcial y fingerprint R50, en la misma instantánea
+    hasta obtener la página. No hay caché, corpus reducido, segundo índice,
+    conexión adicional, dependencia ni relajación de500ms/50ms. Cada lote JSON
+    conserva los valores exactos y lleva longitud; cada fuente tiene terminador
+    inequívoco. El dominio privado `here-search-corpus-v2/batch256` explicita el
+    cambio de framing. Un cursor de búsqueda anterior se rechaza por el camino
+    existente `InvalidInput(reason="corpus_changed")` antes de usar su rank; el
+    keyset de listado y los campos opacos del cursor no cambian. La memoria queda
+    acotada en cantidad de filas por lote, no en bytes: no se trunca texto ni se
+    promete un límite ante valores individuales enormes. Es decisión interna,
+    no aceptación de rendimiento: requiere controles públicos de cambios del
+    corpus más allá del primer lote, regresión, review independiente y nueva
+    medición real con todas las muestras. El p95 anterior1303,482595ms sigue
+    fallado y la UI Busy sigue incompleta. **Cost if wrong:** ajustar framing o
+    tamaño del lote y repetir sus controles/mediciones, manteniendo cobertura
+    completa del corpus, invalidación segura y los presupuestos originales.
+
+56. **Ruling:** publicar la preparación documental de M3 B no inicia su ejecución.
+    Se aclaran las dos frases del draft que confundían el PR de preparación con
+    el dispatch. Antes del GO siguen siendo obligatorios el A congelado/revisado
+    con PR abierto, los heads/firmas y handoffs reales aceptados, los contratos
+    documentados y cualquier PR adicional si cambian. Se conserva el rebase tras
+    merge A; no se agrega un requisito de merge previo para empezar B. Ningún
+    criterio, bloque de tarea, cierre, presupuesto o gate de código/aceptación/
+    entrega se modifica. La publicación anticipada solo evita que el trabajo de
+    documentación espere innecesariamente; un contrato pendiente no se presenta
+    como productor aceptado. **Cost if wrong:** ajustar el documento y fijar sus
+    bindings antes del dispatch, sin iniciar implementación con supuestos abiertos.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
@@ -2032,3 +2124,33 @@ CI, received/responded current-head Copilot and guarded merge remain mandatory.
 No new hardware/provider/clean-install certification is claimed. Two hours remains
 **omitida por ruling 5**, never passed. STATUS records actual chat/branch/worktree
 IDs and the current writer/runtime leases; completed A is not restarted.
+
+## 2026-11-06 — Coordination records PR #23 merged
+
+PR [#23](https://github.com/srodriguez-lefebre/here/pull/23) publishes the four
+coordination/evidence documents and R46–52 without product source/test/schema/config/
+version changes. Independent reviewer parallel_contracts_review APPROVED final
+head13f23b569b9375cb88c8a686e1ca9f31afa8dbcd; editorial M1 ADDRESSED. Its continuation
+checked only the one-word Copilot correction, preserving the earlier assessment.
+
+Initial Copilot5798303411 COMMENTED at09:37:03Z on bca7a93 identified spelling
+inline4491018724. Root corrected it in13f23b5, replied4491036067 in that same thread
+at09:39:21Z and verified threadPRRT_kwDORsQx4M60c8bU resolved. New review requested
+on exact13f at09:39:36Z; actual bot review5798363749 COMMENTED at09:43:03Z reports
+no open issues and the correction resolved. Own reply metadata is not bot review.
+
+Exact-head Windows CI42196684370 completed successfully: actual retained log
+980 passed/2 installed-wheel environment skips/277.06s, plus wheel/source build.
+Windows package42196683781 also succeeded on13f. These validate the unchanged
+accepted A source in this documentation PR, not unmerged B5 or M3 code. Raw checks,
+reviews, individual comments, resolved threads, workflow metadata and CI log are
+retained as `.superpowers/orchestration-pr23-*-13f23b5.json` and
+`.superpowers/orchestration-pr23-ci-42196684370.*`.
+
+After verifying non-draft/main/exact head, independent verdict, received bot review,
+individual reply/resolved thread and both exact Windows checks, root invoked
+`gh pr merge 23 --merge --admin --match-head-commit 13f23b569b9375cb88c8a686e1ca9f31afa8dbcd`.
+Merge commitc4d79b2759cb857094f5fa22adf5b1ad2865f69b at2026-11-06T09:47:58Z.
+This closes the records PR only. M2 B/M3 A, actual native/guarded interoperability,
+milestone versions, final suites and certification remain open. No gate or DoD
+changed; two hours stays **omitida por ruling 5**.

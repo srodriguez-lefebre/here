@@ -12,21 +12,103 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M1 | Provider/timestamps and diarization | Synthetic real-provider run and segment output inspected | Single/multiple-source TTS smokes passed; long transcription/diarization omitted by explicit user instruction |
 | M1 | Failure/crash/network/disconnection/disk-pressure recovery | Fault-injection plus bounded hardware run | PR12 faults, writer/publication process kills and helper-owner death passed; native recoverable saved failure passed; no repeated installed fault matrix claim; long run omitted by user |
 | M1 | Installed application opens, records and uninstalls | Fresh Windows installation and bundled-runtime smoke | Incorporated-source `1740b2d` local Windows 11 frozen GUI/CLI, Start launch, active-update refusal, reinstall/uninstall and data preservation passed; recording retains earlier source evidence; distribution peer review/clean hosted package CI/merge pending |
-| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | A mergeado PR21; B tarea4 implementada/verificada automáticamente en local por M2B-T4-R1-FULL-4e1b2ce-20261106 (1043/9/390,03s), review y docs aceptados. Borrado/cierre B/M2 pendientes; sin certificación nueva |
+| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | A mergeado PR21; B tarea4 implementada/verificada automáticamente en local por M2B-T4-R1-FULL-4e1b2ce-20261106 (1043/9/390,03s), review y docs aceptados. B5 R52/R54 sobre624be55: GREEN9 y cinco focos v2 verificados, review R54-R1 acotada APPROVED; no suite completa nueva. Borrado/cierre B/M2 pendientes; sin certificación nueva |
 | M2 · criterio 2 | Grabación, archivo y retry comparten persistencia de aplicación | CLI delega a SessionProcessor, artefactos y fallos compatibles | Consolidación verificada en focos de tarea 2; integración de catálogo implementada en 7bfd0cb con foco final 26; review técnica y CI final A980/2/307,46 s aceptados; B/M2 pendientes |
 | M2 · criterios 6–7 | Segmentos nullable y pausa sin desplazar el WAV | Cinco recorridos con proveedor fake, procedencia y seek de marcas en WAV sintético | Verificados automáticamente en focos de tarea 2 y catálogo implementado en tarea 3; full4 y review técnica final aceptados; sin certificación de captura/proveedor |
 | M2 · criterio 8 | Migración transaccional, backup administrado y rechazo de esquema futuro | FK/integrity, rollback de DDL y snapshot SQLite API con WAL comprometido | Verificado automáticamente en local: M2A-T1-LOCK-GREEN-20261105 y M2A-T1-FINAL-20261105, más CI final A980/2/307,46 s |
 | M2 · criterio 14 | Busy tipado y acotado, sin trabajo de proveedor/archivos en transacción | Segunda conexión real con bloqueo de escritura y EXCLUSIVE sobre lecturas | Base verificada en tarea1 y publicación implementada en tarea 3, con focos de recuperación Busy; review técnica y CI final A980/2/307,46 s aceptados; B/M2 pendientes |
 | M2 · criterio 15 | Suite completa en CI de Windows sin credencial real ni display | Corrida hospedada sobre el head exacto del PR M2 A | Verificado automáticamente para A por M2A-CI-FINAL-8a498e2-20261106:980 pasan/2 skips wheel/307,46 s, run42155415514; B/cierre M2 exige su propia CI final |
-| M2 | Deletion clears managed memory without resurrection | DB/FTS/files/answers/backup inspection after restart | Open |
+| M2 | Deletion clears managed memory without resurrection | DB/FTS/files/answers/backup inspection after restart | Abierto: B5 sobre624be55 verifica automáticamente focos native/corecompat/service/guard v2; nueve omisiones de privilegio symlink explícitas. Faltan gates integrados/finales B5, consumidores, full/tipos y CI/review/merge del grupo; no certificación ni cierre |
 | M3 | Listing/filter/search and original moment navigation | End-to-end Qt selection and seek plus real WAV marker playback | Open |
-| M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | Open |
+| M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | Abierto: fuente0bea p95 real1303,482595ms fallado; R55/src e198 pasa10 controles y240 de regresión, pero guarded-query-perf-r55-1 conserva40 muestras válidas y FALLA p95=902,413285ms frente al requisito<500ms. UI1F por Busy, objetivo de ocho consultas no alcanzado y heartbeat incompleto; perfil es diagnóstico, no aceptación |
 | M4 | Multi-meeting answers/extractions with valid evidence | Source-resolution and semantic synthetic corpus, provider smoke | Open |
 | M4 | Uncertainty/injection/cancellation/deletion remain honest | No-evidence, invalid-citation, concurrent delete/redaction tests | Open |
 | M5 | Offline first run, settings, tray/startup and safe exit | Qt, process concurrency and Windows settings tests | Open |
 | M5 | Portable data including optional audio and citations | Export/import on a fresh root, hashes and hostile ZIP tests | Open |
 | M5 | Install/update/uninstall preserve user memory | N to N+1 installation and separate uninstall test | Open |
 | All | PR groups reviewed and merged | PR URLs, reviewed heads, comment dispositions, CI and merge SHAs | M2–M5 en ejecución por ruling 20; cada uno de los nueve grupos requiere review independiente, Copilot recibido/respondido y CI Windows verde sobre el head exacto antes del merge; M2 A mergeado por PR21/53712c5 con todos los gates; los ocho grupos restantes pendientes |
+
+## Checkpoint local B5 y performance M3 — 2026-11-06
+
+**Snapshot histórico anterior a mypy-v2 y a las corridas R55.** Los resultados
+posteriores aparecen en la tabla actual y STATUS; los pendientes de este bloque
+describen aquel momento y no anulan ni transfieren evidencia posterior.
+
+Este checkpoint registra corridas existentes, no una nueva ejecución de docs.
+Los nombres de la tabla son los stems reales de sus logs/XML, con fecha20261106.
+Los resultados son independientes: no se suman para inventar una suite completa.
+Fuente/version vigente0.2.0; B/M2 y M3 siguen abiertos, sin aceptación de0.3.0.
+
+### B5: ownership, staging y compatibilidad R52/R54
+
+Fuente exacta `624be55f2101450e458824739de8c8bfb80d0ba5`, src
+`d4575d1a70a2fb2579acb669012cfb8510caa1d5`, tests
+`c0a23fdec146fdeb9eeb1eb6d5ffe6e1d1672d0b`. La misma re-review independiente
+`task-5-r52-r54-fix-2-re-review-report.md` declara R54-R1 ADDRESSED, SPEC/calidad
+APPROVED solo en `aa16784..624be55`, sin nuevos Critical/Important/Minor. No es
+review global de Task5, transferencia R52 a consumidores ni cierre del grupo.
+
+| Corrida nombrada · fecha20261106 | Resultado observado | Alcance y límites |
+|---|---|---|
+| task-5-r52-r54-fix-2-green-1 | 9 pasan/0F/0E/0S/5,49s; XML9/interno5,422s | Cuatro variantes de referencia staging dot/case y cinco controles; bytes, owner real, row/outcome, orphan genuino y before-stage con exit73. No repetido dentro de los cinco focos v2 |
+| task-5-r52-r54-native-v2 | 31 pasan/4 skips/22,82s; XML35/0F/0E/4S/interno22,715s | Dos archivos native-owner/tail; cuatro symlinks sin privilegio omitidos, no aprobados |
+| task-5-r52-r54-corecompat-a-v2 | 98 pasan/5 skips/99,03s; XML103/0F/0E/5S/interno98,925s | Borrado/FTS y cinco nodos CLI de delete/reindex; cinco symlinks sin privilegio omitidos |
+| task-5-r52-r54-corecompat-b-v2 | 47 pasan/29,45s; XML47/0F/0E/0S/interno29,342s | Reconcile/rebuild, participantes/lineage y nodos de recuperación; foco de compatibilidad, no toda la suite |
+| task-5-r52-r54-service-full-v2 | 13 pasan/9,66s; XML13/0F/0E/0S/interno9,391s | Archivo test_memory_service completo, incluidos cinco cortes reales before-stage/after-rename/before-commit/after-commit/before-complete; no full de producto |
+| task-5-r52-r54-guard-remainder-v2 | 20 pasan/37,16s; XML20/0F/0E/0S/interno36,203s | Recovery/privacy/legacy/group y dos nodos de ownership; no cobertura exhaustiva de consumidores |
+
+Los cinco comandos v2 finalizaron exit0 secuencialmente bajo grant exclusivo,
+offscreen/key sintética/raíces temporales y `.env` ausente; sin proveedor ni datos
+privados. XML/logs permanecen en `faab/here/.superpowers/sdd/M2_LIFECYCLE_PLAN/`.
+`task-5-r52-r54-validation-v2-results.md` y
+`task-5-r52-r54-fix-2-immutable-checkpoint.md` vinculan los árboles, comandos y
+hashes; lectura de los cinco logs/XML confirma sus conteos/tiempos y omisiones.
+Las nueve omisiones son de privilegio symlink, no pases ni certificación.
+
+Se conserva la procedencia previa: RED real4F/3,31s sobreaa167, distinto del
+intento4F/3,03s por falta de import json en el arnés; GREEN7 y native35/compat2
+anteriores mantienen sus fuentes y fallos. Ningún resultado anterior se relabela
+como ejecución de624. La higiene/tipos/full finales B5 no tienen resultado
+conocido en este checkpoint. Consumidor M3, UI/player ACK/invalidation, review
+global Task5/docs, CI/Copilot/merge y criterios B/M2 siguen pendientes.
+
+### M3: p95 fallido, UI incompleta y perfil separado
+
+Fuente `0bea8879682c59f3aa5b7dbede9eba1ec78760f0`, tests
+`13c5f8c06be88b4260b03151a18be3dd416e4855`, config
+`7143d4deff5acb55e524baa5ee15c101bce9b3b5`. Performance ejecutada en árbol
+`89c628f569eeef03236ce29c5194f0c46d722815`, HEAD0c4098a más formato de tres tests;
+el commit posterior `ec800c271b6a5dafd2ab269dd7cc28edba42db5d` tiene ese árbol,
+pero no era el HEAD de invocación. Corpus sintético físico1000 reuniones/100000
+segmentos/98901 documentos FTS,220 registros y221 IDs resueltos con alias;
+documentos suprimidos permanecen presentes. Host quieto/exclusivo, sin proveedor.
+
+| Corrida nombrada · fecha20261106 | Resultado observado | Alcance y límites |
+|---|---|---|
+| guarded-query-perf-1 | 1 falla/0P/0E/0S/72,70s; XML1/interno72,625s; exit1 | Cinco warmups y40 consultas públicas con resultados correctos; p95 inclusivo1303,482595ms falla<500ms. Todas las muestras retenidas; setup fuera de tiempos warm |
+| guarded-performance-ui-1 | 1 falla/0P/0E/0S/16,17s; XML1/interno16,137s; exit1 | Busy en library-page requests3/4, cero respuestas de búsqueda; objetivo de ocho consultas no alcanzado. Workers drenados;115 ticks/578,164ms/max11,2069ms son diagnóstico parcial, NO heartbeat aprobado; assertion final<50ms no alcanzada |
+| guarded-query-cost-profile-1 | exit0; shell4,6053457s; control1266,980200ms y llamada perfilada1878,714000ms | Dos llamadas públicas sobre catálogo existente; NO pytest, sin XML/conteo de tests ni nuevo p95. Perfil tiene overhead; no reemplaza ninguno de los dos fallos |
+
+Logs/XML, métricas y bindings están en
+`2710/here/.superpowers/sdd/M3_SEARCH_PLAN/`; reportes
+`guarded-performance-first-run-report.md` y `guarded-query-cost-profile-report.md`.
+El perfil corrió sobre HEAD docs-only `7cf0347efc55f8572d3a084a0b9450c37ffd74ee`,
+con los mismos source/tests/config y79 archivos vinculados. Su summary/exit
+confirman catálogo/registro sin cambios y diez resultados iguales en ambas
+llamadas. `_generation` fue el subtree dominante medido; tiempos inclusivos
+anidados no se suman ni predicen el rendimiento de un algoritmo nuevo. Tampoco
+demuestran la causa concurrente del Busy UI.
+
+La optimización R55 está SOURCE PREPARED, sin verificación en este checkpoint:
+no hereda pases ni tiempos de0bea. p95 sigue FALLIDO y heartbeat INCOMPLETO;
+full/tipos, integración B, UI-delete, previews y gates hospedados/globales de M3
+siguen abiertos. Budgets, corpus, guards y flujo no cambian.
+
+| Nivel | Estado y límite de este checkpoint |
+|---|---|
+| 1 · Implementado | B5 tiene fix624 con review R54-R1 acotada; Task5/grupos no aceptados. R55 solo preparado |
+| 2 · Verificado automáticamente | B5 GREEN9 y cinco focos distintos con omisiones explícitas; M3 p95 FALLA/UI INCOMPLETA. Perfil es diagnóstico, no aceptación |
+| 3 · Certificado | Sin nueva certificación de hardware/proveedor/instalación limpia; prueba de dos horas **omitida por ruling 5** |
 
 ## Checkpoint local M2 B — tarea 4, 2026-11-06
 
