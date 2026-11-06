@@ -13,9 +13,9 @@ seven skips in 364.23s, caused by two existing capture-recovery test wrappers
 rejecting the additive precommit callback; both wheel smokes pass. Narrow fixture
 forwarding is integrated test-only at `ef70f78`, its 13-case focus passes and full 4
 passes 953/seven skips in 358.94s with both wheel smokes on unchanged product
-source. The final scoped independent verdict remains pending. GR1–GR3 remain OPEN
-until that verdict. No task/group approval or hosted
-gates are complete.
+source. Final scoped independent technical review APPROVED source, fixture and
+docs `8845877`; GR1–GR3/GD1/GD2 are ADDRESSED. Task 3 is locally implemented,
+automatically verified and independently accepted; group hosted/merge gates remain open.
 The prior five-failure full remains historical evidence. Governing design:
 `PRODUCT_DESIGN.md` §2–§4, which is a taken decision (ruling 3). Spanish plan and
 acceptance criteria: `../MILESTONE_2_PLAN.md`.
@@ -100,8 +100,8 @@ rebuild and `show` JSON expose the same `revision_audio_assets`. An older receip
 without unambiguous proof stays uncertain with a warning; no relationship is
 invented. Receipt 3 retains these same links and additionally proves explicit
 publication provenance; receipt 2 remains readable without invented proof.
-Acceptance still waits for the final scoped review, current aggregate verification
-and hosted gates despite the historical passing full.
+Current local aggregate verification is complete: full 4 passes 953/seven skips
+in 358.94s with final technical review APPROVED. Hosted acceptance gates remain pending.
 
 ### Segments and evidence
 
@@ -165,8 +165,7 @@ restores the complete operation, including same-meeting parent validation. Recei
 envelopes and nested mappings/arrays of objects are validated before mapping
 methods or referenced reads. Every malformed meeting tree is retained with an
 identified warning so valid siblings still rebuild; repeat reconcile/discovery and
-maintenance JSON remain usable. This is the implemented GR2 correction awaiting
-independent scoped re-review.
+maintenance JSON remain usable. GR2 is ADDRESSED by final independent scoped review.
 
 Source artifact roles are explicit: known session JSON/text/Markdown plus validated
 WAV references. Containment alone never authorizes opening, probing or hashing a
@@ -207,7 +206,7 @@ measured artifact map to match. A still-pending manifest or changed/incomplete
 final evidence retains its exact marker/source bytes with a warning, never
 imports the previous result as a new revision and never calls the provider.
 Pending-manifest discovery exposes that uncertainty through the existing public
-`RecoveryCandidate.error_summary`. GR1 implementation awaits scoped re-review.
+`RecoveryCandidate.error_summary`. GR1 is ADDRESSED by final independent scoped review.
 
 For valid WAV-only legacy retry without `session.json`, reserve a canonical UUID
 and actual lease before mutation/provider, with a measured origin mapping whose
@@ -229,7 +228,7 @@ through the existing cancellation cutover; any accepted cancellation reseals the
 final outcome before that publication. Canonical and optional source identities
 retain one meeting and one partial revision. Direct capture-failure persistence and
 foreign injected processors preserve their existing contracts, as do ordinary
-same-UUID conflict checks. GR3 implementation awaits scoped re-review.
+same-UUID conflict checks. GR3 is ADDRESSED by final independent scoped review.
 
 ### Durable meeting state
 
@@ -262,7 +261,8 @@ the journal path join/probe. Existing manifests retain optional/opaque source ID
 Round-2/3 scoped reviews address the snapshot/audio-only regressions and NB2;
 historical full 2 at `8087e25` passes 940 tests/seven skips. The combined fix at
 `7bfd0cb` has a passing 26-case group/recovery focus; test-only `ef70f78` has the
-current full 4 passing 953/seven skips. Final scoped independent re-review remains pending.
+current full 4 passing 953/seven skips. Final scoped independent review is APPROVED;
+hosted gates remain pending.
 
 ### FTS
 

@@ -12,11 +12,11 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M1 | Provider/timestamps and diarization | Synthetic real-provider run and segment output inspected | Single/multiple-source TTS smokes passed; long transcription/diarization omitted by explicit user instruction |
 | M1 | Failure/crash/network/disconnection/disk-pressure recovery | Fault-injection plus bounded hardware run | PR12 faults, writer/publication process kills and helper-owner death passed; native recoverable saved failure passed; no repeated installed fault matrix claim; long run omitted by user |
 | M1 | Installed application opens, records and uninstalls | Fresh Windows installation and bundled-runtime smoke | Incorporated-source `1740b2d` local Windows 11 frozen GUI/CLI, Start launch, active-update refusal, reinstall/uninstall and data preservation passed; recording retains earlier source evidence; distribution peer review/clean hosted package CI/merge pending |
-| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | Tareas 1/2 aceptadas localmente; tanda GR1–GR3 en 7bfd0cb y fixture test-only ef70f78. Full4 verde 953/7/358,94 s, ambos smokes wheel; full 3 fallido conservado. Re-review final/CI pendientes; GR1–GR3 OPEN, sin aceptación; B abierto |
-| M2 · criterio 2 | Grabación, archivo y retry comparten persistencia de aplicación | CLI delega a SessionProcessor, artefactos y fallos compatibles | Consolidación verificada en focos de tarea 2; integración de catálogo implementada en 7bfd0cb con foco final 26; aceptación agregada/re-review final/CI pendientes |
-| M2 · criterios 6–7 | Segmentos nullable y pausa sin desplazar el WAV | Cinco recorridos con proveedor fake, procedencia y seek de marcas en WAV sintético | Verificados automáticamente en focos de tarea 2 y catálogo implementado en tarea 3; agregado/re-review final pendientes; sin certificación de captura/proveedor |
+| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | Tareas1–3 verificadas localmente y aceptadas técnicamente; full4 verde953/7/358,94 s y ambos smokes; review final APPROVED fuente7bfd/fixtureef70/docs8845877, GR1–GR3 ADDRESSED. CI/merge y B pendientes; sin cierre del grupo/hito |
+| M2 · criterio 2 | Grabación, archivo y retry comparten persistencia de aplicación | CLI delega a SessionProcessor, artefactos y fallos compatibles | Consolidación verificada en focos de tarea 2; integración de catálogo implementada en 7bfd0cb con foco final 26; full4 y review técnica final aceptados; CI pendiente |
+| M2 · criterios 6–7 | Segmentos nullable y pausa sin desplazar el WAV | Cinco recorridos con proveedor fake, procedencia y seek de marcas en WAV sintético | Verificados automáticamente en focos de tarea 2 y catálogo implementado en tarea 3; full4 y review técnica final aceptados; sin certificación de captura/proveedor |
 | M2 · criterio 8 | Migración transaccional, backup administrado y rechazo de esquema futuro | FK/integrity, rollback de DDL y snapshot SQLite API con WAL comprometido | Verificado automáticamente en local: M2A-T1-LOCK-GREEN-20261105 y M2A-T1-FINAL-20261105; CI del grupo pendiente |
-| M2 · criterio 14 | Busy tipado y acotado, sin trabajo de proveedor/archivos en transacción | Segunda conexión real con bloqueo de escritura y EXCLUSIVE sobre lecturas | Base verificada en tarea1 y publicación implementada en tarea 3, con focos de recuperación Busy; agregado/re-review final/CI pendientes |
+| M2 · criterio 14 | Busy tipado y acotado, sin trabajo de proveedor/archivos en transacción | Segunda conexión real con bloqueo de escritura y EXCLUSIVE sobre lecturas | Base verificada en tarea1 y publicación implementada en tarea 3, con focos de recuperación Busy; full4 y review técnica final aceptados; CI pendiente |
 | M2 · criterio 15 | Suite completa en CI de Windows sin credencial real ni display | Corrida hospedada sobre el head exacto del PR M2 A | Pendiente; M2A-T1-FINAL-20261105 es local y no cierra esta fila |
 | M2 | Deletion clears managed memory without resurrection | DB/FTS/files/answers/backup inspection after restart | Open |
 | M3 | Listing/filter/search and original moment navigation | End-to-end Qt selection and seek plus real WAV marker playback | Open |
@@ -44,8 +44,8 @@ acotadas de rondas 1–3 marcan F1–F7/NB1/NB2 addressed; full histórico 8087e
 940/7. La review global única terminó changes requested por GR1–GR3. La tanda
 R38 está integrada en 7bfd0cb, con foco final 26/34,46 s y probe wheel nuevo;
 full 3 fallido por wrappers permanece histórico. Corrección test-only ef70f78
-pasa foco 13/24,82 s y full 4:953/7/358,94 s; re-review final/B/CI del grupo siguen
-abiertos. Los smokes reales de proveedor
+pasa foco13/24,82 s y full4:953/7/358,94 s; review final técnica APPROVED sobre
+docs8845877, GR1–GR3 ADDRESSED. B/CI/merge del grupo siguen abiertos. Los smokes reales de proveedor
 autorizados por ruling 19/20 usan solo audio y texto sintéticos; no se ejecutaron
 en estos checkpoints. No se leyó el
 `.env` real, la biblioteca del usuario ni grabaciones privadas. La matriz y las
@@ -431,10 +431,10 @@ Root `7bfd0cbf477a42aacc44b83b3d2da1e438801756` integra Green
 src tree `2b4036f7deb905efb0a8836f378d267a066564b4` y tests tree
 `a4310416bd10dc922b49e010d8495a98bfdfd585` iguales. La review global única de
 763a891..8087e25 y suplemento e00dd08 terminó **changes requested** para GR1–GR3;
-GD1/GD2 Minor se corrigieron en7be93af. Queda una re-review acotada de tanda más
-docs/evidencia. GR1–GR3 siguen **OPEN** hasta veredicto independiente final, sin
-aprobación de tarea/grupo/hito. Su inspección provisional de fuente los considera
-ADDRESSED sin nuevo breakage accionable, pero no es el veredicto técnico final.
+GD1/GD2 Minor se corrigieron en7be93af. La misma review acotada final de tanda,
+fixture y docs8845877 es **APPROVED**, GR1–GR3/GD1/GD2 **ADDRESSED**, sin nuevo
+Critical/Important ni defecto fuente accionable. Tarea3 aceptada técnicamente,
+grupo/hito aún pendientes de gates y alcance restantes. Reporte `group-fix-review-report.md`.
 
 R38 implementado: marker 3 con token/padre/source kind/intent y hashes exactos del
 manifiesto prospectivo y artefactos con roles validados se persiste antes del
@@ -502,7 +502,7 @@ siendo exacto para fuente sin cambios. El full anterior940/7 no prueba este head
 
 | Nivel vigente | Resultado y límite |
 |---|---|
-| 1 · Implementado | Tanda R38 integrada 7bfd0cb y fixture test-only ef70f78 con full 4 pasando; GR1–GR3 OPEN hasta re-review final, sin aceptación |
+| 1 · Implementado | Tanda R38 fuente7bfd y fixtureef70 con full4 pasando; tarea3 aceptada por review técnica final, GR1–GR3 ADDRESSED; grupo/merge pendientes |
 | 2 · Verificado automáticamente | RED/GREEN/foco 26, fixture 13, static sin nuevos errores, wheel/probe exacto y full 4:953/7/358,94 s con ambos smokes pasando; full 3 fallido conservado; CI pendiente; datos sintéticos |
 | 3 · Certificado | Sin nueva certificación hardware/proveedor/instalador/upgrade limpio; dos horas omitida por ruling 5 |
 

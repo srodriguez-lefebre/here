@@ -123,15 +123,15 @@ GR1–GR3 Important: replay tras metadata, aislamiento de recibos inválidos y
 divergencia de catálogo al cancelar captura. La tanda única de fixes R38 está
 integrada en `7bfd0cb`, equivalente a Green `ec55b95`, con foco final de grupo y
 recovery de 26 pasan/34,46 s. Marker 3 sella evidencia final antes de metadata;
-recibos 2/3 y schema 2 se conservan. GR1–GR3 siguen abiertos hasta una re-review
-independiente acotada. El full de 940/7 corresponde al histórico `8087e25`; falta
-el veredicto final acotado y todos los gates de GitHub. Full 3 de `7bfd0cb` dio ocho fallos/
+recibos 2/3 y schema 2 se conservan. La re-review final independiente APPROVED
+fuente7bfd/fixtureef70/docs8845877 marca GR1–GR3/GD1/GD2 ADDRESSED. El full940/7
+corresponde al histórico `8087e25`; faltan los gates de GitHub. Full 3 de `7bfd0cb` dio ocho fallos/
 945 pasan/siete skips en 364,23 s, por dos wrappers de tests de captura que rechazan
 el callback aditivo. Sus assertions/cortes de crash se conservan al reenviarlo.
 La corrección test-only `ef70f78` pasó foco13/24,82 s y full 4:953 pasan/7 skips/
 358,94 s, ambos smokes wheel pasan con el mismo source/probe no editable exacto.
-Los fallos históricos permanecen y la review final de docs sigue pendiente. No se presenta como
-aceptado el grupo ni el hito.
+Los fallos históricos permanecen. Tarea 3 aceptada técnicamente en local;
+grupo A e hito siguen abiertos hasta sus gates y alcance restantes.
 El ciclo
 de vida/borrado y el cierre de M2 siguen pendientes; no cambia la versión a 0.3.0
 hasta cerrar el grupo B. Su PLAN ajustado se entrega antes en un PR de docs según

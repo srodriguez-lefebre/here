@@ -40,7 +40,8 @@ The main flow is:
   belongs to `8087e25`. New full 3 has eight capture-recovery test-wrapper failures,
   945 passes/seven skips, now historical. Test-only correction `ef70f78` passes
   its 13-case focus and full 4: 953 passed/seven skips in 358.94s, both wheel
-  smokes passing on unchanged source. Final scoped review and hosted gates remain open.
+  smokes passing on unchanged source. Final technical review APPROVED source,
+  fixture and docs `8845877`; hosted gates remain open.
 - `ui/`: Qt Widgets presentation, the live-logo overlay, and the single adapter
   from visual actions to the application contract.
 
@@ -200,7 +201,7 @@ below. Original F1–F7, NB1 and NB2 are addressed in scoped re-review. The fina
 whole-group review of `8087e25` requests changes for GR1–GR3. Their combined fix
 is integrated at `7bfd0cb`, with a 26-case group/recovery focus passing. Test-only
 fixture correction `ef70f78` has the current full 4 passing 953/seven skips; the
-one final scoped re-review remains pending. The earlier
+final scoped review is APPROVED. The earlier
 940-pass/seven-skip full retains its historical `8087e25` source.
 
 ## Catalog publication and local recovery (M2 A task 3)
@@ -324,8 +325,9 @@ corrections were committed separately. The combined R38 fix at `7bfd0cb` matches
 Green `ec55b95` source/tests exactly. Independent baseline RED reported 11 failures
 and one passing control; the final group/recovery focus passes 26 in 34.46s. An
 additional pre-final-replace control first failed only its missing uncertainty
-warning, then passed with the recovery correction. GR1–GR3 remain OPEN pending
-the single scoped re-review. Fresh root wheel/sdist and noneditable 65-file probe
+warning, then passed with the recovery correction. The single scoped re-review
+marks GR1–GR3/GD1/GD2 ADDRESSED and technically APPROVES source, fixture and
+documentation supplement `8845877`. Fresh root wheel/sdist and noneditable 65-file probe
 pass on `7bfd0cb`; full 3 reports eight failures/945 passes/seven skips in 364.23s,
 both wheel smokes passing. Two existing capture-recovery monkeypatch wrappers
 reject `before_metadata_commit`; their narrow optional-keyword forwarding fix
@@ -333,7 +335,7 @@ preserves all assertions and crash cutpoints. It is integrated at `ef70f78`:
 13 cases pass in 24.82s and **full 4 passes 953/seven symlink skips in 358.94s**,
 XML 960 cases/0 failures/0 errors/7 skips/internal 358.621s. Both wheel smokes pass.
 The original `7bfd0cb` wheel remains exact for its unchanged 65-file product source;
-only the test wrappers changed. Final scoped verdict remains pending. Earlier
+only the test wrappers changed. Hosted gates remain pending. Earlier
 failed fulls and the unexplained child timeout
 retain their original results; no new certification or group acceptance is claimed.
 

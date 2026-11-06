@@ -192,9 +192,9 @@ schema stays 2. The final group/recovery focus passes 26 tests. The earlier
 test wrappers reject the additive precommit callback. Both wheel smokes pass.
 The test-only wrapper correction is integrated at `ef70f78`; its 13-case focus
 passes and full 4 passes **953 tests/seven symlink skips in 358.94s**, including
-both wheel smokes on unchanged product source. Final scoped independent re-review
-remains pending. GR1–GR3 remain open
-until that review. Current evidence and hosted CI/Copilot/merge gates are tracked
+both wheel smokes on unchanged product source. Final scoped independent review
+APPROVED source, fixture and docs `8845877`; GR1–GR3/GD1/GD2 are ADDRESSED.
+Current evidence and pending hosted CI/Copilot/merge gates are tracked
 in [STATUS.md](STATUS.md).
 The packaged 0.2.0 delivery above retains its recorded M1 scope.
 

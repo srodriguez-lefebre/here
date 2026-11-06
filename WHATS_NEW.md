@@ -33,8 +33,8 @@ rejecting the additive precommit callback; both wheel smokes pass. The narrow
 fixture correction is integrated at `ef70f78`, preserving all crash assertions.
 Its 13-case focus passes; full 4 passes **953 tests/seven skips in 358.94s** with
 both wheel smokes, using the unchanged product wheel. Final scoped independent
-re-review remains pending; GR1–GR3 stay open until review,
-with hosted gates still pending. M2 is unreleased; version 0.2.0 stays current.
+review APPROVED source, fixture and docs `8845877`; GR1–GR3/GD1/GD2 are addressed.
+Hosted gates remain pending. M2 is unreleased; version 0.2.0 stays current.
 
 ## 0.2.0 — Windows M1 delivery
 

@@ -31,7 +31,7 @@ Lo que M1 ya entrega y M2 consume tal cual:
 Lo que falta y M2 construye:
 
 - Un catálogo con autoridad sobre identidad, título, participantes, relaciones y
-  revisiones. Tarea 3 implementa identidad e ingestión con verificación final pendiente.
+  revisiones. Tarea 3 implementa identidad e ingestión con verificación local y review técnica aceptadas.
 - Revisiones inmutables de transcripción. Tarea 3 conserva snapshots propios;
   los archivos compatibles de la sesión pueden actualizarse durante retry.
 - Un estado durable propio de la reunión, separado de los nueve estados del
@@ -81,7 +81,7 @@ siete. Valen las cinco del diseño.
 
 | Grupo | Tareas del diseño | Documentos | Estado |
 |---|---|---|---|
-| A. Catálogo inmutable | 1 modelos, migraciones y repositorio · 2 segmentos y raw text en todos los recorridos · 3 ingestión, identidad y revisiones | `M2_CATALOG_SPEC.md`, `M2_CATALOG_PLAN.md` | tareas 1/2 con review aceptada; tanda GR1–GR3 en 7bfd0cb y fixture test-only ef70f78; full 4 verde 953/7/358,94 s; re-review final/gates hospedados pendientes; fulls históricos conservados |
+| A. Catálogo inmutable | 1 modelos, migraciones y repositorio · 2 segmentos y raw text en todos los recorridos · 3 ingestión, identidad y revisiones | `M2_CATALOG_SPEC.md`, `M2_CATALOG_PLAN.md` | tareas 1–3 verificadas localmente y aceptadas técnicamente; full4 verde953/7/358,94 s; review final APPROVED sobre fuente7bfd/fixtureef70/docs8845877; gates hospedados/merge pendientes |
 | B. Ciclo de vida y borrado | 4 participantes, edición con `row_version`, reconciliación · 5 borrado transaccional y FTS | `M2_LIFECYCLE_SPEC.md`, `M2_LIFECYCLE_PLAN.md` | plan escrito, sin ejecutar |
 
 Orden obligatorio: A antes que B. Si al mergear A cambió la forma de
@@ -172,12 +172,12 @@ no editable pasaron. Límites y comandos en `development/ACCEPTANCE.md`.
 
 | Criterio | Estado de evidencia |
 |---|---|
-| 1–5. Productores, identidad y revisiones | Rondas 2/3 y tanda R38 integradas en 7bfd0cb, fixture ef70f78; F1–F7/NB1/NB2 addressed; GR1–GR3 OPEN hasta re-review final; full 4 verde 953/7/358,94 s, CI pendiente |
-| 6–7. Segmentos y pausa | Tarea 2 verifica evidencia/seek sintético; focos de tarea 3 preservan segmentos en catálogo, con verificación final/review pendientes |
+| 1–5. Productores, identidad y revisiones | Implementados y verificados localmente con full4 953/7/358,94 s; review técnica final APPROVED, GR1–GR3 ADDRESSED; CI/merge pendientes |
+| 6–7. Segmentos y pausa | Verificados automáticamente en local y aceptados por review técnica; CI pendiente, sin certificación hardware/proveedor |
 | 8. Migración, backup y esquema futuro | Verificación automática local de la base de catálogo; falta CI de Windows en el head del grupo |
-| 14. DB ocupada y transacciones cortas | Verificación local de escrituras/lecturas bloqueadas y publicación de tarea 3 implementada; aceptación agregada/re-review final/CI pendientes |
+| 14. DB ocupada y transacciones cortas | Verificación local y review técnica aceptadas; CI pendiente |
 | 15. Suite en CI de Windows | Pendiente; una suite local no cierra este criterio |
-| 9–10, 13. Crash, catálogo pendiente y rutas | Guards y NB1/NB2 addressed; GR1/GR2/GR3 OPEN por replay entre metadata/primer marker, recibos inválidos y divergencia de catálogo al cancelar captura, sin aceptación global |
+| 9–10, 13. Crash, catálogo pendiente y rutas | Guards/NB1/NB2/GR1–GR3 ADDRESSED por review técnica final; full4 local verde; gates hospedados/merge pendientes |
 | 11–12. Borrado sin resurrección | Grupo B pendiente; no lo cierra la limpieza de staging de tarea 3 |
 | 16. Docs y evidencia de cierre | Checkpoints locales documentados; cierre de grupo/hito pendiente |
 
@@ -254,9 +254,9 @@ callback aditivo; corrección de forwarding conserva assertions/cortes de crash,
 sin cambio de fuente de producto. Corrección test-only ef70f78 integrada con
 114 assertions/cortes intactos; foco 13 pasa 24,82 s y full 4 pasa 953/7/358,94 s.
 XML 960/0F/0E/7S/interno 358,621 s; ambos smokes wheel pasan sobre la misma fuente
-y wheel exactos. Falta re-review independiente final acotada. GR1–GR3 permanecen
-OPEN hasta el veredicto. Sin aceptación de
-tarea/grupo/hito, CI/Copilot/merge ni certificación nueva.
+y wheel exactos. Re-review independiente final APPROVED sobre docs8845877,
+GR1–GR3/GD1/GD2 ADDRESSED. Tarea3 aceptada técnicamente; grupo/hito abiertos,
+sin CI/Copilot/merge ni certificación nueva.
 
 La instrucción R35 exige primero cierre completo y merge de A y sus PRs docs de
 contratos necesarios. Solo entonces root crea chats separados M2 B y M3 A, con

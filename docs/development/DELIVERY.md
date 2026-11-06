@@ -398,7 +398,7 @@ Los rulings nuevos se escriben en español por el ruling 6.
     SQLite. No cambia ningún flujo, dependencia, proceso, deadline, versión ni
     definición de terminado. Es diseño autorizado para una única tanda GR1–GR3,
     implementado en la tanda integrada `7bfd0cb`, con RED/GREEN/foco local y
-    re-review independiente final pendiente. **Cost if wrong:** ajustar el sello,
+    re-review independiente final APPROVED. **Cost if wrong:** ajustar el sello,
     su compatibilidad y el handoff de cutover, conservando evidencia incierta y
     las precondiciones de revisión, sin aceptar como final un intento incompleto.
 
@@ -1384,3 +1384,17 @@ acceptance or version bump. Version 0.2.0, two-hour omission under ruling 5 and 
 responded, exact-head Windows CI and guarded admin merge are pending. R35 still
 requires A merge plus necessary contract-doc PR merges before project chats B/M3 A;
 no chats or future-front execution have started, and future IDs/base remain pending.
+
+## 2026-11-06 — Final independent technical verdict and routine ledger cleanup
+
+Same scoped reviewer APPROVED source7bfd0cb, fixtureef70f78 and committed docs
+8845877d75342d1c0f65f1a6674155c7439ab4ce in group-fix-review-report.md:
+GR1/GR2/GR3/GD1/GD2 ADDRESSED, no remaining Critical/Important finding or new
+source defect. Task3 is implemented, locally automatically verified and technically
+accepted. Full4 evidence and every historical failed run remain unchanged.
+GD3 Minor/P3's three stale current phrases (JSON source state, STATUS released
+lease/completed full4, SPEC aggregate verification) are corrected in this normal
+verdict update. No additional review/runtime is requested. Docs lease released.
+Root may open the M2 A PR; Copilot received/responded, exact-head Windows CI,
+guarded merge and ledger remain pending. Group A/M2 are not closed or certified;
+version0.2.0 and R35 future-chat/contract-doc gates remain unchanged. No new ruling.

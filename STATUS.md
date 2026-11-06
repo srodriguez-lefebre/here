@@ -42,7 +42,8 @@ las definiciones de terminado y los tres niveles de evidencia. Versión vigente
 ## Tarea en curso y resultados reales
 
 `docs/development/M2_CATALOG_PLAN.md`, tarea 3. SPEC `M2_CATALOG_SPEC.md`; hito
-`docs/MILESTONE_2_PLAN.md`. Tarea 3 y grupo A siguen sin aprobar.
+`docs/MILESTONE_2_PLAN.md`. Tarea 3 implementada, verificada automáticamente en
+local y aceptada por review técnica independiente. Grupo A espera gates hospedados/merge.
 
 - Tarea 1: review independiente aceptada después del fix Busy. Foco 34 pasan/
   1 skip/4,70 s; full `M2A-T1-FINAL-20261105` 778 pasan/7 skips/173,68 s,
@@ -79,10 +80,10 @@ las definiciones de terminado y los tres niveles de evidencia. Versión vigente
   memory_pending marker (kill deja sin replay e interrupted); receipt JSON array
   puede abortar rebuild de vecinos por `.get`/AttributeError; cancelación aceptada
   durante persistencia del fallo de captura deja UI/manifest cancelled y catálogo
-  failed con conflicto/marker atascado. GR1/GR2/GR3 Important/P2 están OPEN en
+  failed con conflicto/marker atascado. En ese checkpoint GR1/GR2/GR3 estaban OPEN en
   `group-review-report.md`, veredicto fuente/docs changes requested. GD1/GD2 Minor
-  corregidos en `7be93af`; tanda única R38 integrada. GR1–GR3 siguen OPEN hasta
-  una re-review independiente acotada del diff más docs/evidencia.
+  corregidos en `7be93af`; tanda única R38 integrada. La re-review final acotada
+  APPROVED sobre fuente7bfd/fixtureef70/docs8845877 marca GR1–GR3/GD1/GD2 ADDRESSED.
   Sin aceptación. No repetir esta review global ni reabrir NB1/NB2 ya addressed;
   después corresponde una sola re-review del diff de la tanda.
 - Wheel/sdist nuevos CPython 3.13.15 y probe off-repo `-I` no editable de `8087e25`:
@@ -129,7 +130,9 @@ summary/XML y ambos smokes wheel CLI/GUI pasan (3,018/2,634 s). Los siete skips
 requieren privilegios symlink. Es evidencia automática local sobre fuente
 7bfd/HEAD ef70f78, no CI hospedado ni certificación.
 El full 940/7 pertenece a `8087e25`, no al head nuevo.
-GR1–GR3 siguen OPEN hasta re-review independiente, sin gates hospedados ni aceptación.
+Review técnica independiente final APPROVED: GR1–GR3/GD1/GD2 ADDRESSED, cero
+hallazgos técnicos abiertos. Reporte `group-fix-review-report.md`, docs revisados
+`8845877d75342d1c0f65f1a6674155c7439ab4ce`. Gates hospedados/merge pendientes.
 
 ## Próxima acción obligatoria
 
@@ -137,10 +140,9 @@ GR1–GR3 siguen OPEN hasta re-review independiente, sin gates hospedados ni ace
    smokes wheel verificados. Conservar full 3 fallido y foco 13/24,82 s pasando;
    fuente/probe wheel 7bfd siguen exactos porque el diff es solo tests.
    Conservar todos los fulls históricos sin reutilizarlos como resultado actual.
-2. Una sola re-review independiente acotada de la tanda y docs/evidencia contra
-   los hallazgos globales. GR1–GR3 siguen OPEN hasta el veredicto. No repetir review
-   global ni NB1/NB2 ya addressed; focos solos no aceptan tarea/grupo.
-3. PR de A, Copilot sobre head exacto recibido/respondido y CI Windows verde;
+2. Abrir PR de A con la review independiente final APPROVED y evidencia; GD3
+   Minor de frases antiguas se corrige en este registro rutinario, sin nueva review.
+3. Copilot sobre head exacto recibido/respondido y CI Windows verde;
    merge guardado y ledger. Todavía no hay PR ni CI de A aprobados.
 4. Después del merge A y de los PRs de docs de contratos necesarios, root crea
    dos chats de proyecto separados para M2 B y M3 A, con briefs completos y leases.
@@ -183,8 +185,8 @@ El resto conserva sus dependencias; no se inicia ningún frente en este checkpoi
   Scope: processing/controller/recovery, memory service/artifacts y output
   session_writer; ningún otro escritor. Reviewer `catalog_group_review` terminó
   su misma review global con el suplemento docs `e00dd08`; después revisa el diff
-  de esta tanda una vez. Docs/evidencia `catalog_closure_docs` tiene lease de once
-  archivos; root conserva la ventana exclusiva de runtime para wheel/full 3.
+  de esta tanda una vez: veredicto final APPROVED. Docs/evidencia liberó sus once
+  archivos; full 4 y verificación local completados, sin ventana runtime activa.
   Brief persistente: `.superpowers/sdd/M2_CATALOG_PLAN/group-fix-brief.md`.
   No se repiten las tareas ni las rondas anteriores; root integra y controla gates.
 - Rulings 31–34 registran asociación revision/audio/schema 2, legacy confiable y
@@ -198,8 +200,8 @@ El resto conserva sus dependencias; no se inicia ningún frente en este checkpoi
   (marker 3, lectura1/2 compatible) y el cutover de fallo/cancelación antes de la
   primera publicación. Integrado en `7bfd0cb`, foco final 26 PASS y static sin
   nuevos errores; full 3 fallido por wrappers conservado y corrección test-only
-  integrada ef70f78/foco 13/24,82 s/full 4 verde 953/7/358,94 s. Re-review acotada
-  final pendiente, sin aceptación de tarea/grupo ni gates hospedados.
+  integrada ef70f78/foco 13/24,82 s/full 4 verde 953/7/358,94 s. Re-review final
+  APPROVED y tarea 3 aceptada técnicamente; grupo A pendiente de gates hospedados/merge.
 - Todas las corridas anteriores, incluidos fulls fallidos y diagnóstico de captura,
   conservan alcance y límites en ACCEPTANCE/DELIVERY/evidence JSON. El arnés revisado
   no cambió deadlines del producto; H1 bootstrap se observó en un caso y H2 sharing

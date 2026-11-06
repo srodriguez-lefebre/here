@@ -11,9 +11,9 @@
 > Full 2's 940/seven skips belongs to historical `8087e25`. Full 3 at `7bfd0cb`
 > has eight test-wrapper failures/945 passes/seven skips, retained historically.
 > Test-only correction `ef70f78` passes focus13 and full4:953/seven skips/358.94s.
-> Final scoped re-review remains pending; GR1–GR3 stay OPEN
-> until review. No task/group approval
-> or current-head Windows/Copilot gate is complete.
+> Final scoped technical review APPROVED source, fixture and docs `8845877`;
+> GR1–GR3/GD1/GD2 ADDRESSED. Task 3 is locally verified and independently accepted.
+> Group hosted Windows/Copilot/merge gates remain pending.
 
 **Goal:** Durable meeting identity, immutable transcript revisions and one
 application-owned persistence path, rebuildable from files and usable without a key.
@@ -198,7 +198,7 @@ implemented in rounds 2/3 as recorded below; aggregate task acceptance remains o
   assigned, `legacy_session_id` kept, `ingest_sources` fingerprint stored; second
   ingest → `unchanged`; same UUID different content → readable conflict; identical
   audio in two folders → two meetings.
-- [ ] Implement `artifacts.py` (v1 reading, fingerprint, hash, path validation through
+- [x] Implement `artifacts.py` (v1 reading, fingerprint, hash, path validation through
   `src/output/paths.py`) and `service.py` ingestion inside the publication sequence of
   the spec, with `pending_operations` rows.
 - [x] Write failing fault-injection tests that kill a subprocess at each publication
@@ -206,13 +206,13 @@ implemented in rounds 2/3 as recorded below; aggregate task acceptance remains o
   `reconcile()`; assert reconciliation issues zero provider calls.
 - [x] Write failing retry tests: revision `n+1` created, activated only after commit,
   `n` historical and readable; failed retry leaves `n` active.
-- [ ] Wire the controller, `here trans` and retry to `ingest_session`; inject a
+- [x] Wire the controller, `here trans` and retry to `ingest_session`; inject a
   catalog failure during a recording and assert audio plus `session.json` survive and
   the pending-recovery message is reported.
-- [ ] Create the FTS5 table in sync with the active revision inside the publication
+- [x] Create the FTS5 table in sync with the active revision inside the publication
   transaction; probe FTS5 availability and degrade with a typed warning.
-- [ ] Add the three CLI commands with JSON output and exit codes.
-- [ ] Run focused tests and the full offscreen suite; self-review; independent agent
+- [x] Add the three CLI commands with JSON output and exit codes.
+- [x] Run focused tests and the full offscreen suite; self-review; independent agent
   review; commit as "memory: ingestion, identity and revisions".
 
 **Original frozen-candidate checkpoint (superseded by the integration note below):**
@@ -331,7 +331,9 @@ Root `7bfd0cbf477a42aacc44b83b3d2da1e438801756` integrates Green
 diff is empty. The single final whole-group review of `763a891..8087e25`, including
 docs supplement `e00dd08`, requests changes for GR1/GR2/GR3 Important/P2. GD1/GD2
 minor checkpoint corrections are in `7be93af`; no second whole-source review is
-planned. GR1–GR3 remain OPEN until one scoped independent re-review of this wave.
+planned. The one final scoped re-review APPROVED source, fixture and committed
+docs `8845877`; GR1–GR3/GD1/GD2 are ADDRESSED, with no Critical/Important or new
+actionable source defect. Routine GD3 ledger phrases are corrected in this update.
 
 R38 is implemented: every final producer output seals marker 3 in the writer's
 internal pre-metadata-commit callback after subordinate artifacts exist. Its exact
@@ -377,12 +379,12 @@ Both wheel smokes pass. Full 4 began alone at 2026-11-06T00:54:42.9822634Z;
 `2b4036f7deb905efb0a8836f378d267a066564b4`; tests tree now
 `30c88848b3cf42c9ce4443328e3c8e0100e2af44`. The existing fresh `7bfd0cb` wheel/probe
 is reused because product source/config/scripts/workflows are unchanged; no
-redundant build or fabricated new artifact hash. Final scoped docs verdict pending.
+redundant build or fabricated new artifact hash. Final scoped docs verdict APPROVED.
 Historical full 2 at
 `8087e25` is valid 940/7/325.09s evidence for its own source, not this head. All
 earlier failed suites and the unchanged/unexplained child timeout remain above and
-in ACCEPTANCE/DELIVERY/evidence. No source-level fix verification closes a review
-finding or accepts Task 3/group A/M2. PR/Copilot/exact-head Windows CI/guarded merge
+in ACCEPTANCE/DELIVERY/evidence. Task 3 is implemented, automatically verified
+locally and independently technically accepted. Group A/M2 remain open. PR/Copilot/exact-head Windows CI/guarded merge
 remain pending; version is 0.2.0, with no new certification or future front started.
 
 ## Closing the group

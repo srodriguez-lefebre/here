@@ -8,7 +8,7 @@
   "task_2_commit": "037fc036ef43467136bcf7b8e95c6f8395d1aa5e",
   "task_2_base_commit": "878e7d4b531d0b07599b373261279fbb6b440030",
   "task_2_integration_commit": "1cdaadb72f2ebee53ce3a7be2680a01d18de6ad2",
-  "evidence_level": "implemented_and_verified_automatically_local_full4_passed_final_scoped_review_pending",
+  "evidence_level": "implemented_and_verified_automatically_local_full4_passed_independent_technical_review_approved_hosted_gates_pending",
   "certified": false,
   "data_policy": "Temporary SQLite roots, authored synthetic PCM and transcripts, synthetic key; no private sessions or real .env.",
   "runs": [
@@ -195,11 +195,11 @@
     "handled_raw_io_rollback": "Restore previous bytes or remove fresh unpublished raw after metadata replace failure"
   },
   "task_3_progress": {
-    "state": "combined_R38_fix_and_test_only_fixture_integrated_full4_passed_final_scoped_review_pending",
+    "state": "full4_passed_independent_technical_review_approved_hosted_gates_pending",
     "candidate_suite_green": true,
-    "task_accepted": false,
+    "task_accepted": true,
     "fix_round": 3,
-    "open_findings_count": 3,
+    "open_findings_count": 0,
     "prior_red_passed": 18,
     "prior_red_failed": 31,
     "author_duration_seconds": 2.5,
@@ -234,8 +234,8 @@
       "historical": true,
       "source_commit": "6c422f0b8671d2f736645abb6835d351783cbcc7"
     },
-    "independent_task_review": "scoped_F1_F7_NB1_NB2_addressed_no_task_or_group_acceptance",
-    "independent_whole_branch_review": "final_changes_requested_GR1_GR2_GR3_OPEN_combined_fix_integrated_scoped_re_review_final_pending",
+    "independent_task_review": "task3_locally_implemented_automatically_verified_and_independently_technically_accepted",
+    "independent_whole_branch_review": "original_group_review_plus_single_scoped_re_review_final_approved_GR1_GR2_GR3_GD1_GD2_addressed",
     "hosted_ci": "pending",
     "copilot": "pending",
     "historical_candidate_checkpoint": {
@@ -290,12 +290,12 @@
       "full_evidence_key": "task_3_integrated_full"
     },
     "scoped_open_findings_count": 0,
-    "whole_group_Important_findings_count": 3,
+    "whole_group_Important_findings_count": 0,
     "current_execution_head": "ef70f78cfc9c8f2910e77b2b2818ce2e6b4d71ae",
     "current_tests_tree": "30c88848b3cf42c9ce4443328e3c8e0100e2af44"
   },
   "task_3_protocol": {
-    "source_state": "combined_R38_fix_integrated_final_focus_passed_full3_in_progress_scoped_review_final_pending",
+    "source_state": "full4_passed_independent_technical_review_approved_hosted_gates_pending",
     "rulings": [
       22,
       23,
@@ -326,7 +326,7 @@
     "completion_receipt": "catalog.json written only after DB entity commit",
     "state_snapshots": "meetings/<meeting-uuid>/states/<row_version>-<uuid>.json",
     "unknown_material": "Retain and defer cleanup; UUID parent alone is not ownership",
-    "unknown_cleanup_candidate_verification": "Historical candidate/full1/full2/full3 retained; full3 failed8/945/7 due stale wrappers, fixture focus13 passes24.82s and test-only ef70f78 integrated; current full4 passes953/7skips/358.94s with both wheel smokes passing; final scoped verdict/hosted gates pending",
+    "unknown_cleanup_candidate_verification": "Historical candidate/full1/full2/full3 retained; current full4 953passed/7skips/358.94s, both wheel smokes pass; independent technical review approved, hosted gates pending",
     "source_privacy": "Known session artifact roles and explicit validated WAV references before reads/hashes/native probes",
     "receipt_role_guards_review": "Present in frozen candidate; earlier missing-guard observation superseded",
     "audio_revision_association_review": "Migration 2 revision_audio_assets and receipt v2 implemented; original F1 ADDRESSED, migration 1 unchanged",
@@ -372,7 +372,7 @@
     },
     "native_capture_owner_locks": ".capture_owners/<capture-uuid>.lock",
     "native_owner_lifetime": "Acquired before journal publication; retained by actual job scope through helper closure and final persistence",
-    "postcommit_housekeeping": "Original F4/NB1 addressed; final pre-metadata seal R38 implemented, independent scoped re-review final verdict pending",
+    "postcommit_housekeeping": "Original F4/NB1 and GR1 pre-metadata seal addressed by final independent technical review; full4 passed; hosted gates pending",
     "typed_errors": "Original F7 addressed; prior sf.info regression corrected via independent real PCM16 fixture, no production validation relaxation",
     "marker_schema_version": 3,
     "marker_read_versions": [
@@ -728,8 +728,8 @@
     "superseded_by": "task_3_fix_round_1_review"
   },
   "evidence_levels": {
-    "implemented": "R38 combined fix integrated7bfd0cb plus test-only fixture forwarding ef70f78; current full4 passes953/7skips. GR1-GR3 final status OPEN pending final scoped docs verdict; task/group unaccepted",
-    "verified_automatically": "Local synthetic RED/GREEN/final focus26, fixture13, no new typing diagnostics, exact65-file noneditable wheel/probe reused on byte-identical product source; full4 953passed/7symlinkskips/358.94s, both wheel smokes pass; hosted CI pending; historical failed full3 and earlier evidence retained",
+    "implemented": "Source7bfd plus fixtureef70 implemented, full4 passes953/7/358.94s; task3 independently technically accepted against docs8845877; GR1-GR3/GD1/GD2 addressed, group hosted gates/merge pending",
+    "verified_automatically": "Local synthetic RED/GREEN/foci/full4 and exact wheel/probe pass; independent technical review approved; hosted CI/Copilot/merge pending, no new certification",
     "certified": "No new hardware/provider/clean-install certification; wheel and synthetic checks are automatic local evidence; two-hour acceptance omitted by ruling5"
   },
   "capture_harness_correction": {
@@ -767,7 +767,7 @@
   "limits": [
     "All prior runs retain original historical scope, including candidate883/9, first integrated full5failed/920passed/7skipped, earlier full/fixture diagnostics and unchanged unexplained child timeout.",
     "Original F1-F7, NB1 and NB2 addressed by independent scoped reviews; full2 source8087e25 940passed/7symlinkskips/325.09s and both wheel smokes remain historical, not evidence for new source.",
-    "Final single whole-group source/docs review requested GR1-GR3 changes; GD1/GD2 corrected7be93af. R38 source integrated7bfd0cb and fixture ef70f78, current full4 green. Root reports all provisionally addressed; formal OPEN status retained until same independent reviewer final committed-docs verdict, no second whole-source review.",
+    "Original group review changes requested remains historical; single final scoped re-review APPROVED source7bfd/fixtureef70/docs8845877, GR1-GR3/GD1/GD2 ADDRESSED, current open0. GD3 minor stale ledger phrases corrected routinely, no additional review/runtime requested. Group accepted false until hosted gates.",
     "Current final group/recovery focus26/34.46s passes; earlier404/1skip/159.03s precedes only pending-v3 warning fix. Additional control RED1/5deselected/3.93s is against new candidate, not8087 baseline.",
     "Current full4 on ef70f78 passes953/7symlinkskips/358.94s; XML960/0F/0E/7S/internal358.621s, both wheel smokes pass. Full3 failed8/945/7 remains historical with exact wrapper-only correction and13-case focus; no assertions/crash cutpoints changed.",
     "Marker3 exact pre-metadata seal implemented with marker1/2 readers, receipts2/3 and schema2; pending/unmatched evidence retained with warning, no old-result revision or automatic provider.",
@@ -1170,11 +1170,11 @@
     "independent_of_implementer": true,
     "base": "763a891fa7c0bed54a3158040094b6f083b88f32",
     "head": "8087e252112fd2e6de1efeff1d0f3f531d4be77d",
-    "state": "complete_final_source_and_docs_changes_requested_combined_fix_scoped_re_review_final_pending",
+    "state": "original_changes_requested_followed_by_single_scoped_re_review_final_technically_approved",
     "accepted": false,
     "report": "group-review-report.md",
     "source_verdict": "changes_requested",
-    "final_all_source_docs_verdict": "changes_requested",
+    "final_all_source_docs_verdict": "approved_after_single_scoped_re_review",
     "regression_recipes_executed_by_reviewer": false,
     "docs_supplement_commit": "e00dd08469a9e6a7cde5dfb3f981875ca8a34923",
     "minor_findings": [
@@ -1197,23 +1197,28 @@
         "priority": "Important/P2",
         "path": "Completed metadata can commit before first memory_pending marker",
         "effect": "A kill leaves no startup replay and meeting interrupted or old active revision",
-        "status": "OPEN"
+        "status": "ADDRESSED",
+        "historical_baseline_status": "OPEN"
       },
       {
         "id": "GR2",
         "priority": "Important/P2",
         "path": "Unvalidated non-object receipt JSON or hashes=[] reaches mapping method",
         "effect": "AttributeError escapes rebuild and aborts valid siblings/startup/maintenance JSON envelope",
-        "status": "OPEN"
+        "status": "ADDRESSED",
+        "historical_baseline_status": "OPEN"
       },
       {
         "id": "GR3",
         "priority": "Important/P2",
         "path": "Accepted cancellation after real capture-failure publication changes metadata and invalidates private-result handoff",
         "effect": "Canonical manifest/UI cancelled but catalog failed; ordinary same-UUID ingest conflicts and leaves stuck marker",
-        "status": "OPEN"
+        "status": "ADDRESSED",
+        "historical_baseline_status": "OPEN"
       }
-    ]
+    ],
+    "independent_technical_review_approved": true,
+    "group_accepted": false
   },
   "task_3_group_fix_wave": {
     "base": "8087e252112fd2e6de1efeff1d0f3f531d4be77d",
@@ -1279,13 +1284,19 @@
     },
     "scoped_re_review": {
       "reviewer": "catalog_group_review",
-      "final_verdict": "pending_committed_docs_supplement",
-      "provisional_source_assessment": "Root reports GR1-GR3 and GD1/GD2 addressed and narrow fixture accepted, no new actionable breakage; final source/docs verdict awaits committed docs supplement",
-      "findings_final_status": "OPEN",
-      "second_whole_source_review": false
+      "final_verdict": "APPROVED",
+      "provisional_source_assessment": "Superseded by final technical APPROVED verdict: GR1-GR3/GD1/GD2 addressed, fixture accepted, no Critical/Important or new actionable source defect",
+      "findings_final_status": "ADDRESSED",
+      "second_whole_source_review": false,
+      "report": "group-fix-review-report.md",
+      "reviewed_docs_commit": "8845877d75342d1c0f65f1a6674155c7439ab4ce",
+      "current_open_findings_count": 0,
+      "GD3": "Minor/P3 nonblocking three stale checkpoint phrases corrected in routine verdict ledger update; no new review or runtime requested"
     },
     "task_or_group_accepted": false,
-    "certification_claimed": false
+    "certification_claimed": false,
+    "task_locally_accepted": true,
+    "group_accepted": false
   },
   "task_3_integrated_full_3": {
     "name": "M2A-INTEGRATED-FULL3-7bfd0cb",
@@ -1399,5 +1410,27 @@
         "seconds": 2.634
       }
     ]
+  },
+  "independent_technical_review": {
+    "approved": true,
+    "reviewer": "catalog_group_review",
+    "report": "group-fix-review-report.md",
+    "source_commit": "7bfd0cbf477a42aacc44b83b3d2da1e438801756",
+    "fixture_commit": "ef70f78cfc9c8f2910e77b2b2818ce2e6b4d71ae",
+    "docs_commit": "8845877d75342d1c0f65f1a6674155c7439ab4ce",
+    "addressed": [
+      "GR1",
+      "GR2",
+      "GR3",
+      "GD1",
+      "GD2"
+    ],
+    "current_open_findings_count": 0,
+    "GD3": "nonblocking stale checkpoint phrases corrected by this routine verdict update",
+    "new_Critical_or_Important": "none",
+    "new_actionable_source_defect": "none",
+    "additional_review_or_runtime_requested": false,
+    "group_accepted": false,
+    "hosted_gates": "pending"
   }
 }
