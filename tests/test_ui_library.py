@@ -10,6 +10,7 @@ from __future__ import annotations
 import importlib
 import re
 import threading
+from dataclasses import replace
 from time import perf_counter
 
 import pytest
@@ -26,6 +27,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QLabel,
     QLineEdit,
+    QPlainTextEdit,
     QPushButton,
     QTabWidget,
     QTextEdit,
@@ -147,6 +149,9 @@ def _text(view):
     """Read the rendered UI, including item models; never controller state."""
     parts = [label.text() for label in view.findChildren(QLabel) if label.isVisibleTo(view)]
     parts += [edit.toPlainText() for edit in view.findChildren(QTextEdit) if edit.isVisibleTo(view)]
+    parts += [
+        edit.toPlainText() for edit in view.findChildren(QPlainTextEdit) if edit.isVisibleTo(view)
+    ]
     for widget in view.findChildren(QAbstractItemView):
         if not widget.isVisibleTo(view) or isinstance(widget.parentWidget(), QComboBox):
             continue
@@ -592,3 +597,252 @@ def test_library_controls_have_accessible_names_and_readable_contrast(library, d
             (_luminance(actual.color(role)), _luminance(actual.color(background_role)))
         )
         assert (values[1] + 0.05) / (values[0] + 0.05) >= 4.5
+
+
+def _detail(*, start_ms=0, end_ms=1500, timing_source="provider", text=None):
+    """Build only canonical frozen values; controller latency remains the sole double."""
+    detail_type = _feature("here.memory.models", "MeetingDetail")
+    revision_type = _feature("here.memory.models", "TranscriptRevision")
+    segment_type = _feature("here.memory.models", "Segment")
+    revision_id = "00000000-0000-0000-0000-000000000002"
+    meeting = replace(
+        _meeting(),
+        active_revision_id=revision_id,
+        started_at=None,
+        duration_ms=None,
+    )
+    revision = revision_type(
+        id=revision_id,
+        meeting_id=meeting.id,
+        revision_number=1,
+        raw_text="RAW_REVISION_NOT_A_REPLACEMENT_FOR_ORIGINAL_SEGMENTS",
+        presentation_text="CLEANED_PRESENTATION_NOT_ORIGINAL_EVIDENCE",
+        provider="synthetic",
+        model="synthetic",
+        origin="synthetic-fixture",
+        content_hash="a" * 64,
+    )
+    segment = segment_type(
+        id="00000000-0000-0000-0000-000000000003",
+        revision_id=revision_id,
+        ordinal=0,
+        text=text if text is not None else "<b>ORIGINAL_SEGMENT & source evidence</b>",
+        timing_source=timing_source,
+        start_ms=start_ms,
+        end_ms=end_ms,
+    )
+    return detail_type(
+        meeting=meeting,
+        audio_assets=(),
+        revisions=(revision,),
+        segments=(segment,),
+        revision_audio_assets=(),
+        warnings=(),
+    )
+
+
+def _load_listing(controller, view, qtbot, *meetings):
+    controller.list_handler = lambda query: _page(controller.dto, *meetings)
+    search = _named(view, QLineEdit, r"busca")
+    search.setText("missing")
+    qtbot.waitUntil(lambda: "No hay coincidencias" in _text(view))
+    search.clear()
+    qtbot.waitUntil(lambda: meetings[0].title in _text(view))
+
+
+def _select_first_meeting(view, qtbot):
+    results = _results(view)
+    index = results.model().index(0, 0)
+    results.setCurrentIndex(index)
+    qtbot.mouseDClick(
+        results.viewport(),
+        Qt.MouseButton.LeftButton,
+        pos=results.visualRect(index).center(),
+    )
+
+
+def _open_detail(library, qtbot, detail):
+    desktop, controller, view = library
+    controller.detail_handler = lambda meeting_id: detail
+    _load_listing(controller, view, qtbot, detail.meeting)
+    _select_first_meeting(view, qtbot)
+    qtbot.waitUntil(lambda: detail.segments[0].text in _text(view))
+    qtbot.waitUntil(lambda: not desktop.jobs.busy)
+    return view
+
+
+def _transcript(view):
+    # The required original transcript may be a text widget or segment item view.
+    # Its accessible role distinguishes it from the meeting results and editor.
+    matches = [
+        control
+        for control in view.findChildren(QWidget)
+        if isinstance(control, (QTextEdit, QPlainTextEdit, QAbstractItemView))
+        and control.isVisibleTo(view)
+        and re.search(r"(transcrip|segment)", control.accessibleName(), re.IGNORECASE)
+    ]
+    assert len(matches) == 1, "Original transcript needs a unique accessible reading control"
+    return matches[0]
+
+
+def test_detail_renders_original_literal_segments_instead_of_cleaned_presentation(library, qtbot):
+    detail = _detail()
+    view = _open_detail(library, qtbot, detail)
+    text = _text(view)
+    assert "<b>ORIGINAL_SEGMENT & source evidence</b>" in text
+    assert "CLEANED_PRESENTATION_NOT_ORIGINAL_EVIDENCE" not in text
+    for label in view.findChildren(QLabel):
+        if "ORIGINAL_SEGMENT" in label.text():
+            assert label.textFormat() == Qt.TextFormat.PlainText
+
+
+@pytest.mark.parametrize("measured", [True, False], ids=["measured-zero", "absent"])
+def test_detail_distinguishes_measured_zero_from_absent_segment_timing(library, qtbot, measured):
+    detail = _detail(
+        start_ms=0 if measured else None,
+        end_ms=1500 if measured else None,
+        timing_source="provider" if measured else "absent",
+        text="TIMING_EVIDENCE_SEGMENT",
+    )
+    view = _open_detail(library, qtbot, detail)
+    # No meeting date/duration is present in this fixture. A zero-time indicator
+    # therefore belongs to the measured segment, never a fabricated source date.
+    has_zero_time = re.search(r"(?<!\d)0{1,2}:00(?!\d)", _text(view)) is not None
+    assert has_zero_time is measured
+
+
+def test_delayed_successful_detail_cannot_reappear_after_close(library, qtbot):
+    desktop, controller, view = library
+    entered, release = threading.Event(), threading.Event()
+    detail = _detail(text="LATE_SUCCESSFUL_DETAIL_MUST_STAY_CLOSED")
+
+    def delayed_detail(meeting_id):
+        entered.set()
+        assert release.wait(5), "Test did not release the detail worker"
+        return detail
+
+    controller.detail_handler = delayed_detail
+    try:
+        _load_listing(controller, view, qtbot, detail.meeting)
+        _select_first_meeting(view, qtbot)
+        qtbot.waitUntil(entered.is_set)
+        qtbot.mouseClick(_named(view, QPushButton, r"cerrar.*detalle"), Qt.MouseButton.LeftButton)
+    finally:
+        release.set()
+        qtbot.waitUntil(lambda: not desktop.jobs.busy)
+    assert "LATE_SUCCESSFUL_DETAIL_MUST_STAY_CLOSED" not in _text(view)
+    assert "Planning" in _text(view)
+    assert controller.core.command_log == []
+
+
+def test_keyboard_continues_from_results_to_open_detail_and_title_editor(library, qtbot, qapp):
+    view = _open_detail(library, qtbot, _detail())
+    transcript = _transcript(view)
+    editor = _named(view, QLineEdit, r"t[ií]tulo")
+    assert editor.text() == "Planning"
+    results = _results(view)
+    results.setFocus()
+    qtbot.waitUntil(results.hasFocus)
+    visited = []
+    for _ in range(40):
+        focused = qapp.focusWidget()
+        assert focused is not None
+        qtbot.keyClick(focused, Qt.Key.Key_Tab)
+        focused = qapp.focusWidget()
+        for control in (transcript, editor):
+            if focused is control or (focused is not None and control.isAncestorOf(focused)):
+                if control not in visited:
+                    visited.append(control)
+        if editor in visited:
+            break
+    assert visited == [transcript, editor], (
+        "Original detail and title edit must be keyboard reachable"
+    )
+
+
+@pytest.mark.parametrize("dark", [False, True], ids=["light", "dark"])
+def test_open_detail_controls_have_accessible_names_and_contrast(library, qtbot, dark):
+    view = _open_detail(library, qtbot, _detail())
+    transcript = _transcript(view)
+    editor = _named(view, QLineEdit, r"t[ií]tulo")
+    palette = QPalette(view.palette())
+    background, foreground = ("#202020", "#ffffff") if dark else ("#ffffff", "#202020")
+    for role in (QPalette.ColorRole.Window, QPalette.ColorRole.Base, QPalette.ColorRole.Button):
+        palette.setColor(role, QColor(background))
+    for role in (
+        QPalette.ColorRole.WindowText,
+        QPalette.ColorRole.Text,
+        QPalette.ColorRole.ButtonText,
+    ):
+        palette.setColor(role, QColor(foreground))
+    view.setPalette(palette)
+    controls = [
+        control
+        for control in view.findChildren(QWidget)
+        if isinstance(
+            control,
+            (
+                QLineEdit,
+                QPushButton,
+                QComboBox,
+                QAbstractSpinBox,
+                QAbstractItemView,
+                QTextEdit,
+                QPlainTextEdit,
+            ),
+        )
+        and control.isVisibleTo(view)
+        and control.focusPolicy() != Qt.FocusPolicy.NoFocus
+        and not isinstance(control.parentWidget(), (QComboBox, QAbstractSpinBox))
+    ]
+    assert transcript in controls
+    assert editor in controls
+    for control in controls:
+        assert control.accessibleName().strip(), f"Unnamed control: {type(control).__name__}"
+        actual = control.palette()
+        role = (
+            QPalette.ColorRole.ButtonText
+            if isinstance(control, QPushButton)
+            else control.foregroundRole()
+        )
+        background_role = (
+            QPalette.ColorRole.Button
+            if isinstance(control, QPushButton)
+            else control.backgroundRole()
+        )
+        values = sorted(
+            (_luminance(actual.color(role)), _luminance(actual.color(background_role)))
+        )
+        assert (values[1] + 0.05) / (values[0] + 0.05) >= 4.5
+
+
+def test_status_filter_transports_canonical_status_and_changes_visible_listing(library, qtbot):
+    _, controller, view = library
+    completed = _meeting(title="Completed visible meeting")
+    failed = replace(
+        _meeting(
+            title="Failed visible meeting",
+            meeting_id="00000000-0000-0000-0000-000000000006",
+        ),
+        status=MeetingStatus.FAILED,
+    )
+    _load_listing(controller, view, qtbot, completed, failed)
+    assert "Failed visible meeting" in _text(view)
+
+    def filtered_page(query):
+        assert all(isinstance(value, MeetingStatus) for value in query.statuses)
+        if query.statuses == (MeetingStatus.FAILED,):
+            return _page(controller.dto, failed)
+        return _page(controller.dto, completed, failed)
+
+    controller.list_handler = filtered_page
+    status = _named(view, QComboBox, r"estado")
+    failed_options = [
+        index
+        for index in range(status.count())
+        if re.search(r"(fall|error)", status.itemText(index), re.IGNORECASE)
+    ]
+    assert len(failed_options) == 1, "The status filter must offer failed meetings"
+    status.setCurrentIndex(failed_options[0])
+    qtbot.waitUntil(lambda: "Completed visible meeting" not in _text(view))
+    assert "Failed visible meeting" in _text(view)
