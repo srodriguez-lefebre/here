@@ -1,8 +1,7 @@
 """Operation-owned catalog queries, safe FTS and literal keyset pagination.
 
-This independent A-based query implementation does not implement lifecycle policy.
-The accepted B5 suppression read adapter and sole reindex facade are still pending;
-wire those real contracts before accepting lifecycle-integrated search.
+The canonical catalog read view owns suppression validation, the bounded catalog
+lock and the read transaction. Reindex facade delegation remains a separate handoff.
 """
 
 from __future__ import annotations
@@ -12,7 +11,6 @@ import binascii
 import hashlib
 import json
 import math
-import sqlite3
 import unicodedata
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
@@ -20,7 +18,7 @@ from dataclasses import replace
 from datetime import datetime, timezone
 from typing import Any, TypeVar
 
-from here.memory.database import LibraryConnection, storage_error
+from here.memory.database import LibraryConnection
 from here.memory.models import (
     Meeting,
     MeetingPage,
@@ -31,8 +29,9 @@ from here.memory.models import (
     SearchHit,
     SearchPage,
     SearchQuery,
+    SuppressionSnapshot,
 )
-from here.memory.service import FtsUnavailable, InvalidInput, fts_available
+from here.memory.service import FtsUnavailable, InvalidInput, catalog_read_view, fts_available
 
 _LIST_ORDER = "date-desc-null-last/id-asc"
 _SEARCH_ORDER = "rank-asc/date-desc-null-last/id-asc/segment-asc"
@@ -178,8 +177,17 @@ def _like(token: str) -> str:
     return "%" + token.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
 
 
-def _filters(query: MeetingQuery | SearchQuery, parameters: list[object]) -> str:
+def _filters(
+    query: MeetingQuery | SearchQuery,
+    parameters: list[object],
+    suppression: SuppressionSnapshot,
+) -> str:
     clauses = ["m.status != 'deleting'"]
+    if suppression.suppressed_meeting_ids:
+        clauses.append(
+            "NOT EXISTS (SELECT 1 FROM temp.here_search_suppressed_meetings hidden "
+            "WHERE hidden.id=m.id)"
+        )
     if query.from_utc is not None:
         clauses.append("m.started_at >= ?")
         parameters.append(query.from_utc)
@@ -264,20 +272,28 @@ class SearchService:
         self._connection_factory = connection_factory
 
     @contextmanager
-    def _snapshot(self) -> Iterator[LibraryConnection]:
+    def _snapshot(self) -> Iterator[tuple[LibraryConnection, SuppressionSnapshot]]:
         library = self._connection_factory()
         try:
-            library.execute("BEGIN")
-            yield library
-            library.connection.commit()
-        except sqlite3.Error as error:
-            library.connection.rollback()
-            raise storage_error(error) from error
-        except BaseException:
-            library.connection.rollback()
-            raise
+            with catalog_read_view(library) as suppression:
+                yield library, suppression
         finally:
             library.close()
+
+    @staticmethod
+    def _prepare_suppression(library: LibraryConnection, suppression: SuppressionSnapshot) -> None:
+        # One bind per INSERT keeps large sets out of page parameter
+        # budgets. TEMP storage belongs to this fresh connection only; the B view
+        # rolls its transaction back before our finally-close discards the table.
+        if suppression.suppressed_meeting_ids:
+            library.execute(
+                "CREATE TEMP TABLE here_search_suppressed_meetings "
+                "(id TEXT PRIMARY KEY NOT NULL)"
+            )
+            library.connection.executemany(
+                "INSERT INTO temp.here_search_suppressed_meetings(id) VALUES (?)",
+                ((identity,) for identity in suppression.suppressed_meeting_ids),
+            )
 
     @staticmethod
     def _capabilities(library: LibraryConnection) -> SearchCapabilities:
@@ -292,34 +308,36 @@ class SearchService:
         return SearchCapabilities(available, () if available else (FtsUnavailable(),))
 
     def capabilities(self) -> SearchCapabilities:
-        with self._snapshot() as library:
+        with self._snapshot() as (library, _suppression):
             return self._capabilities(library)
 
     def list_meetings(self, query: MeetingQuery) -> MeetingPage:
         normalized = _validated(query)
         scope = _scope(normalized)
         cursor = _decode(normalized.cursor, "list", scope)
-        parameters: list[object] = []
-        where = _filters(normalized, parameters)
-        # Reservations without a revision remain listable with their real NULLs.
-        where += " AND (m.active_revision_id IS NULL OR r.status='complete'"
-        where += " OR r.status='partial')" if normalized.include_partial else ")"
-        where += " AND " + _literal(normalized.text, parameters, title_only=True)
-        if cursor is not None:
-            where += " AND " + _date_keyset(cursor[5], parameters, search=False)
-        parameters.append(normalized.limit + 1)
-        sql = (
-            "SELECT m.*,r.status AS revision_status,EXISTS ("
-            "SELECT 1 FROM audio_assets a WHERE a.meeting_id=m.id AND a.status='available' "
-            "AND (m.active_revision_id IS NULL OR EXISTS (SELECT 1 FROM revision_audio_assets ra "
-            "WHERE ra.meeting_id=m.id AND ra.revision_id=m.active_revision_id "
-            "AND ra.asset_id=a.id))"
-            ") AS audio_available FROM meetings m LEFT JOIN transcript_revisions r "
-            "ON r.meeting_id=m.id AND r.id=m.active_revision_id WHERE "
-            + where
-            + " ORDER BY (m.started_at IS NULL) ASC,m.started_at DESC,m.id ASC LIMIT ?"
-        )
-        with self._snapshot() as library:
+        with self._snapshot() as (library, suppression):
+            self._prepare_suppression(library, suppression)
+            parameters: list[object] = []
+            where = _filters(normalized, parameters, suppression)
+            # Reservations without a revision remain listable with their real NULLs.
+            where += " AND (m.active_revision_id IS NULL OR r.status='complete'"
+            where += " OR r.status='partial')" if normalized.include_partial else ")"
+            where += " AND " + _literal(normalized.text, parameters, title_only=True)
+            if cursor is not None:
+                where += " AND " + _date_keyset(cursor[5], parameters, search=False)
+            parameters.append(normalized.limit + 1)
+            sql = (
+                "SELECT m.*,r.status AS revision_status,EXISTS ("
+                "SELECT 1 FROM audio_assets a WHERE a.meeting_id=m.id AND a.status='available' "
+                "AND (m.active_revision_id IS NULL OR EXISTS ("
+                "SELECT 1 FROM revision_audio_assets ra "
+                "WHERE ra.meeting_id=m.id AND ra.revision_id=m.active_revision_id "
+                "AND ra.asset_id=a.id))"
+                ") AS audio_available FROM meetings m LEFT JOIN transcript_revisions r "
+                "ON r.meeting_id=m.id AND r.id=m.active_revision_id WHERE "
+                + where
+                + " ORDER BY (m.started_at IS NULL) ASC,m.started_at DESC,m.id ASC LIMIT ?"
+            )
             rows = library.execute(sql, tuple(parameters)).fetchall()
         items = []
         for row in rows[: normalized.limit]:
@@ -344,7 +362,13 @@ class SearchService:
         return MeetingPage(tuple(items), next_cursor)
 
     @staticmethod
-    def _generation(library: LibraryConnection, *, indexed: bool, partial: bool) -> str:
+    def _generation(
+        library: LibraryConnection,
+        suppression: SuppressionSnapshot,
+        *,
+        indexed: bool,
+        partial: bool,
+    ) -> str:
         """Digest actual logical documents, independent of FTS rowids/layout.
 
         Catalog immutable-identity assumptions alone cannot prove that an index-only
@@ -400,10 +424,22 @@ class SearchService:
                 ).encode("utf-8")
                 digest.update(len(encoded).to_bytes(8, "big"))
                 digest.update(encoded)
+        encoded_suppression = json.dumps(
+            ("here-search-suppression-v1", suppression.fingerprint), separators=(",", ":")
+        ).encode("utf-8")
+        digest.update(len(encoded_suppression).to_bytes(8, "big"))
+        digest.update(encoded_suppression)
         return digest.hexdigest()
 
     @staticmethod
-    def _branch(query: SearchQuery, *, fts: bool, partial: bool, parameters: list[object]) -> str:
+    def _branch(
+        query: SearchQuery,
+        suppression: SuppressionSnapshot,
+        *,
+        fts: bool,
+        partial: bool,
+        parameters: list[object],
+    ) -> str:
         if fts:
             projection = "bm25(segments_fts) AS rank,snippet(segments_fts,3,'','','',24) AS excerpt"
             source = (
@@ -421,7 +457,7 @@ class SearchService:
                 "AND r.id=m.active_revision_id JOIN segments s ON s.revision_id=r.id"
             )
             match = _literal(query.text, parameters)
-        where = _filters(query, parameters)
+        where = _filters(query, parameters, suppression)
         return (
             "SELECT " + projection + ",m.id AS meeting_id,r.id AS revision_id,"
             "s.id AS segment_id,m.title,m.started_at,s.start_ms,s.end_ms,s.timing_source,"
@@ -452,7 +488,7 @@ class SearchService:
             )
         scope = _scope(normalized)
         cursor = _decode(normalized.cursor, "search", scope)
-        with self._snapshot() as library:
+        with self._snapshot() as (library, suppression):
             capability = self._capabilities(library)
             indexed = capability.fts_available
             route = (
@@ -463,14 +499,17 @@ class SearchService:
             if cursor is not None and cursor[6] != route:
                 raise InvalidInput("Cursor backend changed; restart the query")
             generation = self._generation(
-                library, indexed=indexed, partial=normalized.include_partial
+                library, suppression, indexed=indexed, partial=normalized.include_partial
             )
             if cursor is not None and cursor[7] != generation:
                 raise InvalidInput(
                     "Search corpus changed; restart the query", reason="corpus_changed"
                 )
+            self._prepare_suppression(library, suppression)
             parameters: list[object] = []
-            complete = self._branch(normalized, fts=indexed, partial=False, parameters=parameters)
+            complete = self._branch(
+                normalized, suppression, fts=indexed, partial=False, parameters=parameters
+            )
             # Materialization keeps FTS auxiliary functions inside their MATCH
             # context. It also prevents branch-local LIMITs from losing global hits.
             sql = (
@@ -478,7 +517,7 @@ class SearchService:
             )
             if normalized.include_partial:
                 sql += " UNION ALL " + self._branch(
-                    normalized, fts=False, partial=True, parameters=parameters
+                    normalized, suppression, fts=False, partial=True, parameters=parameters
                 )
             sql += ") SELECT * FROM hits"
             if cursor is not None:
