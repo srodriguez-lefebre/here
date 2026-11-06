@@ -181,7 +181,7 @@ si falla el write, próximo reconcile no lo repara. R49 y una sola tanda RED/fix
 re-review por los mismos roles; Task4 y B5 siguen abiertos pese al full verde.
 Fuente full congelada src284c24aa/tests01db3dd; logs/review en ledger B4.
 
-Leér reportes de progreso canónicos para pedidos de lease y resultados (además
+Leer reportes de progreso canónicos para pedidos de lease y resultados (además
 de wait_threads): `faab/here/.superpowers/sdd/M2_LIFECYCLE_PLAN/progress.md` y
 `2710/here/.superpowers/sdd/M3_SEARCH_PLAN/progress.md`, bajo la raíz de worktrees.
 R46 fija los defaults de DTOs/errores compartidos; R47 define empty-search→MeetingPage
