@@ -9,6 +9,7 @@ from uuid import UUID
 from here.application.processing import SessionProcessor, _validated_recovery_source
 from here.config.paths import get_data_dir
 from here.memory.artifacts import managed_path, read_pending_intent
+from here.memory.database import LibraryError
 from here.memory.service import MemoryService, OwnershipBusy
 from here.output.metadata import ErrorMetadataDocument, SessionMetadata
 from here.output.ownership import FileLease, LeaseBusy
@@ -52,6 +53,10 @@ class RecoveryCandidate:
     capture_id: str | None = None
 
 
+class _CatalogOwnershipUnavailable(LibraryError):
+    """Catalog failure leaves legacy ownership unknown, never implicitly unowned."""
+
+
 class RecoveryService:
     def __init__(self, root: Path) -> None:
         self.root = root.absolute()
@@ -65,7 +70,14 @@ class RecoveryService:
             pass
         data_dir = get_data_dir()
         if (data_dir / "library.sqlite3").exists():
-            parent = MemoryService(data_dir).retry_parent(directory, source_id)
+            try:
+                parent = MemoryService(data_dir).retry_parent(directory, source_id)
+            except (OwnershipBusy, UnsafeSessionPath):
+                raise
+            except (LibraryError, ValueError) as exc:
+                raise _CatalogOwnershipUnavailable(
+                    "Library ownership unavailable; local recovery required"
+                ) from exc
             if parent is not None:
                 return parent[0]
         return source_id
@@ -208,6 +220,20 @@ class RecoveryService:
                     metadata.status,
                     error_summary,
                     available,
+                    metadata.meeting_id,
+                )
+            except _CatalogOwnershipUnavailable as exc:
+                # Metadata passed path validation, but unknown ownership permits
+                # no marker, error-document or audio inspection, nor mutation.
+                assert metadata is not None
+                key = (metadata.meeting_id or directory.name, directory)
+                candidates[key] = RecoveryCandidate(
+                    directory,
+                    metadata.session_id,
+                    metadata.duration_seconds,
+                    metadata.status,
+                    str(exc),
+                    False,
                     metadata.meeting_id,
                 )
             except (OSError, ValueError, RuntimeError):
