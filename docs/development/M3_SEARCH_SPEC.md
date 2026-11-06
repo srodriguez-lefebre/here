@@ -116,7 +116,7 @@ no large-corpus budget or new certification; query-core e4d proof/review remains
 unchanged. The later integrated checkpoint below records B4, mypy and the bounded
 legacy repair without transferring earlier results to new source bytes.
 
-### Current integrated checkpoint — frozen 5db071a
+### B4/types and display checkpoint — frozen 5db071a
 
 Accepted B4 `96e8aed255a442acb14bbdff5c32877ec201c628` was integrated mechanically
 as `c4cc8ca`, preserving the canonical models plus R46 and exact accepted backend.
@@ -145,8 +145,9 @@ Same GREEN's MainWindow-only `7c9f6d4`→`5db071a2d034bda94ed1676d166bcce3aa7f7f
 changes display fallback only, preserving nonempty text and structured exceptions.
 The bounded E3 follow-up passed seven cases/1.92s (XML 7/internal 1.862s), plus one-file
 Ruff/format without edits. Same reviewer APPROVED this bounded presentation fix.
-No 33/44/mypy repeat occurred; E3 has seven-case/Ruff evidence only, never D1's
-UI 44/no-new-mypy results relabeled as fresh E3 runs.
+That display window supplied E3 seven-case/Ruff evidence only. Later bounded
+preview evidence below adds no new pytest/mypy run; D1's UI 44/no-new-mypy results
+are never relabeled as fresh E3 runs.
 
 Current source/tests/config are `e3ede58c32f5d848988b94dd8c4a5319512546c3` /
 `35efb958f45c9b107f3639fe018c6f0df42b3b79` /
@@ -155,9 +156,39 @@ after commands, before reports/review; root now owns the host. R50–R52 are dec
 contracts/preparation, no accepted B5 API, stub, second service or native adapter;
 app.py is unchanged. Complete tasks/group/M3 remain open: real B5 guard/reindex/
 delete callback and equivalence, guarded 1k/100k p95<500ms/Qt<50ms, integrated full/
-final mypy, preview/global review/hosted Copilot/CI/package/merge/certification
+final mypy, final B5-integrated preview/global review/hosted Copilot/CI/package/merge/certification
 remain pending. No criteria/checklist/version change is made.
 
+### Bounded synthetic preview checkpoint — d7009c7
+
+Three separate authorized offscreen processes ran at docs-only main
+`d7009c724da4fb5eca01d8e28fcec56f6529bf3d`, with the same E3/tests35/config7143
+bytes above. Preview1 passed functional assertions (one synthetic row, public
+Return detail/raw segment/absent timing/editor, no fake command/audited forbidden
+operation/worker/credential), but both PNGs show missing-glyph boxes: visual
+NOT_APPROVED remains unchanged. A standalone no-here QLabel probe reproduces the
+empty Qt6.11.2 font database/unresolved Sans Serif/all glyph1; existing Segoe UI
+registered only in that diagnostic process resolves the sample. QRawFont.isValid
+was true even when broken and is not sufficient proof.
+
+Preview2 changes ONLY harness-local registration/selection of the pinned existing
+Windows Segoe UI at 9pt, measurements and new artifact names; actual preview.main,
+fakes, assertions/isolation/audit remain unchanged. Exit0/entrypoint0 and readable
+533x452 list/1100x800 opened detail establish bounded populated synthetic launch/
+readability. Narrow table scrolls horizontally and combos/first heading clip;
+the first heading still clips expanded. Opened detail regions do not overlap.
+Same reviewer APPROVED BOUNDED PREVIEW EVIDENCE, no new implementation finding or
+fix requested, no general layout/responsive/native qwindows/DPI/accessibility/
+large-corpus approval. Standalone 700x80 font samples are not Biblioteca captures.
+
+All helper/font/source/artifact hashes, exits and elapsed times are in the separate
+preview JSON records; these are not pytest cases/XML or p95/heartbeat measurements.
+Each command's coordinator release preceded report/image inspection; root/B owns
+the host. Product/style/global fonts/config/dependencies remain unchanged; sandbox
+temps are absent. Current E3 now has bounded 7/Ruff plus this preview checkpoint,
+no new 33/44/mypy/full. Real B5 R50–R52/reindex/aliases/delete callbacks remain held
+on root P2, no c9 import. Final integrated B5-source preview and all broader
+Task1/Task2/group/M3/performance/full/final-mypy/hosted/certification gates stay open.
 Commands, exact heads, artifacts and limits are recorded in
 `M3_SEARCH_EVIDENCE.json`; acceptance criteria below are unchanged. This is focused
 automatic evidence, no certification or task/group/milestone closure; no 0.4.0 bump.

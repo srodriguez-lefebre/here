@@ -562,9 +562,9 @@
     "Accepted sole B5 R42 coherent suppression snapshot in reads and R45 generation; typed fail-closed invalid/inaccessible registry; suppression in SQL before cursor/LIMIT, including pending barrier when SQL hide failed and surviving receipts after DB loss/rebuild.",
     "Accepted sole B5 reindex facade, missing-FTS reporting, complete-only/include_partial before-after equivalence, actual no-op generation equivalence and changed-input cursor rejection.",
     "Accepted B496e8 producer integrated; actual current/stale title/version/evidence/FTS consumers and truthful UI types approved at D1/ed8. Historical44/no-new-mypy does not constitute fresh E3 or final B5-integrated acceptance.",
-    "UI R1/R2/R3 remain ADDRESSED; same reviewer also approves D1 typing/title consumers and bounded E3 empty-error display fix. Complete Task2 requires B5 integration, final full/mypy/preview/global/hosted gates.",
+    "Implemented UI fixes, D1 types/title and bounded E3 display/preview checkpoints approved at their scopes. Final B5-integrated preview, broader layout/accessibility, complete Task2 and integrated verification/global/hosted gates remain pending.",
     "Guarded 1,000/100,000 warm p95 below 500ms including final digest/guard work; actual Qt heartbeat no event-loop block above 50ms, under root exclusive runtime grant.",
-    "Final integrated full offscreen suite and no-new-mypy comparison remain pending on eventual integrated source. Exact D1 comparison79→78 with zero added records is verified; E3 only has bounded7/Ruff, no new44/mypy scan.",
+    "Final integrated full/offscreen suite and no-new-mypy comparison remain pending. D1 comparison79→78/zero added records is verified; E3 has bounded7/Ruff and synthetic preview only, no new44/mypy/full scan.",
     "Complete same Task1 assessment and task docs/evidence; root global integration docs only when capacity ready; Task2 and later single global review.",
     "Received/responded current-head Copilot, exact-head Windows CI/package as required, PR and guarded root merge. No M3 hosted gate has started in this checkpoint."
   ],
@@ -573,7 +573,7 @@
     "guarded_p95": "NOT_RUN",
     "qt_heartbeat": "Guarded 1,000/100,000 corpus heartbeat NOT_RUN; small synthetic UI cases/probe do not establish this budget.",
     "real_B4_R48_B5_integration": "B4 accepted source and real current/stale title/version/FTS UI consumers FOCUSED_AUTOMATIC_VERIFIED at D1/ed8; B5 guarded exposure/reindex/delete callback still NOT_ACCEPTED/PENDING.",
-    "ui_source_green": "Historical UI42 then UI44 at recorded D1 context; latest E3 bounded7 GREEN and scoped approval only. No full latest-source UI44 repeat.",
+    "ui_source_green": "Historical UI42 and D1 UI44, E3 bounded7/Ruff and bounded synthetic preview evidence only; no full latest-source UI44 repeat or final B5 integration.",
     "full_suite": "NOT_RUN",
     "mypy_delta": "D1 verified79→78/zero added records/errors; initial79→87 failure retained. Final E3/eventual B5-integrated comparison PENDING, no E3 scan.",
     "build_install": "NOT_RUN",
@@ -581,9 +581,10 @@
     "global_review": "NOT_STARTED",
     "M3_copilot_CI_PR_merge": "NOT_STARTED",
     "certification": "NOT_RUN",
-    "two_hour_recording": "OMITTED under ruling 5, never approved"
+    "two_hour_recording": "OMITTED under ruling 5, never approved",
+    "final_integrated_preview": "PENDING: bounded populated synthetic preview launch/readability accepted under recorded process-local font context; final B5-source preview and broader native/layout/accessibility gates remain."
   },
-  "runtime_coordination": "Coordinator RELEASED immediately after latest seven-case/Ruff commands, BEFORE reports/review; root now B. Docs role performs mechanical Git sync plus static PowerShell JSON/XML/Git only, no runtime/import/tests/lint/mypy/build/uv/network.",
+  "runtime_coordination": "Coordinator RELEASED immediately after EACH preview1/font-probe/preview2 command BEFORE report/image inspection; root/B can hold host. This docs stage runs no Qt/import/compile/tests/lint/mypy/Python/network/build/uv, only static PowerShell/Git/JSON/hash/image reads.",
   "invariants": "No acceptance/DoD, product flow, dependency, schema, privacy or retention changes. No new hardware/provider/clean-install certification, no milestone closure or 0.4.0 bump.",
   "technical_supplements": [
     {
@@ -998,16 +999,18 @@
     "stage_scope": "Historical7e UI42/fix approval and5a81 static integration; later D1 types/title and E3 display checkpoints supersede its pending B4/mypy preparation state without changing original evidence."
   },
   "current_integrated_checkpoint": {
-    "frozen_main": "5db071a2d034bda94ed1676d166bcce3aa7f7f0b",
-    "docs_sync_merge": "018c521a4d4bd08078a91fc1373652745c8b41b3",
+    "frozen_main": "d7009c724da4fb5eca01d8e28fcec56f6529bf3d",
+    "docs_sync_merge": "bba8e564119fd9f7669887328c3311f36ec1ad79",
     "source_tree": "e3ede58c32f5d848988b94dd8c4a5319512546c3",
     "tests_tree": "35efb958f45c9b107f3639fe018c6f0df42b3b79",
     "config_blob": "7143d4deff5acb55e524baa5ee15c101bce9b3b5",
     "query_blob": "034624cb10cd5b85c67a742fdb45950d66c3bc6a",
     "main_window_blob": "c8c0d61ce4f936c6fa80dce41cc6f033ffea630a",
-    "latest_source_evidence": "Only bounded7-case GREEN and MainWindow Ruff/format on E3; D1 UI44/no-new-mypy and previous42/core177 retain their own source bindings",
+    "latest_source_evidence": "E3 bounded7/MainWindow Ruff plus bounded populated synthetic offscreen preview launch/readability. D1 UI44/no-new-mypy, prior UI42 and core177 retain exact historical bindings; no fresh full/mypy/33/44/7 repeat.",
     "task1_task2_group_milestone": "OPEN",
-    "certified": false
+    "certified": false,
+    "previous_frozen_main": "5db071a2d034bda94ed1676d166bcce3aa7f7f0b",
+    "previous_docs_sync_merge": "018c521a4d4bd08078a91fc1373652745c8b41b3"
   },
   "B4_types_title_checkpoint": {
     "accepted_B4": "96e8aed255a442acb14bbdff5c32877ec201c628",
@@ -1291,6 +1294,160 @@
       "important": 0,
       "minor": 0,
       "scope": "MainWindow-only+8/-4; no original UI/query/B4 producer re-review or complete task/group approval"
-    }
+    },
+    "stage_scope": "Historical7-case/Ruff display window. Later bounded preview at same E3 source adds no pytest/mypy repeat and does not relabel D1 evidence."
+  },
+  "preview_checkpoint": {
+    "status": "APPROVED_BOUNDED_POPULATED_SYNTHETIC_PREVIEW_LAUNCH_READABILITY",
+    "head": "d7009c724da4fb5eca01d8e28fcec56f6529bf3d",
+    "source_tree": "e3ede58c32f5d848988b94dd8c4a5319512546c3",
+    "tests_tree": "35efb958f45c9b107f3639fe018c6f0df42b3b79",
+    "config_blob": "7143d4deff5acb55e524baa5ee15c101bce9b3b5",
+    "accounting": "Separate non-pytest preview/probe records; NO pytest case counts or XML invented, existing17 pytest run records unchanged.",
+    "environment": "Shared existing CPython3.13.15 -B, Qt6.11.2 offscreen; temporary cwd/data/transcriptions/absent-env/QSettings; credential variables removed without reads; audit/import boundary forbids DB/network/process/audio. No product/style/global-font/config/dependency edit.",
+    "records": [
+      {
+        "name": "preview1",
+        "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -B 'C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN/run-preview-smoke.py' --repo 'C:/Users/savar/.codex/worktrees/2710/here' --artifacts 'C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN'",
+        "bindings": "preview-smoke-preverification-bindings-1.json",
+        "script_sha256": "A8FE042843618FAD583033905B0FBB20A433E002832C003FD6BF68F8812BAC77",
+        "result": "FUNCTIONAL_PASS_VISUAL_NOT_APPROVED",
+        "exit_code": 0,
+        "entrypoint_exit": 0,
+        "smoke_assertions": "PASS: one populated synthetic row, public Return opens original raw segment/detail, absent timing and editor enabled, no fake command",
+        "forbidden": [],
+        "active_ui_workers": [],
+        "credential_present": false,
+        "qt_stage_seconds": 0.21625189999758732,
+        "tool_wall_seconds": 3.0225923,
+        "json": "preview-smoke-1.json",
+        "log": "preview-smoke-1.log",
+        "exits": "preview-smoke-command-exit-1.json",
+        "images": [
+          "preview-smoke-list-1.png:533x410",
+          "preview-smoke-detail-1.png:1100x800"
+        ],
+        "visual_scope": "ALL text boxes in original PNGs; correct underlying Unicode does NOT approve rendering. Original result/artifacts immutable."
+      },
+      {
+        "name": "independent_font_probe",
+        "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -B 'C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN/run-preview-font-probe.py' --artifacts 'C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN' --font 'C:/Windows/Fonts/segoeui.ttf'",
+        "bindings": "preview-font-preverification-bindings-1.json",
+        "script_sha256": "BFFFD9C942DE917B2DB83F86F591F3396E46401546ADFEA7027F0CF9F849F541",
+        "exit_code": 0,
+        "tool_wall_seconds": 0.6782724,
+        "no_here_imports": true,
+        "default_state": "families=[]; requested Sans Serif9; resolved family empty; every sample glyph index1; raw.isValid=true despite missing-glyph boxes",
+        "explicit_state": "Existing Segoe UI process-local registration resolves family, distinct glyphs and readable same sample; raw.isValid=true alone is insufficient",
+        "json": "preview-font-probe-1.json",
+        "log": "preview-font-probe-1.log",
+        "exits": "preview-font-command-exit-1.json",
+        "images": [
+          "preview-font-default-1.png:700x80",
+          "preview-font-explicit-1.png:700x80"
+        ],
+        "image_scope": "Two NEW standalone QLabel samples, NOT Biblioteca captures or replacements."
+      },
+      {
+        "name": "font_aware_preview2",
+        "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -B 'C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN/run-preview-smoke-fonts.py' --repo 'C:/Users/savar/.codex/worktrees/2710/here' --artifacts 'C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN' --font 'C:/Windows/Fonts/segoeui.ttf'",
+        "bindings": "preview-smoke-preverification-bindings-2.json",
+        "script_sha256": "F3913195ADD44B8B1CAAC4A47641E364E67CC9A3BC3C022DC4DE00965C925CC4",
+        "result": "FUNCTIONAL_PASS_BOUNDED_CAPTURED_TEXT_READABLE",
+        "exit_code": 0,
+        "entrypoint_exit": 0,
+        "smoke_assertions": "Same original assertions/sandbox/audit/real preview.main composition; one row/raw segment/absent timing/editor/public Return, no fake command",
+        "forbidden": [],
+        "active_ui_workers": [],
+        "credential_present": false,
+        "qt_stage_seconds": 0.17468499999813503,
+        "tool_wall_seconds": 2.1823431,
+        "json": "preview-smoke-2.json",
+        "log": "preview-smoke-2.log",
+        "exits": "preview-smoke-command-exit-2.json",
+        "images": [
+          "preview-smoke-list-2.png:533x452",
+          "preview-smoke-detail-2.png:1100x800"
+        ],
+        "font": "Segoe UI9pt selected only in synthetic QApplication, from exact existing Windows font",
+        "harness_delta": "ONLY process-local font registration/measurement,new2 artifact names/context; assertions/audit/isolation/composition retained; originalA8 helper unchanged",
+        "visual_scope": "Readable Spanish/accents; opened detail regions do not overlap. Narrow table horizontal scroll, selected combos/first heading clip; first heading still clips expanded. No blanket layout/native/DPI/accessibility/large-data approval."
+      }
+    ],
+    "font": {
+      "path": "C:/Windows/Fonts/segoeui.ttf",
+      "sha256": "704EADA12961A27FD271F7D3B09E2066520E758390C1776744EFF430FEE30F6E",
+      "scope": "Existing installed Windows Segoe UI, process-local harness registration/selection only,9pt; no install/product/global setting change"
+    },
+    "artifacts": [
+      {
+        "path": "preview-smoke-1.log",
+        "sha256": "49F7E0D6E4A1963DE561C55E9D83A6D094F94AA1C6F3E992B2395C0C936BE365"
+      },
+      {
+        "path": "preview-smoke-1.json",
+        "sha256": "09C45FAC5592EB2A79FCA30CFABE9D7E1AB7D91082252F7EA91240A1B33C8609"
+      },
+      {
+        "path": "preview-smoke-list-1.png",
+        "sha256": "8BB5C47F4FE503CF8AA98DEC2929C09B48B0E0FD337FF1216CAA7AC4D65D000D"
+      },
+      {
+        "path": "preview-smoke-detail-1.png",
+        "sha256": "8FA29E1586DCA92CDBAF63D8F25BF528D4855C7C62AFD726106B513B0456FD22"
+      },
+      {
+        "path": "preview-font-probe-1.log",
+        "sha256": "167EB93496855CC37440C480C6FD137487A60169107D68AA8D6FBF36B6A69C9D"
+      },
+      {
+        "path": "preview-font-probe-1.json",
+        "sha256": "D219EE94DEEE13614E74C2E7260690EF5CE9707C78BBE11123BB88E6BD40FB83"
+      },
+      {
+        "path": "preview-font-default-1.png",
+        "sha256": "B5930983D44AC08434145A365FA57066D5AD742ECD51598FA97625682035F93B"
+      },
+      {
+        "path": "preview-font-explicit-1.png",
+        "sha256": "4C06F808D7145C8D4D6032D497261B5E35BAA82D32840E2053592C7894E76341"
+      },
+      {
+        "path": "preview-smoke-2.log",
+        "sha256": "D6D06E2C70D413F195B483EF3A5ADA91D9B48839D65762FD487D2F01B68EECB5"
+      },
+      {
+        "path": "preview-smoke-2.json",
+        "sha256": "C2C8786803F869615DB7CEA1C9A723319B0D29D04BE3F202D2BA8BA0E430B304"
+      },
+      {
+        "path": "preview-smoke-list-2.png",
+        "sha256": "96F8E447BB3EC5B62133C30B2B0AE5ADE30FC04220450EA16D6795E088B84AD6"
+      },
+      {
+        "path": "preview-smoke-detail-2.png",
+        "sha256": "283126773B482A9C32DCFDAC468F637AC291982E57AF8DD01D99E9515DFC5708"
+      }
+    ],
+    "reports": [
+      "preview-smoke-verification-report.md",
+      "preview-font-probe-verification-report.md",
+      "preview-smoke-fonts-verification-report.md"
+    ],
+    "derivative_diff": "preview-font-aware-harness-preparation.diff",
+    "review": {
+      "reviewer": "/root/task2_review",
+      "head": "d7009c724da4fb5eca01d8e28fcec56f6529bf3d",
+      "verdict": "APPROVED BOUNDED PREVIEW EVIDENCE",
+      "report": "preview-checkpoint-review-report.md",
+      "critical": 0,
+      "important": 0,
+      "minor_implementation_findings": 0,
+      "geometry_limits": "Initial533px table horizontal scroll/combo clipping; fixed first heading clips even1100px. Same reviewer raises no new implementation finding/fix, no general layout approval.",
+      "complete_task_group_layout_approval": false
+    },
+    "release": "Coordinator explicitly RELEASED immediately after EACH command BEFORE report/image inspection; root/B can hold host, no current M3 runtime grant.",
+    "temp_state": "Both preview sandboxes and independent probe cwd statically confirmed absent after release; no user preferences/data/global fonts touched.",
+    "limits": "Small synthetic fake preview, not real B4/search/B5/hardware evidence, not p95/heartbeat. D1 no-new-mypy/UI44, E3 bounded7/Ruff and prior core/UI histories retain source scopes. Final B5-source preview and full/final-mypy/performance/global/hosted/certification/tasks/group remain pending. Actual R50–R52/reindex/aliases/delete callback held on root P2; no c9 import."
   }
 }

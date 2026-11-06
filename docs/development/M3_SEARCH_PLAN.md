@@ -139,7 +139,7 @@ before reports/scoped review/parent integration; root ACKed the reserved host.
 This docs stage has no imports/tests/probes/lint/runtime grant. The latest integrated
 B4/types/legacy checkpoint below preserves the earlier source scopes and held gates.
 
-### Current integrated checkpoint — frozen 5db071a
+### B4/types and display checkpoint — frozen 5db071a
 
 Accepted B4 96e8 was integrated as c4cc8ca with exact backend and canonical model 7ac
 plus unchanged R46. Independent title tests own 4e5869f/main adb0b70 use actual public
@@ -165,7 +165,8 @@ XML 33/internal 9.406s. Same GREEN MainWindow-only 7c9f6d4→5db071a changes dis
 fallback, preserves nonempty characters/structured identity/reason, no tests.
 Exact clean 5db/E3 bounded follow-up: 7P/1.92s, XML 7/internal 1.862s; one-file
 Ruff/format pass without edits. Same reviewer APPROVED the bounded display fix.
-No 33/44/mypy repeat; E3 receives only seven-case/Ruff evidence from this window.
+That display window supplies seven-case/Ruff evidence only; the later preview
+checkpoint adds no pytest/mypy/full run.
 
 Frozen `5db071a2d034bda94ed1676d166bcce3aa7f7f0b` source/tests/config:
 `e3ede58c32f5d848988b94dd8c4a5319512546c3` /
@@ -175,11 +176,36 @@ worktree preserves these bytes; no runtime here. Coordinator released immediatel
 after commands before reports/review; host now B. R50–R52 signatures are declared
 only, no accepted B5 API or early app/native adapter/stub/second service. Complete
 Task1/Task2/group/M3 remain open: B5 guard/reindex/delete callback/equivalence,
-guarded 1k/100k p95<500ms/Qt<50ms, final integrated full/mypy, preview/global review/
+guarded 1k/100k p95<500ms/Qt<50ms, final integrated full/mypy, final B5 preview/global review/
 Copilot/CI/package/guarded merge/certification pending. No version bump.
 `M3_SEARCH_EVIDENCE.json` retains exact commands/SHAs/artifacts and calibration;
 all prior history, core e4 proof/review and acceptance/task blocks remain unchanged.
 
+### Bounded synthetic preview checkpoint — d7009c7
+
+Same E3/tests35/config7143 at actual main `d7009c724da4fb5eca01d8e28fcec56f6529bf3d`:
+preview1 exit0/function passes but all text boxes → visual NOT_APPROVED unchanged.
+Independent no-here offscreen QLabel probe confirms empty font families/unresolved
+Sans Serif/uniform glyph1; process-local existing Segoe UI makes the same 700x80
+sample legible with distinct glyphs. Raw isValid=true alone cannot prove rendering.
+Preview2 registers/selects ONLY the pinned existing font at 9pt inside the synthetic
+QApplication; original composition/assertions/sandbox/audit and source unchanged.
+Exit0/entrypoint0, one synthetic row, public Return/raw segment/absent timing/editor,
+no command/forbidden operation/worker/credential; list 533x452/detail 1100x800 legible.
+Horizontal table scroll, clipped narrow combos and first heading (still clipped
+expanded) remain geometry limits; opened detail has no overlap. Same reviewer
+APPROVED BOUNDED PREVIEW EVIDENCE, no new finding/fix, not general layout/native/
+DPI/accessibility/large-corpus or complete-task approval. Font sample PNGs are not
+Biblioteca captures; original preview1 is not overwritten or relabeled.
+
+Separate preview records bind all 3 actual commands/helpers/font/source/PNGs/exits;
+no pytest counts/XML invented, timings are not p95/heartbeat. Coordinator released
+immediately after EACH command before report/image inspection; root/B host now.
+Current E3 evidence is bounded 7/Ruff plus this populated synthetic preview only;
+no 33/44/mypy/full repeat, D1 result scopes unchanged. Final B5-integrated preview
+and broader gates remain pending; R50–R52 actual handoff held on root P2, no c9,
+stub/second service/native adapter or product/style/global-font/config/dependency
+change. Complete Task1/Task2/group/M3 remain open, no certification/version bump.
 Composite checkboxes remain unchecked: no partial evidence closes their remaining
 clauses. Group/hosted gates, certification and a 0.4.0 bump are not claimed.
 
