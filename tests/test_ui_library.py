@@ -20,7 +20,7 @@ from here.memory.models import Meeting, MeetingStatus
 from here.ui.app import HereDesktop
 from here.ui.contract import ApplicationUiAdapter
 from here.ui.fake_controller import FakeApplicationController
-from PySide6.QtCore import QSettings, Qt, QTimer
+from PySide6.QtCore import QModelIndex, QSettings, Qt, QTimer
 from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -172,10 +172,11 @@ def _text(view):
             continue
         model = widget.model()
         if model is not None:
+            parent = QModelIndex()
             parts += [
-                str(model.index(row, column).data() or "")
-                for row in range(model.rowCount())
-                for column in range(model.columnCount())
+                str(model.index(row, column, parent).data() or "")
+                for row in range(model.rowCount(parent))
+                for column in range(model.columnCount(parent))
             ]
     return "\n".join(parts)
 
@@ -476,11 +477,14 @@ def test_closing_detail_discards_its_delayed_failure(library, qtbot):
         results = _results(view)
         index = results.model().index(0, 0)
         results.setCurrentIndex(index)
+        position = results.visualRect(index).center()
+        qtbot.mouseClick(results.viewport(), Qt.MouseButton.LeftButton, pos=position)
         qtbot.mouseDClick(
             results.viewport(),
             Qt.MouseButton.LeftButton,
-            pos=results.visualRect(index).center(),
+            pos=position,
         )
+        qtbot.mouseRelease(results.viewport(), Qt.MouseButton.LeftButton, pos=position)
         qtbot.waitUntil(entered.is_set)
         qtbot.mouseClick(_named(view, QPushButton, r"cerrar.*detalle"), Qt.MouseButton.LeftButton)
     finally:
@@ -669,11 +673,14 @@ def _select_first_meeting(view, qtbot):
     results = _results(view)
     index = results.model().index(0, 0)
     results.setCurrentIndex(index)
+    position = results.visualRect(index).center()
+    qtbot.mouseClick(results.viewport(), Qt.MouseButton.LeftButton, pos=position)
     qtbot.mouseDClick(
         results.viewport(),
         Qt.MouseButton.LeftButton,
-        pos=results.visualRect(index).center(),
+        pos=position,
     )
+    qtbot.mouseRelease(results.viewport(), Qt.MouseButton.LeftButton, pos=position)
 
 
 def _open_detail(library, qtbot, detail):
