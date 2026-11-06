@@ -103,7 +103,8 @@ def test_warm_search_p95_with_actual_corpus_generation_and_visibility_guard(
         record_property("actual_measured_samples", len(timings))
         p95 = (
             statistics.quantiles(timings, n=100, method="inclusive")[94]
-            if len(timings) == 40 else None
+            if len(timings) == 40
+            else None
         )
         record_property("p95_ms", p95)
     assert len(warmups) == 5 and len(timings) == 40

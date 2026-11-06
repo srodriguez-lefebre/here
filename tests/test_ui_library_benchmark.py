@@ -74,10 +74,9 @@ def _rendered(table, page):
     model = table.model()
     if model is None or not page.items or model.rowCount() != len(page.items):
         return False
-    return (
-        page.items[0].snippet in str(model.index(0, 0).data() or "")
-        and page.items[-1].snippet in str(model.index(len(page.items) - 1, 0).data() or "")
-    )
+    return page.items[0].snippet in str(model.index(0, 0).data() or "") and page.items[
+        -1
+    ].snippet in str(model.index(len(page.items) - 1, 0).data() or "")
 
 
 def test_real_guarded_library_query_render_and_worker_drain_keep_all_gaps_below_fifty_ms(

@@ -36,7 +36,7 @@ class GuardedScaleCatalog:
 
     @property
     def expected_first_segment_ids(self) -> tuple[str, ...]:
-        return self.expected_segment_ids[:self.query.limit]
+        return self.expected_segment_ids[: self.query.limit]
 
 
 def build_guarded_scale_catalog(data_dir: Path) -> GuardedScaleCatalog:
@@ -66,15 +66,21 @@ def build_guarded_scale_catalog(data_dir: Path) -> GuardedScaleCatalog:
     library, repo = _open_catalog(data_dir, corpus)
     try:
         with repo.transaction():
-            repo.insert_ingest_source(IngestSource(
-                id=_identity(9400), origin_path=alias_origin,
-                origin_fingerprint=alias_fingerprint, meeting_id=alias_id,
-                revision_id=corpus.revision_id(5),
-            ))
+            repo.insert_ingest_source(
+                IngestSource(
+                    id=_identity(9400),
+                    origin_path=alias_origin,
+                    origin_fingerprint=alias_fingerprint,
+                    meeting_id=alias_id,
+                    revision_id=corpus.revision_id(5),
+                )
+            )
         pair = {"origin_path": alias_origin, "origin_fingerprint": alias_fingerprint}
         for ordinal, identity in enumerate(registry_ids):
             _record(
-                data_dir, identity=identity, phase="pending" if ordinal % 2 else "complete",
+                data_dir,
+                identity=identity,
+                phase="pending" if ordinal % 2 else "complete",
                 origins=(pair,) if identity == corpus.meeting_id(100) else (),
             )
         suppressed = tuple(sorted((*registry_ids, alias_id)))
@@ -88,11 +94,17 @@ def build_guarded_scale_catalog(data_dir: Path) -> GuardedScaleCatalog:
     # Expected order is derived from that authored fixture contract, not search.
     expected_indices = sorted(range(6, 50), key=lambda index: (-(index // 4), index))
     bundle = GuardedScaleCatalog(
-        data_dir=data_dir, memory=memory, search=service, query=query,
+        data_dir=data_dir,
+        memory=memory,
+        search=service,
+        query=query,
         expected_segment_ids=tuple(corpus.segment_id(index, 0) for index in expected_indices),
-        suppressed_meeting_ids=suppressed, registry_record_ids=registry_ids,
-        alias_meeting_id=alias_id, alias_origin=alias_origin,
-        alias_fingerprint=alias_fingerprint, setup_seconds=0.0,
+        suppressed_meeting_ids=suppressed,
+        registry_record_ids=registry_ids,
+        alias_meeting_id=alias_id,
+        alias_origin=alias_origin,
+        alias_fingerprint=alias_fingerprint,
+        setup_seconds=0.0,
     )
     assert_guarded_scale_catalog(bundle)
     return replace(bundle, setup_seconds=perf_counter() - started)
@@ -120,12 +132,16 @@ def assert_guarded_scale_catalog(bundle: GuardedScaleCatalog) -> None:
         # revision stays out of persistent FTS. Historical segments stay in SQL.
         assert library.execute("SELECT count(*) FROM segments_fts").fetchone()[0] == 98901
         for identity in (bundle.registry_record_ids[0], bundle.alias_meeting_id):
-            assert library.execute(
-                "SELECT count(*) FROM segments_fts WHERE meeting_id=?", (identity,)
-            ).fetchone()[0] == 99
-            assert library.execute(
-                "SELECT status FROM meetings WHERE id=?", (identity,)
-            ).fetchone()[0] == "completed"
+            assert (
+                library.execute(
+                    "SELECT count(*) FROM segments_fts WHERE meeting_id=?", (identity,)
+                ).fetchone()[0]
+                == 99
+            )
+            assert (
+                library.execute("SELECT status FROM meetings WHERE id=?", (identity,)).fetchone()[0]
+                == "completed"
+            )
         alias = library.execute(
             "SELECT origin_path,origin_fingerprint FROM ingest_sources WHERE meeting_id=?",
             (bundle.alias_meeting_id,),
