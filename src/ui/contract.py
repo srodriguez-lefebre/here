@@ -32,6 +32,7 @@ from here.memory.models import (
     MeetingPatch,
     MeetingQuery,
     Participant,
+    ReindexReport,
     SearchPage,
     SearchQuery,
 )
@@ -64,6 +65,11 @@ class _MemoryOwner(Protocol):
 class _CatalogRoot(Protocol):
     @property
     def data_dir(self) -> Path: ...
+
+
+@runtime_checkable
+class _MaintenanceBackend(Protocol):
+    def reindex(self) -> ReindexReport: ...
 
 
 class VisualController(Protocol):
@@ -147,7 +153,8 @@ class ApplicationUiAdapter:
         memory = self._memory_backend()
         if not isinstance(memory, _CatalogRoot):
             raise LibraryError("El backend de consultas de biblioteca aún no está disponible.")
-        return SearchService(lambda: open_library(memory.data_dir))
+        reindexer = memory.reindex if isinstance(memory, _MaintenanceBackend) else None
+        return SearchService(lambda: open_library(memory.data_dir), reindexer=reindexer)
 
     def list_meetings(self, query: MeetingQuery) -> MeetingPage:
         return self._query_backend().list_meetings(query)
