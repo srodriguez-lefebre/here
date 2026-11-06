@@ -90,8 +90,8 @@ class HereApplicationController:
     ) -> None:
         self._capture_factory = capture_factory
         self._live_factory = live_factory
-        self._processor = processor or SessionProcessor()
         self._memory = memory_service or MemoryService(get_data_dir())
+        self._processor = processor or SessionProcessor(memory_service=self._memory)
         self._meeting_id: str | None = None
         self._retry_revision: str | None = None
         self._clock = clock

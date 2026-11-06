@@ -134,7 +134,7 @@ def _publish_metadata_and_segments(
     raw_text: str | None = None,
     before_metadata_commit: Callable[[Path], None] | None = None,
 ) -> None:
-    """Publish metadata last; restore raw evidence and obsolete entries on I/O failure.
+    """Publish metadata last; restore evidence on ordinary precommit failure.
 
     Cleanup of owned temporary paths cannot invalidate committed metadata.
     This is not a multi-file transaction against process termination or concurrent writers.
@@ -179,7 +179,7 @@ def _publish_metadata_and_segments(
             before_metadata_commit(staged_metadata)
         staged_metadata.replace(metadata_path)
         committed = True
-    except OSError as publication_error:
+    except Exception as publication_error:
         rollback_error: OSError | None = None
         for destination, backup in reversed(backups.items()):
             if destination not in moved_backups:

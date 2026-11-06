@@ -136,11 +136,19 @@ class RecoveryService:
                         pending = read_pending_intent(directory, metadata.meeting_id)
                         if metadata.status != "pending":
                             claim()
-                            SessionProcessor().publish_memory(
+                            result = SessionProcessor().publish_memory(
                                 directory,
                                 revision_of=pending.revision_of,
                                 status_only=pending.intent == "status",
                             )
+                            if result.status == "rejected":
+                                details = "; ".join(
+                                    str(getattr(warning, "message", warning))
+                                    for warning in result.warnings
+                                )
+                                catalog_warning = "Library publication pending local recovery"
+                                if details:
+                                    catalog_warning += f": {details}"
                         elif pending.hashes is not None:
                             # A final seal cannot make an uncommitted manifest final.
                             # Preserve both pieces of evidence without acquiring a
@@ -151,7 +159,20 @@ class RecoveryService:
                 # A copied manifest does not own other directories with the same ID.
                 key = (metadata.meeting_id or directory.name, directory)
                 if metadata.status == "completed":
-                    completed.add(key)
+                    if catalog_warning:
+                        # Completed evidence needs local catalog recovery only.
+                        # Do not inspect retry audio or offer another provider call.
+                        candidates[key] = RecoveryCandidate(
+                            directory,
+                            metadata.session_id,
+                            metadata.duration_seconds,
+                            metadata.status,
+                            catalog_warning,
+                            False,
+                            metadata.meeting_id,
+                        )
+                    else:
+                        completed.add(key)
                     continue
                 with self._ownership(metadata.meeting_id, directory=directory):
                     available = validate_recovery_audio(directory, metadata)
