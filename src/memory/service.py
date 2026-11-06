@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import shutil
 import sqlite3
 from contextlib import ExitStack, contextmanager
@@ -28,9 +29,17 @@ from here.memory.artifacts import (
     validate_artifact_roles,
     write_durable_json,
 )
-from here.memory.database import Busy, LibraryConnection, LibraryError, migrate, open_library
+from here.memory.database import (
+    Busy,
+    LibraryConnection,
+    LibraryError,
+    migrate,
+    open_library,
+    storage_error,
+)
 from here.memory.models import (
     AudioAsset,
+    DeletionResult,
     IngestSource,
     Meeting,
     MeetingDetail,
@@ -39,9 +48,11 @@ from here.memory.models import (
     MeetingStatus,
     Participant,
     PendingOperation,
+    ReindexReport,
     RevisionAudioAsset,
     Segment,
     SpeakerAssignment,
+    SuppressionSnapshot,
     TranscriptRevision,
 )
 from here.memory.repository import MemoryRepository
@@ -185,6 +196,133 @@ class _FileLock(FileLease):
             raise Busy(str(exc)) from exc
 
 
+@dataclass(frozen=True, slots=True)
+class _DeletionRecord:
+    meeting_id: str
+    origins: tuple[tuple[str, str], ...]
+    phase: str
+
+    def document(self) -> dict[str, Any]:
+        return {
+            "schema_version": 1,
+            "meeting_id": self.meeting_id,
+            "origins": [
+                {"origin_path": path, "origin_fingerprint": fingerprint}
+                for path, fingerprint in self.origins
+            ],
+            "phase": self.phase,
+        }
+
+
+def _origin_pair(value: object) -> tuple[str, str]:
+    """Validate stored origin metadata lexically; never inspect an external path."""
+    if not isinstance(value, dict) or set(value) != {"origin_path", "origin_fingerprint"}:
+        raise ValueError("Invalid deletion origin envelope")
+    path, fingerprint = value["origin_path"], value["origin_fingerprint"]
+    if (
+        not isinstance(path, str)
+        or not os.path.isabs(path)
+        or os.path.normcase(os.path.normpath(path)) != path
+        or any(ord(character) < 32 for character in path)
+        or not isinstance(fingerprint, str)
+        or re.fullmatch(r"[0-9a-f]{64}", fingerprint) is None
+    ):
+        raise ValueError("Invalid deletion origin pair")
+    return path, fingerprint
+
+
+def _deletion_registry(data_dir: Path) -> tuple[tuple[_DeletionRecord, ...], tuple[str, ...]]:
+    """The sole registry parser, shared by locked reads, writers and recovery."""
+    try:
+        directory = managed_path(data_dir, ".deletions", directory=True)
+        try:
+            entries = sorted(directory.iterdir(), key=lambda entry: entry.name)
+        except FileNotFoundError:
+            return (), ()
+        records = []
+        stages = []
+        # Validate EVERY role/path before opening even the first final record.
+        finals = []
+        for entry in entries:
+            stage = re.fullmatch(r"\.([0-9a-f-]{36})\.json\.[A-Za-z0-9_-]{8}\.stage", entry.name)
+            if stage is not None and _is_uuid(stage[1]):
+                session_artifact_path(directory, entry.name)
+                stages.append(entry.name)
+            elif entry.suffix == ".json" and _is_uuid(entry.stem):
+                finals.append(session_artifact_path(directory, entry.name))
+            else:
+                raise ValueError("Unrecognized deletion registry entry retained")
+        for path in finals:
+            value = json.loads(path.read_text(encoding="utf-8"))
+            if (
+                not isinstance(value, dict)
+                or set(value) != {"schema_version", "meeting_id", "origins", "phase"}
+                or type(value["schema_version"]) is not int
+                or value["schema_version"] != 1
+                or value["meeting_id"] != path.stem
+                or value["phase"] not in ("pending", "complete")
+                or not isinstance(value["origins"], list)
+            ):
+                raise ValueError("Invalid deletion registry record")
+            origins = tuple(sorted(_origin_pair(origin) for origin in value["origins"]))
+            if len(set(origins)) != len(origins):
+                raise ValueError("Duplicate deletion origin pair")
+            records.append(_DeletionRecord(path.stem, origins, value["phase"]))
+        return tuple(records), tuple(stages)
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        raise LibraryError("Deletion registry unavailable; local recovery is required") from exc
+
+
+def _suppression_snapshot(
+    library: LibraryConnection, records: tuple[_DeletionRecord, ...]
+) -> SuppressionSnapshot:
+    ids = {record.meeting_id for record in records}
+    pairs = {pair for record in records for pair in record.origins}
+    if pairs:
+        for row in library.execute(
+            "SELECT meeting_id,origin_path,origin_fingerprint FROM ingest_sources"
+        ):
+            if (row[1], row[2]) in pairs:
+                if not _is_uuid(row[0]):
+                    raise LibraryError("Invalid suppressed catalog identity")
+                ids.add(row[0])
+    resolved = tuple(sorted(ids))
+    digest = hashlib.sha256()
+    for value in ("here-suppression-v1", [record.document() for record in records], resolved):
+        encoded = json.dumps(
+            value, sort_keys=True, ensure_ascii=False, separators=(",", ":")
+        ).encode("utf-8")
+        digest.update(len(encoded).to_bytes(8, "big"))
+        digest.update(encoded)
+    return SuppressionSnapshot(resolved, digest.hexdigest())
+
+
+@contextmanager
+def catalog_read_view(library: LibraryConnection) -> Iterator[SuppressionSnapshot]:
+    """Own only the bounded publication lease and a fresh caller's read transaction."""
+    if library.connection.in_transaction:
+        raise LibraryError("Catalog read view requires a fresh connection without a transaction")
+    lock: _FileLock | None = None
+    owned_transaction = False
+    try:
+        lock = _FileLock(managed_path(library.data_dir, ".memory.lock"))
+        library.execute("BEGIN")
+        owned_transaction = True
+        records, _ = _deletion_registry(library.data_dir)
+        yield _suppression_snapshot(library, records)
+    except sqlite3.Error as exc:
+        raise storage_error(exc) from exc
+    except (OSError, ValueError) as exc:
+        raise LibraryError("Catalog read view unavailable") from exc
+    finally:
+        try:
+            if owned_transaction:
+                library.connection.rollback()
+        finally:
+            if lock is not None:
+                lock.close()
+
+
 def _remove_tree(root: Path, relative: str, names: set[str] | None = None) -> None:
     """Remove registered protocol files; unknown material defers cleanup."""
     directory = managed_path(root, relative, directory=True)
@@ -238,6 +376,8 @@ class MemoryService:
     def __init__(self, data_dir: Path) -> None:
         self.data_dir = Path(data_dir).absolute()
         self._owners: dict[str, _FileLock] = {}
+        self.before_delete: list[Callable[[str], None]] = []
+        self._derived_row_purgers: list[Callable[[MemoryRepository, str], None]] = []
         self._publication_context: ContextVar[tuple[str, str] | None] = ContextVar(
             "here_memory_publication", default=None
         )
@@ -258,6 +398,7 @@ class MemoryService:
         lock = _FileLock(self.data_dir / ".memory.lock")
         library: LibraryConnection | None = None
         try:
+            _deletion_registry(self.data_dir)
             library = open_library(self.data_dir)
             migrate(library)
             yield MemoryRepository(library)
@@ -276,14 +417,453 @@ class MemoryService:
         )
         return True
 
+    def reindex(self) -> ReindexReport:
+        """Replace the one derived index, preserving partial and historical evidence."""
+        with self._operation() as repo:
+            records, _ = _deletion_registry(self.data_dir)
+            suppression = _suppression_snapshot(repo.library, records)
+            with repo.transaction():
+                if not self._fts(repo):
+                    return ReindexReport(warnings=(FtsUnavailable(),))
+                repo.library.execute("DELETE FROM segments_fts")
+                # Visibility precedes insertion, and no partial branch writes FTS.
+                suppressed = set(suppression.suppressed_meeting_ids)
+                rows = repo.library.execute(
+                    "SELECT m.id,m.title,r.id AS revision_id,s.id AS segment_id,s.text "
+                    "FROM meetings m JOIN transcript_revisions r ON r.id=m.active_revision_id "
+                    "AND r.meeting_id=m.id JOIN segments s ON s.revision_id=r.id "
+                    "WHERE r.status='complete' AND m.status!='deleting' ORDER BY m.id,s.ordinal"
+                ).fetchall()
+                meetings = set()
+                count = 0
+                for row in rows:
+                    if row["id"] in suppressed:
+                        continue
+                    repo.library.execute(
+                        "INSERT INTO segments_fts VALUES (?,?,?,?,?)",
+                        (
+                            row["id"],
+                            row["revision_id"],
+                            row["segment_id"],
+                            row["text"],
+                            row["title"],
+                        ),
+                    )
+                    meetings.add(row["id"])
+                    count += 1
+            return ReindexReport(len(meetings), count)
+
+    def _delete_inventory(self, repo: MemoryRepository, identity: str) -> dict[str, Any]:
+        """Read only A-registered publication/state roles; unknown children stay unowned."""
+        root = managed_path(self.data_dir, f"meetings/{identity}", directory=True)
+        files: dict[str, str] = {}
+        directories = {f"meetings/{identity}"}
+        revisions = managed_path(self.data_dir, f"meetings/{identity}/revisions", directory=True)
+        if revisions.exists():
+            directories.add(revisions.relative_to(self.data_dir).as_posix())
+            for directory in sorted(revisions.iterdir()):
+                if not _is_uuid(directory.name):
+                    continue
+                validate_session_directory(directory)
+                registration = session_artifact_path(directory, ".publication.json")
+                receipt = session_artifact_path(directory, "catalog.json")
+                if not registration.exists():
+                    # No suffix/UUID-only authority, even for a familiar filename.
+                    continue
+                plan = json.loads(registration.read_text(encoding="utf-8"))
+                if (
+                    not isinstance(plan, dict)
+                    or set(plan) != {"schema_version", "operation_id", "hashes"}
+                    or type(plan["schema_version"]) is not int
+                    or plan["schema_version"] != 1
+                    or not _is_uuid(plan["operation_id"])
+                    or not isinstance(plan["hashes"], dict)
+                    or any(
+                        not isinstance(name, str)
+                        or not isinstance(digest, str)
+                        or re.fullmatch(r"[0-9a-f]{64}", digest) is None
+                        for name, digest in plan["hashes"].items()
+                    )
+                ):
+                    raise ValueError("Invalid registered publication inventory")
+                validate_artifact_roles(directory, plan["hashes"])
+                operation = repo.get_pending_operation(plan["operation_id"])
+                if operation is not None:
+                    payload = json.loads(operation.payload_json)
+                    if (
+                        operation.kind != "publish_revision"
+                        or operation.meeting_id != identity
+                        or operation.destination_path
+                        != directory.relative_to(self.data_dir).as_posix()
+                        or payload.get("revision_id") != directory.name
+                        or payload.get("hashes") != plan["hashes"]
+                    ):
+                        raise ValueError("Publication inventory disagrees with registered journal")
+                if receipt.exists():
+                    snapshot = _receipt_envelope(json.loads(receipt.read_text(encoding="utf-8")))
+                    if (
+                        snapshot.get("schema_version") not in {2, 3}
+                        or snapshot["meeting"].get("id") != identity
+                        or snapshot["revision"].get("meeting_id") != identity
+                        or snapshot["revision"].get("id") != directory.name
+                        or snapshot["hashes"] != plan["hashes"]
+                    ):
+                        raise ValueError("Publication receipt disagrees with cleanup inventory")
+                    if snapshot["schema_version"] == 3:
+                        proof = _Publication.read(snapshot.get("publication"))
+                        if (
+                            snapshot.get("operation_id") != plan["operation_id"]
+                            or proof.revision_id != directory.name
+                        ):
+                            raise ValueError("Publication cleanup provenance mismatch")
+                    assets = {
+                        asset["id"]: AudioAsset(**asset) for asset in snapshot["audio_assets"]
+                    }
+                    for asset in assets.values():
+                        path = managed_path(self.data_dir, asset.relative_path)
+                        if asset.meeting_id != identity or not path.is_relative_to(root):
+                            raise ValueError("Cleanup audio must belong to its meeting")
+                        if path.suffix.lower() != ".wav":
+                            raise ValueError("Cleanup audio must have a WAV role")
+                        validate_artifact_roles(path.parent, (path.name,))
+                    for ordinal, values in enumerate(snapshot["revision_audio_assets"]):
+                        link = RevisionAudioAsset(**values)
+                        if (
+                            link.meeting_id != identity
+                            or link.revision_id != directory.name
+                            or link.asset_id not in assets
+                            or link.ordinal != ordinal
+                        ):
+                            raise ValueError("Cleanup audio relationship mismatch")
+                        validate_artifact_roles(directory, (link.source_file,))
+                    files[receipt.relative_to(self.data_dir).as_posix()] = file_hash(receipt)
+                directories.add(directory.relative_to(self.data_dir).as_posix())
+                files[registration.relative_to(self.data_dir).as_posix()] = file_hash(registration)
+                for name, digest in plan["hashes"].items():
+                    path = session_artifact_path(directory, name)
+                    if path.exists() and file_hash(path) != digest:
+                        raise ValueError("Registered cleanup artifact hash mismatch")
+                    files[path.relative_to(self.data_dir).as_posix()] = digest
+        states = managed_path(self.data_dir, f"meetings/{identity}/states", directory=True)
+        if states.exists():
+            directories.add(states.relative_to(self.data_dir).as_posix())
+            for path in sorted(states.iterdir()):
+                read_meeting_snapshot(states, path.name, identity)
+                files[path.relative_to(self.data_dir).as_posix()] = file_hash(path)
+        return {"schema_version": 1, "files": files, "directories": sorted(directories)}
+
+    def _validate_delete_operation(
+        self, operation: PendingOperation, record: _DeletionRecord
+    ) -> dict[str, Any]:
+        if (
+            not _is_uuid(operation.id)
+            or operation.kind != "delete"
+            or operation.meeting_id != record.meeting_id
+            or operation.staging_path is not None
+            or operation.destination_path != f"meetings/{record.meeting_id}"
+        ):
+            raise ValueError("Invalid pending delete identity or path")
+        value = json.loads(operation.payload_json)
+        if (
+            not isinstance(value, dict)
+            or set(value) != {"schema_version", "files", "directories", "origins"}
+            or type(value["schema_version"]) is not int
+            or value["schema_version"] != 1
+            or not isinstance(value["files"], dict)
+            or not isinstance(value["directories"], list)
+            or not isinstance(value["origins"], list)
+            or tuple(sorted(_origin_pair(pair) for pair in value["origins"])) != record.origins
+        ):
+            raise ValueError("Invalid pending delete inventory envelope")
+        root = managed_path(self.data_dir, f"meetings/{record.meeting_id}", directory=True)
+        for relative, digest in value["files"].items():
+            if not isinstance(relative, str) or not isinstance(digest, str):
+                raise ValueError("Invalid delete file inventory")
+            path = managed_path(self.data_dir, relative)
+            if not path.is_relative_to(root) or re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+                raise ValueError("Delete inventory escapes its meeting")
+            parts = path.relative_to(root).parts
+            if len(parts) == 3 and parts[0] == "revisions" and _is_uuid(parts[1]):
+                if path.name not in {"catalog.json", ".publication.json"}:
+                    validate_artifact_roles(path.parent, (path.name,))
+            elif len(parts) == 2 and parts[0] == "states":
+                if path.exists():
+                    read_meeting_snapshot(path.parent, path.name, record.meeting_id)
+                elif re.fullmatch(r"[1-9][0-9]*-[0-9a-f-]{36}\.json", path.name) is None:
+                    raise ValueError("Invalid deleted state role")
+            else:
+                raise ValueError("Unregistered delete inventory role")
+            if path.exists() and file_hash(path) != digest:
+                raise ValueError("Delete inventory file changed")
+        for relative in value["directories"]:
+            if not isinstance(relative, str):
+                raise ValueError("Invalid delete directory inventory")
+            path = managed_path(self.data_dir, relative, directory=True)
+            parts = path.relative_to(root).parts if path.is_relative_to(root) else ("unsafe",)
+            if parts not in ((), ("states",), ("revisions",)) and not (
+                len(parts) == 2 and parts[0] == "revisions" and _is_uuid(parts[1])
+            ):
+                raise ValueError("Unknown delete directory role")
+        return value
+
+    def _delete_owner(
+        self, repo: MemoryRepository, identity: str, leases: ExitStack, *, accepted: bool = False
+    ) -> None:
+        path = managed_path(self.data_dir, f".owners/{identity}.lock")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        lease = _FileLock(path, timeout=0)
+        leases.callback(lease.close)
+        meeting = repo.get_meeting(identity)
+        if (
+            not accepted
+            and meeting is not None
+            and meeting.status in {MeetingStatus.RECORDING, MeetingStatus.PROCESSING}
+        ):
+            raise Busy("Capture or processing must finish before deletion")
+
+    def _delete_journal(self, repo: MemoryRepository, record: _DeletionRecord) -> PendingOperation:
+        rows = repo.library.execute(
+            "SELECT * FROM pending_operations WHERE kind='delete' AND meeting_id=?",
+            (record.meeting_id,),
+        ).fetchall()
+        if len(rows) > 1:
+            raise ValueError("Ambiguous delete operation")
+        if rows:
+            operation = PendingOperation(**dict(rows[0]))
+            self._validate_delete_operation(operation, record)
+            return operation
+        inventory = self._delete_inventory(repo, record.meeting_id)
+        inventory["origins"] = record.document()["origins"]
+        return PendingOperation(
+            str(uuid4()),
+            "delete",
+            "prepared",
+            record.meeting_id,
+            destination_path=f"meetings/{record.meeting_id}",
+            payload_json=json.dumps(inventory),
+        )
+
+    def _prepare_delete(
+        self, repo: MemoryRepository, record: _DeletionRecord, operation: PendingOperation
+    ) -> tuple[object, ...]:
+        warnings: tuple[object, ...] = ()
+        with repo.transaction():
+            if repo.get_pending_operation(operation.id) is None:
+                repo.insert_pending_operation(operation)
+            meeting = repo.get_meeting(record.meeting_id)
+            if meeting is not None and meeting.status != MeetingStatus.DELETING:
+                occurred_at = datetime.now(timezone.utc).isoformat()
+                repo.library.execute(
+                    "UPDATE meetings SET status='deleting',row_version=row_version+1,updated_at=? "
+                    "WHERE id=?",
+                    (occurred_at, record.meeting_id),
+                )
+                repo.record_event(
+                    record.meeting_id,
+                    "status_changed",
+                    occurred_at,
+                    {"from": meeting.status, "to": "deleting"},
+                )
+            if self._fts(repo):
+                # Optional FTS capability is distinct from core secure_delete.
+                try:
+                    repo.connection.execute(
+                        "INSERT INTO segments_fts(segments_fts,rank) VALUES('secure-delete',1)"
+                    )
+                except sqlite3.OperationalError:
+                    pass  # Final compaction is required on either capability path.
+                repo.library.execute(
+                    "DELETE FROM segments_fts WHERE meeting_id=?", (record.meeting_id,)
+                )
+            else:
+                warnings = (FtsUnavailable(),)
+            for _, fingerprint in record.origins:
+                repo.library.execute(
+                    "INSERT OR IGNORE INTO deleted_origins VALUES (?,?)",
+                    (fingerprint, datetime.now(timezone.utc).isoformat()),
+                )
+        return warnings
+
+    def _purge_delete_files(self, operation: PendingOperation, record: _DeletionRecord) -> None:
+        inventory = self._validate_delete_operation(operation, record)
+
+        # Keep A's proof until all registered content has been removed, enabling
+        # restart with SQL loss during the file phase. Unknown material is retained.
+        def purge_order(relative: str) -> tuple[int, bool, str]:
+            path = Path(relative)
+            if path.name in {"catalog.json", ".publication.json"}:
+                role = 4
+            elif "states" in path.parts:
+                role = 3
+            elif path.suffix.lower() == ".wav":
+                role = 2
+            elif path.suffix.lower() in {".txt", ".md"}:
+                role = 0
+            else:
+                role = 1
+            return role, path.name == ".publication.json", relative
+
+        files = sorted(inventory["files"], key=purge_order)
+        for relative in files:
+            path = managed_path(self.data_dir, relative)
+            path.unlink(missing_ok=True)
+        for relative in sorted(inventory["directories"], key=lambda name: (-name.count("/"), name)):
+            path = managed_path(self.data_dir, relative, directory=True)
+            if path.exists():
+                path.rmdir()  # Never recursively remove unregistered children.
+
+    def _finish_delete(
+        self, repo: MemoryRepository, record: _DeletionRecord, operation: PendingOperation
+    ) -> DeletionResult:
+        warnings = self._prepare_delete(repo, record, operation)
+        self._purge_delete_files(operation, record)
+        repo.library.execute("PRAGMA secure_delete=ON")
+        with repo.transaction():
+            for purge in tuple(self._derived_row_purgers):
+                purge(repo, record.meeting_id)
+            exists = repo.library.execute(
+                "SELECT 1 FROM sqlite_master WHERE name='segments_fts' AND type='table'"
+            ).fetchone()
+            if exists:
+                repo.library.execute(
+                    "DELETE FROM segments_fts WHERE meeting_id=?", (record.meeting_id,)
+                )
+                repo.library.execute("INSERT INTO segments_fts(segments_fts) VALUES('rebuild')")
+            repo.purge_meeting(record.meeting_id)
+        # VACUUM also removes old FTS token/free-page residue on runtimes without
+        # FTS secure-delete. Checkpoints are bounded and busy is never completion.
+        checkpoint = repo.library.execute("PRAGMA wal_checkpoint(TRUNCATE)").fetchone()
+        if checkpoint is not None and checkpoint[0] != 0:
+            raise Busy("Deletion WAL cleanup is busy")
+        repo.library.execute("VACUUM")
+        checkpoint = repo.library.execute("PRAGMA wal_checkpoint(TRUNCATE)").fetchone()
+        if checkpoint is not None and checkpoint[0] != 0:
+            raise Busy("Deletion WAL cleanup is busy")
+        for backup in repo.library.managed_backup_paths():
+            backup.unlink()
+        # All required physical work precedes completion, including retained
+        # per-meeting owner cleanup (the shared publication lock is never removed).
+        if repo.get_meeting(record.meeting_id) is not None:
+            raise LibraryError("Deletion core cleanup remains pending")
+        with repo.transaction():
+            if operation.phase == "prepared":
+                repo.transition_pending_operation(operation.id, "complete")
+        complete = replace(record, phase="complete")
+        directory = managed_path(self.data_dir, ".deletions", directory=True)
+        write_durable_json(
+            session_artifact_path(directory, f"{record.meeting_id}.json"), complete.document()
+        )
+        return DeletionResult("completed", record.meeting_id, warnings=warnings)
+
+    @staticmethod
+    def _delete_failure(identity: str, error: Exception, *, accepted: bool) -> DeletionResult:
+        reason = "busy" if isinstance(error, Busy) else "purge_failed" if accepted else "io"
+        return DeletionResult(
+            "pending" if accepted else "rejected",
+            identity,
+            reason,
+            ("Deletion pending local recovery" if accepted else "Deletion could not start",),
+            "io",
+        )
+
+    def delete_meeting(self, meeting_id: str) -> DeletionResult:
+        self._identity(meeting_id)
+        # An unlocked observation can prove prior acceptance for phase-aware
+        # Busy results. It never grants mutation; all work revalidates under lock.
+        records, _ = _deletion_registry(self.data_dir)
+        accepted = any(record.meeting_id == meeting_id for record in records)
+        hook_error: Exception | None = None
+        try:
+            with self._operation() as repo, ExitStack() as leases:
+                records, _ = _deletion_registry(self.data_dir)
+                accepted = any(record.meeting_id == meeting_id for record in records)
+                if not accepted:
+                    self._meeting(repo, meeting_id)
+                    self._delete_owner(repo, meeting_id, leases)
+                    self._delete_inventory(repo, meeting_id)
+            for release in tuple(self.before_delete):
+                try:
+                    release(meeting_id)
+                except Exception as exc:
+                    hook_error = exc
+                    break
+            with self._operation() as repo, ExitStack() as leases:
+                records, _ = _deletion_registry(self.data_dir)
+                record = next(
+                    (record for record in records if record.meeting_id == meeting_id), None
+                )
+                accepted = record is not None
+                if hook_error is not None:
+                    return DeletionResult(
+                        "pending" if accepted else "rejected",
+                        meeting_id,
+                        "hook_failed",
+                        ("Deletion release acknowledgement failed",),
+                        "io",
+                    )
+                if not accepted:
+                    self._meeting(repo, meeting_id)
+                self._delete_owner(repo, meeting_id, leases, accepted=accepted)
+                if record is None:
+                    inventory = self._delete_inventory(repo, meeting_id)
+                    origins = tuple(
+                        sorted(
+                            {
+                                (row[0], row[1])
+                                for row in repo.library.execute(
+                                    "SELECT origin_path,origin_fingerprint FROM ingest_sources "
+                                    "WHERE meeting_id=?",
+                                    (meeting_id,),
+                                )
+                            }
+                        )
+                    )
+                    record = _DeletionRecord(meeting_id, origins, "pending")
+                    # Validate every pair before persisting the minimal barrier.
+                    for origin in record.document()["origins"]:
+                        _origin_pair(origin)
+                    inventory["origins"] = record.document()["origins"]
+                    operation = PendingOperation(
+                        str(uuid4()),
+                        "delete",
+                        "prepared",
+                        meeting_id,
+                        destination_path=f"meetings/{meeting_id}",
+                        payload_json=json.dumps(inventory),
+                    )
+                    self._validate_delete_operation(operation, record)
+                    directory = managed_path(self.data_dir, ".deletions", directory=True)
+                    directory.mkdir(exist_ok=True)
+                    write_durable_json(
+                        session_artifact_path(directory, f"{meeting_id}.json"), record.document()
+                    )
+                    accepted = True
+                else:
+                    operation = self._delete_journal(repo, record)
+                return self._finish_delete(repo, record, operation)
+        except (InvalidInput, NotFound, Conflict, Busy) as exc:
+            # Atomic replace may have succeeded before its caller observed failure.
+            records, _ = _deletion_registry(self.data_dir)
+            accepted = accepted or any(record.meeting_id == meeting_id for record in records)
+            if not accepted:
+                raise
+            return self._delete_failure(meeting_id, exc, accepted=True)
+        except Exception as exc:
+            records, _ = _deletion_registry(self.data_dir)
+            accepted = accepted or any(record.meeting_id == meeting_id for record in records)
+            return self._delete_failure(meeting_id, exc, accepted=accepted)
+
     def active_revision(self, meeting_id: str | None) -> str | None:
         if not meeting_id:
             return None
         library = open_library(self.data_dir)
         try:
-            repo = MemoryRepository(library)
-            meeting = repo.get_meeting(meeting_id)
-            return meeting.active_revision_id if meeting else None
+            with catalog_read_view(library) as suppression:
+                if meeting_id in suppression.suppressed_meeting_ids:
+                    return None
+                repo = MemoryRepository(library)
+                meeting = repo.get_meeting(meeting_id)
+                return meeting.active_revision_id if meeting else None
         finally:
             library.close()
 
@@ -293,23 +873,25 @@ class MemoryService:
         """Resolve trusted retry lineage without modifying or hashing a legacy origin."""
         library = open_library(self.data_dir)
         try:
-            repo = MemoryRepository(library)
-            if meeting_id is not None:
-                try:
-                    canonical = str(UUID(meeting_id)) == meeting_id
-                except ValueError:
-                    canonical = False
-                if canonical:
+            with catalog_read_view(library) as suppression:
+                repo = MemoryRepository(library)
+                if meeting_id is not None and _is_uuid(meeting_id):
+                    if meeting_id in suppression.suppressed_meeting_ids:
+                        raise NotFound("Meeting has been deleted")
                     meeting = repo.get_meeting(meeting_id)
                     return (meeting.id, meeting.active_revision_id) if meeting else None
-            rows = library.execute(
-                "SELECT DISTINCT m.id,m.active_revision_id FROM ingest_sources i "
-                "JOIN meetings m ON m.id=i.meeting_id WHERE i.origin_path=?",
-                (normalized_origin(session_dir),),
-            ).fetchall()
-            if len(rows) > 1:
-                raise ValueError("Legacy origin conflict: more than one catalog identity")
-            return (rows[0][0], rows[0][1]) if rows else None
+                rows = library.execute(
+                    "SELECT DISTINCT m.id,m.active_revision_id FROM ingest_sources i "
+                    "JOIN meetings m ON m.id=i.meeting_id WHERE i.origin_path=?",
+                    (normalized_origin(session_dir),),
+                ).fetchall()
+                visible = [row for row in rows if row[0] not in suppression.suppressed_meeting_ids]
+                if rows and not visible:
+                    raise NotFound("Origin has been deleted")
+                rows = visible
+                if len(rows) > 1:
+                    raise ValueError("Legacy origin conflict: more than one catalog identity")
+                return (rows[0][0], rows[0][1]) if rows else None
         finally:
             library.close()
 
@@ -409,12 +991,17 @@ class MemoryService:
         acquired = False
         try:
             with self._operation() as repo:
+                records, _ = _deletion_registry(self.data_dir)
+                if (origin, fingerprint) in {pair for record in records for pair in record.origins}:
+                    raise NotFound("Origin has been deleted")
                 rows = repo.library.execute(
                     "SELECT DISTINCT meeting_id FROM ingest_sources WHERE origin_path=?", (origin,)
                 ).fetchall()
                 if len(rows) > 1:
                     raise ValueError("Legacy origin conflict: more than one catalog identity")
                 identity = rows[0][0] if rows else str(uuid4())
+                if identity in _suppression_snapshot(repo.library, records).suppressed_meeting_ids:
+                    raise NotFound("Meeting has been deleted")
                 if not isinstance(identity, str) or not _is_uuid(identity):
                     raise ValueError("Invalid reserved audio-only identity")
                 if identity in self._owners:
@@ -504,6 +1091,8 @@ class MemoryService:
         # Opening the catalog is a typed storage boundary; CLI must distinguish a
         # broken database from a rejected source or publication conflict.
         with self._operation() as repo:
+            records, _ = _deletion_registry(self.data_dir)
+            suppression = _suppression_snapshot(repo.library, records)
             try:
                 source = (
                     read_retry_artifacts(session_dir)
@@ -511,6 +1100,16 @@ class MemoryService:
                     else read_artifacts(session_dir)
                 )
                 source_read = True
+                if source.metadata.meeting_id in suppression.suppressed_meeting_ids or (
+                    source.origin_path,
+                    source.fingerprint,
+                ) in {pair for record in records for pair in record.origins}:
+                    return IngestResult(
+                        "rejected",
+                        source.metadata.meeting_id,
+                        ("Origin or identity has been deleted",),
+                        "conflict",
+                    )
                 publication_context = self._publication_context.get()
                 if publication_context is not None:
                     replay = self._replay_publication(
@@ -551,6 +1150,10 @@ class MemoryService:
                             error_category="conflict",
                         )
                     identity = parent.meeting_id
+                if identity in suppression.suppressed_meeting_ids:
+                    return IngestResult(
+                        "rejected", identity, ("Origin or identity has been deleted",), "conflict"
+                    )
                 if previous_origin and revision_of is None:
                     return IngestResult("unchanged", previous_origin.meeting_id)
                 previous = repo.get_meeting(identity)
@@ -800,6 +1403,22 @@ class MemoryService:
                 return IngestResult("rejected", identity, (str(exc),), category)
 
     def _reconcile_operation(self, repo: MemoryRepository, operation: PendingOperation) -> None:
+        records, _ = _deletion_registry(self.data_dir)
+        if operation.kind == "delete":
+            record = next(
+                (item for item in records if item.meeting_id == operation.meeting_id), None
+            )
+            if record is None:
+                raise ValueError("Delete journal has no durable suppression authority")
+            self._validate_delete_operation(operation, record)
+            self._finish_delete(repo, record, operation)
+            return
+        if (
+            operation.meeting_id
+            in _suppression_snapshot(repo.library, records).suppressed_meeting_ids
+        ):
+            # A publication/state operation cannot recreate deleted evidence.
+            return
         if operation.kind == "persist_state":
             identity = operation.meeting_id
             if (
@@ -1026,6 +1645,9 @@ class MemoryService:
         completed: list[RecoveryOutcome] = []
         skipped: list[RecoveryOutcome] = []
         marked: list[RecoveryOutcome] = []
+        records, _ = _deletion_registry(self.data_dir)
+        suppression = _suppression_snapshot(repo.library, records)
+        suppressed_origins = {pair for record in records for pair in record.origins}
         meetings_root = managed_path(self.data_dir, "meetings", directory=True)
         if not meetings_root.exists():
             return RecoveryReport()
@@ -1034,6 +1656,8 @@ class MemoryService:
                 identity = str(UUID(directory.name))
                 if identity != directory.name:
                     raise ValueError("Invalid managed meeting UUID")
+                if identity in suppression.suppressed_meeting_ids:
+                    continue
                 validate_session_directory(directory)
                 # Existing catalog rows stay authoritative. Only absent meetings
                 # are restored; uncertain unreceipted publications are not adopted.
@@ -1053,6 +1677,14 @@ class MemoryService:
                         warnings.append(f"Uncertain publication retained: {identity}/{revision_id}")
                         continue
                     snapshot = _receipt_envelope(json.loads(receipt.read_text(encoding="utf-8")))
+                    if any(
+                        (origin.get("origin_path"), origin.get("origin_fingerprint"))
+                        in suppressed_origins
+                        for origin in snapshot["ingest_sources"]
+                    ):
+                        raise ValueError(
+                            "Suppressed origin receipt retained for owned cleanup only"
+                        )
                     if (
                         snapshot.get("schema_version") not in {2, 3}
                         or snapshot["meeting"]["id"] != identity
@@ -1129,6 +1761,12 @@ class MemoryService:
                         except (OSError, ValueError, TypeError, KeyError) as exc:
                             warnings.append(str(exc))
                             continue
+                        if any(
+                            (origin.get("origin_path"), origin.get("origin_fingerprint"))
+                            in suppressed_origins
+                            for origin in envelope.get("ingest_sources", [])
+                        ):
+                            raise ValueError("Suppressed lifecycle origin cannot restore a meeting")
                         if (
                             meeting_values is None
                             or state["row_version"] >= meeting_values["row_version"]
@@ -1227,6 +1865,29 @@ class MemoryService:
         marked: list[RecoveryOutcome] = []
         skipped: list[RecoveryOutcome] = []
         with self._operation() as repo, ExitStack() as leases:
+            records, stages = _deletion_registry(self.data_dir)
+            if stages:
+                warnings.append("Uncommitted deletion metadata stages retained")
+            # Restore suppression/origins BEFORE the one existing receipt rebuild.
+            # A record never grants arbitrary-file authority; A proof still does.
+            for record in records:
+                try:
+                    with repo.transaction():
+                        for _, fingerprint in record.origins:
+                            repo.library.execute(
+                                "INSERT OR IGNORE INTO deleted_origins VALUES (?,?)",
+                                (fingerprint, datetime.now(timezone.utc).isoformat()),
+                            )
+                    with ExitStack() as deletion_leases:
+                        self._delete_owner(repo, record.meeting_id, deletion_leases, accepted=True)
+                        operation = self._delete_journal(repo, record)
+                        result = self._finish_delete(repo, record, operation)
+                    if result.status == "completed":
+                        completed.append(RecoveryOutcome(record.meeting_id, "Deletion completed"))
+                except Exception:
+                    warnings.append("Deletion remains pending local recovery")
+                    skipped.append(RecoveryOutcome(record.meeting_id, "Deletion cleanup pending"))
+            suppressed = set(_suppression_snapshot(repo.library, records).suppressed_meeting_ids)
             if repo.library.storage_warning:
                 warnings.append(repo.library.storage_warning)
             rows = repo.library.execute(
@@ -1268,6 +1929,11 @@ class MemoryService:
                 protect(identity)
             for row in rows:
                 if row["meeting_id"] in live:
+                    continue
+                if row["kind"] == "delete":
+                    # Already handled above with the same retained ownership path.
+                    continue
+                if row["meeting_id"] in suppressed:
                     continue
                 try:
                     self._reconcile_operation(repo, PendingOperation(**dict(row)))
@@ -1313,7 +1979,7 @@ class MemoryService:
             state_operations: list[PendingOperation] = []
             with repo.transaction():
                 for row in active_rows:
-                    if row[0] not in live:
+                    if row[0] not in live and row[0] not in suppressed:
                         self._change_status(repo, row[0], MeetingStatus.INTERRUPTED)
                         state_operations.append(self._state_operation(repo, row[0]))
                         marked.append(RecoveryOutcome(row[0], "Unowned work marked interrupted"))
@@ -1331,7 +1997,7 @@ class MemoryService:
                         )
                     )
             for row in repo.library.execute("SELECT * FROM audio_assets").fetchall():
-                if row["meeting_id"] in live:
+                if row["meeting_id"] in live or row["meeting_id"] in suppressed:
                     continue
                 try:
                     path = managed_path(self.data_dir, row["relative_path"])
@@ -1368,6 +2034,9 @@ class MemoryService:
         if meeting_id not in self._owners:
             self._acquire_owner(meeting_id)
         with self._operation() as repo:
+            records, _ = _deletion_registry(self.data_dir)
+            if meeting_id in _suppression_snapshot(repo.library, records).suppressed_meeting_ids:
+                raise NotFound("Meeting has been deleted")
             with repo.transaction():
                 if repo.get_meeting(meeting_id) is None:
                     repo.insert_meeting(
@@ -1404,6 +2073,9 @@ class MemoryService:
             raise OwnershipBusy("A processing job already owns this meeting")
         self._acquire_owner(meeting_id)
         with self._operation() as repo:
+            records, _ = _deletion_registry(self.data_dir)
+            if meeting_id in _suppression_snapshot(repo.library, records).suppressed_meeting_ids:
+                raise NotFound("Meeting has been deleted")
             with repo.transaction():
                 if repo.get_meeting(meeting_id) is None:
                     repo.insert_meeting(Meeting(id=meeting_id, status=MeetingStatus.PROCESSING))
@@ -1419,6 +2091,9 @@ class MemoryService:
 
     def _acquire_owner(self, meeting_id: str) -> None:
         try:
+            records, _ = _deletion_registry(self.data_dir)
+            if any(record.meeting_id == meeting_id for record in records):
+                raise NotFound("Meeting has been deleted")
             directory = managed_path(self.data_dir, ".owners", directory=True)
             directory.mkdir(parents=True, exist_ok=True)
             self._owners[meeting_id] = _FileLock(directory / f"{meeting_id}.lock")
@@ -1504,6 +2179,9 @@ class MemoryService:
 
     @staticmethod
     def _change_status(repo: MemoryRepository, meeting_id: str, status: MeetingStatus) -> None:
+        records, _ = _deletion_registry(repo.library.data_dir)
+        if meeting_id in _suppression_snapshot(repo.library, records).suppressed_meeting_ids:
+            raise NotFound("Meeting has been deleted")
         meeting = repo.get_meeting(meeting_id)
         if meeting is None or meeting.status == status:
             return
@@ -1527,6 +2205,9 @@ class MemoryService:
 
     @staticmethod
     def _meeting(repo: MemoryRepository, meeting_id: str) -> Meeting:
+        records, _ = _deletion_registry(repo.library.data_dir)
+        if meeting_id in _suppression_snapshot(repo.library, records).suppressed_meeting_ids:
+            raise NotFound("Meeting does not exist")
         meeting = repo.get_meeting(meeting_id)
         if meeting is None:
             raise NotFound("Meeting does not exist")
@@ -1590,16 +2271,19 @@ class MemoryService:
     @contextmanager
     def _read_operation(self) -> Iterator[MemoryRepository]:
         """Materialize detached values from one explicit SQLite read snapshot."""
-        with self._operation() as repo:
-            repo.library.execute("BEGIN")
-            try:
-                yield repo
-            finally:
-                repo.connection.rollback()
+        library = open_library(self.data_dir)
+        try:
+            with catalog_read_view(library):
+                yield MemoryRepository(library)
+        finally:
+            library.close()
 
     def get_meeting(self, meeting_id: str) -> MeetingDetail:
         self._identity(meeting_id)
         with self._read_operation() as repo:
+            records, _ = _deletion_registry(self.data_dir)
+            if meeting_id in _suppression_snapshot(repo.library, records).suppressed_meeting_ids:
+                raise NotFound("Meeting does not exist")
             warnings = (repo.library.storage_warning,) if repo.library.storage_warning else ()
             return self._detail(repo, meeting_id, warnings)
 
@@ -1809,7 +2493,10 @@ class MemoryService:
             )
 
     def show(self, meeting_id: str) -> dict[str, object] | None:
-        with self._operation() as repo:
+        with self._read_operation() as repo:
+            records, _ = _deletion_registry(self.data_dir)
+            if meeting_id in _suppression_snapshot(repo.library, records).suppressed_meeting_ids:
+                return None
             meeting = repo.get_meeting(meeting_id)
             if meeting is None:
                 return None

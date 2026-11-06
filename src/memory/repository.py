@@ -169,6 +169,21 @@ class MemoryRepository:
     def insert_participant(self, participant: Participant) -> None:
         self._insert("participants", participant)
 
+    def purge_meeting(self, meeting_id: str) -> None:
+        """Remove core rows after trusted derived purgers have used their relationships."""
+        self._require_transaction()
+        self.library.execute(
+            "UPDATE meetings SET active_revision_id=NULL WHERE id=?", (meeting_id,)
+        )
+        for table in ("speaker_assignments", "revision_audio_assets", "ingest_sources"):
+            self.library.execute(f"DELETE FROM {table} WHERE meeting_id=?", (meeting_id,))
+        self.library.execute("DELETE FROM meetings WHERE id=?", (meeting_id,))
+        # Publication payloads can contain derived content in future formats. A
+        # minimal delete control row is the only per-meeting journal retained.
+        self.library.execute(
+            "DELETE FROM pending_operations WHERE meeting_id=? AND kind!='delete'", (meeting_id,)
+        )
+
     def get_participant(self, participant_id: str) -> Participant | None:
         return self._get("participants", participant_id, Participant)
 

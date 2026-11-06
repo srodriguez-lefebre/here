@@ -10,7 +10,7 @@ from here.application.processing import SessionProcessor, _validated_recovery_so
 from here.config.paths import get_data_dir
 from here.memory.artifacts import managed_path, read_pending_intent
 from here.memory.database import LibraryError
-from here.memory.service import MemoryService, OwnershipBusy
+from here.memory.service import MemoryService, NotFound, OwnershipBusy
 from here.output.metadata import ErrorMetadataDocument, SessionMetadata
 from here.output.ownership import FileLease, LeaseBusy
 from here.output.paths import UnsafeSessionPath, session_artifact_path, validate_session_directory
@@ -63,16 +63,11 @@ class RecoveryService:
 
     def _owner_identity(self, directory: Path, source_id: str | None) -> str | None:
         """A legacy manifest keeps its ID; its normalized origin locates its owner."""
-        try:
-            if source_id is not None and str(UUID(source_id)) == source_id:
-                return source_id
-        except ValueError:
-            pass
         data_dir = get_data_dir()
         if (data_dir / "library.sqlite3").exists():
             try:
                 parent = MemoryService(data_dir).retry_parent(directory, source_id)
-            except (OwnershipBusy, UnsafeSessionPath):
+            except (NotFound, OwnershipBusy, UnsafeSessionPath):
                 raise
             except (LibraryError, ValueError) as exc:
                 raise _CatalogOwnershipUnavailable(
