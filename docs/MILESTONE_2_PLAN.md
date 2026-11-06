@@ -89,7 +89,7 @@ siete. Valen las cinco del diseño.
 | Grupo | Tareas del diseño | Documentos | Estado |
 |---|---|---|---|
 | A. Catálogo inmutable | 1 modelos, migraciones y repositorio · 2 segmentos y raw text en todos los recorridos · 3 ingestión, identidad y revisiones | `M2_CATALOG_SPEC.md`, `M2_CATALOG_PLAN.md` | Cerrado/mergeado PR21/53712c5; verificado automáticamente con CI980/2/307,46 s, package y reviews exact-head; sin certificación nueva |
-| B. Ciclo de vida y borrado | 4 participantes, edición con `row_version`, reconciliación · 5 borrado transaccional y FTS | `M2_LIFECYCLE_SPEC.md`, `M2_LIFECYCLE_PLAN.md` | Contratos PR22 mergeados; tarea4 aceptada localmente en4e1b2ce/docs96e8aed, full1043/9/390,03s y reviews; tarea5 H1/H2 Important abiertos con RED7F/2P/6,63s y fix en curso; RED nativo34 observado, tail/contexto pendientes; grupo/M2 abiertos |
+| B. Ciclo de vida y borrado | 4 participantes, edición con `row_version`, reconciliación · 5 borrado transaccional y FTS | `M2_LIFECYCLE_SPEC.md`, `M2_LIFECYCLE_PLAN.md` | Contratos PR22/23 mergeados; tarea4 aceptada localmente en4e1b2ce/docs96e8aed, full1043/9/390,03s; H1/H2 corregidos/revisados en fbe (9P/6,91s), handoff técnico R50/reindex a M3; tail1278 revisado con foco2P, contexto R52 e interoperabilidad real pendientes; grupo/M2 abiertos |
 
 Orden obligatorio: A antes que B. Si al mergear A cambió la forma de
 `pending_operations` o de los contratos del catálogo, el PLAN de B se ajusta en su
