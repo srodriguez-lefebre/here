@@ -142,12 +142,12 @@ generate summaries or action items.
 
 ## Local catalog (M2 in progress)
 
-The source candidate implements cataloging of recordings, file transcriptions
+The merged catalog implementation supports cataloging of recordings, file transcriptions
 and explicit retries under the configured user data root. It keeps managed copies
 and immutable transcript revisions; importing a saved session leaves the original
 folder unchanged. Repeated import of the same origin is unchanged. Conflicting
 content with the same meeting UUID is rejected; an explicit application retry
-is intended to create the next revision while retaining earlier evidence.
+creates the next revision while retaining earlier evidence.
 
 These maintenance commands work without a provider key:
 
@@ -159,7 +159,7 @@ here memory reconcile --json
 
 `ingest` reports `status`, `meeting_id` and warnings. `show` returns the meeting,
 audio assets, revisions and segments; `reconcile` reports local recovery warnings.
-The intended exit codes are 0 for success, 2 for invalid input, 3 for a rejected conflict or
+The exit codes are 0 for success, 2 for invalid input, 3 for a rejected conflict or
 missing meeting, and 4 for an unavailable/corrupt catalog. `--json` keeps the result
 machine-readable. Local catalog commands never transcribe or contact the provider.
 
@@ -183,29 +183,23 @@ while valid neighboring meetings can rebuild. Accepted cancellation during captu
 failure persistence is finalized before the first catalog publication, preserving
 the original capture error and audio under the same meeting.
 
-M2 is not released or complete. Integrated source `7bfd0cb` implements the combined
-GR1–GR3 fixes. Final pending markers use version 3; readers accept markers 1/2,
-publication receipts remain version 3 with version-2 compatibility, and the DB
-schema stays 2. The final group/recovery focus passes 26 tests. The earlier
-940-pass/seven-skip full belongs to historical source `8087e25`. New full 3 at
-`7bfd0cb` reports eight failures/945 passes/seven skips: existing capture-recovery
-test wrappers reject the additive precommit callback. Both wheel smokes pass.
-The test-only wrapper correction is integrated at `ef70f78`; its 13-case focus
-passes and full 4 passes **953 tests/seven symlink skips in 358.94s**, including
-both wheel smokes on unchanged product source. Final scoped independent review
-APPROVED source, fixture and docs `8845877`; GR1–GR3/GD1/GD2 are ADDRESSED.
-Current evidence and pending hosted CI/Copilot/merge gates are tracked
-in [STATUS.md](STATUS.md).
-The packaged 0.2.0 delivery above retains its recorded M1 scope.
+M2 A is merged in PR [#21](https://github.com/srodriguez-lefebre/here/pull/21),
+with independent review, all Copilot observations answered and resolved, and
+exact-head Windows tests/package checks passing. Final pending markers use
+version3, with readers for1/2; receipts retain version2/3 compatibility and DB schema2.
+Ordinary precommit callback errors restore prior evidence; the default processor
+shares the controller's catalog. Invalid pending markers or unavailable legacy
+ownership mappings leave bounded, nonretryable recovery warnings, without reading
+audio or guessing identity while ownership is uncertain. Actual owner/path guards
+remain strict.
 
-PR [#21](https://github.com/srodriguez-lefebre/here/pull/21) received three Copilot
-observations on `3394149`. Corrections are integrated in `c3cdf08`: ordinary
-precommit callback errors restore prior evidence; the default processor shares
-the controller's catalog; completed sessions with blocked local publication show
-an existing recovery warning with provider retry disabled. Eight new cases pass,
-and the affected focus passes 325/one symlink skip. Prior full4/technical approval
-and Windows CI belong to the previous source. Full 5 passes 961/seven symlink skips in 371.80s; scoped review of
-these corrections remain pending, followed by replies/new Copilot/exact-head CI.
+The final Windows suite passes980 tests with two installed-wheel cases omitted;
+the fresh exact-source wheel separately passes all four distribution checks,
+including both installed entries. These are automatic synthetic checks, not new
+hardware/provider/clean-install certification. M2 remains in progress pending
+lifecycle/deletion and milestone acceptance. Version0.2.0 stays current; the
+packaged delivery above retains its M1 scope. Current status and named evidence:
+[STATUS.md](STATUS.md) and [ACCEPTANCE.md](docs/development/ACCEPTANCE.md).
 
 ## Audio Diagnostics
 

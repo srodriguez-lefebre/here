@@ -41,7 +41,9 @@ The main flow is:
   945 passes/seven skips, now historical. Test-only correction `ef70f78` passes
   its 13-case focus and full 4: 953 passed/seven skips in 358.94s, both wheel
   smokes passing on unchanged source. Final technical review APPROVED source,
-  fixture and docs `8845877`; hosted gates remain open.
+  fixture and docs `8845877` at that historical checkpoint. Final sourcec59ae33
+  adds the accepted Copilot corrections; exact-head Windows980/2/package and
+  received Copilot close those hosted gates in merge53712c5 (PR21).
 - `ui/`: Qt Widgets presentation, the live-logo overlay, and the single adapter
   from visual actions to the application contract.
 
@@ -162,7 +164,7 @@ that artifact. The writer preflights its managed entry and stages raw and segmen
 evidence before publishing metadata. A handled metadata-replace failure restores
 previous raw bytes or removes a fresh unpublished raw file. This I/O rollback is
 not an atomic filesystem transaction against process termination or concurrent
-writers; task 3 still owns immutable catalog publication and reconciliation.
+writers; the immutable catalog publication/reconciliation path below handles durable revisions.
 
 `events.json` is written when lifecycle events exist. Pause and resume events
 contain both wall-clock time and the duration of material actually recorded.
@@ -196,28 +198,27 @@ Frozen DTOs carry stored values without introducing global speaker identities.
 SQLite busy/locked errors from migration reads, repository reads and writes become
 the recoverable `Busy` error, including the rollback-journal exclusive-lock case.
 
-Task 3 builds publication and producer integration on this foundation as described
-below. Original F1–F7, NB1 and NB2 are addressed in scoped re-review. The final
-whole-group review of `8087e25` requests changes for GR1–GR3. Their combined fix
-is integrated at `7bfd0cb`, with a 26-case group/recovery focus passing. Test-only
-fixture correction `ef70f78` has the current full 4 passing 953/seven skips; the
-final scoped review is APPROVED. The earlier
-940-pass/seven-skip full retains its historical `8087e25` source.
+M2 A publication/producer integration is merged in PR21/53712c5. Independent
+reviews cover original F1–F7, NB1/NB2, GR1–GR3 and Copilot C1–C5. Exact-head8a498e2
+Windows CI passes980/two wheel skips/307.46s with package success; separate fresh
+installed-wheel checks pass4/7.51s. This is automatic synthetic verification, not
+new hardware/provider/clean-install certification. M2 lifecycle/deletion remains B.
 
 ## Catalog publication and local recovery (M2 A task 3)
 
-Current source `c3cdf08` adds the three PR #21 Copilot corrections under R40.
-Ordinary precommit `Exception` triggers the existing evidence rollback before
-propagation; `BaseException`/process-termination semantics remain unchanged and
-failed rollback retains backups/causal diagnostics. The controller constructs its
-MemoryService first and shares it with the default SessionProcessor, preserving
-explicit processors. A rejected completed-session replay yields an existing
-RecoveryCandidate (`status=completed`, `can_retry=False`, readable `error_summary`)
-before retry-audio inspection. Existing desktop controls show the warning and
-disable provider retry; successful/no-marker completed controls stay hidden.
-Eight new cases pass and affected focus 325/one symlink skip passes. Current full 5
-passes 961/seven symlink skips in 371.80s, both wheel smokes passing. Final scoped
-review remains pending; earlier approval/full4 apply to the previous source.
+Merged sourcec59ae33 includes PR21 Copilot corrections R40/R43/R44. Ordinary
+precommit `Exception` triggers evidence rollback before propagation;
+`BaseException`/process termination is unchanged, and failed rollback retains
+backups/causal diagnostics. The controller shares its actual MemoryService with
+the default processor while preserving injected processors. Rejected completed
+replay and malformed pending intents use the existing nonretryable RecoveryCandidate
+warning before retry-audio inspection. An actual catalog ownership lookup failure
+(LibraryError or ambiguous-origin ValueError) becomes a private metadata-only
+warning; no marker/error/audio/native material is inspected and no identity or
+parent is invented while ownership is unknown. Real OwnershipBusy/UnsafeSessionPath
+guards remain strict, stale materialize fails closed, and the adapter rejects
+nonretryable candidates before credentials/provider retry. No new process,
+capture deadline, schema, dependency or UI flow is introduced by those corrections.
 
 `MemoryService.ingest_session(session_dir, *, revision_of=None)` interprets v1
 artifacts without modifying the origin. Known artifact roles and explicit WAV
@@ -348,7 +349,8 @@ preserves all assertions and crash cutpoints. It is integrated at `ef70f78`:
 13 cases pass in 24.82s and **full 4 passes 953/seven symlink skips in 358.94s**,
 XML 960 cases/0 failures/0 errors/7 skips/internal 358.621s. Both wheel smokes pass.
 The original `7bfd0cb` wheel remains exact for its unchanged 65-file product source;
-only the test wrappers changed. Hosted gates remain pending. Earlier
+only the test wrappers changed. Hosted gates were pending at that checkpoint;
+final exact-head Windows CI/Copilot/merge now close A as recorded above. Earlier
 failed fulls and the unexplained child timeout
 retain their original results; no new certification or group acceptance is claimed.
 

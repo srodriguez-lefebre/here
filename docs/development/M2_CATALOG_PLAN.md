@@ -2,7 +2,7 @@
 
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
 > review, then independent agent review. The author merges after Copilot review, CI and independent subagent review (rulings 16 and 17). Steps use checkbox
-> syntax. **Status: in execution since 2026-11-05 (ruling 20).** Task 1 independent
+> syntax. **Status: group A CLOSED/merged by PR #21, 2026-11-06 (ruling 20).** Task 1 independent
 > review accepted after its Busy correction. Task 2 SPEC/quality review passed;
 > local suite evidence is recorded below. Source `8087e25` includes scoped fixes
 > through round 3: original F1–F7, NB1 and NB2 addressed. The final whole-group
@@ -13,7 +13,10 @@
 > Test-only correction `ef70f78` passes focus13 and full4:953/seven skips/358.94s.
 > Final scoped technical review APPROVED source, fixture and docs `8845877`;
 > GR1–GR3/GD1/GD2 ADDRESSED. Task 3 is locally verified and independently accepted.
-> Group hosted Windows/Copilot/merge gates remain pending.
+> Exact reviewed head8a498e2 has Copilot5795325438 received/no open issues, all five
+> threads replied/resolved, complete Windows980/2wheel skips/307.46s and package
+> success. Guarded merge53712c5 closed A at03:22:06Z. Evidence level: implemented
+> and automatically verified; no new real certification. M2/B remain open.
 
 **Goal:** Durable meeting identity, immutable transcript revisions and one
 application-owned persistence path, rebuildable from files and usable without a key.
@@ -27,9 +30,11 @@ source/DB mutation. Independent RED six distinct cases:3 failures/3 controls acr
 two sequential runs (13.93s summed); GREEN6/4.24s; affected169/114.05s, no skips;
 Ruff/format2 clean, canonical mypy79/79 without new messages. Fresh65-file byte-equal
 noneditable probe and distribution4/7.51s pass, including both installed-wheel smokes.
-Final scoped source/docs verdict, C5 reply, newly received Copilot and complete
-exact-head Windows suite/package CI remain pending before guarded merge. R43/R44
-require that complete CI gate; no duplicate local full7, new certification or closure.
+Final scoped source/docs verdict APPROVED for c59ae33/3fdbd05; C5 reply4488660276
+and all five threads resolved. Copilot5795325438 COMMENTED on exact8a498e2 has no
+open issues; complete Windows CI980/2/307.46s and package success precede guarded
+merge53712c5. A is closed with automatic evidence, M2/B remain open. R43/R44 are
+satisfied without duplicate local full7 or new real certification.
 
 **Historical C4 checkpoint:** Copilot 5794829768 COMMENTED on D23 resolves C1–C3
 and adds C4/inline 4488285573. R43 correction 56af525 from 0a28842 catches marker-data
@@ -121,7 +126,8 @@ one symlink-privilege skip in 4.70s. Scoped independent re-review accepted the f
 no actionable task 1 findings remain. Final run `M2A-T1-FINAL-20261105`: 778 passed,
 7 symlink-privilege skips in 173.68s, including both noneditable-wheel smokes.
 Limits are recorded in `ACCEPTANCE.md`; task source commit `9a80060` records the
-implementation. Current-head Windows CI for M2 A remains pending.
+implementation. Windows CI was pending at this task checkpoint; final group
+run42155415514 and merge53712c5 now close A as recorded above.
 No file publication, producer integration, FTS or M2 completion is claimed here.
 
 ### Task 2: Segments and raw text on every transcript path
@@ -353,7 +359,7 @@ one meeting, original capture-error/audio evidence and ordinary identity-conflic
 rules. Do not restart already addressed NB1/NB2.
 Closing checkboxes remain unchecked pending aggregate results/review and hosted gates.
 
-### Current source checkpoint — combined GR1–GR3 fix wave
+### Historical source checkpoint — combined GR1–GR3 fix wave
 
 Root `7bfd0cbf477a42aacc44b83b3d2da1e438801756` integrates Green
 `ec55b9564d3af01247d3367675a340a361f6b6ef`; source tree
@@ -419,6 +425,14 @@ locally and independently technically accepted. Group A/M2 remain open. PR/Copil
 remain pending; version is 0.2.0, with no new certification or future front started.
 
 ## Closing the group
+
+Completed: PR #21 reviewed head8a498e207812592ff84a0acc5ba4e9f392e02373;
+received Copilot5795325438/all five threads replied and resolved; complete Windows
+tests42155415514 and package42155415501 success; guarded merge commit
+53712c5beedafc2d40e2abf10c13362a1c3c9f78; DELIVERY ledger records all five steps.
+The remaining bullets preserve the delivery procedure; A's implementation must
+not be restarted. Before B/M3A launch, their adjusted contract docs require their
+own final review/PR/Copilot/CI/merge gates. No future chat exists at this checkpoint.
 
 - Update `README.md` (new commands, data root), `ARCHITECTURE.md` (memory package and
   publication sequence), `docs/MILESTONE_2_PLAN.md` (criteria 1–10, 13–15 status),

@@ -105,7 +105,7 @@ el alcance restante en Windows: correcciones, distribución instalable,
 verificaciones de runtime/instalación, avisos, checksums y PR revisadas
 y mergeadas. Al cerrar M1 termina esta ejecución; M2-M5 quedan pendientes.
 
-### Ejecución vigente al 2026-11-05
+### Checkpoint histórico de ejecución al 2026-11-05
 
 La instrucción explícita del usuario registrada como ruling 20 reemplaza la pausa
 de implementación del ruling 15 y el límite histórico de terminar en M1. Se
@@ -154,3 +154,23 @@ actual y CI de Windows verde en ese head; el ruling 20 no permite omitir una
 condición por demora. La evidencia automática local no certifica hardware,
 proveedor ni instalación limpia. La prueba de dos horas permanece omitida por
 ruling 5, sin presentarla como aprobada.
+
+### Ejecución vigente al 2026-11-06
+
+M2 A quedó cerrado por PR[#21](https://github.com/srodriguez-lefebre/here/pull/21),
+merge53712c5beedafc2d40e2abf10c13362a1c3c9f78 a03:22:06Z. Nivel: implementado y
+verificado automáticamente, sin certificación nueva de hardware/proveedor/instalación.
+Head revisado8a498e207812592ff84a0acc5ba4e9f392e02373: review independiente final
+APPROVED; Copilot5795325438 recibido sin issues abiertos y cinco hilos respondidos/
+resueltos; suite Windows42155415514 pasa980/2 skips wheel/307,46 s; package42155415501
+success. Merge guardado --merge --admin --match-head-commit y ledger en DELIVERY.
+Los smokes del wheel exacto pasan por separado,4/7,51 s; no son instalación limpia.
+
+M2 sigue abierto por ciclo de vida/borrado B y sus criterios restantes; versión
+0.2.0 hasta cierre M2/0.3.0. Próximo paso: PR de contratos M2_LIFECYCLE/M3_SEARCH y
+agenda M3 ajustados al A mergeado, con sus propios gates. Solo después root crea
+los dos chats de trabajo con ramas/worktrees y briefs, según ruling35; ninguno
+creado en este checkpoint. Tras M2B se permite adelantar M5B con claims pendientes
+hasta M4B; demás dependencias intactas. STATUS guarda bases, ownership y reanudación.
+Los principios y definiciones de terminado de este documento no cambian. La prueba
+de dos horas permanece **omitida por ruling 5**, nunca aprobada.

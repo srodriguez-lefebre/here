@@ -1,6 +1,16 @@
 # M2 immutable catalog specification
 
-Status: in execution under the explicit 2026-11-05 mandate (ruling 20).
+Status: group A CLOSED and merged in PR #21 at
+`53712c5beedafc2d40e2abf10c13362a1c3c9f78` (2026-11-06T03:22:06Z).
+Implemented and automatically verified: complete Windows CI on reviewed head
+`8a498e207812592ff84a0acc5ba4e9f392e02373` passes980/two wheel skips/307.46s;
+package success and received Copilot5795325438 with all five threads resolved.
+Final sourcec59ae33/docs3fdbd05 scoped independent review APPROVED. Fresh exact-source
+installed-wheel distribution4/7.51s supplies the two cases omitted in hosted CI.
+No new hardware/provider/clean-install certification; M2 milestone/B remain open,
+version0.2.0. Contract documentation for B/M3A is the next gate, before chat launch.
+
+Historical implementation checkpoints (retained with their original source):
 Tasks 1/2 have local verification and independent reviews. Original F1–F7, NB1
 and NB2 are addressed by scoped re-reviews. The final whole-group source/docs
 review of `8087e25` requests changes for GR1–GR3; minor GD1/GD2 checkpoint fixes
@@ -15,7 +25,7 @@ forwarding is integrated test-only at `ef70f78`, its 13-case focus passes and fu
 passes 953/seven skips in 358.94s with both wheel smokes on unchanged product
 source. Final scoped independent technical review APPROVED source, fixture and
 docs `8845877`; GR1–GR3/GD1/GD2 are ADDRESSED. Task 3 is locally implemented,
-automatically verified and independently accepted; group hosted/merge gates remain open.
+automatically verified and independently accepted at that checkpoint; hosted gates were then open and are now closed above.
 The prior five-failure full remains historical evidence. Governing design:
 `PRODUCT_DESIGN.md` §2–§4, which is a taken decision (ruling 3). Spanish plan and
 acceptance criteria: `../MILESTONE_2_PLAN.md`.
@@ -30,9 +40,10 @@ changing source/catalog bytes or inventing identity/parent. Actual OwnershipBusy
 and UnsafeSessionPath guards remain strict; stale materialization fails closed.
 Independent RED covers six distinct cases (three failures/three controls across
 two runs); GREEN6/4.24s, affected169/114.05s and fresh installed-wheel distribution4/
-7.51s pass. Final scoped source/docs review and mandatory exact-head complete
-Windows CI remain pending under R43/R44. No duplicate local full7 is run; no new
-hardware/provider/clean-install certification or group closure is claimed.
+7.51s pass. Final scoped source/docs review APPROVED and complete exact-head
+Windows CI980/2/307.46s/package success satisfy R43/R44. Copilot5795325438 confirms
+C5 resolved on8a; guarded merge53712c5 closes A. No duplicate local full7 or new
+hardware/provider/clean-install certification; milestone M2 remains open.
 
 Historical C4 correction source is `56af525` (Green `0a28842`) under R43. Malformed
 marker ValueError is handled only around `read_pending_intent`; UnsafeSessionPath
@@ -134,8 +145,9 @@ rebuild and `show` JSON expose the same `revision_audio_assets`. An older receip
 without unambiguous proof stays uncertain with a warning; no relationship is
 invented. Receipt 3 retains these same links and additionally proves explicit
 publication provenance; receipt 2 remains readable without invented proof.
-Current local aggregate verification is complete: full 4 passes 953/seven skips
-in 358.94s with final technical review APPROVED. Hosted acceptance gates remain pending.
+Historical local full4 passes953/seven skips/358.94s on its stated source. Final
+review and exact-head Windows980/2/307.46s/package/Copilot/merge close A as recorded
+above, without relabeling that historical local run.
 
 ### Segments and evidence
 
@@ -295,8 +307,8 @@ the journal path join/probe. Existing manifests retain optional/opaque source ID
 Round-2/3 scoped reviews address the snapshot/audio-only regressions and NB2;
 historical full 2 at `8087e25` passes 940 tests/seven skips. The combined fix at
 `7bfd0cb` has a passing 26-case group/recovery focus; test-only `ef70f78` has the
-current full 4 passing 953/seven skips. Final scoped independent review is APPROVED;
-hosted gates remain pending.
+historical full4 passing953/seven skips. Final review and exact-head hosted gates
+are satisfied at merge53712c5; those previous runs keep their source-specific scope.
 
 ### FTS
 

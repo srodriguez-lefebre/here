@@ -12,12 +12,12 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M1 | Provider/timestamps and diarization | Synthetic real-provider run and segment output inspected | Single/multiple-source TTS smokes passed; long transcription/diarization omitted by explicit user instruction |
 | M1 | Failure/crash/network/disconnection/disk-pressure recovery | Fault-injection plus bounded hardware run | PR12 faults, writer/publication process kills and helper-owner death passed; native recoverable saved failure passed; no repeated installed fault matrix claim; long run omitted by user |
 | M1 | Installed application opens, records and uninstalls | Fresh Windows installation and bundled-runtime smoke | Incorporated-source `1740b2d` local Windows 11 frozen GUI/CLI, Start launch, active-update refusal, reinstall/uninstall and data preservation passed; recording retains earlier source evidence; distribution peer review/clean hosted package CI/merge pending |
-| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | C5 implementado c59ae33:GREEN6/afectado169/distribución4 verificados automáticamente en local; review final y suite Windows completa exact-head pendientes bajo R43/R44. CI5b974/2 histórico. Grupo/merge/B abiertos; sin certificación |
-| M2 · criterio 2 | Grabación, archivo y retry comparten persistencia de aplicación | CLI delega a SessionProcessor, artefactos y fallos compatibles | Consolidación verificada en focos de tarea 2; integración de catálogo implementada en 7bfd0cb con foco final 26; full4 y review técnica final aceptados; CI pendiente |
+| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | A implementado y verificado automáticamente; PR21 merge53712c5 tras CI980/2/307,46 s y reviews. Ciclo de vida/borrado B pendiente; M2 abierto, sin certificación nueva |
+| M2 · criterio 2 | Grabación, archivo y retry comparten persistencia de aplicación | CLI delega a SessionProcessor, artefactos y fallos compatibles | Consolidación verificada en focos de tarea 2; integración de catálogo implementada en 7bfd0cb con foco final 26; review técnica y CI final A980/2/307,46 s aceptados; B/M2 pendientes |
 | M2 · criterios 6–7 | Segmentos nullable y pausa sin desplazar el WAV | Cinco recorridos con proveedor fake, procedencia y seek de marcas en WAV sintético | Verificados automáticamente en focos de tarea 2 y catálogo implementado en tarea 3; full4 y review técnica final aceptados; sin certificación de captura/proveedor |
-| M2 · criterio 8 | Migración transaccional, backup administrado y rechazo de esquema futuro | FK/integrity, rollback de DDL y snapshot SQLite API con WAL comprometido | Verificado automáticamente en local: M2A-T1-LOCK-GREEN-20261105 y M2A-T1-FINAL-20261105; CI del grupo pendiente |
-| M2 · criterio 14 | Busy tipado y acotado, sin trabajo de proveedor/archivos en transacción | Segunda conexión real con bloqueo de escritura y EXCLUSIVE sobre lecturas | Base verificada en tarea1 y publicación implementada en tarea 3, con focos de recuperación Busy; full4 y review técnica final aceptados; CI pendiente |
-| M2 · criterio 15 | Suite completa en CI de Windows sin credencial real ni display | Corrida hospedada sobre el head exacto del PR M2 A | Pendiente para C5; CI5b42151367541 pasa974/2 skips wheel/349,23 s solo sobre5b. No cierra la fila del nuevo head corregido |
+| M2 · criterio 8 | Migración transaccional, backup administrado y rechazo de esquema futuro | FK/integrity, rollback de DDL y snapshot SQLite API con WAL comprometido | Verificado automáticamente en local: M2A-T1-LOCK-GREEN-20261105 y M2A-T1-FINAL-20261105, más CI final A980/2/307,46 s |
+| M2 · criterio 14 | Busy tipado y acotado, sin trabajo de proveedor/archivos en transacción | Segunda conexión real con bloqueo de escritura y EXCLUSIVE sobre lecturas | Base verificada en tarea1 y publicación implementada en tarea 3, con focos de recuperación Busy; review técnica y CI final A980/2/307,46 s aceptados; B/M2 pendientes |
+| M2 · criterio 15 | Suite completa en CI de Windows sin credencial real ni display | Corrida hospedada sobre el head exacto del PR M2 A | Verificado automáticamente para A por M2A-CI-FINAL-8a498e2-20261106:980 pasan/2 skips wheel/307,46 s, run42155415514; B/cierre M2 exige su propia CI final |
 | M2 | Deletion clears managed memory without resurrection | DB/FTS/files/answers/backup inspection after restart | Open |
 | M3 | Listing/filter/search and original moment navigation | End-to-end Qt selection and seek plus real WAV marker playback | Open |
 | M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | Open |
@@ -26,17 +26,35 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M5 | Offline first run, settings, tray/startup and safe exit | Qt, process concurrency and Windows settings tests | Open |
 | M5 | Portable data including optional audio and citations | Export/import on a fresh root, hashes and hostile ZIP tests | Open |
 | M5 | Install/update/uninstall preserve user memory | N to N+1 installation and separate uninstall test | Open |
-| All | PR groups reviewed and merged | PR URLs, reviewed heads, comment dispositions, CI and merge SHAs | M2–M5 en ejecución por ruling 20; cada uno de los nueve grupos requiere review independiente, Copilot recibido/respondido y CI Windows verde sobre el head exacto antes del merge; M2 A pendiente |
+| All | PR groups reviewed and merged | PR URLs, reviewed heads, comment dispositions, CI and merge SHAs | M2–M5 en ejecución por ruling 20; cada uno de los nueve grupos requiere review independiente, Copilot recibido/respondido y CI Windows verde sobre el head exacto antes del merge; M2 A mergeado por PR21/53712c5 con todos los gates; los ocho grupos restantes pendientes |
 
 ## Current execution scope
+
+**M2 A cerrado y mergeado**, implementado y verificado automáticamente, sin nueva
+certificación real. PR[#21](https://github.com/srodriguez-lefebre/here/pull/21),
+head8a498e207812592ff84a0acc5ba4e9f392e02373, merge53712c5beedafc2d40e2abf10c13362a1c3c9f78
+el2026-11-06T03:22:06Z. M2 sigue abierto hasta B y sus criterios/version0.3.0.
+
+| Corrida nombrada | Resultado observado | Alcance y límites |
+|---|---|---|
+| M2A-CI-FINAL-8a498e2-20261106 | 980 pasan/2 skips en307,46 s, run42155415514 | Suite completa Windows offscreen/key sintética/raíces temporales sobre8a exacto; skips son ambos wheel sin HERE_WHEEL_PYTHON, no pases |
+| M2A-PACKAGE-FINAL-8a498e2-20261106 | Success, run42155415501 | Workflow Windows de bundle/installer sobre8a; no certifica instalación limpia ni upgrade real |
+| M2A-COPILOT3-WHEEL-c59ae33 | Distribución4 pasan/7,51 s, incluidos CLI y GUI instalados | Fuente exacta byte-igual al merge; ejecución local distinta de CI, no aumenta el conteo980 |
+
+Review independiente final sourcec59ae33/docs3fdbd05 APPROVED. Copilot5795325438
+COMMENTED recibido2026-11-06T03:20:34Z sobre8a, sin issues abiertos/C5 resuelto;
+las cinco observaciones tienen respuesta y sus hilos están resueltos. Root ejecutó
+merge commit con --admin --match-head-commit tras CI verde exacto. Ledger completo
+en DELIVERY; log real `.superpowers/m2a-ci-42155415514.log`. Esta documentación
+inspecciona resultados existentes y no afirma una nueva ejecución de tests.
 
 C5 actual implementado c59ae331ebf124400ef3e476e5f0fcc029e83999 desdee8bd181:
 src5c66169c0a93a8f0606a011bd9570bbdd9137903 y testsfb958d021eaf7d149c00a3a1be174e36fbef2a1c.
 R44 conserva metadata legada visible con aviso fijo no reintentable cuando falla
 resolver ownership, sin leer material sensible ni inferir identidad; dueño real y
 paths inseguros siguen bloqueados y materialize falla cerrado. Review final de
-fuente/docs pendiente. Verificado automáticamente en local por las corridas siguientes,
-con datos sintéticos; sin certificación nueva ni cierre de A/M2.
+fuente/docs APPROVED; el CI exacto y merge A constan arriba. Las siguientes corridas
+locales conservan su fuente y límites; sin certificación nueva ni cierre de M2.
 
 | Corrida nombrada | Resultado observado | Alcance y límites |
 |---|---|---|
@@ -55,7 +73,8 @@ Docs leyó logs/probe y parseó XML; no ejecutó runtime. R43/R44 mantienen la s
 completa obligatoria en Windows CI del nuevo head antes del merge, sin full local7
 duplicado. CI5b42151367541 pasa974/2 wheel skips/349,23 s y package42151367491 pasa:
 históricos para C5. Copilot5795057762 sobre5b confirmó C4 y abrió C5/4488473222;
-C5 aún no respondido/publicado, nueva review recibida y CI exacto pendientes.
+C5 fue respondido/publicado y recibió nueva review/CI exacto antes del merge,
+como consta arriba. Los estados pendientes anteriores conservan alcance histórico.
 
 Checkpoint histórico C4 56af525 desde 0a28842, src a17ec107c212d62e1984bb1cede094b579db5137 y
 tests c6a29f96af9ffc1e0c488ca73a430ef9a99b86b6. RED 6 fallan/2 controles pasan/
