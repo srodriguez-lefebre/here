@@ -674,6 +674,45 @@ Los rulings nuevos se escriben en español por el ruling 6.
     B5/M3/M4 aprobada. **Cost if wrong:** adaptar los contratos y sus callers antes
     del handoff, preservando fase durable, locks, privacidad y todos los gates.
 
+52. **Ruling:** el adapter de ownership nativo B5 usa autoridad explícita de la
+    composición existente, sin registro durable nuevo de raíces. La review de los
+    callpaths96e8aed muestra que begin_capture/begin_processing retienen el lease
+    OS canónico `.owners/<ID>.lock` antes de modificar SQL; protege el mismo ID
+    aun con una raíz por-request desconocida para otro proceso. La apertura nativa
+    obtiene UUID nuevo antes de reservar catálogo. Se cierra el tail real donde
+    controller libera catálogo antes del cleanup nativo: retener catálogo hasta
+    concluir cleanup nativo u ordenar primero el close nativo existente, respetando
+    handles inyectados, idempotencia de owned_job y deadlines actuales. No se
+    inventa un productor soportado que fuerce UUID viejo con solo un lock nativo.
+    `MemoryService(data_dir,*,sessions_root:Path|None=None)` conserva las lecturas
+    sin contexto; la composición pasa la raíz configurada real y el método privado
+    `_register_sessions_root(root)` retiene raíces explícitas por proceso. Registrar
+    StartRequest.output_dir antes de lanzar el worker sobre el MISMO servicio
+    inyectado, sin reemplazar su data_dir. GUI/composición y RecoveryService que
+    ya conocen la raíz la transmiten antes de cualquier delete/cleanup; CLI delete
+    y reconciliación destructiva usan get_settings().TRANSCRIPTIONS_DIR dentro del
+    settings_operation existente. El core no carga settings/.env por su cuenta.
+    Sin contexto explícito, el chequeo destructivo falla cerrado con LibraryError
+    recuperable existente/io4, no Busy que finja dueño probado; reads y reparación
+    no destructiva continúan. Si ya hay barrera válida, falta de contexto deja
+    pending/hidden según R51, nunca rechazo o rollback ficticio de la aceptación.
+    Raíces absolutas lexicales se deduplican; validar raíz, `.capture_owners`, ID y
+    rol de lock al usarlos y revalidar después del ACK R51. Usar probes/leases OS
+    acotados existentes y retener los aplicables, junto al canónico, durante todo
+    el intento. No crear raíces ni borrar archivos externos para descubrir dueños;
+    ausencia de un path declarado no es prueba global de inactividad. Ningún
+    ingest_source, receipt, manifest o paquete concede autoridad para inspeccionar
+    otra raíz. No cambia retención, ubicación de datos, tráfico, procesos o UX.
+    RED suplementario por autor distinto precede el delta: default explícito y
+    custom, freshCLI/StartRequest/inyección, orden real de cleanup, lease canónico
+    con raíz desconocida/fallo SQL, contexto ausente/unsafe, revalidación tras ACK
+    y retención de leases durante cleanup. Se prueba en worktree separado del
+    GREEN actual; fixtures/callers reciben contexto sintético explícito conforme
+    al contrato, sin relajar assertions ni reclasificar el primer RED100. La review
+    estática no verifica el adapter. **Cost if wrong:** ajustar composición y
+    lifetime de leases antes de aceptar B5/M3; una autoridad durable más amplia
+    sería otra decisión de §3, fuera de esta implementación mínima.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
