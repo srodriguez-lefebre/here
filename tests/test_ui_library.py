@@ -15,7 +15,8 @@ from dataclasses import replace
 from time import perf_counter
 
 import pytest
-from here.memory.database import LibraryError
+from here.application import ApplicationEvent, ApplicationState, EventKind
+from here.memory.database import Busy, LibraryError
 from here.memory.models import Meeting, MeetingStatus
 from here.ui.app import HereDesktop
 from here.ui.contract import ApplicationUiAdapter
@@ -1116,3 +1117,171 @@ def test_real_r48_scoped_assignments_control_visible_speakers_and_passive_segmen
     ]
     assert all(target.audio_path is None and target.status == "current" for target in targets)
     assert not (default_root / "library.sqlite3").exists()
+
+
+def _publish_memory_ingested(controller, meeting_id):
+    controller.core.publish(
+        ApplicationEvent(
+            kind=EventKind.MEMORY_INGESTED,
+            state=controller.core.snapshot.state,
+            details={"status": "inserted", "meeting_id": meeting_id},
+        )
+    )
+
+
+def test_recording_ingestion_refreshes_library_on_return_without_query_edit(library, qtbot):
+    desktop, controller, view = library
+    qtbot.waitUntil(lambda: "Aún no hay reuniones" in _text(view))
+    search = _named(view, QLineEdit, r"busca")
+    qtbot.mouseClick(
+        _named(view, QPushButton, r"(iniciar|nueva|grabar).*grabaci|grabar"),
+        Qt.MouseButton.LeftButton,
+    )
+    tabs = desktop.main_window.findChild(QTabWidget)
+    assert tabs is not None
+    assert tabs.tabText(tabs.currentIndex()) == "Captura"
+    controller.core.set_state(ApplicationState.PROCESSING)
+    meeting = _meeting(title="INGESTED_LIBRARY_MEETING")
+    controller.list_handler = lambda query: _page(controller.dto, meeting)
+    _publish_memory_ingested(controller, meeting.id)
+    controller.core.complete()
+    controller.core.publish(
+        ApplicationEvent(kind=EventKind.WORKER_COMPLETED, state=ApplicationState.COMPLETED)
+    )
+    library_index = next(index for index in range(tabs.count()) if tabs.widget(index) is view)
+    tabs.setCurrentIndex(library_index)
+    qtbot.waitUntil(lambda: "INGESTED_LIBRARY_MEETING" in _text(view))
+    assert search.text() == ""
+    assert "Aún no hay reuniones" not in _text(view)
+    assert controller.core.command_log == ["start"]
+
+
+def test_ingestion_invalidates_an_older_inflight_query_without_changing_search(library, qtbot):
+    desktop, controller, view = library
+    entered, release = threading.Event(), threading.Event()
+
+    def before_ingest(query):
+        entered.set()
+        assert release.wait(10), "Test did not release the pre-ingestion query"
+        return _hits(controller.dto, "STALE_BEFORE_INGESTION")
+
+    controller.search_handler = before_ingest
+    search = _named(view, QLineEdit, r"busca")
+    try:
+        search.setText("evidence")
+        qtbot.waitUntil(entered.is_set)
+        controller.search_handler = lambda query: _hits(controller.dto, "AFTER_INGESTION")
+        _publish_memory_ingested(controller, "00000000-0000-0000-0000-000000000030")
+        qtbot.waitUntil(lambda: "AFTER_INGESTION" in _text(view))
+    finally:
+        release.set()
+        qtbot.waitUntil(lambda: not desktop.jobs.busy)
+    assert "AFTER_INGESTION" in _text(view)
+    assert "STALE_BEFORE_INGESTION" not in _text(view)
+    assert search.text() == "evidence"
+    assert controller.core.command_log == []
+
+
+def test_participant_busy_stays_visible_and_retry_recovers_replaceable_options(
+    tmp_path, dto, qapp, qtbot
+):
+    library_type = _feature("here.ui.library", "LibraryView")
+    controller = LibraryController(tmp_path, dto)
+    read_participants = controller.list_participants
+    attempts = 0
+    release_page = threading.Event()
+    meeting = _meeting(title="PAGE_SUCCESS_DURING_PARTICIPANT_BUSY")
+
+    def transient_participants(meeting_id=None):
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            controller.calls.append(("participants", meeting_id, threading.get_ident()))
+            raise Busy("SYNTHETIC_PARTICIPANTS_BUSY")
+        return read_participants(meeting_id)
+
+    def list_page(query):
+        assert release_page.wait(10), "Test did not release the successful page worker"
+        return _page(dto, meeting)
+
+    controller.list_participants = transient_participants
+    controller.list_handler = list_page
+    desktop = HereDesktop(
+        qapp,
+        controller,
+        settings=QSettings(str(tmp_path / "participant-busy.ini"), QSettings.Format.IniFormat),
+    )
+    try:
+        desktop.show()
+        tabs = desktop.main_window.findChild(QTabWidget)
+        assert tabs is not None
+        view = desktop.main_window.findChild(library_type)
+        assert view is not None
+        library_index = next(index for index in range(tabs.count()) if tabs.widget(index) is view)
+        tabs.setCurrentIndex(library_index)
+        qtbot.waitUntil(lambda: "SYNTHETIC_PARTICIPANTS_BUSY" in _text(view))
+        release_page.set()
+        qtbot.waitUntil(lambda: "PAGE_SUCCESS_DURING_PARTICIPANT_BUSY" in _text(view))
+        qtbot.waitUntil(lambda: not desktop.jobs.busy)
+        assert "SYNTHETIC_PARTICIPANTS_BUSY" in _text(view)
+        qtbot.mouseClick(
+            _named(view, QPushButton, r"(reintentar|recargar)"), Qt.MouseButton.LeftButton
+        )
+        selector = _named(view, QComboBox, r"participante")
+        qtbot.waitUntil(
+            lambda: any("Alice Synthetic" in selector.itemText(i) for i in range(selector.count()))
+        )
+        qtbot.waitUntil(lambda: not desktop.jobs.busy)
+        assert "SYNTHETIC_PARTICIPANTS_BUSY" not in _text(view)
+        selector.setCurrentIndex(_option_index(selector, r"Alice Synthetic"))
+        qtbot.waitUntil(
+            lambda: any(
+                kind == "list" and query.participant_id == controller.participant_options[0].id
+                for kind, query, _ in controller.calls
+            )
+        )
+        qtbot.waitUntil(lambda: not desktop.jobs.busy)
+        for _ in range(2):
+            previous_attempts = attempts
+            _publish_memory_ingested(controller, meeting.id)
+            qtbot.waitUntil(lambda: attempts > previous_attempts)
+            qtbot.waitUntil(lambda: not desktop.jobs.busy)
+            assert selector.currentData() == "00000000-0000-0000-0000-000000000010"
+            options = [selector.itemText(i) for i in range(selector.count())]
+            assert options.count("Alice Synthetic") == 1
+            assert options.count("Bob Synthetic") == 1
+    finally:
+        release_page.set()
+        qtbot.waitUntil(lambda: not desktop.jobs.busy)
+
+
+def test_slow_library_query_disables_capture_actions_until_shared_worker_finishes(library, qtbot):
+    desktop, controller, view = library
+    entered, release = threading.Event(), threading.Event()
+
+    def slow_query(query):
+        entered.set()
+        assert release.wait(10), "Test did not release the shared library job"
+        return _hits(controller.dto, "FINISHED_SHARED_LIBRARY_JOB")
+
+    controller.search_handler = slow_query
+    controls = [
+        desktop.main_window.findChild(QPushButton, name)
+        for name in ("startButton", "devicesButton", "testMicrophoneButton", "testSystemButton")
+    ]
+    assert all(control is not None and control.isEnabled() for control in controls)
+    try:
+        _named(view, QLineEdit, r"busca").setText("slow")
+        qtbot.waitUntil(entered.is_set)
+        tabs = desktop.main_window.findChild(QTabWidget)
+        assert tabs is not None
+        capture_index = next(
+            index for index in range(tabs.count()) if tabs.tabText(index) == "Captura"
+        )
+        tabs.setCurrentIndex(capture_index)
+        assert all(not control.isEnabled() for control in controls)
+    finally:
+        release.set()
+        qtbot.waitUntil(lambda: not desktop.jobs.busy)
+    assert all(control.isEnabled() for control in controls)
+    assert controller.core.command_log == []
