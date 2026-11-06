@@ -81,11 +81,12 @@ Hasta esa transferencia no hay otro writer. Processing continúa sin concesión.
 Cualquier handoff adicional se concede explícitamente. Migraciones/pyproject/uv.lock/versiones
 siguen seriales y requieren permiso de root. Global docs son root-only.
 
-Runtime del checkpoint: B posee ventana EXCLUSIVA para el lote v2 en serie sobre
-624be55: native35, CORECOMPAT-A, CORECOMPAT-B, SERVICE-FULL y guard/privacy remainder,
-deteniéndose ante el primer fallo. R54-R1 ADDRESSED/SPEC y calidad APPROVED por
-la misma review independiente. M3 liberó su perfil diagnóstico exit0; interpreta
-resultados y UI GREEN prepara un timeline pasivo de Busy, todavía sin ejecutarlo.
+Runtime del checkpoint: B posee ventana EXCLUSIVA para higiene/tipos frescos y,
+si no hay nueva deuda y el árbol queda congelado, full offscreen. El lote v2 sobre
+624be55 terminó sin fallos: native31P/4skips, CORECOMPAT-A98P/5skips,
+CORECOMPAT-B47P, SERVICE-FULL13P y guard/privacy20P. Son cinco corridas separadas,
+no un full agregado. R54-R1 ADDRESSED/SPEC y calidad APPROVED por la misma review
+independiente. M3 prepara controles de la optimización y timeline UI sin runtime.
 Sin full/build/uv/mypy/benchmark concurrente. Consultar SIEMPRE
 los dos ledgers antes de reasignar: este owner es snapshot, no permiso permanente.
 READERS7 terminó7P/5,10s, incluido primer uso con raíz vacía. M3 verificó44P/14,42s
@@ -162,8 +163,9 @@ por dot/case no protegía el staging. Nuevo RED real4F/3,31s; el primer intento
 624be55f2101450e458824739de8c8bfb80d0ba5, srcd4575d1a70a2fb2579acb669012cfb8510caa1d5,
 testsc0a23fdec146fdeb9eeb1eb6d5ffe6e1d1672d0b: GREEN9/5,49s/XML5,422, controles
 completos de bytes, owner, row/outcome y orphan genuino. Misma re-review acotada
-R54-R1 ADDRESSED/SPEC y calidad APPROVED, sin nuevos hallazgos; lote amplio v2
-autorizado, todavía sin resultado. Full/tipos sobre este source no corridos.
+R54-R1 ADDRESSED/SPEC y calidad APPROVED, sin nuevos hallazgos; los cinco XML v2
+confirman el lote amplio anterior sin fallos/errores. Full/tipos frescos sobre este
+source siguen pendientes; review whole Task5/grupo y docs distintos en preparación.
 No transferir R52 ni cerrar Task5. Warning Ruff heredado queda para root/config
 serial. Cero writer UI B.
 
@@ -203,8 +205,14 @@ parcial, NO heartbeat aprobado. Workers drenados. Fuente0bea; árbol ejecutado
 89c628f569eeef03236ce29c5194f0c46d722815, tests13c5f8c06be88b4260b03151a18be3dd416e4855;
 commit posterior equivalente ec800c271b6a5dafd2ab269dd7cc28edba42db5d solo formato.
 Reporte guarded-performance-first-run-report.md y dos logs/XML mantienen fallos
-y límites. Perfil causal y timeline Busy pendientes; no inferir optimización ni
-relajar budgets, corpus, guards o flujo. Todo sigue en evidencia automática
+y límites. Perfil causal completado exit0/4,605s: control público1266,9802ms,
+perfil1878,714ms, generación1549,1202ms con199918 dumps; overhead material, no p95.
+DB/registro y79 archivos invariantes. R55 registra encoding completo por lotes256;
+fuente preparada e783255ca23b4da6288f3ac45bf61bc01f08085a, search.py14+/3-,
+src e198e954658eefa15222476adfdfc06db797b8a8, sin runtime/velocidad aprobada.
+Mismos RED/reviewer cubren cambios públicos de corpus más allá del primer lote;
+sin test espejo de codec ni caché. Timeline Busy pendiente. No relajar budgets,
+corpus, guards o flujo. Todo sigue en evidencia automática
 sintética, sin cierre de grupos ni certificación real.
 
 Historia de corridas, no estado vigente ni resultados sumables:
@@ -310,11 +318,12 @@ Core permite avanzar tras merge real M2 B, PR docs/handoff B5 y GO;
 claims/answers esperan M4 B y adapters sus contratos reales. Sin código/runtime
 portabilidad; reporte `m5-portability-contract-preparation-report.md` en ese worktree.
 
-M3 B preparación SPEC/PLAN lista en `m2-segments`, blobs03207dd/9c177e5 tras deltas
-aditivos R46/R47/R50 y76 líneas R51/R52. Preflight y scoped reviews independientes READY
+M3 B preparación SPEC/PLAN lista en `m2-segments`, blobsb6ae4d8/c662440 tras deltas
+aditivos R46/R47/R50,76 líneas R51/R52 y23 líneas R53. Preflight y scoped reviews independientes READY
 FOR PREPARATION, cero hallazgos,11 cláusulas/14 bloques completos preservados.
 Reportes `m3-library-preparation-review-report.md` y
-`m3-library-binding-delta-review-report.md` y `m3-library-r51-r52-binding-review-report.md`;
+`m3-library-binding-delta-review-report.md`, `m3-library-r51-r52-binding-review-report.md`
+y `m3-library-r53-binding-review-report.md`;
 Citation/offsets/Unicode, empty MeetingPage/InvalidInput.reason, guard READ,
 ACK/leases/fase durable/contexto explícito fijados; adaptadores
 reales B5/UI y PR docs final todavía pendientes. B puede arrancar sobre A revisado con PR abierto, tras contratos
@@ -375,9 +384,9 @@ no provee selección meeting_ids ni OR del retrieval M4: handoff interno pendien
 sin asumir MemoryService.search, SQL directo de intelligence o filtro post-LIMIT.
 Root resolverá ese contrato; no es bloqueo humano ni aceptación de un adapter.
 
-No hay bloqueo humano actual. Próximo: validación amplia ya preparada de B
-sobre624be55; diagnóstico causal de p95/Busy de M3, luego
-corrección justificada y medición nueva. Alternar host tras release confirmado.
+No hay bloqueo humano actual. Próximo: higiene/tipos/full y review final B;
+controles/regresión/p95 nuevo sobre la generación M3 modificada y timeline Busy
+antes de su corrección. Alternar host tras release confirmado.
 Consultar ledgers antes de rotar
 host o asignar archivos; los planes/fixtures/reviews ya preparados no se reinician.
 Reanudar desde estos IDs/reportes sin recrear los chats ni repetir el catálogo A.
