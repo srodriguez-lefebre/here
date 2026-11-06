@@ -364,8 +364,14 @@ a heartbeat pass and final50ms assertion was unreached; workers drained. See
 GLOBAL RELEASE preceded analysis,raw79/Git unchanged. No retroactive0bea cause or
 uninstrumented timing inference; uninstrumented heartbeat acceptance NOT_RUN.
 The ledger now retains all28 prior records plus this separate observed invocation.
-R57 materializer31F/warmC4 scripts are PREPARED ONLY: dedicatedBASE absent, no new
-materialization/DB/fingerprint result; raw80 plus declared supplement81 preserved.
+R57 later executed materializer31F once and conditional warmC4 at clean HEAD9406/
+sourcee198/tests a2ac/config7143, both exit0: dedicated synthetic READY input,
+raw81/DB/220registry/marker/Git invariant. Exactly5 warmups+control+observed call,
+no pytest/cProfile/p95. Warmups2239–2690ms do not reproduce old822–1028ms;
+observed wall/CPU2642.9028/2562.5ms,control3438.416/3046.875ms. Inclusive phases
+and quantized CPU are not subtracted or used to infer host cause. See canonical
+R57 diagnosis addendum/summary and READY/manifests pinned in JSON; no equality
+with205 or result/digest cache. GLOBAL RELEASE preceded postchecks/analysis.
 Existing p95902.413285>500 remains FAILED; no source fix/B transfer is authorized.
 
 ## Intent
