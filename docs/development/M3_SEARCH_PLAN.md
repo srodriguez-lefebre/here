@@ -3,11 +3,12 @@
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
 > review, then independent agent review. Root coordinates file leases and merges
 > only after current-head received/responded Copilot, Windows CI and independent
-> review. Steps use checkbox syntax. **Status: planned, not in execution.** The
-> latest explicit user instruction permits M3 A alongside M2 B only after M2 A closes
-> with all gates and the necessary contract documentation PRs are merged. One
-> cohesive docs PR may cover both fronts. Root creates
-> the separate project chats/worktrees afterward. Final merged-A base SHA: `53712c5beedafc2d40e2abf10c13362a1c3c9f78`.
+> review. Steps use checkbox syntax. **Status: in progress — query-core checkpoint,
+> 2026-11-06; complete Task 1/group/milestone acceptance pending.** Root issued GO
+> after M2 A merge `53712c5beedafc2d40e2abf10c13362a1c3c9f78` and contracts merge
+> `73d3cb384bd422de6899d8c7b761f3f3159ea3f1`. M3 front: `codex/m3-search`,
+> `C:/Users/savar/.codex/worktrees/2710/here`, chat
+> `01a1af04-e779-7363-be61-c840651b0b18`. Root retains leases/integration/merges.
 
 **Goal:** A `SearchService` with typed queries, safe FTS5 access, stable pagination
 and a fallback, plus a Qt library tab that lists, filters, searches and edits titles
@@ -34,11 +35,11 @@ pytest-qt; no new runtime dependency.
   skips in 307.46s; package CI 42155415501 passed on that same head. Fresh local
   installed-wheel distribution checks passed all four cases in 7.51s. These are
   automatic synthetic evidence, not hardware/provider/clean-install certification.
-  This contract documentation still needs its own independent review, received and
-  answered current-head Copilot, exact-head Windows CI and guarded merge before
-  dispatch. Root records its actual reviewed head/merge and execution bases in
-  DELIVERY/STATUS; neither future chat exists yet. Planned B/M3 APIs below are not
-  A implementations and do not become accepted integration through this docs PR.
+  Contract PR #22 merged as `73d3cb384bd422de6899d8c7b761f3f3159ea3f1` at
+  2026-11-06T03:59:54Z from reviewed head `96f76dbbcb5ab4ba92866d9acf73c2673e140ee8`:
+  independent approval, received/responded Copilot 5795547739, exact Windows tests
+  42159238848 (980/two wheel skips/304.66s), package 42159238847 and guarded merge.
+  Both fronts exist and have GO; these documentation gates do not accept B/M3 code.
 - `src/memory/` imports neither Qt nor Typer; `src/ui/` never runs SQL or reads
   session files.
 - User text never reaches `MATCH` unquoted; every token is quoted and escaped.
@@ -58,12 +59,43 @@ pytest-qt; no new runtime dependency.
   no competing tests, builds or mypy during those runs. Independent work must honor
   the root resource lease as well as file ownership.
 
-## Dependencies and handoff before execution
+## Execution checkpoint — 2026-11-06
 
-After A is accepted/merged and necessary contract documentation PRs are merged, task 1's
-query/list/filter/fallback work may proceed with M2 B in parallel. Root records the
-actual merged-A SHA, per-front branch/worktree and file leases in the dispatch brief.
-Do not create those chats or start implementation as part of this preparation.
+Task 1's independent query core is focused-verified and independently **APPROVED
+CORE** at `e4d2469c31b6053d0f432151c9a254f620eab404`; complete Task 1 acceptance
+is pending. Focus2 observed 177 passes/one opt-in benchmark skip/26.79s; XML
+178/0 failures/0 errors/1 skip, internal 26.699s. Source/tests trees are
+`63ce6ddb6b99f5df0deb6db7c7d5857ffe0783c7` /
+`f9baed770a46679ea02e128eed1cd23c32d5f4c1`. `/root/task1_review`, independent of
+RED/GREEN, found no confirmed Critical/Important/Minor core defect. Continue that
+same assessment after actual remaining integrations/evidence; no global review
+or final Task 1 approval is recorded.
+
+Frozen R46 DTO/model/error handoffs are integrated and models returned to B.
+Only the independent query/list/filter/FTS/hybrid/literal/cursor core is covered;
+real B4/R48 backend and title/version/index behavior, coherent shared B5 R42
+suppression, the sole reindex facade and real before/after/no-op equivalence are
+pending. Small synthetic cases do not establish the guarded 1,000/100,000 p95
+or Qt heartbeat. Full suite, mypy delta and subsequent relevant checks remain open.
+Final four-file Ruff check/format passed at e4d after mechanical formatting and an
+explicit same-fixture re-export; no assertions/scenarios were weakened.
+
+Task 2 RED is retained at its own exact heads: initially 2 failures/8 passes;
+post-DTO 2 failures/8 passes/26 setup errors because LibraryView was absent.
+Those 26 widget assertions were not reached. UI source `846c53f` is only
+SOURCE_PREPARED, runtime zero and not parent-integrated at this checkpoint;
+UI GREEN/review and actual B integrations remain pending. Both M3 runtime windows
+were released; root currently owns allocation to B, and this docs stage has no
+runtime grant. `M3_SEARCH_EVIDENCE.json` binds commands, heads and actual artifacts.
+Composite checkboxes remain unchecked: no partial evidence closes their remaining
+clauses. Group/hosted gates, certification and a 0.4.0 bump are not claimed.
+
+## Dependencies and handoff during execution
+
+Accepted A and contract-documentation merges permit task 1's independent
+query/list/filter/fallback work alongside M2 B under root's recorded leases.
+The root STATUS/dispatch brief and front progress report retain actual ownership;
+the older local STATUS header is not the current execution checkpoint.
 
 - Bind query DTO/read helpers to the accepted A schema, including nullable dates,
   `row_version`, active revision visibility, `segments_fts` and R31's
@@ -303,4 +335,5 @@ only and cannot close B4/B5 integration or suppression acceptance.
 - Root aligns the M3 milestone agenda with ruling 35 in the contract docs PR
   without changing acceptance criteria. After M2 B merges, M5 B may advance with
   its claims hook waiting for M4 B; other group dependencies remain in STATUS.
-  This preparation creates no chat/worktree and authorizes no early implementation.
+  The accepted documentation merges and root GO launched the current two fronts;
+  subsequent integrations and group closure still require the gates above.

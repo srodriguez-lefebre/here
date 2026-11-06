@@ -1,0 +1,297 @@
+{
+  "milestone": "M3",
+  "group": "A",
+  "recorded_on": "2026-11-06",
+  "status": "in_progress",
+  "certified": false,
+  "evidence_level": "focused_automatically_verified_and_independently_approved_query_core_only",
+  "task_1_acceptance": "PENDING",
+  "task_2_acceptance": "PENDING",
+  "group_acceptance": "PENDING",
+  "milestone_acceptance": "PENDING",
+  "foundation_merge": "53712c5beedafc2d40e2abf10c13362a1c3c9f78",
+  "execution_docs_merge": "73d3cb384bd422de6899d8c7b761f3f3159ea3f1",
+  "front": {
+    "branch": "codex/m3-search",
+    "worktree": "C:/Users/savar/.codex/worktrees/2710/here",
+    "chat_id": "01a1af04-e779-7363-be61-c840651b0b18",
+    "authorization": "Root GO after accepted PR21 and PR22 merges; root owns contracts, file/runtime leases, global integration and merges."
+  },
+  "source_checkpoint": {
+    "head": "e4d2469c31b6053d0f432151c9a254f620eab404",
+    "source_tree": "63ce6ddb6b99f5df0deb6db7c7d5857ffe0783c7",
+    "tests_tree": "f9baed770a46679ea02e128eed1cd23c32d5f4c1",
+    "search_blob": "034624cb10cd5b85c67a742fdb45950d66c3bc6a",
+    "models_blob": "4680f29def6120826c0fbea9effac1b9bd315269",
+    "service_blob": "99da9a2e75ce5caf5aaf7a3b42a2b1e34e947f24",
+    "scope": "Independent normalization, safe bound queries, R39 keys, R41 hybrid/literal routes, implemented R45 generation/snapshot, R46 DTOs and R47 empty delegation. No real B4/R48/B5 behavior accepted."
+  },
+  "roles": {
+    "search_red": "/root/search_red",
+    "query_source_and_dtos": "/root/search_green",
+    "ui_red": "/root/ui_red",
+    "ui_source": "/root/ui_green",
+    "integration_runtime_and_mechanical_style": "/root",
+    "independent_query_core_review": "/root/task1_review",
+    "checkpoint_docs": "/root/checkpoint_docs",
+    "policy": "Separate RED, GREEN, independent review and docs roles; no self-review substitutes for the independent assessment."
+  },
+  "handoffs": [
+    {
+      "scope": "B model declarations only",
+      "own_commit": "246faec39b17a965b1ceaed6510a00f7cea89206",
+      "integration_commit": "94b7f98593f110076622c47e8b2a44c903b90f62",
+      "accepted_behavior": false
+    },
+    {
+      "scope": "Canonical B errors only",
+      "own_commit": "0452945167909ffd657ce8d39b2ed8a4a0b40e2f",
+      "integration_commit": "3f5e3b0f46fd8c952b0c3a1ec61355923e2b22ba",
+      "accepted_behavior": false
+    },
+    {
+      "scope": "R46 immutable query/page/citation declarations",
+      "own_commit": "5c9197a580535182ffd4afd98bf1e5e007a1f375",
+      "integration_commit": "42d147ad5ceea60e27a6e78b267c98ac6ea110bf",
+      "models_lease": "FROZEN in M3; returned to B for R48"
+    },
+    {
+      "scope": "Independent query source",
+      "own_commit": "ec39fe580cf7235d25ea48e9975654864d4f5a3c",
+      "integration_commit": "eef3dcb96c773600171833618065ccf2d78a7278"
+    },
+    {
+      "scope": "Independent RED helper alignment to actual array codec; all rejection assertions/scenarios preserved",
+      "own_commit": "67b469fd9ea069426d84dee373ac1c0145cd4625",
+      "integration_commit": "2e9a43c1c8f0fb32b98ce8078cd2307c61034b0a"
+    },
+    {
+      "scope": "R47 and R48 contract clarifications only; no acceptance changed",
+      "integration_commits": [
+        "16cd80c1854b386a83e715974d243ab09f844352",
+        "df63a3b8b539cc9eb13423c6b91a957effc5cdcc"
+      ]
+    }
+  ],
+  "fixture": {
+    "path": "tests/search_fixtures.py",
+    "executed_worktree": "C:/Users/savar/.codex/worktrees/2710/here",
+    "sha256": "E9118360BC2501BCE9DB9A6C0F605DB614367385F28A84C396DE788EB0B54C8F",
+    "git_blob": "7af42340f44fab36316abfc3be130112d5e72df2",
+    "transfer_commit": "bf0785e598380703d9c915c6d8f63ca12157283e",
+    "provenance": "Transferred once by root, preserved without regeneration. SHA256 binds executed parent-worktree bytes; Git blob binds tracked content.",
+    "large_fixture_status": "NOT_RUN: opt-in 1,000 meetings/100,000 segments benchmark skipped; small synthetic DB cases actually exercised."
+  },
+  "artifact_root": "C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN",
+  "environment": {
+    "shell": "pwsh",
+    "python": "CPython 3.13.15",
+    "python_executable": "C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe",
+    "python_environment": "Read-only shared existing environment; no new environment/install",
+    "pytest": "9.1.1",
+    "qt": "6.11.2",
+    "hostname": "SantiG14",
+    "variables": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "QT_QPA_PLATFORM": "offscreen",
+      "OPENAI_API_KEY": "synthetic-test-key",
+      "HERE_ENV_FILE": "C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN/absent.env",
+      "HERE_RUN_SEARCH_BENCHMARK": "removed/unset"
+    },
+    "privacy": "Synthetic data and temporary catalog roots only. No real .env, private audio/library, provider or network accessed for these M3 runs."
+  },
+  "runs": [
+    {
+      "name": "M3A-T1-PUBLIC-RED",
+      "head": "3d6a6ac59163ffc88c54ee17a91c8bface4d757c",
+      "source_tree": "5c66169c0a93a8f0606a011bd9570bbdd9137903",
+      "tests_tree": "b16bd314262fdadec0058a2d441cea03468c6f70",
+      "workdir": "C:/Users/savar/.codex/worktrees/2710/here",
+      "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -m pytest -vv tests/test_memory_search.py tests/test_memory_search_fallback.py tests/test_memory_search_benchmark.py -k 'not private_cursor_payload and not private_search_cursor' -o 'markers=slow: opt-in synthetic search benchmark' --junitxml=.superpowers/sdd/M3_SEARCH_PLAN/task-1-red.xml",
+      "exit_code": 1,
+      "collected": 178,
+      "selected": 112,
+      "passed": 0,
+      "failed": 111,
+      "setup_errors": 0,
+      "skipped": 1,
+      "deselected": 66,
+      "duration_seconds": 6.91,
+      "xml_cases": 112,
+      "xml_internal_seconds": 6.841,
+      "log": "task-1-red.log",
+      "xml": "task-1-red.xml",
+      "report": "task-1-red-run-report.md",
+      "scope": "All failures missing here.memory.search; before production/model handoff. Private codec cases deferred, not passed. Benchmark skipped."
+    },
+    {
+      "name": "M3A-T2-AVAILABLE-UI-RED",
+      "head": "3becc79996edd16d7aacad9cbc61dfb96df523b1",
+      "source_tree": "5c66169c0a93a8f0606a011bd9570bbdd9137903",
+      "tests_tree": "9cda171cffa91737574062efe902e9837c53c19f",
+      "workdir": "C:/Users/savar/.codex/worktrees/m3-ui-red/here",
+      "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -m pytest -vv tests/test_ui_lifecycle.py --junitxml=C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN/task-2-available-red.xml",
+      "exit_code": 1,
+      "collected": 10,
+      "selected": 10,
+      "passed": 8,
+      "failed": 2,
+      "setup_errors": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "duration_seconds": 3.31,
+      "xml_cases": 10,
+      "xml_internal_seconds": 2.427,
+      "log": "task-2-available-red.log",
+      "xml": "task-2-available-red.xml",
+      "report": "task-2-available-red-run-report.md",
+      "scope": "Actual missing tabs and worker stringifying LibraryError; eight existing/control lifecycle passes. Library widget cases not run in this initial window."
+    },
+    {
+      "name": "M3A-T2-POST-DTO-WIDGET-RED",
+      "head": "d40d251733000856f0489eaf998231e05e6ad748",
+      "source_tree": "5b389dfc424baca0a7cc10d956c966e02572a935",
+      "tests_tree": "0c4dea3210abd8a249a2724264aaad7d60f56c22",
+      "workdir": "C:/Users/savar/.codex/worktrees/m3-ui-red/here",
+      "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -m pytest -vv tests/test_ui_library.py tests/test_ui_lifecycle.py --junitxml=C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN/task-2-widget-red.xml",
+      "exit_code": 1,
+      "collected": 36,
+      "selected": 36,
+      "passed": 8,
+      "failed": 2,
+      "setup_errors": 26,
+      "skipped": 0,
+      "deselected": 0,
+      "duration_seconds": 4.45,
+      "xml_cases": 36,
+      "xml_internal_seconds": 3.504,
+      "log": "task-2-widget-red.log",
+      "xml": "task-2-widget-red.xml",
+      "report": "task-2-widget-red-run-report.md",
+      "scope": "Canonical DTO imports available. All 26 setup errors are absent here.ui.library.LibraryView; their widget assertions were NOT reached. Not missing-DTO collection failures or 26 semantic failures/passes."
+    },
+    {
+      "name": "M3A-T1-FOCUS1",
+      "head": "df63a3b8b539cc9eb13423c6b91a957effc5cdcc",
+      "source_tree": "75224b4a9d1fbd3e7beeebfea404fe7e0f6b5cd6",
+      "tests_tree": "30b6a6b200a5a0f1bc27af590dfb8ee6a765d2c1",
+      "workdir": "C:/Users/savar/.codex/worktrees/2710/here",
+      "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -m pytest -vv tests/test_memory_search.py tests/test_memory_search_fallback.py tests/test_memory_search_benchmark.py -o 'markers=slow: opt-in synthetic search benchmark' --junitxml=.superpowers/sdd/M3_SEARCH_PLAN/task-1-focus-1.xml",
+      "exit_code": 0,
+      "collected": 178,
+      "selected": 178,
+      "passed": 177,
+      "failed": 0,
+      "setup_errors": 0,
+      "skipped": 1,
+      "deselected": 0,
+      "duration_seconds": 33.43,
+      "xml_cases": 178,
+      "xml_internal_seconds": 31.196,
+      "log": "task-1-focus-1.log",
+      "xml": "task-1-focus-1.xml",
+      "report": "task-1-focused-green-report.md",
+      "scope": "Independent query core, including all 66 actual-codec rejection cases; small synthetic DBs. Real B4/R48/B5 integrations absent; default benchmark skipped."
+    },
+    {
+      "name": "M3A-T1-FOCUS2",
+      "head": "e4d2469c31b6053d0f432151c9a254f620eab404",
+      "source_tree": "63ce6ddb6b99f5df0deb6db7c7d5857ffe0783c7",
+      "tests_tree": "f9baed770a46679ea02e128eed1cd23c32d5f4c1",
+      "workdir": "C:/Users/savar/.codex/worktrees/2710/here",
+      "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -m pytest -vv tests/test_memory_search.py tests/test_memory_search_fallback.py tests/test_memory_search_benchmark.py -o 'markers=slow: opt-in synthetic search benchmark' --junitxml=.superpowers/sdd/M3_SEARCH_PLAN/task-1-focus-2.xml",
+      "exit_code": 0,
+      "collected": 178,
+      "selected": 178,
+      "passed": 177,
+      "failed": 0,
+      "setup_errors": 0,
+      "skipped": 1,
+      "deselected": 0,
+      "duration_seconds": 26.79,
+      "xml_cases": 178,
+      "xml_internal_seconds": 26.699,
+      "log": "task-1-focus-2.log",
+      "xml": "task-1-focus-2.xml",
+      "report": "task-1-focused-green-report.md",
+      "scope": "Final frozen query core after mechanical style/import changes. No full-suite, B integration, UI, performance or certification acceptance."
+    }
+  ],
+  "lint_checkpoint": {
+    "head": "e4d2469c31b6053d0f432151c9a254f620eab404",
+    "files": [
+      "src/memory/search.py",
+      "tests/test_memory_search.py",
+      "tests/test_memory_search_fallback.py",
+      "tests/test_memory_search_benchmark.py"
+    ],
+    "commands": [
+      "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -m ruff check src/memory/search.py tests/test_memory_search.py tests/test_memory_search_fallback.py tests/test_memory_search_benchmark.py",
+      "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -m ruff format --check src/memory/search.py tests/test_memory_search.py tests/test_memory_search_fallback.py tests/test_memory_search_benchmark.py"
+    ],
+    "result": "PASS: All checks passed; 4 files already formatted",
+    "logs": [
+      "task-1-ruff-check-3.log",
+      "task-1-ruff-format-check-3.log"
+    ],
+    "historical_logs": [
+      "task-1-ruff-check-1.log",
+      "task-1-ruff-format-check-1.log",
+      "task-1-ruff-format-2.log",
+      "task-1-ruff-check-2.log",
+      "task-1-ruff-import-fix.log",
+      "task-1-ruff-format-check-2.log"
+    ],
+    "history": "Initial E501/F811/import/format findings corrected mechanically in e4d. catalog as catalog re-exports the SAME fixture, then safe import sorting; no assertions, scenarios or expected values weakened.",
+    "retained_warning": "Inherited root-only pyproject top-level select deprecation; no metadata edit or new code diagnostic."
+  },
+  "independent_review": {
+    "reviewer": "/root/task1_review",
+    "base": "73d3cb384bd422de6899d8c7b761f3f3159ea3f1",
+    "head": "e4d2469c31b6053d0f432151c9a254f620eab404",
+    "verdict": "APPROVED CORE",
+    "critical": 0,
+    "important": 0,
+    "minor": 0,
+    "spec_compliance": "Yes for implemented independent query core; complete Task 1 cannot yet be accepted",
+    "report": "task-1-core-review-report.md",
+    "diff_package": "task-1-core-review-e4d2469.diff.md",
+    "runtime": "NOT_RUN: read-only source/evidence assessment",
+    "continuation": "Complete this SAME assessment after real B integrations/performance/full/docs; not a global review or future-adapter approval."
+  },
+  "ui_source_checkpoint": {
+    "head": "846c53fec27620d98727c45d9bfff4d0da4d37ea",
+    "status": "SOURCE_PREPARED",
+    "runtime_count": 0,
+    "parent_integrated": false,
+    "report": "task-2-green-source-report.md",
+    "limits": "Not UI GREEN, no real B4/R48/B5 adapter acceptance; all 26 widget assertions still require actual execution."
+  },
+  "remaining_gates": [
+    "Accepted sole B5 R42 coherent suppression snapshot in reads and R45 generation; typed fail-closed invalid/inaccessible registry; suppression in SQL before cursor/LIMIT, including pending barrier when SQL hide failed and surviving receipts after DB loss/rebuild.",
+    "Accepted sole B5 reindex facade, missing-FTS reporting, complete-only/include_partial before-after equivalence, actual no-op generation equivalence and changed-input cursor rejection.",
+    "Actual B4 update_meeting optimistic row_version/title-index consistency and R48 get_meeting/list_participants canonical immutable participant/link/assignment payloads plus same injected controller MemoryService/custom root; model/error handoffs do not establish these.",
+    "Real UI adapters, current-only request/corpus_changed restart, debounce/close-detail/conflict behavior, queued pre-delete callback invalidation and accessibility/themes; focused UI GREEN and independent review.",
+    "Guarded 1,000/100,000 warm p95 below 500ms including final digest/guard work; actual Qt heartbeat no event-loop block above 50ms, under root exclusive runtime grant.",
+    "Full offscreen suite and mypy baseline comparison/no new touched-file errors at eventual integrated head; appropriate checks for later relevant edits.",
+    "Complete same Task1 assessment and task docs/evidence; root global integration docs only when capacity ready; Task2 and later single global review.",
+    "Received/responded current-head Copilot, exact-head Windows CI/package as required, PR and guarded root merge. No M3 hosted gate has started in this checkpoint."
+  ],
+  "not_run": {
+    "large_corpus_benchmark": "NOT_RUN (SKIPPED by default in focused runs)",
+    "guarded_p95": "NOT_RUN",
+    "qt_heartbeat": "NOT_RUN",
+    "real_B4_R48_B5_integration": "NOT_RUN",
+    "ui_source_green": "NOT_RUN",
+    "full_suite": "NOT_RUN",
+    "mypy_delta": "NOT_RUN",
+    "build_install": "NOT_RUN",
+    "provider_smoke": "NOT_RUN",
+    "global_review": "NOT_STARTED",
+    "M3_copilot_CI_PR_merge": "NOT_STARTED",
+    "certification": "NOT_RUN",
+    "two_hour_recording": "OMITTED under ruling 5, never approved"
+  },
+  "runtime_coordination": "Both M3 windows explicitly RELEASED; root assigned B GREEN R48/full next. No runtime grant or runtime execution for this documentation stage.",
+  "invariants": "No acceptance/DoD, product flow, dependency, schema, privacy or retention changes. No new hardware/provider/clean-install certification, no milestone closure or 0.4.0 bump."
+}

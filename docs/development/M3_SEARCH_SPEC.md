@@ -1,12 +1,14 @@
 # M3 search and library actions specification
 
-Status: planned, not in execution. The latest explicit user instruction authorizes
-M3 group A alongside M2 group B after M2 group A closes with every review/CI/merge
-gate and the necessary contract documentation PRs are merged (ruling 35). One
-cohesive docs PR may reconcile both fronts; no fixed PR count is required. Root
-coordinates the separate chats/worktrees, file leases and merges. The accepted merged-A base is
-`53712c5beedafc2d40e2abf10c13362a1c3c9f78`. Root records this documentation
-PR's reviewed head and merge before dispatch.
+Status: in progress, query-core checkpoint on 2026-11-06; Task 1, group A and M3
+remain open. Root issued GO after the accepted M2 A and contract-documentation
+merges (ruling 35). The M3 front is `codex/m3-search` at
+`C:/Users/savar/.codex/worktrees/2710/here`, chat
+`01a1af04-e779-7363-be61-c840651b0b18`, based on contracts merge
+`73d3cb384bd422de6899d8c7b761f3f3159ea3f1` with accepted A merge
+`53712c5beedafc2d40e2abf10c13362a1c3c9f78` as ancestor. Root retains file/runtime
+leases, global integration and merges; current coordination is recorded in its
+STATUS and this front's progress report, not the older local STATUS snapshot.
 
 Accepted foundation: PR #21 merged as `53712c5beedafc2d40e2abf10c13362a1c3c9f78`
 at 2026-11-06T03:22:06Z, from reviewed head
@@ -20,15 +22,47 @@ threads. Complete Windows CI 42155415514 passed 980 cases/two wheel-environment
 skips in 307.46s; package CI 42155415501 passed on that same head. Fresh local
 installed-wheel distribution checks passed all four cases in 7.51s. These are
 automatic synthetic evidence, not hardware/provider/clean-install certification.
-This contract documentation still needs its own independent review, received and
-answered current-head Copilot, exact-head Windows CI and guarded merge before
-dispatch. Root records its actual reviewed head/merge and execution bases in
-DELIVERY/STATUS; neither future chat exists yet. Planned B/M3 APIs below are not
-A implementations and do not become accepted integration through this docs PR.
-Technical acceptance does not certify hardware/provider/installer or implement B.
+Contract PR #22 merged as `73d3cb384bd422de6899d8c7b761f3f3159ea3f1` at
+2026-11-06T03:59:54Z, from reviewed head `96f76dbbcb5ab4ba92866d9acf73c2673e140ee8`.
+Independent review approved PC1–PC3/R45; received Copilot 5795547739 had no open
+issues, with the BM25 observation answered/resolved. Exact-head Windows tests
+42159238848 passed 980/two wheel skips in 304.66s and package 42159238847 passed.
+Those fulfilled documentation launch gates; they do not accept B implementations
+or the later M3 code. M3's own hosted and group gates remain pending.
 
 Governing design: `PRODUCT_DESIGN.md` §2, §3 and §5, a taken decision (ruling 3).
 Spanish plan and acceptance criteria: `../MILESTONE_3_PLAN.md`.
+
+## Execution checkpoint — 2026-11-06
+
+The implemented independent query core at
+`e4d2469c31b6053d0f432151c9a254f620eab404` has focused synthetic verification:
+177 passed, one default opt-in benchmark skip in 26.79s; XML has 178 cases,
+zero failures/errors and one skip. Source tree is
+`63ce6ddb6b99f5df0deb6db7c7d5857ffe0783c7`, tests tree
+`f9baed770a46679ea02e128eed1cd23c32d5f4c1`. The independent `/root/task1_review`
+assessment is **APPROVED CORE**, with no confirmed Critical/Important/Minor defect;
+complete Task 1 compliance/acceptance remains pending. This covers the implemented
+normalization, bound queries, R39 keysets, R41 hybrid/literal routes and R45
+snapshot/generation behavior. It does not establish lifecycle-integrated reads.
+
+R46's frozen DTOs and canonical B model/error handoffs are integrated; the models
+lease is returned to B. R47/R48 declarations below remain governing. Actual B4
+update/version/title-index behavior and R48 backend reads/detail relations/shared
+controller access still await accepted handoff; B5's coherent R42 guard and sole
+reindex facade/equivalence are not integrated. No-op reindex generation equivalence
+also awaits the real operation. No alternate parser, authority or rebuild is added.
+
+UI RED observed two failures/eight passes, then two failures/eight passes/26 setup
+errors after DTO handoff: absent LibraryView prevented all 26 widget assertions.
+UI source `846c53fec27620d98727c45d9bfff4d0da4d37ea` is SOURCE_PREPARED only,
+runtime zero and not integrated into this frozen query checkpoint. UI GREEN,
+real B adapters/deletion callback invalidation, guarded 1,000/100,000 p95 and Qt
+heartbeat, full suite, mypy delta, final task/group review and M3 hosted gates are
+pending. The benchmark skip supplies no large-corpus or performance result.
+Commands, exact heads, artifacts and limits are recorded in
+`M3_SEARCH_EVIDENCE.json`; acceptance criteria below are unchanged. This is focused
+automatic evidence, no certification or task/group/milestone closure; no 0.4.0 bump.
 
 ## Intent
 
@@ -231,7 +265,8 @@ carry the partial badge and a source-derived untimed indication from nullable
 timing fields/`timing_source=absent`; no start at zero masquerades as a timestamp.
 Reindex equivalence covers both opt-in states: the complete index is rebuilt while
 the partial branch remains a read. There is no partial persistent index or second
-reindexer. All of this is planned R41 behavior, not an implemented A search API.
+reindexer. The independent R41 query routes have focused evidence above; real B5
+reindex and R42 integration remain required. This is not an A-foundation API.
 
 ### Visibility rules
 
@@ -321,10 +356,11 @@ mutation or invented identity/parent. Unknown ownership stops marker/error/audio
 inspection; native/catalog Busy and unsafe paths remain fail-closed, as does stale
 materialization with unknown ownership. Search must preserve these inherited
 safeguards, not implement another recovery flow.
-Hosted gates and merge still block launch. Search starts from actual merged A and
-does not implement these fixes, expose private producer handoffs, choose a retry
-API or issue provider/replay work. B result DTOs/mutations/reindex remain planned;
-real M3 actions wait for accepted B4/B5 contracts.
+The accepted A and contract-documentation merges permit the current independent
+query work. M3's own hosted gates and merge remain open. Search does not implement
+these inherited fixes, expose private producer handoffs, choose a retry API or
+issue provider/replay work. Frozen B model/error declarations are integrated;
+real B4/R48 actions and B5 guard/reindex still await accepted contracts.
 
 No playback, no citation target resolution, no CLI, no participant editing beyond
 what M2 already exposes, no provider call, no semantic search, no transcript text
