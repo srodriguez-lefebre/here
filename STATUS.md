@@ -3,6 +3,58 @@
 Actualizado: 2026-11-06. Leé CLAUDE.md primero; después este archivo y
 `docs/MASTER_PLAN.md`. Historial y rulings: `docs/development/DELIVERY.md`.
 
+## PAUSADO por instrucción del usuario — 2026-11-06
+
+El usuario pidió guardar todo y cortar; luego precisó el mensaje en inglés:
+`paused: checkpoint work in progress`. Todos
+los grants de fuente/runtime están revocados; solo se permite cerrar procesos y
+guardar el checkpoint. No reanudar automáticamente: esperar nueva instrucción.
+Los apartados operativos siguientes son historia anterior a esta pausa.
+
+Punto de retoma: M2 B conserva W1/W2 y reader R59 aprobados en sus scopes;
+W3 parcial pasó7P/11,33s sobre5926/C234. El writer atómico R62 sigue pendiente
+de RED/GREEN/review y bloquea SOURCE COMPLETE. Faltan regresiones finales,
+tipos/full2, integración, versión0.3.0, distribución y gates del PR.
+M3 A conserva UI R58 verificada automáticamente y R61 funcional; p95 real
+848,67978ms sigue fallido frente a500ms. R63 es trabajo preparado sin verificación
+nueva; R52 UI sigue pendiente. No hay aceptación ni certificación nueva de hito.
+Versión vigente0.2.0. M5 B early core no empezó; claims esperan M4 B.
+
+Los reportes/logs/manifests ignorados permanecen en sus worktrees y no se agregan
+al repositorio. Los commits de pausa preservan WIP, no aprueban código ni planes.
+Las filas de evidencia y omisiones conservan su alcance; dos horas sigue
+**omitida por ruling 5**.
+
+Checkpoints locales de pausa; carpetas bajo `C:/Users/savar/.codex/worktrees/`,
+cada una termina en `/here`. Los diez WTs de los dos frentes quedaron limpios,
+sin procesos propios activos. No hubo tests/builds nuevos durante la pausa.
+
+| Worktree | Rama | Commit de pausa |
+|---|---|---|
+| faab | codex/m2-lifecycle | 89305c1 |
+| b5-w2-red | codex/m2-b5-r62-red | ae00b44 |
+| b5-w3-red | codex/m2-b5-w3-green | 3d97ed3 |
+| m2-native-owner-red | codex/m2-b5-w2-red | 90fc7e2 |
+| 2710 | codex/m3-search | 49baac0 |
+| m3-search-evidence | codex/m3-search-evidence | f0db68d |
+| m3-search-green | codex/m3-search-green | ca80f49 |
+| m3-search-red | codex/m3-search-red | 8f37a9a |
+| m3-ui-implementation | codex/m3-ui-green | 1ffa174 |
+| m3-ui-red | codex/m3-ui-red | 348c567 |
+| m2-preparation | codex/m2-preparation | 8a0aae7 |
+| m2-segments | codex/m2-segments | 1085a6e |
+| m4-grounded-preparation | codex/m4-grounded-preparation | fa6fa7b |
+| m2-copilot-red | codex/m2-copilot-red-3 | d36e800 |
+| five-milestones | codex/m1-desktop-recovery | 9d63d80 |
+| ruling19-review | codex/pausado-ruling19-review | 7faf8e7 |
+
+Orquestación y evidencia global: `m2-catalog/here`, rama
+`codex/m3-library-contracts`, commit de pausa que contiene este registro. Los
+borradores históricos/fixtures preservados no sustituyen los contratos vigentes;
+no integrar ramas de preparación completas por el solo hecho de estar commiteadas.
+`m2-ingestion/here` conserva únicamente `uv-setup.log` como artefacto local ajeno
+al código. El checkout original no tenía cambios antes de registrar la pausa.
+
 ## Objetivo y checkpoint vigente
 
 Implementar y entregar M2–M5 completos bajo ruling 20, sin cambiar definiciones

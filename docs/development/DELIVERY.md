@@ -2349,3 +2349,15 @@ No new hardware/provider/clean-install certification or version change;0.2.0
 remains current. Two hours stays **omitida por ruling 5**, never passed. M3 B GO
 still requires the actual reviewed/open-A-PR handoff and accepted contracts;
 early M5 B still waits for actual M2 B merge.
+
+## Pausa explícita — 2026-11-06
+
+El usuario solicitó guardar el trabajo y cortar, con mensajes de commit en inglés.
+Se revocaron todos los grants de fuente/runtime y se detuvieron ambos frentes.
+Los cambios de código, tests y planes preparados se guardaron en commits locales
+`paused: ...`; STATUS contiene ramas, worktrees y SHAs de retoma. No se ejecutaron
+nuevas suites, builds, smokes o merges para este checkpoint. Los resultados previos
+conservan sus scopes; el p95 848,67978 ms sigue fallido y el writer R62 pendiente.
+Los logs/manifests ignorados y datos sintéticos de ejecución siguen locales;
+ninguna credencial ni biblioteca privada forma parte de los commits. La pausa no
+acepta WIP ni cierra otro grupo/hito. Reanudar solo por instrucción del usuario.
