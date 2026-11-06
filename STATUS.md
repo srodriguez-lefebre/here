@@ -71,11 +71,13 @@ parcial. B todavía no tiene writer UI. Processing continúa sin concesión.
 Cualquier handoff adicional se concede explícitamente. Migraciones/pyproject/uv.lock/versiones
 siguen seriales y requieren permiso de root. Global docs son root-only.
 
-Runtime ACTUAL: B liberó después de selección129,1F/128P/86,28s y callers40P.
-El fallo único es conteo del journal, bajo contraste SPEC por su RED. M3 posee
-ventana para probe/foco UI38 sobre2389a7f y GREEN/Ruff/format; B escribe sin runtime.
-No full/build/mypy todavía. Suplemento outcome RED2 falló2/0E/3,05s; GREEN R1
-pasó7/7/5,24s. RED R1 previo5F/0E/4,10s en87f9a302
+Runtime ACTUAL: M3 liberó tras UI final38P/12,57s y Ruff/format nueve archivos,
+sin procesos. B posee ventana para mypy comparativo y UN full R49 corregido sobre
+4e1b2cead486563516b69e09fb45543ee85b53aa, clean y congelado, src4ca55bbe7e88ff59f79dee47e8740fef2253718e/
+testsbf4f471a87ad84df8ac41f8da375f8fd1025f42e; no build/uv ni mutación durante full.
+Mismo reviewer B4 en re-review R1 acotada, lectura paralela. UI congela/revisa/docs
+sin runtime; handoff B4 completo espera review/full/docs. Suplemento outcome RED2
+falló2/0E/3,05s; GREEN R1 pasó7/7/5,24s. RED R1 previo5F/0E/4,10s en87f9a302
 y ambos focos UI conservan sus fuentes/logs; R48 consumer asserts aún pendientes.
 No repetir full previo. Sin build/benchmark todavía. Cada coordinador libera la ventana
 con evidencia real; root la asigna al otro
@@ -100,8 +102,15 @@ verificados. Handoff e0d083ae2aebb0ef1b1d428f6b3beba42ac9030f,125 líneas en tre
 archivos, autorizado a M3 preservando sus DTOs. API real ya disponible técnicamente,
 sin aceptación global B4. M3 core e4d2469:177P/1benchmarkskip/26,79s, los66 controles
 estructurales ejecutados; review APPROVED CORE con B5/performance/full pendientes.
-UI post-DTO:2F/8P/26 errores por LibraryView ausente en el baseline; asserts de
-widgets todavía no alcanzados, no verificación de R48 ni GREEN UI.
+UI post-DTO histórico:2F/8P/26 errores por LibraryView ausente en el baseline.
+Después focos13F/25P,9F/29P,9F/29P conservaron causas/harness; el foco35P/3F
+alcanzó assertions R48 reales. Correcciones UI y foco final38/38P/12,57s tras
+formato/Ruff verifican roster, speakers scoped, targets pasivos y teclado, con DB
+sintética/customroot real para dos casos. No edición real B4/guard B5/perf/full aún.
+R1 compatibilidad129:128P/1F/86,28s y callers40P/30,10s. El único fallo era conteo
+global del journal: RED preservó publicación exacta, agregó persist_state complete
+y ausencia global de prepared; caso único corregido1P/3,15s, testf244018. No sumar
+estos pases como full129; full corregido pendiente sobre fuente4e1b2ce.
 
 B4 FULL1 en9e10c9cb1e0d385feea8cd73c8912b9ebd8a3929 pasó1036/9skips/391,45s
 (1045 casos,0F/E;2wheel ausente+7privilegios symlink). REVIEW necesita fixes por
@@ -211,6 +220,6 @@ SHA256318E31615073D5DDC9B73937DA10A1DA7BA291A59F74497C1983533F6094D265.
 ni validación; futuro RED inspecciona/valida al recibirlo UNA vez por root.
 Reporte `m4-synthetic-corpus-preparation-report.md` en ese worktree; corpus previos intactos.
 
-No hay bloqueo humano actual. Próxima acción: foco UI M3 y caso único B corregido;
-después re-review acotada y full B corregido, sin reiniciar roles.
+No hay bloqueo humano actual. Próxima acción: recoger mypy/full B R49 y su scoped
+review; docs distintos y aceptarTask4 antes B5, habilitando handoff real a M3.
 Reanudar desde estos IDs/reportes sin recrear los chats ni repetir el catálogo A.
