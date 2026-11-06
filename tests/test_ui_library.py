@@ -1387,9 +1387,11 @@ def test_real_title_editor_stale_version_shows_conflict_without_overwrite_or_ret
     qtbot.keyClicks(editor, "Attempted tamarind agenda")
     qtbot.mouseClick(_named(view, QPushButton, r"guardar.*t[ií]tulo"), Qt.MouseButton.LeftButton)
     qtbot.waitUntil(
-        lambda: editor.text() == "Concurrent coriander agenda"
-        and re.search(r"(cambi[oó]|conflicto|versi[oó]n actual)", _text(view), re.IGNORECASE)
-        is not None
+        lambda: (
+            editor.text() == "Concurrent coriander agenda"
+            and re.search(r"(cambi[oó]|conflicto|versi[oó]n actual)", _text(view), re.IGNORECASE)
+            is not None
+        )
     )
     qtbot.waitUntil(lambda: not desktop.jobs.busy)
     assert "Concurrent coriander agenda" in _text(view)
