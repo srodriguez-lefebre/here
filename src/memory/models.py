@@ -106,3 +106,27 @@ class PendingOperation:
     staging_path: str | None = None
     destination_path: str | None = None
     payload_json: str = "{}"
+
+
+@dataclass(frozen=True, slots=True)
+class MeetingPatch:
+    """Omitted fields preserve their value; only user-authored metadata is editable."""
+
+    title: str | None = None
+    notes: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class Participant:
+    id: str
+    display_name: str
+
+
+@dataclass(frozen=True, slots=True)
+class MeetingDetail:
+    meeting: Meeting
+    audio_assets: tuple[AudioAsset, ...] = ()
+    revisions: tuple[TranscriptRevision, ...] = ()
+    segments: tuple[Segment, ...] = ()
+    revision_audio_assets: tuple[RevisionAudioAsset, ...] = ()
+    warnings: tuple[object, ...] = ()
