@@ -35,7 +35,8 @@ The main flow is:
 - `memory/`: immutable catalog DTOs, operation-owned SQLite connections, numbered
   migrations with managed backups, an explicit transaction repository, validated
   artifact ingestion and local revision publication/reconciliation. Scoped fixes
-  through round 3 are integrated; full/group review and hosted gates remain open.
+  through round 3 are integrated; the local full passes 940/seven skips, while
+  whole-group review requests changes and hosted gates remain open.
 - `ui/`: Qt Widgets presentation, the live-logo overlay, and the single adapter
   from visual actions to the application contract.
 

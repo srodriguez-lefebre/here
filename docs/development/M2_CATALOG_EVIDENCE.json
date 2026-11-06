@@ -320,7 +320,7 @@
     "completion_receipt": "catalog.json written only after DB entity commit",
     "state_snapshots": "meetings/<meeting-uuid>/states/<row_version>-<uuid>.json",
     "unknown_material": "Retain and defer cleanup; UUID parent alone is not ownership",
-    "unknown_cleanup_candidate_verification": "Historical 122-case focus and 883-pass candidate suite; current root full has five failures",
+    "unknown_cleanup_candidate_verification": "Historical 122-case focus and 883-pass candidate suite; historical integrated full1 at1f1bc88 had five failures, while full2 at8087e25 passes940/seven skips; whole-group findings and hosted gates remain open",
     "source_privacy": "Known session artifact roles and explicit validated WAV references before reads/hashes/native probes",
     "receipt_role_guards_review": "Present in frozen candidate; earlier missing-guard observation superseded",
     "audio_revision_association_review": "Migration 2 revision_audio_assets and receipt v2 implemented; original F1 ADDRESSED, migration 1 unchanged",
