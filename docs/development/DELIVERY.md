@@ -904,6 +904,23 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Cost if wrong:** ajustar precedencia/límite de pending y repetir controles,
     reteniendo incertidumbre y bytes desconocidos, sin ampliar autoridad de borrado.
 
+61. **2026-11-06 — M3 A puede eliminar wrappers de filas en generación sin
+    cambiar el token v2 ni sus inputs.** El RED de rendimiento sigue siendo el
+    benchmark público real fallido; los controles nuevos de equivalencia no se
+    presentan como RED si ya pasan. Solo los cursores de `_generation` pueden usar
+    `row_factory=None` y codificar directamente los tuples de `fetchmany(256)`.
+    La conexión canónica conserva `sqlite3.Row` para páginas/detalle y los demás
+    lectores. No se cambia SQL, orden, cobertura completa de FTS/schema/evidencia,
+    snapshot, supresión, framing v2, encoder ni tratamiento de valores/errores.
+    Se exige igualdad de bytes/digest con v2 previo, límites de batches, errores
+    y aislamiento de la factoría; no se promete mejora medida ni alcanzar 500 ms.
+    No hay cache, SQL packing, UDF, dependencia o índice nuevo. Instrumentación
+    con proxies necesita setters transparentes antes de otra corrida diagnóstica;
+    no se agregan detecciones de proxies o bypasses al producto. Fuente y controles
+    independientes en worktrees propios; runtime solo con ventana exclusiva.
+    **Costo si falla:** retirar este cambio de representación o corregirlo y
+    repetir equivalencia/regresiones; conservar todos los inputs y el presupuesto.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
