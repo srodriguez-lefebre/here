@@ -7,12 +7,12 @@ import json
 import os
 import shutil
 import sqlite3
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from contextvars import ContextVar
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Callable, Iterator
 from uuid import UUID, uuid4
 
 from here.memory.artifacts import (
@@ -21,6 +21,7 @@ from here.memory.artifacts import (
     managed_path,
     normalized_origin,
     read_artifacts,
+    read_meeting_snapshot,
     read_meeting_state,
     read_pending_intent,
     read_retry_artifacts,
@@ -34,6 +35,7 @@ from here.memory.models import (
     Meeting,
     MeetingDetail,
     MeetingParticipant,
+    MeetingPatch,
     MeetingStatus,
     Participant,
     PendingOperation,
@@ -62,8 +64,18 @@ class IngestResult:
 
 
 @dataclass(frozen=True)
+class RecoveryOutcome:
+    identity: str
+    reason: str
+
+
+@dataclass(frozen=True)
 class RecoveryReport:
     warnings: tuple[object, ...] = ()
+    completed: tuple[RecoveryOutcome, ...] = ()
+    reverted: tuple[RecoveryOutcome, ...] = ()
+    marked: tuple[RecoveryOutcome, ...] = ()
+    skipped: tuple[RecoveryOutcome, ...] = ()
 
 
 class Conflict(LibraryError):
@@ -420,12 +432,14 @@ class MemoryService:
                                 duration_ms=duration_ms,
                             )
                         )
-                    else:
-                        repo.library.execute(
-                            "UPDATE meetings SET status='processing', "
-                            "row_version=row_version+1 WHERE id=?",
-                            (identity,),
+                        repo.record_event(
+                            identity,
+                            "status_changed",
+                            datetime.now(timezone.utc).isoformat(),
+                            {"from": None, "to": "processing"},
                         )
+                    else:
+                        self._change_status(repo, identity, MeetingStatus.PROCESSING)
                     if repo.get_ingest_source(origin, fingerprint) is None:
                         repo.insert_ingest_source(
                             IngestSource(str(uuid4()), origin, fingerprint, identity, None)
@@ -723,6 +737,8 @@ class MemoryService:
                             )
                         )
                     if self._fts(repo):
+                        indexed_meeting = repo.get_meeting(identity)
+                        assert indexed_meeting is not None
                         repo.library.execute(
                             "DELETE FROM segments_fts WHERE meeting_id=?", (identity,)
                         )
@@ -735,12 +751,19 @@ class MemoryService:
                                         revision_id,
                                         segment.id,
                                         segment.text,
-                                        meeting.title,
+                                        indexed_meeting.title,
                                     ),
                                 )
                     else:
                         warnings += (FtsUnavailable(),)
                     repo.activate_revision(identity, revision_id)
+                    if previous is None or previous.status != meeting.status:
+                        repo.record_event(
+                            identity,
+                            "status_changed",
+                            datetime.now(timezone.utc).isoformat(),
+                            {"from": previous.status if previous else None, "to": meeting.status},
+                        )
                 committed = True
                 self._write_receipt(repo, operation)
                 self._write_state(repo, identity)
@@ -777,6 +800,22 @@ class MemoryService:
                 return IngestResult("rejected", identity, (str(exc),), category)
 
     def _reconcile_operation(self, repo: MemoryRepository, operation: PendingOperation) -> None:
+        if operation.kind == "persist_state":
+            identity = operation.meeting_id
+            if (
+                not _is_uuid(operation.id)
+                or not isinstance(identity, str)
+                or not _is_uuid(identity)
+                or operation.staging_path is not None
+                or operation.destination_path is not None
+                or operation.payload_json != "{}"
+                or repo.get_meeting(identity) is None
+            ):
+                raise ValueError("Invalid pending lifecycle state operation")
+            self._write_state(repo, identity)
+            with repo.transaction():
+                repo.transition_pending_operation(operation.id, "complete")
+            return
         if operation.kind != "publish_revision":
             raise ValueError("Unknown pending operation")
         if not operation.meeting_id or str(UUID(operation.meeting_id)) != operation.meeting_id:
@@ -822,9 +861,34 @@ class MemoryService:
             return
         directory = managed_path(self.data_dir, f"meetings/{identity}/states", directory=True)
         directory.mkdir(parents=True, exist_ok=True)
+        snapshot = {
+            "schema_version": 2,
+            "meeting": asdict(meeting),
+            "source_kind": self._known_source_kind(repo, identity),
+            "participants": [
+                dict(row)
+                for row in repo.library.execute(
+                    "SELECT p.* FROM participants p JOIN meeting_participants l "
+                    "ON p.id=l.participant_id WHERE l.meeting_id=? ORDER BY p.id",
+                    (identity,),
+                )
+            ],
+        }
+        for table in (
+            "meeting_participants",
+            "speaker_assignments",
+            "lifecycle_events",
+            "audio_assets",
+            "ingest_sources",
+        ):
+            snapshot[table] = [
+                dict(row)
+                for row in repo.library.execute(
+                    f"SELECT * FROM {table} WHERE meeting_id=? ORDER BY 1", (identity,)
+                )
+            ]
         write_durable_json(
-            session_artifact_path(directory, f"{meeting.row_version}-{uuid4()}.json"),
-            {"schema_version": 1, "meeting": asdict(meeting)},
+            session_artifact_path(directory, f"{meeting.row_version}-{uuid4()}.json"), snapshot
         )
 
     def _write_receipt(self, repo: MemoryRepository, operation: PendingOperation) -> None:
@@ -875,10 +939,96 @@ class MemoryService:
             snapshot["operation_id"] = operation.id
         write_durable_json(receipt, snapshot)
 
-    def _rebuild(self, repo: MemoryRepository, warnings: list[object]) -> None:
+    def _restore_lifecycle_snapshot(self, repo: MemoryRepository, snapshot: dict[str, Any]) -> None:
+        """Restore supplements only after immutable revisions establish their evidence."""
+        identity = snapshot["meeting"]["id"]
+        for values in snapshot["audio_assets"]:
+            asset = repo.get_audio_asset(values["id"])
+            if asset is None or any(
+                value != asdict(asset)[name] for name, value in values.items() if name != "status"
+            ):
+                raise ValueError("Lifecycle state cannot authorize an unreceipted audio asset")
+            # Status comes from the actual managed bytes, never a historical health claim.
+        for values in snapshot["ingest_sources"]:
+            source = IngestSource(**values)
+            if source.revision_id is not None:
+                revision = repo.get_revision(source.revision_id)
+                if revision is None or revision.meeting_id != identity:
+                    raise ValueError("Lifecycle origin references an unreceipted revision")
+            existing_source = repo.get_ingest_source(source.origin_path, source.origin_fingerprint)
+            if existing_source is None:
+                repo.insert_ingest_source(source)
+            elif existing_source != source:
+                raise ValueError("Lifecycle origin conflicts with immutable publication evidence")
+        for values in snapshot["participants"]:
+            participant = Participant(**values)
+            existing_participant = repo.get_participant(participant.id)
+            if existing_participant is None:
+                repo.insert_participant(participant)
+            elif existing_participant != participant:
+                raise ValueError("Lifecycle participant identity conflicts with another meeting")
+        for values in snapshot["meeting_participants"]:
+            repo.library.execute(
+                "INSERT INTO meeting_participants VALUES (?,?,?)",
+                (identity, values["participant_id"], values["role"]),
+            )
+        for values in snapshot["speaker_assignments"]:
+            self._speaker_scope(repo, identity, values["revision_id"], values["speaker_key"])
+            repo.library.execute(
+                "INSERT INTO speaker_assignments VALUES (?,?,?,?)",
+                (identity, values["revision_id"], values["speaker_key"], values["participant_id"]),
+            )
+        for values in snapshot["lifecycle_events"]:
+            repo.library.execute(
+                "INSERT INTO lifecycle_events VALUES (?,?,?,?,?,?)",
+                (
+                    values["id"],
+                    identity,
+                    values["kind"],
+                    values["occurred_at"],
+                    values["recorded_duration_ms"],
+                    values["payload"],
+                ),
+            )
+        if (
+            snapshot["source_kind"] == "legacy_audio_only"
+            and self._known_source_kind(repo, identity) != "legacy_audio_only"
+        ):
+            reservations = [
+                item for item in snapshot["ingest_sources"] if item["revision_id"] is None
+            ]
+            if not reservations:
+                raise ValueError("Audio-only state requires its measured reservation origin")
+            origin = reservations[0]
+            repo.insert_pending_operation(
+                PendingOperation(
+                    str(uuid4()),
+                    "reserve_audio_only",
+                    "complete",
+                    identity,
+                    payload_json=json.dumps(
+                        {
+                            "source_kind": "legacy_audio_only",
+                            "origin_path": origin["origin_path"],
+                            "origin_fingerprint": origin["origin_fingerprint"],
+                        }
+                    ),
+                )
+            )
+
+    def _rebuild(
+        self,
+        repo: MemoryRepository,
+        warnings: list[object],
+        *,
+        can_restore: Callable[[str], bool] | None = None,
+    ) -> RecoveryReport:
+        completed: list[RecoveryOutcome] = []
+        skipped: list[RecoveryOutcome] = []
+        marked: list[RecoveryOutcome] = []
         meetings_root = managed_path(self.data_dir, "meetings", directory=True)
         if not meetings_root.exists():
-            return
+            return RecoveryReport()
         for directory in meetings_root.iterdir():
             try:
                 identity = str(UUID(directory.name))
@@ -889,13 +1039,13 @@ class MemoryService:
                 # are restored; uncertain unreceipted publications are not adopted.
                 if repo.get_meeting(identity) is not None:
                     continue
+                if can_restore is not None and not can_restore(identity):
+                    continue
                 revisions_path = managed_path(
                     self.data_dir, f"meetings/{identity}/revisions", directory=True
                 )
-                if not revisions_path.exists():
-                    continue
                 snapshots = []
-                for revision_dir in revisions_path.iterdir():
+                for revision_dir in revisions_path.iterdir() if revisions_path.exists() else ():
                     revision_id = str(UUID(revision_dir.name))
                     validate_session_directory(revision_dir)
                     receipt = session_artifact_path(revision_dir, "catalog.json")
@@ -919,7 +1069,16 @@ class MemoryService:
                         ):
                             raise ValueError("Managed publication provenance mismatch")
                     validate_artifact_roles(revision_dir, snapshot["hashes"])
+                    local_audio = {
+                        Path(asset["relative_path"]).name: asset["sha256"]
+                        for asset in snapshot["audio_assets"]
+                        if Path(asset["relative_path"]).parent
+                        == revision_dir.relative_to(self.data_dir)
+                    }
                     for name, digest in snapshot["hashes"].items():
+                        if name in local_audio and local_audio[name] == digest:
+                            # Audio health is measured below; readable text survives its loss.
+                            continue
                         if file_hash(session_artifact_path(revision_dir, name)) != digest:
                             raise ValueError("Managed revision hash mismatch during rebuild")
                     for asset in snapshot["audio_assets"]:
@@ -929,11 +1088,15 @@ class MemoryService:
                         if path.suffix.lower() != ".wav":
                             raise ValueError("Managed audio asset must have a WAV role")
                         validate_artifact_roles(path.parent, (path.name,))
-                        if (
-                            path.stat().st_size != asset["size_bytes"]
-                            or file_hash(path) != asset["sha256"]
-                        ):
-                            raise ValueError("Managed audio hash or identity mismatch")
+                        try:
+                            size = path.stat().st_size
+                        except FileNotFoundError:
+                            asset["status"] = "missing"
+                        else:
+                            valid = (
+                                size == asset["size_bytes"] and file_hash(path) == asset["sha256"]
+                            )
+                            asset["status"] = "available" if valid else "corrupt"
                     for segment in snapshot["segments"]:
                         if segment["revision_id"] != revision_id:
                             raise ValueError("Managed segment revision mismatch")
@@ -954,21 +1117,35 @@ class MemoryService:
                         }:
                             raise ValueError("Managed source identity mismatch")
                     snapshots.append(snapshot)
-                if not snapshots:
-                    continue
                 snapshots.sort(key=lambda item: item["revision"]["revision_number"])
-                meeting_values = snapshots[-1]["meeting"]
+                meeting_values = snapshots[-1]["meeting"] if snapshots else None
+                lifecycle_snapshot = None
                 states = managed_path(self.data_dir, f"meetings/{identity}/states", directory=True)
                 if states.exists():
                     for entry in states.iterdir():
                         try:
-                            state = read_meeting_state(states, entry.name, identity)
+                            envelope = read_meeting_snapshot(states, entry.name, identity)
+                            state = envelope["meeting"]
                         except (OSError, ValueError, TypeError, KeyError) as exc:
                             warnings.append(str(exc))
                             continue
-                        if state["row_version"] >= meeting_values["row_version"]:
+                        if (
+                            meeting_values is None
+                            or state["row_version"] >= meeting_values["row_version"]
+                        ):
                             meeting_values = state
+                            lifecycle_snapshot = (
+                                envelope if envelope["schema_version"] == 2 else None
+                            )
+                if meeting_values is None:
+                    continue
                 meeting = Meeting(**meeting_values)
+                revision_ids = {snapshot["revision"]["id"] for snapshot in snapshots}
+                if (
+                    meeting.active_revision_id is not None
+                    and meeting.active_revision_id not in revision_ids
+                ):
+                    raise ValueError("Lifecycle state cannot authorize an unreceipted revision")
                 with repo.transaction():
                     repo.insert_meeting(replace(meeting, active_revision_id=None))
                     inserted_assets = set()
@@ -1008,6 +1185,8 @@ class MemoryService:
                                     ),
                                 )
                             )
+                    if lifecycle_snapshot is not None:
+                        self._restore_lifecycle_snapshot(repo, lifecycle_snapshot)
                     if meeting.active_revision_id:
                         repo.activate_revision(identity, meeting.active_revision_id)
                         repo.library.execute(
@@ -1022,12 +1201,32 @@ class MemoryService:
                                     "INSERT INTO segments_fts VALUES (?,?,?,?,?)",
                                     (identity, active.id, segment.id, segment.text, meeting.title),
                                 )
+                completed.append(
+                    RecoveryOutcome(identity, "Catalog restored from managed committed evidence")
+                )
+                for row in repo.library.execute(
+                    "SELECT id,status FROM audio_assets WHERE meeting_id=? AND status!='available'",
+                    (identity,),
+                ):
+                    marked.append(RecoveryOutcome(row["id"], f"Audio asset marked {row['status']}"))
             except (OSError, ValueError, RuntimeError, KeyError, TypeError) as exc:
                 warnings.append(f"Managed meeting {directory.name} retained: {exc}")
+                skipped.append(
+                    RecoveryOutcome(
+                        directory.name, "Managed evidence retained; rebuild unavailable"
+                    )
+                )
+        return RecoveryReport(
+            completed=tuple(completed), marked=tuple(marked), skipped=tuple(skipped)
+        )
 
     def reconcile(self) -> RecoveryReport:
         warnings: list[object] = []
-        with self._operation() as repo:
+        completed: list[RecoveryOutcome] = []
+        reverted: list[RecoveryOutcome] = []
+        marked: list[RecoveryOutcome] = []
+        skipped: list[RecoveryOutcome] = []
+        with self._operation() as repo, ExitStack() as leases:
             if repo.library.storage_warning:
                 warnings.append(repo.library.storage_warning)
             rows = repo.library.execute(
@@ -1039,31 +1238,67 @@ class MemoryService:
             ).fetchall()
             identities = {row[0] for row in active_rows} | {row["meeting_id"] for row in rows}
             live = set()
-            for identity in identities:
+            checked = set()
+
+            def protect(identity: str | None) -> None:
                 if identity is None:
-                    continue
+                    return
+                if identity in checked:
+                    return
+                checked.add(identity)
                 try:
                     if str(UUID(identity)) != identity:
                         raise ValueError("Invalid owner identity")
                     owner_path = managed_path(self.data_dir, f".owners/{identity}.lock")
-                    if not owner_path.exists():
-                        continue
-                    probe = _FileLock(owner_path, timeout=0, create=False)
-                    probe.close()
+                    owner_path.parent.mkdir(parents=True, exist_ok=True)
+                    probe = _FileLock(owner_path, timeout=0)
+                    leases.callback(probe.close)
                 except Busy:
                     live.add(identity)
+                    skipped.append(RecoveryOutcome(identity, "Live catalog owner; work preserved"))
                 except (OSError, ValueError) as exc:
                     warnings.append(str(exc))
                     # An invalid owner path is not proof the job has stopped.
                     live.add(identity)
+                    skipped.append(
+                        RecoveryOutcome(identity, "Ownership unavailable; work preserved")
+                    )
+
+            for identity in identities:
+                protect(identity)
             for row in rows:
                 if row["meeting_id"] in live:
                     continue
                 try:
                     self._reconcile_operation(repo, PendingOperation(**dict(row)))
+                    after = repo.get_pending_operation(row["id"])
+                    if after is not None and after.phase == "complete":
+                        completed.append(
+                            RecoveryOutcome(after.id, "Committed local operation completed")
+                        )
+                    elif after is not None and after.phase == "reverted":
+                        reverted.append(
+                            RecoveryOutcome(after.id, "Uncommitted local operation reverted")
+                        )
                 except Exception as exc:
                     warnings.append(str(exc))
-            self._rebuild(repo, warnings)
+                    skipped.append(
+                        RecoveryOutcome(row["id"], "Operation retained; local recovery required")
+                    )
+
+            def can_restore(identity: str) -> bool:
+                protect(identity)
+                return identity not in live
+
+            rebuilt = self._rebuild(repo, warnings, can_restore=can_restore)
+            completed.extend(rebuilt.completed)
+            marked.extend(rebuilt.marked)
+            skipped.extend(rebuilt.skipped)
+            active_rows = repo.library.execute(
+                "SELECT id FROM meetings WHERE status IN ('recording','processing')"
+            ).fetchall()
+            for row in active_rows:
+                protect(row[0])
             staging = managed_path(self.data_dir, ".staging", directory=True)
             if staging.exists():
                 for entry in staging.iterdir():
@@ -1078,15 +1313,45 @@ class MemoryService:
             with repo.transaction():
                 for row in active_rows:
                     if row[0] not in live:
-                        repo.library.execute(
-                            "UPDATE meetings SET status='interrupted', row_version=row_version+1 "
-                            "WHERE id=? AND status IN ('recording','processing')",
-                            (row[0],),
-                        )
+                        self._change_status(repo, row[0], MeetingStatus.INTERRUPTED)
+                        marked.append(RecoveryOutcome(row[0], "Unowned work marked interrupted"))
             for row in active_rows:
                 if row[0] not in live:
-                    self._write_state(repo, row[0])
-        return RecoveryReport(tuple(warnings))
+                    try:
+                        self._write_state(repo, row[0])
+                    except (OSError, ValueError, LibraryError) as exc:
+                        warnings.append(str(exc))
+            for row in repo.library.execute("SELECT * FROM audio_assets").fetchall():
+                if row["meeting_id"] in live:
+                    continue
+                try:
+                    path = managed_path(self.data_dir, row["relative_path"])
+                    if not path.is_relative_to(self.data_dir / "meetings" / row["meeting_id"]):
+                        raise ValueError("Managed audio identity mismatch")
+                    if path.suffix.lower() != ".wav":
+                        raise ValueError("Managed audio asset must have a WAV role")
+                    validate_artifact_roles(path.parent, (path.name,))
+                    try:
+                        size = path.stat().st_size
+                    except FileNotFoundError:
+                        health = "missing"
+                    else:
+                        valid = size == row["size_bytes"] and file_hash(path) == row["sha256"]
+                        health = "available" if valid else "corrupt"
+                    if health != row["status"]:
+                        with repo.transaction():
+                            repo.library.execute(
+                                "UPDATE audio_assets SET status=? WHERE id=?", (health, row["id"])
+                            )
+                        marked.append(RecoveryOutcome(row["id"], f"Audio asset marked {health}"))
+                except (OSError, ValueError) as exc:
+                    warnings.append(str(exc))
+                    skipped.append(
+                        RecoveryOutcome(row["id"], "Unsafe or inaccessible asset retained")
+                    )
+        return RecoveryReport(
+            tuple(warnings), tuple(completed), tuple(reverted), tuple(marked), tuple(skipped)
+        )
 
     def begin_capture(self, meeting_id: str, *, started_at: str | None = None) -> None:
         if str(UUID(meeting_id)) != meeting_id:
@@ -1103,16 +1368,19 @@ class MemoryService:
                             status=MeetingStatus.RECORDING,
                         )
                     )
+                    repo.record_event(
+                        meeting_id,
+                        "status_changed",
+                        datetime.now(timezone.utc).isoformat(),
+                        {"from": None, "to": "recording"},
+                    )
             self._write_state(repo, meeting_id)
 
     def set_status(self, meeting_id: str, status: str) -> None:
         status = MeetingStatus(status)
         with self._operation() as repo:
             with repo.transaction():
-                repo.library.execute(
-                    "UPDATE meetings SET status=?, row_version=row_version+1 WHERE id=?",
-                    (status, meeting_id),
-                )
+                self._change_status(repo, meeting_id, status)
             self._write_state(repo, meeting_id)
 
     def begin_processing(self, meeting_id: str) -> None:
@@ -1126,12 +1394,14 @@ class MemoryService:
             with repo.transaction():
                 if repo.get_meeting(meeting_id) is None:
                     repo.insert_meeting(Meeting(id=meeting_id, status=MeetingStatus.PROCESSING))
-                else:
-                    repo.library.execute(
-                        "UPDATE meetings SET status='processing', "
-                        "row_version=row_version+1 WHERE id=?",
-                        (meeting_id,),
+                    repo.record_event(
+                        meeting_id,
+                        "status_changed",
+                        datetime.now(timezone.utc).isoformat(),
+                        {"from": None, "to": "processing"},
                     )
+                else:
+                    self._change_status(repo, meeting_id, MeetingStatus.PROCESSING)
             self._write_state(repo, meeting_id)
 
     def _acquire_owner(self, meeting_id: str) -> None:
@@ -1185,10 +1455,7 @@ class MemoryService:
                     return IngestResult(
                         "rejected", meeting_id, ("Revision conflict: stale outcome",)
                     )
-                repo.library.execute(
-                    "UPDATE meetings SET status=?, row_version=row_version+1 WHERE id=?",
-                    (status, meeting_id),
-                )
+                self._change_status(repo, meeting_id, MeetingStatus(status))
             self._write_state(repo, meeting_id)
         return IngestResult("unchanged", meeting_id)
 
@@ -1217,9 +1484,27 @@ class MemoryService:
                 owner.close()
 
     @staticmethod
+    def _change_status(repo: MemoryRepository, meeting_id: str, status: MeetingStatus) -> None:
+        meeting = repo.get_meeting(meeting_id)
+        if meeting is None or meeting.status == status:
+            return
+        now = datetime.now(timezone.utc).isoformat()
+        repo.library.execute(
+            "UPDATE meetings SET status=?,row_version=row_version+1,updated_at=? WHERE id=?",
+            (status, now, meeting_id),
+        )
+        repo.record_event(meeting_id, "status_changed", now, {"from": meeting.status, "to": status})
+
+    @staticmethod
     def _identity(identity: str) -> None:
         if not _is_uuid(identity):
             raise InvalidInput("Use a canonical UUID")
+
+    @staticmethod
+    def _display_name(display_name: str) -> str:
+        if not isinstance(display_name, str) or not display_name.strip():
+            raise InvalidInput("Participant name must be a nonempty string")
+        return display_name.strip()
 
     @staticmethod
     def _meeting(repo: MemoryRepository, meeting_id: str) -> Meeting:
@@ -1314,6 +1599,196 @@ class MemoryService:
                 )
             return tuple(Participant(**dict(row)) for row in rows)
 
+    @staticmethod
+    def _state_operation(repo: MemoryRepository, meeting_id: str) -> PendingOperation:
+        operation = PendingOperation(str(uuid4()), "persist_state", "prepared", meeting_id)
+        repo.insert_pending_operation(operation)
+        return operation
+
+    def _persist_edit(
+        self,
+        repo: MemoryRepository,
+        meeting_id: str,
+        operation: PendingOperation,
+        warnings: tuple[object, ...] = (),
+    ) -> MeetingDetail:
+        if repo.library.storage_warning:
+            warnings += (repo.library.storage_warning,)
+        try:
+            self._reconcile_operation(repo, operation)
+        except Exception:
+            # SQL has committed. The prepared operation retries local housekeeping.
+            warnings += ("Committed lifecycle edit; state snapshot pending local recovery",)
+        return self._detail(repo, meeting_id, warnings)
+
+    def add_participant(self, display_name: str) -> Participant:
+        participant = Participant(str(uuid4()), self._display_name(display_name))
+        with self._operation() as repo:
+            with repo.transaction():
+                repo.insert_participant(participant)
+        return participant
+
+    def link_participant(
+        self, meeting_id: str, participant_id: str, role: str | None = None
+    ) -> MeetingDetail:
+        self._identity(meeting_id)
+        self._identity(participant_id)
+        if role is not None and not isinstance(role, str):
+            raise InvalidInput("Participant role must be a string or omitted")
+        with self._operation() as repo:
+            with repo.transaction():
+                self._meeting(repo, meeting_id)
+                if repo.get_participant(participant_id) is None:
+                    raise NotFound("Participant does not exist")
+                repo.library.execute(
+                    "INSERT INTO meeting_participants VALUES (?,?,?) ON CONFLICT "
+                    "(meeting_id,participant_id) DO UPDATE SET role=excluded.role",
+                    (meeting_id, participant_id, role),
+                )
+                now = datetime.now(timezone.utc).isoformat()
+                repo.library.execute(
+                    "UPDATE meetings SET row_version=row_version+1,updated_at=? WHERE id=?",
+                    (now, meeting_id),
+                )
+                repo.record_event(meeting_id, "participant_linked", now, {})
+                operation = self._state_operation(repo, meeting_id)
+            return self._persist_edit(repo, meeting_id, operation)
+
+    @staticmethod
+    def _speaker_scope(
+        repo: MemoryRepository, meeting_id: str, scope: str | None, speaker_key: str
+    ) -> None:
+        if (
+            not isinstance(scope, str)
+            or not _is_uuid(scope)
+            or not isinstance(speaker_key, str)
+            or not speaker_key
+        ):
+            raise InvalidInput("Use the revision and its original request-scoped speaker key")
+        revision = repo.get_revision(scope)
+        if revision is None or revision.meeting_id != meeting_id:
+            raise InvalidInput("Speaker scope must be a revision of this meeting")
+        if not repo.library.execute(
+            "SELECT 1 FROM segments WHERE revision_id=? AND speaker_key=? LIMIT 1",
+            (scope, speaker_key),
+        ).fetchone():
+            raise InvalidInput("Speaker key does not exist in this request scope")
+
+    def assign_speaker(
+        self, meeting_id: str, speaker_key: str, participant_id: str | None, scope: str
+    ) -> MeetingDetail:
+        self._identity(meeting_id)
+        if participant_id is not None:
+            self._identity(participant_id)
+        with self._operation() as repo:
+            with repo.transaction():
+                self._meeting(repo, meeting_id)
+                self._speaker_scope(repo, meeting_id, scope, speaker_key)
+                if participant_id is not None:
+                    if repo.get_participant(participant_id) is None:
+                        raise NotFound("Participant does not exist")
+                    if not repo.library.execute(
+                        "SELECT 1 FROM meeting_participants WHERE meeting_id=? "
+                        "AND participant_id=?",
+                        (meeting_id, participant_id),
+                    ).fetchone():
+                        raise InvalidInput("Link the participant to the meeting before assignment")
+                    repo.library.execute(
+                        "INSERT INTO speaker_assignments VALUES (?,?,?,?) ON CONFLICT "
+                        "(meeting_id,revision_id,speaker_key) DO UPDATE SET "
+                        "participant_id=excluded.participant_id",
+                        (meeting_id, scope, speaker_key, participant_id),
+                    )
+                else:
+                    repo.library.execute(
+                        "DELETE FROM speaker_assignments WHERE meeting_id=? AND revision_id=? "
+                        "AND speaker_key=?",
+                        (meeting_id, scope, speaker_key),
+                    )
+                now = datetime.now(timezone.utc).isoformat()
+                repo.library.execute(
+                    "UPDATE meetings SET row_version=row_version+1,updated_at=? WHERE id=?",
+                    (now, meeting_id),
+                )
+                repo.record_event(meeting_id, "speaker_assigned", now, {})
+                operation = self._state_operation(repo, meeting_id)
+            return self._persist_edit(repo, meeting_id, operation)
+
+    def add_meeting_participant(
+        self, meeting_id: str, display_name: str, *, speaker_key: str | None = None
+    ) -> MeetingDetail:
+        """Create, link and optionally assign atomically for the CLI command."""
+        self._identity(meeting_id)
+        participant = Participant(str(uuid4()), self._display_name(display_name))
+        with self._operation() as repo:
+            with repo.transaction():
+                meeting = self._meeting(repo, meeting_id)
+                if speaker_key is not None:
+                    self._speaker_scope(repo, meeting_id, meeting.active_revision_id, speaker_key)
+                repo.insert_participant(participant)
+                repo.library.execute(
+                    "INSERT INTO meeting_participants VALUES (?,?,NULL)",
+                    (meeting_id, participant.id),
+                )
+                if speaker_key is not None:
+                    repo.library.execute(
+                        "INSERT INTO speaker_assignments VALUES (?,?,?,?) ON CONFLICT "
+                        "(meeting_id,revision_id,speaker_key) DO UPDATE SET "
+                        "participant_id=excluded.participant_id",
+                        (meeting_id, meeting.active_revision_id, speaker_key, participant.id),
+                    )
+                now = datetime.now(timezone.utc).isoformat()
+                repo.library.execute(
+                    "UPDATE meetings SET row_version=row_version+1,updated_at=? WHERE id=?",
+                    (now, meeting_id),
+                )
+                repo.record_event(meeting_id, "participant_linked", now, {})
+                operation = self._state_operation(repo, meeting_id)
+            return self._persist_edit(repo, meeting_id, operation)
+
+    def update_meeting(
+        self, meeting_id: str, patch: MeetingPatch, expected_version: int
+    ) -> MeetingDetail:
+        self._identity(meeting_id)
+        if not isinstance(patch, MeetingPatch) or any(
+            value is not None and not isinstance(value, str) for value in (patch.title, patch.notes)
+        ):
+            raise InvalidInput("Meeting patch accepts only string title and notes")
+        if type(expected_version) is not int or expected_version < 1:
+            raise InvalidInput("Expected version must be a positive integer")
+        with self._operation() as repo:
+            with repo.transaction():
+                meeting = self._meeting(repo, meeting_id)
+                if meeting.row_version != expected_version:
+                    raise Conflict("Meeting changed; reload its current version")
+                now = datetime.now(timezone.utc).isoformat()
+                title = meeting.title if patch.title is None else patch.title
+                notes = meeting.notes if patch.notes is None else patch.notes
+                repo.library.execute(
+                    "UPDATE meetings SET title=?,notes=?,row_version=row_version+1,updated_at=? "
+                    "WHERE id=? AND row_version=?",
+                    (title, notes, now, meeting_id, expected_version),
+                )
+                has_fts = self._fts(repo)
+                if has_fts:
+                    repo.library.execute(
+                        "UPDATE segments_fts SET title=? WHERE meeting_id=?", (title, meeting_id)
+                    )
+                repo.record_event(
+                    meeting_id,
+                    "metadata_updated",
+                    now,
+                    {
+                        "fields": [
+                            name for name in ("title", "notes") if getattr(patch, name) is not None
+                        ]
+                    },
+                )
+                operation = self._state_operation(repo, meeting_id)
+            return self._persist_edit(
+                repo, meeting_id, operation, () if has_fts else (FtsUnavailable(),)
+            )
+
     def show(self, meeting_id: str) -> dict[str, object] | None:
         with self._operation() as repo:
             meeting = repo.get_meeting(meeting_id)
@@ -1347,4 +1822,19 @@ class MemoryService:
                     (meeting_id,),
                 )
             ]
+            result["participants"] = [
+                dict(row)
+                for row in repo.library.execute(
+                    "SELECT p.* FROM participants p JOIN meeting_participants l "
+                    "ON p.id=l.participant_id WHERE l.meeting_id=? ORDER BY p.id",
+                    (meeting_id,),
+                )
+            ]
+            for table in ("meeting_participants", "speaker_assignments", "lifecycle_events"):
+                result[table] = [
+                    dict(row)
+                    for row in repo.library.execute(
+                        f"SELECT * FROM {table} WHERE meeting_id=? ORDER BY 1", (meeting_id,)
+                    )
+                ]
             return result

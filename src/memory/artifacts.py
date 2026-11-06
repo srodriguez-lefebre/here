@@ -9,11 +9,13 @@ import os
 import re
 from collections.abc import Iterable
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path, PurePosixPath, PureWindowsPath
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 
 import soundfile as sf  # type: ignore[import-untyped]
+from here.memory.models import AudioAsset, IngestSource, Meeting, MeetingStatus, Participant
 from here.output.metadata import SessionMetadata
 from here.output.paths import (
     UnsafeSessionPath,
@@ -86,8 +88,23 @@ def validate_artifact_roles(
             raise ValueError("Unrecognized WAV is not declared session audio")
 
 
-def read_meeting_state(directory: Path, name: str, meeting_id: str) -> dict[str, Any]:
-    """Only generated state filenames authorize reading a state envelope."""
+def _state_uuid(value: object) -> bool:
+    try:
+        return isinstance(value, str) and str(UUID(value)) == value
+    except ValueError:
+        return False
+
+
+def _state_digest(value: object) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value)
+    )
+
+
+def read_meeting_snapshot(directory: Path, name: str, meeting_id: str) -> dict[str, Any]:
+    """Validate the existing state envelope and its additive lifecycle supplements."""
     filename = Path(name)
     version, separator, identity = filename.stem.partition("-")
     try:
@@ -106,13 +123,185 @@ def read_meeting_state(directory: Path, name: str, meeting_id: str) -> dict[str,
     meeting = state.get("meeting") if isinstance(state, dict) else None
     if (
         not isinstance(state, dict)
-        or state.get("schema_version") != 1
+        or state.get("schema_version") not in {1, 2}
         or not isinstance(meeting, dict)
         or meeting.get("id") != meeting_id
         or meeting.get("row_version") != int(version)
     ):
         raise ValueError("Invalid managed meeting-state envelope")
-    return meeting
+    if state["schema_version"] == 1:
+        return state
+    expected = {
+        "schema_version",
+        "meeting",
+        "participants",
+        "meeting_participants",
+        "speaker_assignments",
+        "lifecycle_events",
+        "audio_assets",
+        "ingest_sources",
+        "source_kind",
+    }
+    if set(state) != expected or state["source_kind"] not in {"session", "legacy_audio_only"}:
+        raise ValueError("Invalid lifecycle snapshot envelope")
+    Meeting(**meeting)
+    if (
+        not _state_uuid(meeting_id)
+        or any(
+            not isinstance(meeting.get(key), str)
+            for key in ("title", "notes", "created_at", "updated_at")
+        )
+        or type(meeting.get("row_version")) is not int
+        or meeting["row_version"] < 1
+        or type(meeting.get("paused_ms")) is not int
+        or meeting["paused_ms"] < 0
+        or any(
+            meeting.get(key) is not None and not isinstance(meeting[key], str)
+            for key in ("legacy_session_id", "started_at", "completed_at")
+        )
+        or meeting.get("duration_ms") is not None
+        and (type(meeting["duration_ms"]) is not int or meeting["duration_ms"] < 0)
+        or meeting.get("active_revision_id") is not None
+        and not _state_uuid(meeting["active_revision_id"])
+    ):
+        raise ValueError("Invalid lifecycle meeting values")
+    MeetingStatus(meeting["status"])
+    for key in ("created_at", "updated_at", "started_at", "completed_at"):
+        if meeting[key] is not None:
+            datetime.fromisoformat(meeting[key])
+    columns = {
+        "participants": {"id", "display_name"},
+        "meeting_participants": {"meeting_id", "participant_id", "role"},
+        "speaker_assignments": {"meeting_id", "revision_id", "speaker_key", "participant_id"},
+        "lifecycle_events": {
+            "id",
+            "meeting_id",
+            "kind",
+            "occurred_at",
+            "recorded_duration_ms",
+            "payload",
+        },
+        "audio_assets": set(AudioAsset.__dataclass_fields__),
+        "ingest_sources": set(IngestSource.__dataclass_fields__),
+    }
+    for table, fields in columns.items():
+        entries = state[table]
+        if not isinstance(entries, list) or any(
+            not isinstance(entry, dict) or set(entry) != fields for entry in entries
+        ):
+            raise ValueError("Invalid lifecycle snapshot table shape")
+        if table != "participants" and any(entry["meeting_id"] != meeting_id for entry in entries):
+            raise ValueError("Lifecycle snapshot relationship belongs to another meeting")
+    participants = {}
+    for entry in state["participants"]:
+        participant = Participant(**entry)
+        if (
+            not _state_uuid(participant.id)
+            or not isinstance(participant.display_name, str)
+            or not participant.display_name.strip()
+            or participant.id in participants
+        ):
+            raise ValueError("Invalid lifecycle participant")
+        participants[participant.id] = participant
+    linked = set()
+    for entry in state["meeting_participants"]:
+        if (
+            entry["participant_id"] not in participants
+            or entry["participant_id"] in linked
+            or entry["role"] is not None
+            and not isinstance(entry["role"], str)
+        ):
+            raise ValueError("Invalid lifecycle participant link")
+        linked.add(entry["participant_id"])
+    if set(participants) != linked:
+        raise ValueError("Lifecycle participant snapshot must contain linked identities only")
+    assigned = set()
+    for entry in state["speaker_assignments"]:
+        scope_key = (entry["revision_id"], entry["speaker_key"])
+        if (
+            not _state_uuid(entry["revision_id"])
+            or not isinstance(entry["speaker_key"], str)
+            or not entry["speaker_key"]
+            or scope_key in assigned
+            or entry["participant_id"] is not None
+            and entry["participant_id"] not in linked
+        ):
+            raise ValueError("Invalid lifecycle speaker assignment")
+        assigned.add(scope_key)
+    events = set()
+    for entry in state["lifecycle_events"]:
+        if (
+            not _state_uuid(entry["id"])
+            or entry["id"] in events
+            or entry["kind"]
+            not in {"status_changed", "metadata_updated", "participant_linked", "speaker_assigned"}
+            or not isinstance(entry["occurred_at"], str)
+            or not isinstance(entry["payload"], str)
+            or entry["recorded_duration_ms"] is not None
+            and (
+                type(entry["recorded_duration_ms"]) is not int or entry["recorded_duration_ms"] < 0
+            )
+        ):
+            raise ValueError("Invalid lifecycle event")
+        datetime.fromisoformat(entry["occurred_at"])
+        payload = json.loads(entry["payload"])
+        if not isinstance(payload, dict) or set(payload) - {"from", "to", "fields"}:
+            raise ValueError("Invalid lifecycle event payload")
+        for key in ("from", "to"):
+            if payload.get(key) is not None:
+                MeetingStatus(payload[key])
+        if "fields" in payload and (
+            not isinstance(payload["fields"], list)
+            or len(payload["fields"]) > 2
+            or any(
+                not isinstance(value, str) or value not in {"title", "notes"}
+                for value in payload["fields"]
+            )
+        ):
+            raise ValueError("Invalid lifecycle event edited fields")
+        events.add(entry["id"])
+    assets = set()
+    for entry in state["audio_assets"]:
+        asset = AudioAsset(**entry)
+        if (
+            not _state_uuid(asset.id)
+            or asset.id in assets
+            or not _state_digest(asset.sha256)
+            or asset.status not in {"available", "missing", "corrupt"}
+            or not isinstance(asset.relative_path, str)
+            or not isinstance(asset.codec, str)
+            or any(
+                type(entry[key]) is not int or entry[key] < 0
+                for key in ("size_bytes", "duration_ms")
+            )
+            or any(
+                type(entry[key]) is not int or entry[key] <= 0
+                for key in ("sample_rate", "channels")
+            )
+        ):
+            raise ValueError("Invalid lifecycle audio asset")
+        assets.add(asset.id)
+    origins = set()
+    for entry in state["ingest_sources"]:
+        source = IngestSource(**entry)
+        origin_key = (source.origin_path, source.origin_fingerprint)
+        if (
+            not _state_uuid(source.id)
+            or not isinstance(source.origin_path, str)
+            or not source.origin_path
+            or not _state_digest(source.origin_fingerprint)
+            or source.revision_id is not None
+            and not _state_uuid(source.revision_id)
+            or origin_key in origins
+        ):
+            raise ValueError("Invalid lifecycle origin")
+        origins.add(origin_key)
+    return state
+
+
+def read_meeting_state(directory: Path, name: str, meeting_id: str) -> dict[str, Any]:
+    """Keep the schema-1 caller contract while validating both envelope versions."""
+    return cast(dict[str, Any], read_meeting_snapshot(directory, name, meeting_id)["meeting"])
 
 
 def write_durable_json(path: Path, value: object) -> None:

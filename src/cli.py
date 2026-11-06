@@ -4,7 +4,7 @@ from collections.abc import Callable
 from dataclasses import asdict, dataclass, is_dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, cast
 from uuid import UUID
 
 import typer
@@ -20,7 +20,8 @@ from here.config.paths import get_data_dir
 from here.config.settings import get_settings, settings_operation
 from here.live_processing import LiveTranscriptionController
 from here.memory.database import LibraryError
-from here.memory.service import MemoryService
+from here.memory.models import MeetingPatch
+from here.memory.service import Conflict, InvalidInput, MemoryService, NotFound
 from here.output.metadata import (
     ChunkMetadata,
     ErrorMetadata,
@@ -104,7 +105,7 @@ def memory_reconcile(json_output: bool = typer.Option(False, "--json")) -> None:
     try:
         report = MemoryService(get_data_dir()).reconcile()
     except (LibraryError, OSError) as exc:
-        _memory_error(exc, json_output, 4)
+        _memory_lifecycle_error(exc, json_output)
         return
     _memory_output(asdict(report), json_output)
 
@@ -123,6 +124,56 @@ def memory_show(meeting_id: str, json_output: bool = typer.Option(False, "--json
         return
     if result is None:
         _memory_error(ValueError("Meeting does not exist"), json_output, 3)
+    _memory_output(result, json_output)
+
+
+def _memory_lifecycle_error(error: Exception, json_output: bool) -> None:
+    if isinstance(error, InvalidInput):
+        category, code = "invalid_input", 2
+    elif isinstance(error, (Conflict, NotFound)):
+        category, code = "conflict", 3
+    else:
+        category, code = "io", 4
+    _memory_output({"error": str(error), "error_category": category}, json_output)
+    raise typer.Exit(code)
+
+
+@memory_app.command("rename")
+def memory_rename(
+    meeting_id: str, title: str, json_output: bool = typer.Option(False, "--json")
+) -> None:
+    try:
+        MemoryService._identity(meeting_id)
+        memory = MemoryService(get_data_dir())
+        shown = memory.show(meeting_id)
+        if shown is None:
+            raise NotFound("Meeting does not exist")
+        meeting = cast(dict[str, object], shown["meeting"])
+        result = memory.update_meeting(
+            meeting_id,
+            MeetingPatch(title=title),
+            expected_version=cast(int, meeting["row_version"]),
+        )
+    except (LibraryError, OSError) as exc:
+        _memory_lifecycle_error(exc, json_output)
+        return
+    _memory_output(result, json_output)
+
+
+@memory_app.command("participant")
+def memory_participant(
+    meeting_id: str,
+    display_name: str,
+    speaker: str | None = typer.Option(None, "--speaker"),
+    json_output: bool = typer.Option(False, "--json"),
+) -> None:
+    try:
+        result = MemoryService(get_data_dir()).add_meeting_participant(
+            meeting_id, display_name, speaker_key=speaker
+        )
+    except (LibraryError, OSError) as exc:
+        _memory_lifecycle_error(exc, json_output)
+        return
     _memory_output(result, json_output)
 
 
