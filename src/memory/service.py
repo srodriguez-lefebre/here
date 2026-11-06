@@ -62,6 +62,22 @@ class RecoveryReport:
     warnings: tuple[object, ...] = ()
 
 
+class Conflict(LibraryError):
+    """The displayed version is stale; reload before editing again."""
+
+
+class NotFound(LibraryError):
+    """The requested catalog identity does not exist."""
+
+
+class InvalidInput(LibraryError):
+    """The request does not satisfy the explicit lifecycle input contract."""
+
+    def __init__(self, message: str, *, reason: str = "invalid_input") -> None:
+        super().__init__(message)
+        self.reason = reason
+
+
 class OwnershipBusy(Busy):
     """A live job owns the session; no provider or compatibility mutation may start."""
 
