@@ -17,6 +17,159 @@ from typer.testing import CliRunner
 runner = CliRunner()
 
 
+def _lifecycle_cli_json(arguments, expected_exit=0):
+    result = runner.invoke(cli_module.app, ["memory", *arguments, "--json"])
+    assert result.exit_code == expected_exit, result.output + repr(result.exception)
+    assert result.stdout.strip(), result.output
+    return json.loads(result.stdout)
+
+
+@pytest.fixture
+def lifecycle_cli(tmp_path, monkeypatch):
+    from here.memory.service import MemoryService
+    from memory_fixtures import MEETING_ID, make_session
+
+    root = tmp_path / "data"
+    monkeypatch.setenv("HERE_DATA_DIR", str(root))
+    monkeypatch.setenv("HERE_ENV_FILE", str(tmp_path / "absent.env"))
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("Lifecycle CLI allocated provider/network work")
+
+    monkeypatch.setattr("socket.socket.connect", forbidden)
+    monkeypatch.setattr("here.transcription.client.build_client", forbidden)
+    memory = MemoryService(root)
+    source = make_session(tmp_path / "source", meeting_id=MEETING_ID)
+    assert memory.ingest_session(source.directory).status == "inserted"
+    return memory, MEETING_ID
+
+
+def test_memory_lifecycle_cli_rename_persists_unicode_title_and_current_version(lifecycle_cli):
+    memory, identity = lifecycle_cli
+    version = memory.show(identity)["meeting"]["row_version"]
+    result = _lifecycle_cli_json(["rename", identity, "Agenda sintética ágil"])
+    assert result["meeting"]["title"] == "Agenda sintética ágil"
+    assert memory.show(identity)["meeting"]["row_version"] == version + 1
+
+
+@pytest.mark.parametrize("assign", [False, True])
+def test_memory_lifecycle_cli_participant_links_and_optionally_assigns_stored_key(
+    lifecycle_cli, assign
+):
+    import sqlite3
+    from contextlib import closing
+
+    memory, identity = lifecycle_cli
+    shown = memory.show(identity)
+    arguments = ["participant", identity, "Persona sintética"]
+    if assign:
+        arguments += ["--speaker", shown["segments"][0]["speaker_key"]]
+    result = _lifecycle_cli_json(arguments)
+    assert isinstance(result, dict)
+    with closing(sqlite3.connect(memory.data_dir / "library.sqlite3")) as connection:
+        participants = connection.execute("SELECT id,display_name FROM participants").fetchall()
+        assert len(participants) == 1 and participants[0][1] == "Persona sintética"
+        assert connection.execute(
+            "SELECT meeting_id,participant_id FROM meeting_participants"
+        ).fetchall() == [
+            (identity, participants[0][0]),
+        ]
+        assignments = connection.execute(
+            "SELECT revision_id,speaker_key,participant_id FROM speaker_assignments"
+        ).fetchall()
+        assert assignments == (
+            [
+                (
+                    shown["meeting"]["active_revision_id"],
+                    shown["segments"][0]["speaker_key"],
+                    participants[0][0],
+                )
+            ]
+            if assign
+            else []
+        )
+    assert memory.show(identity)["segments"] == shown["segments"]
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        ["rename", "not-a-uuid", "Name"],
+        ["participant", "not-a-uuid", "Name"],
+        ["participant", "11111111-1111-4111-8111-111111111111", "  "],
+        ["participant", "11111111-1111-4111-8111-111111111111", "Name", "--speaker", "speaker_0"],
+    ],
+)
+def test_memory_lifecycle_cli_invalid_input_is_json_exit_two(lifecycle_cli, arguments):
+    import sqlite3
+    from contextlib import closing
+
+    error = _lifecycle_cli_json(arguments, 2)
+    assert error["error"]
+    memory, _identity = lifecycle_cli
+    with closing(sqlite3.connect(memory.data_dir / "library.sqlite3")) as connection:
+        assert connection.execute("SELECT COUNT(*) FROM participants").fetchone()[0] == 0
+        assert connection.execute("SELECT COUNT(*) FROM speaker_assignments").fetchone()[0] == 0
+
+
+@pytest.mark.parametrize("command", ["rename", "participant"])
+def test_memory_lifecycle_cli_missing_meeting_is_json_exit_three(lifecycle_cli, command):
+    error = _lifecycle_cli_json([command, "22222222-2222-4222-8222-222222222222", "Absent"], 3)
+    assert error["error"]
+
+
+@pytest.mark.parametrize("command", ["rename", "participant"])
+def test_memory_lifecycle_cli_corrupt_catalog_is_json_exit_four(tmp_path, monkeypatch, command):
+    root = tmp_path / "catalog"
+    root.mkdir()
+    database = root / "library.sqlite3"
+    database.write_bytes(b"Synthetic corrupt lifecycle database")
+    monkeypatch.setenv("HERE_DATA_DIR", str(root))
+    error = _lifecycle_cli_json([command, "11111111-1111-4111-8111-111111111111", "Name"], 4)
+    assert error["error"]
+    assert database.read_bytes() == b"Synthetic corrupt lifecycle database"
+
+
+def test_memory_lifecycle_cli_reconcile_exposes_detailed_local_outcomes(lifecycle_cli):
+    memory, identity = lifecycle_cli
+    memory.set_status(identity, "processing")
+    result = _lifecycle_cli_json(["reconcile"])
+    assert all(
+        isinstance(result[name], list)
+        for name in ("warnings", "completed", "reverted", "marked", "skipped")
+    )
+    assert any(item["identity"] == identity and item["reason"] for item in result["marked"])
+    assert memory.show(identity)["meeting"]["status"] == "interrupted"
+
+
+def test_memory_lifecycle_cli_stale_rename_is_json_conflict_without_overwrite(
+    lifecycle_cli, monkeypatch
+):
+    from here.memory import models
+    from here.memory.service import MemoryService
+
+    memory, identity = lifecycle_cli
+    original = MemoryService.update_meeting
+    competed = []
+
+    def concurrent_edit(self, meeting_id, patch, expected_version):
+        if not competed:
+            competed.append(meeting_id)
+            original(
+                memory,
+                meeting_id,
+                models.MeetingPatch(title="Concurrent winner"),
+                expected_version=expected_version,
+            )
+        return original(self, meeting_id, patch, expected_version=expected_version)
+
+    monkeypatch.setattr(MemoryService, "update_meeting", concurrent_edit)
+    error = _lifecycle_cli_json(["rename", identity, "Stale CLI loser"], 3)
+    assert error["error"]
+    assert competed == [identity]
+    assert memory.show(identity)["meeting"]["title"] == "Concurrent winner"
+
+
 class _FakeSource:
     label = "microphone"
     device_name = "Asterisk Nova"
