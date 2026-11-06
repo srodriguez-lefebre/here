@@ -143,7 +143,8 @@ need root's quiet resource window without competing tests/builds/mypy.
 ## Review focus
 
 - Operator-looking user input (`NEAR`, `*`, `^`, `-x`, `title:x`, unbalanced quotes).
-- Cursor stability when a meeting is inserted or deleted between pages.
+- Listing keyset stability across inserts/deletes, and R45 search-generation
+  rejection before using ranks changed by any corpus mutation, including nonmatches.
 - Filters applied after `LIMIT` by mistake.
 - A late response from a superseded request replacing the current result.
 - Conflict handling on title edit with a stale `row_version`.
@@ -187,15 +188,23 @@ Use the existing accepted FTS probe before adding any capability implementation.
   and escape characters treated literally in both partial and missing-FTS routes.
 - [ ] Implement normalization and expression building.
 - [ ] Write failing tests for listing and search: empty query lists by date then id;
-  filters before limit; cursor round trip across two pages with an insert in between;
+  filters before limit; listing cursor round trip across two pages with an insert in between;
   malformed cursor → `InvalidInput`; `deleting`, historical and partial exclusion;
   `include_partial` badge flag. Include unknown-date audio-only lineage and a
   reservation without a revision; retain unknown fields. Assert list/search exact
   R39 ordering across equal dates, NULL and non-NULL cursor boundaries and equal
   ranks; from inclusion/to exclusion and exclusion of NULL under either date
   bound; identical date rules in FTS/fallback; mismatched cursor query/filter/order
-  and malformed NULL flags return `InvalidInput`. Cover inserts/deletes between
-  pages without OFFSET, sentinels, duplicate rows or invented dates.
+  and malformed NULL flags return `InvalidInput`. Cover listing inserts/deletes
+  between pages without OFFSET, sentinels, duplicate rows or invented dates.
+  Under R45, stable-corpus ranked pages retain their complete R39 continuation;
+  a nonmatching insert, deletion, title/revision/filter-relation change or accepted
+  suppression from another connection rejects an old search cursor with structured
+  `InvalidInput(corpus_changed)` before returning items. A fresh cursor-free query
+  returns the correct current ordering without duplicates/suppressed hits. Check
+  reproducible generation across fresh service/connection instances, no hit-only
+  generation, no cross-connection data_version shortcut and all FTS/hybrid/fallback
+  routes. Existing listing insert/NULL controls must continue without invalidation.
   Mixed complete/partial matches must cross the global LIMIT/rank/date-NULL keyset
   correctly; complete ranks retain BM25, partials are literal rank 0 and badged.
   Assert no historical/deleting/suppressed hits, no per-branch truncation and
@@ -203,6 +212,16 @@ Use the existing accepted FTS probe before adding any capability implementation.
   text, at most 160 characters, with only measured/absent timing information.
 - [ ] Implement queries with `bm25()` ordering, filters in SQL, opaque cursors and
   bounded `snippet()`.
+  Bind search cursors to R45's deterministic complete-corpus/visibility generation
+  in the same short read snapshot as the page; reject changed generations before
+  keyset evaluation. Default to existing metadata/immutable-revision digest, with
+  the coherent B5 suppression snapshot; no migration, persistent cache, extra writer
+  or connection-local counter treated as a global generation. Measure the unchanged
+  p95 budget with this actual generation work included.
+  Prove metadata covers the actual logical FTS documents, including filtered or
+  suppressed rows still affecting statistics and index-only maintenance changes.
+  Canonically order/encode inputs and hold one explicit read transaction through
+  generation and full page fetch, retaining existing bounded database handling.
   Add R41's read-only active-partial literal branch only when opted in; UNION ALL
   before global R39 cursor/LIMIT, with common filters/suppression applied first.
   Consume B5's accepted R42 guard through its private adapter before real read
@@ -242,6 +261,9 @@ root reserves any common UI/contract file against B's concurrent GUI integration
   closing the detail drops its callback; both empty states and their actions.
   Queue an older result before a logically accepted B deletion, deliver it after
   the guard changes, and prove request invalidation prevents row/detail resurrection.
+  Deliver structured `corpus_changed` on a continuation and assert the existing
+  request/loading path clears that cursor, requests page one and replaces old pages;
+  a superseded callback cannot append stale hits or trigger provider work.
 - [ ] Implement the tab, search field with debounce, filters, list model and detail
   pane fed only by DTOs from the controller.
 - [ ] Write failing tests for title editing: stale `row_version` shows conflict and

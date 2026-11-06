@@ -137,6 +137,37 @@ cursor branch before combining with the bound filters. Apply the same date/null
 ordering and filtering in the literal fallback; its uniform rank key is `0`,
 while the FTS branch retains BM25 ordering. Never use OFFSET paging.
 
+R45 binds every `SearchQuery` cursor to a deterministic logical corpus generation
+as well as the keys above. BM25 uses corpus-wide statistics, so even a nonmatching
+insert can change existing ranks. Generation and page must come from the same
+short explicit SQLite read transaction through generation, query and page fetch,
+with the coherent validated B5 suppression snapshot. Cover the actual logical FTS
+document corpus, including nonmatching, filtered and already-suppressed documents
+still present in FTS and affecting its statistics,
+plus the active partial branch when selected and all metadata/relations affecting
+eligibility. The default is a read-only canonical digest of existing catalog
+metadata: immutable active-revision identities (which bind segment content),
+indexed titles, status/date/version and filter relations, with R42 suppression.
+Metadata is sufficient only where immutable-revision and index-maintenance
+invariants prove equivalent coverage of actual rank inputs; index-only changes
+must not silently alter those inputs under an unchanged token. Use deterministic
+canonical ordering/encoding, not process-local iteration order or randomized hashes.
+No new schema, persistent result cache, long-lived read transaction or second
+index writer is introduced. Do not substitute query-hit-only hashes, file mtimes
+or cross-connection `PRAGMA data_version`; each operation opens its own connection.
+Equivalent corpus inputs across fresh connections must produce the same token.
+
+Before applying a saved rank, compare that cursor generation with the current
+snapshot. A mismatch raises existing `InvalidInput` with a machine-readable
+`corpus_changed` reason; return no mixed-generation page or continuation cursor.
+Restart without a cursor to rank the current corpus. This applies consistently
+to FTS, hybrid and literal search routes, retaining their existing bound mode and
+R39 keys. No-op reindex with identical logical rank inputs preserves equivalence;
+changed index semantics/corpus must not reuse an old generation. The performance
+and quiet-window requirements remain unchanged. `MeetingQuery.list_meetings`
+retains its date/ID keyset and original insert-between-pages acceptance; do not
+invalidate ordinary listing cursors under this search-specific rule.
+
 Snippets come from FTS5 `snippet()` with plain-text markers and a bounded length;
 the UI renders them as text, never as HTML. Results carry `meeting_id`,
 `revision_id`, `segment_id`, snippet, `start_ms`/`end_ms` when present and
@@ -207,7 +238,11 @@ coincidencias" (action: clear filters).
 All queries run through `BackgroundJobs` in `src/ui/bridge.py`, off the Qt thread,
 with a 200 ms debounce on text input and a monotonic request id; a result whose id
 is older than the latest request is discarded. Closing a detail invalidates its
-callbacks. Title editing calls `MemoryService.update_meeting` with the displayed
+callbacks. A structured R45 `corpus_changed` result discards the old search cursor
+and starts the current query from page one through the same request/loading path,
+replacing rather than appending old pages. Superseded callbacks remain invalid;
+no new control, persistent snapshot or warning-prose parsing is required.
+Title editing calls `MemoryService.update_meeting` with the displayed
 `row_version`; a `Conflict` is shown and the row is refreshed, never overwritten.
 The real title-edit adapter and its acceptance depend on the accepted M2 B task-4
 contract; independent query/worker/detail preparation may proceed beforehand.
@@ -285,5 +320,9 @@ only as a type in `src/memory/models.py` so group B and M4 share it.
 
 - [SQLite FTS5](https://www.sqlite.org/fts5.html): `MATCH` syntax, `bm25()`,
   `snippet()`, tokenizer options and the need to quote user tokens.
+- [SQLite BM25](https://www.sqlite.org/fts5.html#the_bm25_function): corpus-wide
+  rank statistics require generation-bound continuation after mutations.
+- [SQLite data_version](https://www.sqlite.org/pragma.html#pragma_data_version):
+  its connection-local values are not a cross-connection corpus generation.
 - [Qt QThread and worker objects](https://doc.qt.io/qtforpython-6/PySide6/QtCore/QThread.html):
   queued signals and the request-sequence pattern already used by `BackgroundJobs`.

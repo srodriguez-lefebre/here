@@ -34,14 +34,22 @@ Ruling 35: después de A, completar el PR de documentación necesario antes de c
 los chats separados M2 B y M3 A. **Todavía no se creó ninguno ni empezó su código.**
 Rama actual de mantenimiento: `codex/m2b-m3a-contracts`; base real A merge
 `53712c5beedafc2d40e2abf10c13362a1c3c9f78`; worktree raíz de orquestación
-`C:/Users/savar/.codex/worktrees/m2-catalog/here`. Número de PR, review final y
-merge de estos contratos: pendientes. No confundir revisión preparatoria con
-aprobación del PR final ni con implementación.
+`C:/Users/savar/.codex/worktrees/m2-catalog/here`. PR de contratos
+[#22](https://github.com/srodriguez-lefebre/here/pull/22), head
+`1fd228fecc255198cfa00f8969d35c609c9de9e6`: review independiente final APPROVED,
+PC1–PC3 ADDRESSED. Copilot5795454802 recibido sobre ese head a03:41:49Z abre
+observación4488791517: BM25 cambia con el corpus y puede invalidar ranks de cursor.
+R45 precisa generación de búsqueda reproducible y rechazo/reinicio estructurado,
+con listado fecha/ID intacto. El diff documental corregido espera review acotada,
+publicación/respuesta y nueva review Copilot. CI1fd pasó980/2wheel skips/294,91 s
+(tests42157559503 y package42157559427 success); será histórico para el head nuevo,
+que requiere sus propios gates. Merge docs pendiente; ningún chat creado.
+No confundir aprobación documental con implementación de B/M3.
 
 Documentos a reconciliar/revisar: `docs/development/M2_LIFECYCLE_SPEC.md` y
 `M2_LIFECYCLE_PLAN.md`; `M3_SEARCH_SPEC.md` y `M3_SEARCH_PLAN.md`;
 agenda de `docs/MILESTONE_3_PLAN.md`. Heredan el A aceptado y R39–R44:
-NULL/cursor y orden estable, búsqueda parcial opt-in sin otro indexador,
+NULL/cursor y orden estable, generación de búsqueda R45, parcial opt-in sin otro indexador,
 barrera durable de borrado/supresión y warnings fail-closed de recuperación.
 M3 A puede avanzar búsqueda independiente desde A; título/reindex y guards
 compartidos esperan el handoff aceptado de B y lease de root. Fakes no cierran
@@ -112,9 +120,16 @@ Preparación futura ya existente: `next-contracts-preparation-report.md`,
 Fixtures de memoria/búsqueda/playback/ZIPs siguen preservados en sus worktrees;
 su generación no certifica benchmark, seek o importador.
 
+Fixture real de actualización 0.2.0 ya descargado una vez desde el workflow M1
+42102224714/artifact13450512413: `.superpowers/m5-upgrade-baseline-0.2.0/`.
+Se verificaron seis checksums y 730 entradas de inventario; reporte
+`.superpowers/m5-upgrade-baseline-preparation-report.md`. No se ejecutó ni instaló:
+es preparación verificada del fixture, no certificación de actualización.
+
 No se leyó el `.env` real ni audio/biblioteca privados. Smokes opt-in futuros usan
 solo HERE_PROVIDER_SMOKE_KEY y texto/audio sintéticos según ruling19, sin imprimir
 ni persistir la credencial. Máquina Windows limpia: pedir al necesitar la fila,
 con protocolo escrito. Prueba de dos horas: **omitida por ruling 5**, nunca aprobada.
-No hay bloqueo humano actual. Próxima acción: completar/revisar/mergear el PR de
+No hay bloqueo humano actual. Próxima acción: cerrar la review del diff R45,
+publicar/responder su hilo y recibir nuevo Copilot/CI exacto; mergear el PR de
 contratos con sus gates, crear los dos chats con briefs y registrar su estado real.

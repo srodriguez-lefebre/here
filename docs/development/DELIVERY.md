@@ -501,6 +501,31 @@ Los rulings nuevos se escriben en español por el ruling 6.
     antes del merge. **Cost if wrong:** ajustar clasificación/advertencia y sus
     lectores, conservando evidencia incierta y bloqueo de toda acción sin ownership.
 
+45. **Ruling:** se corrige la observación `4488791517` de Copilot `5795454802`
+    sobre el PR de contratos #22. Los cursores de `search` atan las claves R39 a
+    una generación lógica reproducible del corpus, calculada en el mismo snapshot
+    de lectura que la página y con el guard R42 coherente. Incluye todo el corpus
+    que afecta BM25, aunque una fila no coincida, un filtro la excluya o ya esté
+    suprimida pero siga en FTS, y los
+    metadatos/relaciones que afectan visibilidad; no solo los hits de la consulta.
+    El default es un digest de metadatos existentes, identidades de revisiones
+    inmutables, títulos y supresión validada, solo donde prueban equivalencia con
+    el corpus FTS real; mantenimiento del índice no cambia el rank sin invalidar
+    ese token. Orden/encoding canónicos y transacción de lectura explícita hasta
+    terminar de obtener la página, sin migración ni caché persistente.
+    No se compara `PRAGMA data_version` entre conexiones distintas. Si cambió la
+    generación, se rechaza el cursor antes de usar su rank con `InvalidInput` y
+    razón estructurada `corpus_changed`; la UI reinicia la consulta desde la
+    primera página mediante sus requests existentes, sin anexar una página vieja.
+    El listado `MeetingQuery` conserva su keyset fecha/ID y su contrato original
+    frente a inserciones: no se invalida por esta regla de búsqueda. Se prueban
+    mutaciones desde otra conexión, incluidas inserciones no coincidentes, y la
+    continuidad entre conexiones con corpus estable. No cambian criterios del
+    hito, flujos públicos, retención, índice persistente, dependencias ni umbrales
+    p95/heartbeat. **Cost if wrong:** ajustar fingerprint/cursor y su recuperación
+    interna antes de cerrar M3, conservando resultados completos, guards de borrado
+    y la paginación de listado ya definida.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
@@ -1708,3 +1733,28 @@ PR number/final review/merge still pending at this checkpoint. R35's two user-vi
 project chats have not been created; their branch/worktree/executor/contract-base
 IDs stay pending. Root remains sole orchestrator/contract/lease/integration/merge
 owner; later M5B starts only after M2B and leaves claims integration until M4B.
+
+## 2026-11-06 — Contract PR #22, BM25 continuation correction
+
+Prepared-contract review PC1–PC3 finalized APPROVED on1fd228f, after A-closure
+commitd8ebe3b. PR #22 opened non-draft with that independent result and evidence;
+Copilot requested on exact1fd at03:36:31Z. Review5795454802 COMMENTED03:41:49Z
+opens inline4488791517: corpus-wide BM25 changes can invalidate a saved-rank
+cursor even after a nonmatching insert. Official SQLite BM25/data_version docs
+confirm the rank inputs and connection-local version limitation.
+
+R45 corrects the planned search contract: canonical complete-corpus generation,
+one explicit read transaction plus coherent suppression, typed stale-cursor
+rejection before old-rank use and restart through existing request handling.
+Date/ID listing keeps its original insertion behavior. This changes no product
+implementation, schema, retention, public flow or milestone acceptance clause.
+Static checks retain all13/12 original SPEC clauses, prepared acceptance sections,
+12/14 unchecked step lines and the full M3 numbered criteria section. The added
+mutation tests are planned, not executed search evidence. Scoped independent
+review of this committed correction remains pending.
+
+Historical exact1fd CI passed980/two wheel skips/294.91s in42157559503 and package
+42157559427 passed; root retained/read `.superpowers/contracts-ci-42157559503.log`.
+These are not the corrected-head gates. Reply4488791517 with the reachable fix,
+request/receive new Copilot and get complete exact-head Windows tests/package
+green before guarded merge. No future chat or implementation has started.
