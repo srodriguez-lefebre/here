@@ -1059,6 +1059,38 @@
       "report": "r61-row-controls-1-report.md",
       "working_tree_changes": "NONE;isolatedGREEN2e69/source04f3/tests1ebd/config7143,ALL84raw/Git+interpreter invariant,oracle11E2unchanged. NOTprimaryb560/combinedR58-R61 invocation.",
       "scope": "First equivalence PASS is CONTROL,notRED.7realpacketbyte/digest/error/factoryvectors compare measuredoldv2data;8threaloldcursor/freshconn/SECONDrealBnoop/5IDs/namedlist-detail. CaptureexplicitlyDESELECTED,0skip. No universalencoder/toolchain/customfactory/p95/fullTask1claim."
+    },
+    {
+      "name": "M3A-R61-ORIGINAL-QUERY-BENCHMARK-VALID-BUDGET-FAILURE",
+      "classification": "ACTUAL_R61_VALID_COMPLETE40_SAMPLE_BUDGET_FAILURE",
+      "head": "2e69c117c66f2ed1763b4e507c76947729dd9647",
+      "source_tree": "04f3fd9802b378efc588df393d92e238915f203f",
+      "tests_tree": "1ebd4f67002a13300f454e18dcb49580d9d416e0",
+      "config_blob": "7143d4deff5acb55e524baa5ee15c101bce9b3b5",
+      "workdir": "C:/Users/savar/.codex/worktrees/m3-search-green/here",
+      "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -m pytest -vv tests/test_memory_search_benchmark.py::test_warm_search_p95_with_actual_corpus_generation_and_visibility_guard --junitxml=C:\\Users\\savar\\.codex\\worktrees\\2710\\here\\.superpowers\\sdd\\M3_SEARCH_PLAN/r61-query-benchmark-1.xml",
+      "exit_code": 1,
+      "collected": 1,
+      "selected": 1,
+      "passed": 0,
+      "failed": 1,
+      "setup_errors": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "duration_seconds": 49.08,
+      "xml_cases": 1,
+      "xml_internal_seconds": 48.73,
+      "log": "r61-query-benchmark-1.log",
+      "xml": "r61-query-benchmark-1.xml",
+      "bindings": "r61-query-benchmark-1-pre-bindings.json",
+      "post_bindings": "r61-query-benchmark-1-post-bindings.json",
+      "exits": "r61-query-benchmark-1-exit.json",
+      "log_sha256": "EE3B28D357AFE5D8E35DD9775C6C91BB3E8348D6CBFEC939FFD449B0736C38E5",
+      "xml_sha256": "0FC076C9B1EC36C8CAE1FAEFA05AAF2EB651ACEE3E8B78D82204D952F7162EE5",
+      "report": "r61-query-benchmark-1-report.md",
+      "working_tree_changes": "NONE;actualisolatedGREEN2e69/source04f3/tests1ebd/config7143,ALL84raw/Git+interpreter invariant. No retry,instrumentation,fixture/helper/source/config/EOLchange or R57query/rebuild. NOTprimary/combinedR58-R61 invocation.",
+      "warnings": "2retained:unchangedslowmarker+record_property/xunit2,no suppression/configfix/rerun",
+      "scope": "VALID complete5warmups+40correctpublicqueries thenoriginalstrictp95<500FAIL at848.6797799909255ms. Setup11.002631799987284s outsideintervals;fullactualguard/generation/fetch/close. Notsetupfailure/partial/falseRED;historical902/1303failures andfunctional8+10/240PASS retainedseparately. No causal speedup/hostcause/500claim."
     }
   ],
   "lint_checkpoint": {
@@ -1117,14 +1149,14 @@
     "Real sole B reindex/page/partial/fallback/SECOND-noop evidence is complemented by actualR53 GREEN11 and bounded T1/T2 approvals atd8. Callback/composition checkpoint is approved; complete Task1/Task2/B5 and final integration/performance/type/full gates remain held.",
     "Accepted B496e8 producer integrated; actual current/stale title/version/evidence/FTS consumers and truthful UI types approved at D1/ed8. Historical44/no-new-mypy does not constitute fresh E3 or final B5-integrated acceptance.",
     "Implemented UI fixes, D1 types/title and bounded E3 display/preview checkpoints approved at their scopes. Final B5-integrated preview, broader layout/accessibility, complete Task2 and integrated verification/global/hosted gates remain pending.",
-    "Strict original8query50msgatePASS onlyauthor2b/source12774/context,SameT2boundedAPPROVED;page/page,title/read,crossview/externalowner remainoutside. Actual query valid40 p95902.413285ms FAILED versus unchanged <500ms budget;R61isolatedexistingcontrols10+regression240PASS,hygienePASS;bytecaptureCAPTURED_REAL_APPROVED/equivalence8CONTROL_PASS_BOUNDED_APPROVED,notintegrated or performancepass/Bwait. R61originalp95packageREADY/NOT_RUN/no grant;historical902FAILED.",
+    "R58strict8query50msgatePASSonlyauthor2b/source12774/context,exclusionspage/page/title/read/crossview/externalheld. R61isolatedfunctional8+10/240/scopedapprovalseparate;actualvalid40p95848.6797799909255FAILED unchanged500. Historical902/1303retained,R61notintegrated/combined,no newfix/diagnostic/repeat.",
     "FreshR58UI44/heartbeat1 atworker2b andtwofilehygienePASS;source integrated38byGitblobequivalence,notfreshprimaryrun. Currentmypy/full/UIpreview/native/delete/global/hosted gatesremainheld;historicalR55/oldsourceproofs preserved.",
     "Complete same Task1 assessment and task docs/evidence; root global integration docs only when capacity ready; Task2 and later single global review.",
     "Received/responded current-head Copilot, exact-head Windows CI/package as required, PR and guarded root merge. No M3 hosted gate has started in this checkpoint."
   ],
   "not_run": {
-    "large_corpus_benchmark": "Queryp95 remainsFAILED on actual0bea/R55e198 separatelybound runs,latest902.413285>500. R58originaluninstrumentedUIgatePASS at author2b/source12774 only;instrumentedR55observerfailure/history unchanged. Noqueryp95transferorclosure.",
-    "guarded_p95": "FAILED latestR55:valid40 p95902.4132849997841ms vs unchanged<500,actualb9+stagednewteststyle/e198/a2ac/7143; historical0bea1303.482595failure unchanged.",
+    "large_corpus_benchmark": "EXECUTED querybudgetFAILED atseparatelybound0bea1303.482595/R55e198902.413285/R61isolated04f3848.6797799909255,nonewaived. R58originalUI50msgatePASSonlyauthor2b/context;priorUIincompletesunchanged.",
+    "guarded_p95": "FAILED latestactualisolatedR61/source04f3valid40p95848.6797799909255ms vsunchanged<500;historicalR55/sourcee198902.413285 andoriginal0bea1303.482595FAILS preserved. Nocombinedprimarysourceacceptance.",
     "qt_heartbeat": "PASS originaluninstrumented8querygate at exactauthor2b/source12774/context:8callbacks/renderdrains,final50msassertreached,max8.9216ms. SameT2boundedAPPROVED;source integrated38 by83Gitblobequivalence,NOTnewprimaryinvocation or83rawidentity. BroaderTask2/group/native/full gates remainheld.",
     "real_B4_R48_B5_integration": "Historical B4/R48 consumers retain their source scope. R50 actual guard/real-B-reindex checkpoint is bounded-approved at D6; R53 facade/composition and R50 interaction are bounded-approved at d8 with actual 11 passes and a separate 228-pass/1-benchmark-skip regression. Complete B5/UI delete ACK/native/R52/current full/types remain PENDING; no complete task/group approval.",
     "ui_source_green": "Current boundedR58UI44+original8queryheartbeatPASS atworker2b/source12774,SameTask2boundedAPPROVED;mechanicallyintegrated38by83Gitblobequivalence. Finalcurrentfull/UIpreview/types/B5delete/native/completeTask2acceptance remainsheld; no executionat38 transferred.",
@@ -1555,7 +1587,7 @@
     "stage_scope": "Historical7e UI42/fix approval and5a81 static integration; later D1 types/title and E3 display checkpoints supersede its pending B4/mypy preparation state without changing original evidence."
   },
   "current_integrated_checkpoint": {
-    "frozen_main": "38cff90dba7bd2914e44491ec60e8cf58771a2f4",
+    "frozen_main": "b8a76cbcc5ef7c5716818bd7b69a872cc97ff0f3",
     "docs_sync_merge": "31b075170f33227d1d632217f3cec8a686fc1a2f",
     "source_tree": "12774a1e6702ab943934280d05d0de6897e8378d",
     "tests_tree": "a2acb894f96523dae6e871fc65a9e13d6c7eb4e5",
@@ -1563,12 +1595,12 @@
     "query_blob": "f3033a16f83c093c2179bb3c3fb7d9cb0389fb37",
     "ui_contract_blob": "10b5665aeac6aad2da3731058dfe414f1b241c6b",
     "stage": "R58_BOUNDED_APPROVED_UI44_AND_STRICT50MS_PASS_QUERY_P95_FAILED",
-    "latest_source_evidence": "HistoricalR55/observer/R57bindings retained. R58author2b/source12774UI44+strict8query50msgatePASS/scopedT2APPROVED integrated38by83Gitblobs,3EOLrawdifferences;NOTprimaryinvocation/rawidentity. IsolatedR61source04f3 priorab83710+240PASS;actual2e69/tests1ebd8measured-v2CONTROL_PASS andscopedT1APPROVED. SourceR61notintegrated/combined,no p95proof;historical902FAILED,R61benchmarkREADY_NOTRUN.",
+    "latest_source_evidence": "PrimaryR58source12774remainsseparatefromisolatedR61. R61actual2e69/source04f3/tests1ebd8parityCONTROL/scopedT1functionalAPPROVED,prior10+240PASS. Laterseparateoriginalbenchmark1F/valid40p95848.6797799909255>500,notcombinedR58-R61/primaryrun. Historical902/1303FAILS retained,no sourcefix orTask1M3closure.",
     "task1_task2_group_milestone": "OPEN",
     "certified": false,
-    "current_parent_test_only_head": "38cff90dba7bd2914e44491ec60e8cf58771a2f4",
+    "current_parent_test_only_head": "b8a76cbcc5ef7c5716818bd7b69a872cc97ff0f3",
     "current_parent_test_only_tests_tree": "a2acb894f96523dae6e871fc65a9e13d6c7eb4e5",
-    "current_parent_delta_scope": "Root integration38ONLYlibrary/bridge62additions afterscopedreviewapproval;actualrunsstillworker2b. Source12774/tests a2ac/config7143,83Gitblobs match; EOL-onlyrawdifferences models/library/search_fixtures preserved. R61notintegrated."
+    "current_parent_delta_scope": "AfterR58integration38,docs-only35integrationb8 leavesprimarysource12774/tests a2ac/config7143 unchanged. ActualR61allrunsremainisolated2e69/source04f3,notprimary/combinedsource."
   },
   "B4_types_title_checkpoint": {
     "accepted_B4": "96e8aed255a442acb14bbdff5c32877ec201c628",
@@ -2101,12 +2133,12 @@
   },
   "documentation_checkpoint": {
     "status": "FROZEN_BOUNDED_EVIDENCE_CHECKPOINT_READY_FOR_PARENT_INTEGRATION",
-    "source_freeze": "38cff90dba7bd2914e44491ec60e8cf58771a2f4",
+    "source_freeze": "b8a76cbcc5ef7c5716818bd7b69a872cc97ff0f3",
     "report": "guarded-generation-r55-docs-checkpoint-report.md",
     "runtime": "NONE; root/B owns host",
     "no_M3B_regeneration": "Existing root M3B SPEC03207dd/PLAN9c177e5 remains owned by root; no duplicate preparation or start",
-    "recording_cutoff": "35pytestrecords=ALL34priorunchanged+actual2e69measured-v2comparison8P/1captureDESELECTED/0skip. Entirepreview/types/criteria unchanged;boundedT1functionalAPPROVED,notTask1/M3/p95.",
-    "future_preparation": "R61originalbenchmark93A5/0295READY_NOT_RUN/no grant/nohostreservation,unchanged5warmups/40/500. SameUI_REDpreparesR52controls,handoffpending. Nofutureexecution/combinedsourceclaim."
+    "recording_cutoff": "36pytestrecords=ALL35priorunchanged+oneactualisolatedR61originalbenchmark1F49.08/XML48.730/valid40p95848.6797799909255FAILED. Entirepreview/types/criteria unchanged;functionalapprovalseparate,Task1M3NOTAPPROVED.",
+    "future_preparation": "No newruntime/sourcefix/diagnostic/benchmarkrepeat authorizedbyvalidfailure. SAMEreviewactualperformanceupdateconfirmsFAILED848.68/functionalapprovalpreserved;R52controls preparation/handoffpending only. No future results included."
   },
   "R53_facade_checkpoint": {
     "status": "BOUNDED_SPEC_QUALITY_APPROVED_WITH_ACTUAL_GREEN_AND_CURRENT_REGRESSION",
@@ -2463,7 +2495,7 @@
     "hygiene": "ONLYnewtestI001/formatinitialfindings retained; safeimportsort/layout finalcheck+formatPASS. SourceRuff/mypy/full/UI NOTRUN inthisgrant.",
     "release": "GLOBALRELEASEimmediatelyafterlastbenchmarkprocessBEFOREXML/metrics/analysis/reports/review/commit;all80raw/treeunchanged",
     "UI": "Later actual observer526 at cleanf9/e198/a2ac executed once1F,observational diagnostic only; uninstrumented heartbeat NOT_RUN. Old0beaBusyINCOMPLETE retained without retrocause.",
-    "next": "R55/R58anddiagnosticproofsretain separate scopes. R61isolatedab837 existing10+240+hygienePASS;bytecaptureCAPTURED_REAL_APPROVED/equivalence8CONTROL_PASS_BOUNDED_APPROVED/notintegrated. No performance500 or combinedsourceacceptance."
+    "next": "R55/R58historicalproofsremainbound;isolatedR61functionalapproved butactualR61p95848.68FAILED. No combinedsource/primaryintegration/performance500acceptance;historical902/1303 retained."
   },
   "guarded_query_cost_diagnostic": {
     "report": "guarded-query-cost-profile-report.md",
@@ -2585,19 +2617,19 @@
     "primary_integration": "Root-approved mechanical handback38cff90dba7bd2914e44491ec60e8cf58771a2f4,ONLYlibrary/bridge62additions,source12774/tests a2ac/config7143. ALL83Gitblobs match actualexecuted2b;primary/worker rawEOL-only differences models,library,search_fixtures declared/normalizedidentical. NO83rawidentity or invocationat38 claimed.",
     "independent_review": "SAME Task2 FINALboundedR58APPROVED at frozen2b,no confirmedCritical/Important/Minor; r58-ui-review-report.md. CompleteTask2/group/M3 remainopen,no priorreviewrestart.",
     "limits": "Bounded auxiliary(participants/detail)↔page only. Page↔page/title↔read/crossview/externalownership outside; genuine Busy/Retry intact. Strict50msgate passonlyTHISsource/context,no p95500/full/types/hardware/task/group approval.",
-    "query": "Historicalvalid40p95902.413285>500FAILED. SeparateisolatedR61source04f3existingab83710/240PASS andactual2e69/tests1ebd8parityCONTROL/scopedT1APPROVED,oracle11E2unchanged. No combinedR58/R61/primaryintegration or optimized500claim;benchmarkREADY_NOTRUN.",
+    "query": "IsolatedR61functional8+10/240/scopedapprovalretained. LateroriginalR61valid40p95848.6797799909255>500FAILED;old902/1303failuresunchanged. R61notintegrated/combinedR58-R61,nocausal speedup/500claim.",
     "integration_bindings": "r58-ui-primary-integration-bindings.json",
     "integration_bindings_sha256": "D6FAED180A48BCD26B647FE41878BAFF915860FBD024CB4582E342AD25396127"
   },
   "R61_source_preparation": {
-    "status": "ISOLATED_BOUNDED_FUNCTIONAL_CONTROL_QUALITY_APPROVED_BYTE_CURSOR_MATRIX_PASS_P95_NOT_RUN",
+    "status": "ISOLATED_BOUNDED_FUNCTIONAL_APPROVED_ORIGINAL_P95_EXECUTED_FAILED",
     "commit": "ab837b987ff9ba759e8aae3dea14a1d89daaef33",
     "worktree": "C:/Users/savar/.codex/worktrees/m3-search-green/here",
     "source_tree": "04f3fd9802b378efc588df393d92e238915f203f",
     "query_blob": "9e7d8e0fb626fab8773f424e55544693bd3b7cb5",
     "report": "guarded-generation-optimization-proposal.md,R61sourcecheckpoint",
     "proposal_sha256": "A315A1CA0619C14463392D2B53F0CADB3F5B8DFDFA1836726465D59D46EA248C",
-    "scope": "Originalab837production04f3unchanged;existing10+240separatePASS,actual2e69eightmeasured-v2comparisonPASS. SAME T1 finalboundedSPEC/functional/controlqualityAPPROVED,noC/I/Minor. No primaryintegration/combinedR58-R61;R61p95NOT_RUN,historical902FAILED/Task1M3NOTAPPROVED.",
+    "scope": "Identicalproduction04f3:existingab83710+240 andactual2e69eightparityCONTROL_PASS/scopedT1functionalAPPROVED retained. Separateactual2e69originalqueryp95valid40FAILED848.6797799909255>500. Historical902/1303 unchanged;R61notprimaryintegrated/combined,noTask1M3approval.",
     "existing_verification": {
       "report": "r61-existing-verification-report.md",
       "report_sha256": "4328ABA3568EE9C464F2E6F7F366141C83E8939CF8EAAD4708F47613A37D4E47",
@@ -2661,13 +2693,13 @@
       "invariance": "ALL84_RAW_AND_GIT_BLOBS_PLUS_INTERPRETER_UNCHANGED",
       "EOL": "GREENharnessCRLFA180 vs authorLF7F022,sameGitblob/normalizedtext,nocrossWTrawidentity or rewrite",
       "release": "GLOBAL RELEASE immediately after completed exec chunk a82f31 exit0, before this postcheck/analysis",
-      "review": "SAME Task1 FINALboundedSPEC/functional/control-qualityAPPROVED,noC/I/Minor/noSTOPfinding. Task1/M3NOTAPPROVED;R61p95NOT_RUN.",
+      "review": "SAME Task1 FINALboundedSPEC/functional/controlqualityAPPROVED,noC/I/Minor/noSTOPfinding atcomparison. LaterseparateR61p95FAILED848.68,notarelabeledcontrolfailure;Task1/M3NOTAPPROVED.",
       "review_report": "guarded-generation-optimization-review-report.md,R61finaladdendum",
-      "review_report_final_sha256": "06706ACF4DFBD91F05603744E1CF4D6D9CB9230322106C99A90DA2650EB1A048",
+      "review_report_final_sha256": "DF0466D8F29D54718B4AB1307C7134CB9F44342752DC1A66130B8CE007CCA694",
       "primary": "b560/source12774clean,noR61integration or combinedsourceinvocation"
     },
     "benchmark_preparation": {
-      "status": "READY_NOT_RUN_NO_GRANT_NO_HOSTRESERVATION",
+      "status": "HISTORICAL_READY_PACKET_BEFORE_ACTUAL_SINGLE_RUN",
       "request": "r61-query-benchmark-request.md",
       "request_sha256": "93A5D9E190DCF337A4AB2831344D043004469B9CB45217913F8A89D43EAD425C",
       "prepared_bindings": "r61-query-benchmark-prepared-bindings.json",
@@ -2677,7 +2709,39 @@
       "tests": "1ebd4f67002a13300f454e18dcb49580d9d416e0",
       "config": "7143d4deff5acb55e524baa5ee15c101bce9b3b5",
       "workload": "Unchangedoriginal5warmups/40samples/p95<500,1k/100k/actualguard/digestallcosts;no changedfixture/helper/threshold/R57input",
-      "limits": "No grant/result/prediction;docsblocknothing,historicalfailuresretained"
+      "limits": "ThisREADYstage precededseparatelygrantedactualbenchmark1F;unchangedpacket retained. Actualoutcome in benchmark_result,no repeat/fixgrant or alteredthreshold."
+    },
+    "benchmark_result": {
+      "status": "EXECUTED_VALID_COMPLETE40_BUDGET_FAILED",
+      "head": "2e69c117c66f2ed1763b4e507c76947729dd9647",
+      "source": "04f3fd9802b378efc588df393d92e238915f203f",
+      "tests": "1ebd4f67002a13300f454e18dcb49580d9d416e0",
+      "config": "7143d4deff5acb55e524baa5ee15c101bce9b3b5",
+      "report": "r61-query-benchmark-1-report.md",
+      "report_sha256": "6B9F05814036FD8289623E761C6C238DA820D28EE13B0798D59F8CE376F6C7A7",
+      "measurements": "r61-query-benchmark-1-measurements.json",
+      "measurements_sha256": "1D345294F931214C359988B74FB9980451E47F2386D3DEF944570F84F55F4AFB",
+      "outcome": "1F/0P/E/S,49.08s/XML1internal48.730,exit1,2warningsretained",
+      "p95_ms": 848.6797799909255,
+      "budget_ms": 500,
+      "sample_count": 40,
+      "warmup_count": 5,
+      "setup_seconds": 11.002631799987284,
+      "min_ms": 778.2217000058154,
+      "median_ms": 798.4010999934981,
+      "max_ms": 876.6022999916459,
+      "recomputation_absolute_difference_ms": 0,
+      "workload": "Unchangedoriginal1kmeetings/100ksegments/98901FTS/220records/221resolvedIDs+alias/44hits/include_partial/limit10,all40correctcalls/fullguard/generation/fetch/closeincluded",
+      "instrumentation": "NONE;oneactualrun/no rerun,notR57input/proxy/profiler",
+      "full_raw_evidence": "ALL40+5warmups/originalXMLstrings/machine/context/7XMLsourcehashes retained in measurements/XML;notdiscardedoutliers",
+      "invariance": "ALL84_RAW_AND_GIT_BLOBS_PLUS_INTERPRETER_UNCHANGED",
+      "release": "GLOBAL RELEASE immediately after session92885 exit1 before this postcheck/XML analysis/hash/report/Git",
+      "runtime_session": 92885,
+      "primary": "Duringactualrunb560/source12774clean;isolated04f3 notprimaryorcombinedR58-R61",
+      "limits": "VALIDbudgetfailure,notharness/setup/partial/falseRED. No causal speedup/bottleneck/hostcause/oldmeasurementinvalidity or500pass. Functional8+10/240/scopedapprovalstandseparately;Task1/M3NOTAPPROVED,no furtherfix/diagnostic/repeat authorized.",
+      "review_report": "guarded-generation-optimization-review-report.md,R61benchmark evidence update",
+      "review_report_final_sha256": "DF0466D8F29D54718B4AB1307C7134CB9F44342752DC1A66130B8CE007CCA694",
+      "reviewer_assessment": "SAME T1 actualbudgetFAILconfirmed848.67978>500;boundedfunctional/controlqualityAPPROVALunchanged,Task1/M3NOTAPPROVED. No newdiagnosis/fix/runtime authorized."
     }
   }
 }

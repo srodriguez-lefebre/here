@@ -444,7 +444,7 @@ and bounded approval follow below,without completeTask1approval.
 CapturePASS is measurement,not comparison,semanticRED or performance.34records
 preserve ALL33prior/preview3/types/criteria; historical902.413285>500 staysFAILED.
 
-### R61 measured-v2 comparison — bounded functional approval, p95 NOT_RUN
+### R61 measured-v2 comparison — bounded functional approval
 
 Actual isolated GREEN2e69/source04f3/tests1ebd/config7143 passed source+harness
 Ruffcheck/format-check without writes,then9collected/1capture explicitly DESELECTED/
@@ -458,11 +458,32 @@ See `r61-row-controls-1-report.md` and measured artifacts pinned in JSON.
 
 SAME Task1 FINALboundedSPEC/functional/control-quality APPROVED,noC/I/Minor or
 STOPfinding,at this isolatedmatrix;completeTask1/M3 NOTAPPROVED. Primaryb560/
-source12774 stayed clean;no R61 integration or combinedR58/R61 result. Original
-p95 package93A5/0295 is READY/NOT_RUN,no grant/hostreservation,unchanged5warmups/
+source12774 stayed clean;no R61 integration or combinedR58/R61 result.
+At that functional-review checkpoint p95 package93A5/0295 was READY/NOT_RUN,
+with no hostreservation,unchanged5warmups/
 40samples/500ms. Historical902.413285>500 remains FAILED;no speedup or p95 pass.
 35pytestrecords preserve ALL34prior/preview/types/literalcriteria/tasks/Closing/M3B.
 R52 controls are preparation only,with handoff pending;no future result included.
+
+### R61 original p95 — valid complete budget failure
+
+Exactly one original UNINSTRUMENTED benchmark ran at isolatedGREEN2e69/source04f3/
+tests1ebd/config7143. All5warmups+40publicqueries and correctness checks completed,
+then unchanged strict500ms assertion failed: **p95848.6797799909255ms**,1F/49.08s,
+XML1/internal48.730s/0E/S/exit1. Two warnings retained;no fix/retry/instrumentation.
+Setup11.002631799987284s outsideintervals;original1k/100k/98901FTS/220records/
+221IDs/44hits/helper/corpus/guard/generation/fetch/close workload unchanged.
+All40/warmups,machine/context/7sourcehashes remain in canonical measurements/XML;
+inclusive nativep95recomputation difference0. See `r61-query-benchmark-1-report.md`.
+ALL84raw/Git+interpreter invariant;GLOBAL RELEASE immediately after92885exit1
+preceded postchecks/analysis. Primarysource12774 is not this invocation or a
+combinedR58/R61 measurement;R61source remains isolated/notintegrated.
+
+This is a valid measured budgetFAIL,notsetup/partial/falseRED. Existingfunctional
+8+10/240PASS and boundedapproval remain separate;old902/1303failures unchanged.
+Different elapsed values alone prove no causal speedup,hostcause or invalidity.
+No newfix/diagnostic/repeat/500claim/Task1M3closure.36records preserve ALL35prior/
+preview/types/literalcriteria/tasks/Closing/M3B;broader gates remainheld.
 
 ## Intent
 
