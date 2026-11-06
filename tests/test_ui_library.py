@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QLabel,
     QLineEdit,
+    QListWidget,
     QPlainTextEdit,
     QPushButton,
     QTabWidget,
@@ -169,6 +170,9 @@ def _text(view):
     ]
     for widget in view.findChildren(QAbstractItemView):
         if not widget.isVisibleTo(view) or isinstance(widget.parentWidget(), QComboBox):
+            continue
+        if isinstance(widget, QListWidget):
+            parts += [widget.item(row).text() for row in range(widget.count())]
             continue
         model = widget.model()
         if model is not None:
