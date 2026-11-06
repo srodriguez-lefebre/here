@@ -698,8 +698,11 @@ Los rulings nuevos se escriben en español por el ruling 6.
     pending/hidden según R51, nunca rechazo o rollback ficticio de la aceptación.
     Raíces absolutas lexicales se deduplican; validar raíz, `.capture_owners`, ID y
     rol de lock al usarlos y revalidar después del ACK R51. Usar probes/leases OS
-    acotados existentes y retener los aplicables, junto al canónico, durante todo
-    el intento. No crear raíces ni borrar archivos externos para descubrir dueños;
+    acotados existentes: después del ACK libre de locks R51 y la revalidación,
+    adquirir/retener los aplicables y el canónico desde antes de hacer durable la
+    barrera hasta terminar cleanup. El preflight previo al ACK no es aceptación;
+    un dueño que aparezca durante ese ACK se detecta antes de nueva barrera.
+    No crear raíces ni borrar archivos externos para descubrir dueños;
     ausencia de un path declarado no es prueba global de inactividad. Ningún
     ingest_source, receipt, manifest o paquete concede autoridad para inspeccionar
     otra raíz. No cambia retención, ubicación de datos, tráfico, procesos o UX.
