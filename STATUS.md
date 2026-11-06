@@ -94,12 +94,11 @@ Hasta esa transferencia no hay otro writer. Processing continúa sin concesión.
 Cualquier handoff adicional se concede explícitamente. Migraciones/pyproject/uv.lock/versiones
 siguen seriales y requieren permiso de root. Global docs son root-only.
 
-Runtime del checkpoint: W2 GREEN terminó y B confirmó GLOBAL RELEASE de todos
-los procesos/hijos antes de reportar. Root concedió ahora R58 UI EXCLUSIVO:
-83 pins/higiene → foco → gate original de ocho consultas/heartbeat condicional.
-Los comandos se iniciaron; todavía sin resultado. B queda en fuente/review-only;
-la próxima ventana RED59 depende de readiness y concesión concreta. Consultar
-ambos ledgers antes de rotar el host; este checkpoint no autoriza otro runtime.
+Runtime del checkpoint: R58 terminó con GLOBAL RELEASE; después RED59 terminó
+y confirmó GLOBAL RELEASE de sesión64364 antes de reportar. Host libre, sin grant
+activo para ningún frente. B implementa productor sobre C20E; consumidor recovery
+en su WT separado. M3 tiene trabajo query source-only R61. Los próximos comandos
+requieren bindings/readiness y concesión concreta; consultar ambos ledgers.
 W1 terminó con release completo:
 RED3F/1P/16,63s → GREEN4P/19,91s y regresión delete79P/5symlink skips/182,92s.
 Fuente42a29fbfaef83c30b895ed6e75af95562313623a, src01400e51c9ac19d66309aaa6bf91976a95c91992;
@@ -117,10 +116,15 @@ HEADd480317988a8f355f64034a782637a63f97f1ae4 es test-only sobre42a; no es un com
 del source ejecutado. La review posterior `task-5-whole-w2-re-review-report.md`
 declara W2 ADDRESSED/SPEC-R60 y calidad APPROVED solo para C20E/27F, sin nuevos
 hallazgos. Regresiones/finaltypes/full2 y Task5/grupo B/M2 siguen abiertos.
-R59 tiene paquete independiente READY40/NOT_RUN, no RED observado ni colección
-verificada. Productor service en faab y consumidor recovery en su WT separado;
-ambos conservan writers distintos. Runtime del consumidor espera productor real
-verificado y handoff; no stub, parser duplicado ni instancia default nueva.
+RED59 real:40 collected,38F/2P/0E/0S/14,57s, XML14,528;29 fallos por método
+ausente y7 por módulo ausente, dos regresiones de identidad de excepción del
+caller y dos controles Busy que pasan. Runner real en `b5-w2-red/here`, rama
+`codex/m2-b5-r59-red`, HEAD05c9fed2449cab24d16f96a9997bcdd86cb461bc/base624,
+serviceA987; testAC636ACC3E2003E67B261EB32829A297F1739350B37BDBE05944FDDEDF154C36.
+No es corrida sobre C20E ni prueba de los cuerpos de guard ausentes. Productor
+service se implementa en faab sobre C20E y consumidor recovery en WT distinto;
+runtime del consumidor espera productor real verificado/handoff, sin stub,
+parser duplicado ni instancia default nueva. Reporte task-5-r59-red-wt-execution-1-report.md.
 
 M3 terminó10 controles R55 y240 de regresión, sin fallos; benchmark40 válido
 p95=902,413285ms FALLA500. Perfil residual2 exit0 liberado: control5207ms/perfil2744ms,
@@ -131,11 +135,22 @@ sin afirmar igualdad binaria. Fixture READY y diagnóstico CPU terminaron exit0:
 cinco warmups y dos llamadas públicas, estado DIAGNOSTIC_COMPLETED_NOT_BENCHMARK;
 no pytest ni p95 nuevo, no causa general del host inferida. Fuentee198/tests a2ac/
 config7143 invariantes en la corrida9406c72; docs posteriores31e9 no son su HEAD.
-R58 está SOURCE PREPARED en WT propio, commit2b66246198965eaca7a3df5d326837f4851b8942,
+Checkpoint M3-R58-UI-2b66246-20261106: en WT propio `m3-ui-implementation/here`,
+commit2b66246198965eaca7a3df5d326837f4851b8942,
 src12774a1e6702ab943934280d05d0de6897e8378d: solo library.py/bridge.py, sin integración
-en primary. Validación iniciada, sin resultado de tests/benchmark. Coordina auxiliares con páginas; page/page,
-título/crossview/externos siguen fuera del alcance resuelto. No aprobación50ms/500ms
-ni Task2. Packet de validación83pins ahora bajo grant activo; ningún resultado aún.
+en primary al reporte. Dos corridas separadas: r58-ui-focus-1 pasó44P/16,36s/
+XML16,294 y r58-ui-heartbeat-1 pasó1P/23,56s/XML22,725. Gate original de ocho
+callbacks IDs3–10/render/drain completo:1788 ticks/1789 gaps/8941,6032ms,
+máximo8,9216ms<50ms, errors=[], drained=True;83 pins intactos. Verificado
+automáticamente solo ese gate/contexto; review Task2 posterior APPROVED acotada
+en r58-ui-review-report.md sobre el mismo2b/source12774, sin findings. Coordina auxiliares
+con páginas; page/page/título/crossview/externos conservan límites. No p95<500ms,
+full/grupo/certificación. Reporte r58-ui-verification-report.md; hashes en ACCEPTANCE.
+R61commit62a5197 autoriza query source-only: representación local del cursor y
+equivalencia de bytesv2; sin corrida ni p95 nuevo.
+Handback posterior: M3 integró mecánicamente R58 como
+`38cff90dba7bd2914e44491ec60e8cf58771a2f4`; src12774/tests a2ac/config7143
+son idénticos a2b (diff de source/tests/config vacío). No es otra corrida.
 B liberó full1
 con1F/310P/110,55s, detenido25% por -x: el override global TRANSCRIPTIONS_DIR del
 runner interfirió con test_config_paths. No editar producto/test para ese fallo;
@@ -151,7 +166,7 @@ al consumidor distinto, con preparación sin pase de integración. El lote v2 so
 624be55 terminó sin fallos: native31P/4skips, CORECOMPAT-A98P/5skips,
 CORECOMPAT-B47P, SERVICE-FULL13P y guard/privacy20P. Son cinco corridas separadas,
 no un full agregado. R54-R1 ADDRESSED/SPEC y calidad APPROVED por la misma review
-independiente. M3 conserva R57 READY; R58 inició validación autorizada, sin resultado aún.
+independiente. M3 conserva R57 READY; R58 verificó sus dos corridas y liberó runtime.
 Sin full/build/uv/mypy/benchmark concurrente. Consultar SIEMPRE
 los dos ledgers antes de reasignar: este owner es snapshot, no permiso permanente.
 READERS7 terminó7P/5,10s, incluido primer uso con raíz vacía. M3 verificó44P/14,42s
@@ -457,9 +472,10 @@ no provee selección meeting_ids ni OR del retrieval M4: handoff interno pendien
 sin asumir MemoryService.search, SQL directo de intelligence o filtro post-LIMIT.
 Root resolverá ese contrato; no es bloqueo humano ni aceptación de un adapter.
 
-No hay bloqueo humano actual. Próximo: bind/grant del RED R59 y productor/consumidor
-reales, regresiones/finaltypes/full2 B; esperar resultado y release del grant activo
-R58 antes de rotar al RED59 si está listo. R55 conserva p95 FALLIDO; R57 es diagnóstico.
+No hay bloqueo humano actual. Próximo: GREEN productor/consumidor R59 tras RED real,
+regresiones/finaltypes/full2 B; R58 integrado tras su review acotada APPROVED,
+y fuente query R61 antes de nueva verificación. Host libre/sin grant vigente;
+R55 conserva p95 FALLIDO y R57 es diagnóstico. Root concede la próxima ventana.
 PR documental24 ya mergeado; M3 B todavía espera GO y handoffs reales.
 Alternar host tras release confirmado.
 Consultar ledgers antes de rotar

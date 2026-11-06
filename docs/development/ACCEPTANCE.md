@@ -7,7 +7,7 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | Milestone | Acceptance requirement | Evidence required | Current state |
 |---|---|---|---|
 | M1 | Both default Windows sources captured at 44.1/48 kHz | Actual device/format and WAV frame/duration report | Short actual two-source capture passed; long run omitted by user |
-| M1 | Two-hour meeting without unbounded growth or unexplained gaps | Frames/known markers, peak memory, disk, queue and final artifacts | Omitted by explicit user instruction; not run |
+| M1 | Two-hour meeting without unbounded growth or unexplained gaps | Frames/known markers, peak memory, disk, queue and final artifacts | omitida por ruling 5; no ejecutada ni aprobada |
 | M1 | Pause/resume audio timeline, destructive cancel and saved exit | Qt and Windows synthetic marker runs | Short native pause/resume and paused save-exit passed; synthetic restart/exit barriers passed; no repeated installed capture claim; long run omitted by user |
 | M1 | Provider/timestamps and diarization | Synthetic real-provider run and segment output inspected | Single/multiple-source TTS smokes passed; long transcription/diarization omitted by explicit user instruction |
 | M1 | Failure/crash/network/disconnection/disk-pressure recovery | Fault-injection plus bounded hardware run | PR12 faults, writer/publication process kills and helper-owner death passed; native recoverable saved failure passed; no repeated installed fault matrix claim; long run omitted by user |
@@ -20,13 +20,62 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M2 · criterio 15 | Suite completa en CI de Windows sin credencial real ni display | Corrida hospedada sobre el head exacto del PR M2 A | Verificado automáticamente para A por M2A-CI-FINAL-8a498e2-20261106:980 pasan/2 skips wheel/307,46 s, run42155415514; B/cierre M2 exige su propia CI final |
 | M2 | Deletion clears managed memory without resurrection | DB/FTS/files/answers/backup inspection after restart | Abierto: B5 sobre624be55 verifica automáticamente focos native/corecompat/service/guard v2; nueve omisiones de privilegio symlink explícitas. Faltan gates integrados/finales B5, consumidores, full/tipos y CI/review/merge del grupo; no certificación ni cierre |
 | M3 | Listing/filter/search and original moment navigation | End-to-end Qt selection and seek plus real WAV marker playback | Open |
-| M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | Abierto: fuente0bea p95 real1303,482595ms fallado; R55/src e198 pasa10 controles y240 de regresión, pero guarded-query-perf-r55-1 conserva40 muestras válidas y FALLA p95=902,413285ms frente al requisito<500ms. UI1F por Busy, objetivo de ocho consultas no alcanzado y heartbeat incompleto; perfil es diagnóstico, no aceptación |
+| M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | Abierto: p95 históricos0bea1303,482595ms y R55/e198902,413285ms FALLAN<500ms; R55 conserva10 controles y240 de regresión. R58/2b66246 verifica automáticamente foco44P y gate UI original1P: ocho consultas completas, max8,9216ms<50ms. Review Task2 del suplemento R58 APPROVED acotada, sin integración en primary al reporte; no p95 nuevo, cierre de grupo ni certificación. Fallos UI anteriores conservados |
 | M4 | Multi-meeting answers/extractions with valid evidence | Source-resolution and semantic synthetic corpus, provider smoke | Open |
 | M4 | Uncertainty/injection/cancellation/deletion remain honest | No-evidence, invalid-citation, concurrent delete/redaction tests | Open |
 | M5 | Offline first run, settings, tray/startup and safe exit | Qt, process concurrency and Windows settings tests | Open |
 | M5 | Portable data including optional audio and citations | Export/import on a fresh root, hashes and hostile ZIP tests | Open |
 | M5 | Install/update/uninstall preserve user memory | N to N+1 installation and separate uninstall test | Open |
 | All | PR groups reviewed and merged | PR URLs, reviewed heads, comment dispositions, CI and merge SHAs | M2–M5 en ejecución por ruling 20; cada uno de los nueve grupos requiere review independiente, Copilot recibido/respondido y CI Windows verde sobre el head exacto antes del merge; M2 A mergeado por PR21/53712c5 con todos los gates; los ocho grupos restantes pendientes |
+
+## Checkpoint M3-R58-UI-2b66246-20261106 — dos corridas independientes
+
+Ejecución real en `C:/Users/savar/.codex/worktrees/m3-ui-implementation/here`,
+HEAD `2b66246198965eaca7a3df5d326837f4851b8942`, src
+`12774a1e6702ab943934280d05d0de6897e8378d`, tests
+`a2acb894f96523dae6e871fc65a9e13d6c7eb4e5`, config
+`7143d4deff5acb55e524baa5ee15c101bce9b3b5`. No fue una corrida de primary31e9;
+la fuente todavía no estaba integrada allí al emitirse el reporte. Los83 pins
+reales de ese checkout permanecieron iguales antes/después, incluidos los EOL
+distintos ya declarados; no se normalizaron fixtures ni se trasladó evidencia.
+
+| Corrida nombrada · fecha20261106 | Resultado observado | Alcance y límites |
+|---|---|---|
+| r58-ui-focus-1 | 44 pasan/0F/0E/0S/16,36s; XML44/interno16,294s; exit0 | Archivos UI library/lifecycle sin cambiar tests: callbacks obsoletos, latest-before-old-finish, consumidores R48/título/Busy/Retry y cierre real de workers; no suite completa |
+| r58-ui-heartbeat-1 | 1 pasa/0F/0E/0S/23,56s; XML1/interno22,725s; exit0 | Nodo original sin observer: ocho SearchPage callbacks y ocho render/drain completos, IDs3–10, errors=[], drained=True. Assertion estricta<50ms alcanzada y aprobada en este snapshot |
+
+Gate real con1000 reuniones/100000 segmentos,220 registros/221 IDs suprimidos con
+alias; mismo controller/adapter/MemoryService y raíces sintéticas. Timer completo:
+1788 ticks,1790 puntos/1789 gaps,8941,6032ms de ventana, máximo8,9216ms; propiedades
+crudas y recomputación exacta retenidas. Setup11,5722745s queda fuera de esa ventana.
+Host exclusivo/offscreen/key sintética; opt-in solo para el nodo final. Los dos
+checks Ruff/formato previos pasaron, sin cambios de fuente/tests/fonts/flujo/
+timeout/threshold. Release GLOBAL inmediato tras sesión66172 y cierre de workers.
+
+Reporte completo y artefactos bajo `2710/here/.superpowers/sdd/M3_SEARCH_PLAN/`:
+`r58-ui-verification-report.md`, logs/XML de los dos nombres de corrida, métricas
+y bindings pre/post. SHA256 inspeccionados:
+
+| Artefacto | SHA256 |
+|---|---|
+| r58-ui-focus-1.log | `9A99F4EB58BFAD8A3C1B53CFC1B61795240FAB1DA4CDBAE57F7C3EE94BDD3DF8` |
+| r58-ui-focus-1.xml | `8EBE316ED7EB1EC780D0430E0DDCC46CBD6FD70B69590F18130E823480E7C0F8` |
+| r58-ui-heartbeat-1.log | `BBFAAF3AA7C73240238E99D04D551A174EE77DA69A4694943BA157B61BA23956` |
+| r58-ui-heartbeat-1.xml | `45DE1541E507541903E4BA5CBFD697EDAB5265253A3D1F10624CFA5BADC187F1` |
+| r58-ui-measurements-1.json | `5CD9E1487C8255121805096AB49D2AAAC1196F543A0A95E55932079EBE7782AA` |
+| r58-ui-validation-1-pre-bindings.json | `7BD7B651671C158711355CFA6D9BD809102496AC9E678B228E41AB0B4CFBE008` |
+| r58-ui-validation-1-post-bindings.json | `28307902E2A3B009DC3A46A19B7DEE5426128A3DA724AEAE1CBD16AE22329665` |
+
+Nivel implementado y verificado automáticamente para este gate; la review posterior
+`r58-ui-review-report.md` APRUEBA el suplemento R58 acotado en el mismo2b/source12774,
+sin Critical/Important/Minor, sin integración ni cierre Task2. Page/page, título/read, cross-view y ownership externo mantienen sus
+límites. Las dos corridas no se suman a un full ni prueban integración B5/global.
+Se conservan los fallos históricos de performance/UI y sus bases: el p95 R55
+902,413285ms sigue FALLIDO<500ms; ningún perfil diagnóstico es aceptación p95.
+R61 solo autoriza trabajo de fuente query sobre representación local del cursor
+y equivalencia de bytesv2, sin p95 nuevo. Full/tipos/hosted/Task2/grupo/M3 abiertos;
+sin certificación de hardware/proveedor/instalación limpia ni cambio de versión.
+La prueba de dos horas permanece **omitida por ruling 5**, nunca aprobada.
 
 ## Checkpoint local B5 y performance M3 — 2026-11-06
 
