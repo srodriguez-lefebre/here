@@ -70,15 +70,16 @@ las definiciones de terminado y los tres niveles de evidencia. Versión vigente
   `.superpowers/m2a-integrated-final-2.*`: 947 casos, cero failures/errors,
   tiempo interno 325,029 s; ambos smokes wheel pasan, skips siete symlinks.
   Full verde no equivale a aceptación de tarea/grupo mientras falte review global.
-- Review de todo A por `catalog_group_review` en curso, base `763a891`..`8087e25`.
-  Tres Important provisionales: metadata completed puede persistir antes del primer
+- Review de todo A por `catalog_group_review` terminada, base `763a891`..`8087e25`,
+  suplemento docs `e00dd08`. Tres Important: metadata completed puede persistir antes del primer
   memory_pending marker (kill deja sin replay e interrupted); receipt JSON array
   puede abortar rebuild de vecinos por `.get`/AttributeError; cancelación aceptada
   durante persistencia del fallo de captura deja UI/manifest cancelled y catálogo
   failed con conflicto/marker atascado. GR1/GR2/GR3 Important/P2 están OPEN en
-  `group-review-report.md`, source verdict changes requested. Review global sigue
-  provisional hasta suplemento docs comprometido; sin aceptación. Corregir juntos
-  sin reabrir NB1/NB2 ya addressed.
+  `group-review-report.md`, veredicto fuente/docs changes requested. GD1/GD2 Minor
+  corregidos en `7be93af`; GR1–GR3 se corrigen en una única tanda con diseño R38.
+  Sin aceptación. No repetir esta review global ni reabrir NB1/NB2 ya addressed;
+  después corresponde una sola re-review del diff de la tanda.
 - Wheel/sdist nuevos CPython 3.13.15 y probe off-repo `-I` no editable de `8087e25`:
   65 módulos byte-idénticos, schema 2/FTS5/FK/integrity correctos. Hashes en
   `.superpowers/m2a-wheel-catalog-probe-8087e25.json`; probes anteriores históricos.
@@ -87,9 +88,9 @@ las definiciones de terminado y los tres niveles de evidencia. Versión vigente
 
 ## Próxima acción obligatoria
 
-1. Completar la review de grupo; conservar el full 2 verde y sus límites, y los
-   hallazgos/veredictos reales. Rondas acotadas NB1/NB2 ya addressed, sin reiniciarlas.
-2. Atender los tres hallazgos de grupo cuando se formalicen, con RED/GREEN/re-review,
+1. Conservar review global terminada y full 2 verde con sus límites. RED de
+   GR1–GR3 en preparación; GREEN espera sus reproducciones. NB1/NB2 ya addressed.
+2. Corregir los tres hallazgos formales con RED/GREEN/re-review,
    focos y nueva suite estable si la fuente cambia. No aceptar tarea/grupo solo
    por focos y reviews de diffs; falta veredicto de todo A y verificación agregada.
 3. PR de A, Copilot sobre head exacto recibido/respondido y CI Windows verde;
@@ -133,7 +134,7 @@ El resto conserva sus dependencias; no se inicia ningún frente en este checkpoi
   `catalog_group_fixes` reutiliza el worktree liberado `m2-ingestion` sobre
   `codex/m2-final-fixes`, base fuente `8087e25`; primero diseña y espera RED.
   Scope: processing/controller/recovery, memory service/artifacts y output
-  session_writer; ningún otro escritor. Reviewer `catalog_group_review` cierra
+  session_writer; ningún otro escritor. Reviewer `catalog_group_review` terminó
   su misma review global con el suplemento docs `e00dd08`; después revisa el diff
   de esta tanda una vez. Docs/evidencia `segments_red` liberó sus once archivos.
   Brief persistente: `.superpowers/sdd/M2_CATALOG_PLAN/group-fix-brief.md`.
