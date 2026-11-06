@@ -81,19 +81,6 @@ class _DateFilter(QDateEdit):
         return QWidget.focusNextPrevChild(self, forward)
 
 
-class _MeetingResults(QTableWidget):
-    openRequested = Signal(int, int)
-
-    def mouseDoubleClickEvent(self, event):  # noqa: N802
-        index = self.indexAt(event.position().toPoint())
-        if index.isValid():
-            self.setCurrentIndex(index)
-            self.openRequested.emit(index.row(), index.column())
-            event.accept()
-        else:
-            super().mouseDoubleClickEvent(event)
-
-
 class LibraryView(QWidget):
     """Render canonical pages; stale requests cannot mutate the current view."""
 
@@ -154,7 +141,7 @@ class LibraryView(QWidget):
         self._retry.setAccessibleName("Reintentar consulta de biblioteca")
         self._retry.clicked.connect(self.refresh)
 
-        self._results = _MeetingResults(0, 6)
+        self._results = QTableWidget(0, 6)
         self._results.setAccessibleName("Resultados de reuniones de biblioteca")
         self._results.setHorizontalHeaderLabels(
             ["Título / coincidencia", "Fecha", "Duración", "Estado", "Audio", "Transcripción"]
@@ -164,7 +151,6 @@ class LibraryView(QWidget):
         self._results.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self._results.horizontalHeader().setStretchLastSection(True)
         self._results.cellActivated.connect(self._open_row)
-        self._results.openRequested.connect(self._open_row)
         self._more = QPushButton("Cargar más")
         self._more.setAccessibleName("Cargar más resultados")
         self._more.clicked.connect(self._continue)
