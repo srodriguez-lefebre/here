@@ -252,3 +252,54 @@ def test_reindex_busy_is_typed_error_not_partial_success_report(index_catalog):
         with pytest.raises(Busy):
             memory.reindex()
     assert _rows(memory.data_dir, "SELECT * FROM segments_fts ORDER BY meeting_id,segment_id") == before
+
+
+@pytest.mark.parametrize("probe_failure", ["ioerr", "busy", "missing-module"])
+def test_h1_reindex_classifies_real_probe_errors_and_preserves_existing_index(
+    index_catalog, monkeypatch, probe_failure
+):
+    from here.memory.database import Busy
+
+    memory = index_catalog
+    before = _rows(memory.data_dir, "SELECT * FROM segments_fts ORDER BY meeting_id,segment_id")
+    assert before, "The preservation assertion needs a populated real FTS index"
+    original_open = service_module.open_library
+    calls = []
+
+    class ProbeConnection:
+        def __init__(self, connection):
+            self.connection = connection
+
+        def __getattr__(self, name):
+            return getattr(self.connection, name)
+
+        def execute(self, sql, parameters=()):
+            if sql == "CREATE VIRTUAL TABLE temp.here_fts_probe USING fts5(text)":
+                calls.append(sql)
+                code, message = {
+                    "ioerr": (sqlite3.SQLITE_IOERR, "synthetic disk I/O error"),
+                    "busy": (sqlite3.SQLITE_BUSY, "synthetic database is locked"),
+                    "missing-module": (sqlite3.SQLITE_ERROR, "no such module: fts5"),
+                }[probe_failure]
+                error = sqlite3.OperationalError(message)
+                error.sqlite_errorcode = code
+                raise error
+            return self.connection.execute(sql, parameters)
+
+    def open_with_probe(*args, **kwargs):
+        library = original_open(*args, **kwargs)
+        library.connection = ProbeConnection(library.connection)
+        return library
+
+    monkeypatch.setattr(service_module, "open_library", open_with_probe)
+    if probe_failure == "missing-module":
+        report = memory.reindex()
+        assert (report.indexed_meetings, report.indexed_segments) == (0, 0)
+        assert len(report.warnings) == 1 and isinstance(report.warnings[0], FtsUnavailable)
+    else:
+        with pytest.raises(Busy if probe_failure == "busy" else LibraryError) as caught:
+            memory.reindex()
+        if probe_failure == "ioerr":
+            assert not isinstance(caught.value, Busy)
+    assert calls == ["CREATE VIRTUAL TABLE temp.here_fts_probe USING fts5(text)"]
+    assert _rows(memory.data_dir, "SELECT * FROM segments_fts ORDER BY meeting_id,segment_id") == before

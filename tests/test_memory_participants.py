@@ -614,3 +614,162 @@ def test_r48_new_link_and_assignment_dtos_preserve_default_role_and_nullable_ide
         }
         with pytest.raises(FrozenInstanceError):
             assignment.participant_id = OTHER_MEETING_ID
+
+
+@pytest.fixture
+def h2_registry_observer(monkeypatch):
+    """Observe actual final-record opens/reads and each live SQLite transaction mode."""
+    from pathlib import Path
+    from here.memory.database import LibraryConnection
+
+    observations = []
+    statements = []
+    live = {}
+    original_open = service_module.open_library
+    original_close = LibraryConnection.close
+    original_path_open = Path.open
+
+    def open_library(*args, **kwargs):
+        library = original_open(*args, **kwargs)
+        state = {"library": library, "mode": None}
+        live[id(library)] = state
+
+        def trace(sql):
+            statements.append(sql)
+            normalized = sql.strip().upper()
+            if normalized.startswith("BEGIN"):
+                state["mode"] = "write" if "IMMEDIATE" in normalized else "read"
+            elif normalized in {"COMMIT", "ROLLBACK"}:
+                state["mode"] = None
+
+        library.connection.set_trace_callback(trace)
+        return library
+
+    def close_library(library):
+        live.pop(id(library), None)
+        return original_close(library)
+
+    def observe(action, path):
+        observations.append((action, path.name, tuple(
+            (state["library"].connection.in_transaction, state["mode"])
+            for state in live.values()
+        )))
+
+    class RegistryFile:
+        def __init__(self, file, path):
+            self.file = file
+            self.path = path
+
+        def __getattr__(self, name):
+            return getattr(self.file, name)
+
+        def __enter__(self):
+            self.file.__enter__()
+            return self
+
+        def __exit__(self, *args):
+            return self.file.__exit__(*args)
+
+        def read(self, *args, **kwargs):
+            observe("read", self.path)
+            return self.file.read(*args, **kwargs)
+
+    def path_open(path, *args, **kwargs):
+        file = original_path_open(path, *args, **kwargs)
+        if path.parent.name == ".deletions" and path.suffix == ".json":
+            observe("open", path)
+            return RegistryFile(file, path)
+        return file
+
+    monkeypatch.setattr(service_module, "open_library", open_library)
+    monkeypatch.setattr(LibraryConnection, "close", close_library)
+    monkeypatch.setattr(Path, "open", path_open)
+    return observations, statements
+
+
+@pytest.mark.parametrize("operation", ["begin-processing", "update-meeting"])
+@pytest.mark.parametrize("outcome", ["committed", "event-rollback", "suppressed"])
+def test_h2_registry_io_precedes_write_transaction_without_losing_atomicity_or_suppression(
+    catalog, h2_registry_observer, operation, outcome
+):
+    from memory_fixtures import write_json
+
+    root, memory, _source = catalog
+    observations, statements = h2_registry_observer
+    directory = root / ".deletions"
+    directory.mkdir()
+    # An unrelated valid final forces actual filesystem work on an ordinary write.
+    write_json(directory / f"{OTHER_MEETING_ID}.json", {
+        "schema_version": 1, "meeting_id": OTHER_MEETING_ID, "origins": [], "phase": "pending",
+    })
+    detail = memory.get_meeting(MEETING_ID)
+    assert detail.meeting.id == MEETING_ID
+    assert any(
+        action == "read" and (True, "read") in states
+        for action, _name, states in observations
+    ), "R50 must still validate records within its coherent BEGIN read snapshot"
+    before = _snapshot(root), _files(root)
+    pending_before = _rows(root, "SELECT * FROM pending_operations ORDER BY id")
+    version = detail.meeting.row_version
+    old_status = detail.meeting.status
+    if outcome == "suppressed":
+        write_json(directory / f"{MEETING_ID}.json", {
+            "schema_version": 1, "meeting_id": MEETING_ID, "origins": [], "phase": "pending",
+        })
+    elif outcome == "event-rollback":
+        with closing(sqlite3.connect(root / "library.sqlite3")) as connection:
+            connection.execute(
+                "CREATE TRIGGER h2_event_failure BEFORE INSERT ON lifecycle_events "
+                "BEGIN SELECT RAISE(ABORT, 'synthetic H2 event failure'); END"
+            )
+            connection.commit()
+    observations.clear()
+    statements.clear()
+
+    def perform():
+        if operation == "begin-processing":
+            memory.begin_processing(MEETING_ID)
+        else:
+            memory.update_meeting(
+                MEETING_ID, _patch(title="H2 atomic title"), expected_version=version,
+            )
+
+    try:
+        if outcome == "suppressed":
+            with pytest.raises(service_module.NotFound):
+                perform()
+        elif outcome == "event-rollback":
+            with pytest.raises(LibraryError):
+                perform()
+        else:
+            perform()
+    finally:
+        if operation == "begin-processing":
+            memory.finish_capture(MEETING_ID)
+
+    # Check effects before the I/O boundary assertion, so a RED identifies the
+    # forbidden interval rather than hiding whether the real operation completed.
+    if outcome == "committed":
+        assert _rows(root, "SELECT status,row_version,title FROM meetings WHERE id=?", (MEETING_ID,)) == [
+            ("processing" if operation == "begin-processing" else old_status,
+             version + 1, detail.meeting.title if operation == "begin-processing" else "H2 atomic title"),
+        ]
+        events = _rows(root, "SELECT kind,payload FROM lifecycle_events WHERE meeting_id=?", (MEETING_ID,))
+        assert len(events) == len(before[0]["lifecycle_events"]) + 1
+        expected_kind = "status_changed" if operation == "begin-processing" else "metadata_updated"
+        expected_payload = ({"from": old_status, "to": "processing"}
+                            if operation == "begin-processing" else {"fields": ["title"]})
+        assert sum(kind == expected_kind and json.loads(payload) == expected_payload
+                   for kind, payload in events) == 1
+        for table in ("transcript_revisions", "segments", "audio_assets", "revision_audio_assets"):
+            assert _rows(root, f"SELECT * FROM {table} ORDER BY 1") == before[0][table]
+    else:
+        assert (_snapshot(root), _files(root)) == before
+        assert _rows(root, "SELECT * FROM pending_operations ORDER BY id") == pending_before
+    if outcome != "suppressed":
+        assert any(sql.strip().upper() == "BEGIN IMMEDIATE" for sql in statements)
+    assert {action for action, _name, _states in observations} == {"open", "read"}
+    forbidden = [item for item in observations if (True, "write") in item[2]]
+    assert forbidden == [], "Deletion registry filesystem I/O occurred under BEGIN IMMEDIATE"
+    if outcome == "suppressed":
+        assert memory.show(MEETING_ID) is None
