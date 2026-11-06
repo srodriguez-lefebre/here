@@ -400,13 +400,22 @@ def test_malformed_cursor_is_rejected_before_page_sql(catalog, cursor):
 
 
 def _malformed_envelope(cursor, path, value):
-    """Mutate the agreed private envelope, preserving all unrelated real keys."""
+    """Mutate the actual private array codec, preserving unrelated real keys.
+
+    Semantic field names keep rejection scenarios readable; positions follow the
+    source-only ec39fe5 codec rather than the provisional object-envelope design.
+    """
     padded = cursor + "=" * (-len(cursor) % 4)
     payload = json.loads(base64.urlsafe_b64decode(padded).decode("utf-8"))
-    target = payload
-    for key in path[:-1]:
-        target = target[key]
-    target[path[-1]] = value
+    field_positions = {"v": 1, "kind": 2, "order": 4, "keys": 5}
+    if len(path) == 1:
+        payload[field_positions[path[0]]] = value
+    else:
+        key_positions = (
+            {"rank": 0, "null": 1, "date": 2, "meeting_id": 3, "segment_id": 4}
+            if payload[2] == "search" else {"null": 0, "date": 1, "meeting_id": 2}
+        )
+        payload[field_positions[path[0]]][key_positions[path[1]]] = value
     # Deliberately permit NaN/Infinity in malformed JSON numeric payloads; the
     # production decoder must reject them rather than issue SQLite page SQL.
     encoded = json.dumps(payload, ensure_ascii=False, allow_nan=True).encode("utf-8")
