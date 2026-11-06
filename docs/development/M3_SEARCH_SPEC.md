@@ -1,6 +1,6 @@
 # M3 search and library actions specification
 
-Status: in progress; guarded performance FAILED/UI INCOMPLETE checkpoint, 2026-11-06. Complete
+Status: in progress; R55 functional checkpoint approved/p95 FAILED, UI NOT_RUN, 2026-11-06. Complete
 Task 1, Task 2, group A and M3
 remain open. Root issued GO after the accepted M2 A and contract-documentation
 merges (ruling 35). The M3 front is `codex/m3-search` at
@@ -253,7 +253,7 @@ Commands, exact heads, artifacts and limits are recorded in
 `M3_SEARCH_EVIDENCE.json`; acceptance criteria below are unchanged. This is focused
 automatic evidence, no certification or task/group/milestone closure; no 0.4.0 bump.
 
-### First guarded performance checkpoint — query FAILED / UI INCOMPLETE
+### Historical0bea performance checkpoint — query FAILED / UI INCOMPLETE
 
 Two separate authorized commands ran at actual HEAD
 `0c4098a0d77d3ea057ccaa34e7d5fb586a6bf381` plus ONLY staged mechanical format of
@@ -293,6 +293,52 @@ requires a new root grant. Scale-control/evidence/docs approval (D1 addressed)
 does not approve performance. Final full/types/UI/B5-integrated preview,
 delete ACK/nonresurrection/native/R52/global/hosted/task/group/M3 gates remain open;
 no criterion, threshold, certification or version change.
+
+### R55 generation checkpoint — functional approved / p95 still FAILED
+
+The actual two-call causal diagnostic at old source0bea/known synthetic input194
+is recorded in `guarded-query-cost-profile-report.md`, not as pytest cases/XML.
+It supports targeting repeated generation serialization/framing; nested inclusive
+costs are not summed. R55 source e783→4cbc changes only internal generation v2:
+fixed256-row batches, all actual ordered SQL inputs and real B fingerprint/snapshot
+preserved. This bounds rows, not bytes; large fields remain costly. Static v1→v2
+cursor-rejection reasoning is not a newly executed cross-version test.
+
+ALL THREE actual commands ran HEAD `b9f16b02740fb436c9ff69d7db21e2b90fe70568`
+plus ONLY staged new-test safe import-sort/mechanical format. Executed root
+`e59253d05f38716118a2d543bddd663e89987106`, source
+`e198e954658eefa15222476adfdfc06db797b8a8`, tests
+`a2acb894f96523dae6e871fc65a9e13d6c7eb4e5`, config7143. Post-release
+`1cb2442a69d47a14afc92662288ab579958ab00c` equals that entire executed tree;
+it is NOT the invocation HEAD. All80 raw bindings remained identical.
+
+New controls:10P/4.79s, XML10/internal4.614s; first-pass CONTROL, no invented RED.
+Actual819-document nonmatching/suppressed FTS-only mutations at255/256/257/final
+reject cursors before MATCH; fresh traversal and SECOND real B no-op are covered.
+A separate existing regression passed240/46.02s, XML240/internal45.744s:
+140 search+37 fallback+51 guard+11 facade+1 scale. New10 were not repeated;
+benchmark/opt-in were absent from both functional commands. Fresh R55 evidence
+is separate from the unchanged historical0bea records.
+
+Then unchanged query benchmark:1F/52.56s, XML1/internal51.151s. Valid setup11.5409553s
+outside warm intervals,5 warmups and40 complete correct public calls on the same
+1k/100k/98,901FTS/220records/221IDs/44hits workload. Inclusive p95
+**902.4132849997841ms still FAILS unchanged <500ms**. Raw40 and machine/input
+context remain in the XML/measurements artifact. The old1303.482595ms failure is
+preserved; a lower new measurement is not causal speedup certification.
+
+SAME Task1 FINAL bounded R55 SPEC/functional-quality review is APPROVED, no
+confirmed Critical/Important/Minor finding; complete Task1 NOT APPROVED and
+performance FAILED. Only new-test hygiene passed after retained I001/format
+findings; source Ruff/current mypy/full remain unrun. R55 UI observer/heartbeat
+NOT_RUN; old0bea Busy/INCOMPLETE is not transferred to this source. Diagnostic2
+R55/known input205 and refreshed passive UI observer are PREPARED ONLY and need
+new execution grants; no second source optimization is authorized.
+
+28 separate pytest records preserve all25 prior and the entire preview3. GLOBAL
+RELEASE immediately followed the last process BEFORE XML/metrics/reports/review/
+commit. All broader B/native/delete/UI/preview/types/full/global/hosted/task/group/
+M3 gates stay open, with unchanged thresholds/criteria/version and no certification.
 
 ## Intent
 

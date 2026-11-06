@@ -5,7 +5,7 @@
 > only after current-head received/responded Copilot, Windows CI and independent
 > review. Steps use checkbox syntax. **Status: in progress — query-core checkpoint,
 > 2026-11-06; UI attempts recorded, complete tasks/group/milestone acceptance pending.**
-> Guarded query performance FAILED/UI heartbeat INCOMPLETE; complete tasks/group/milestone remain open.
+> R55 functional checkpoint approved/p95 FAILED, UI NOT_RUN; complete tasks/group/milestone remain open.
 > Root issued GO
 > after M2 A merge `53712c5beedafc2d40e2abf10c13362a1c3c9f78` and contracts merge
 > `73d3cb384bd422de6899d8c7b761f3f3159ea3f1`. M3 front: `codex/m3-search`,
@@ -257,7 +257,7 @@ certification/tasks/groups remain pending; no M3B regeneration or version bump.
 Composite checkboxes remain unchecked: no partial evidence closes their remaining
 clauses. Group/hosted gates, certification and a 0.4.0 bump are not claimed.
 
-### First guarded performance checkpoint — query FAILED / UI INCOMPLETE
+### Historical0bea performance checkpoint — query FAILED / UI INCOMPLETE
 
 Actual HEAD0c4098a plus ONLY staged3-file mechanical formatter delta executed two
 separate nodes on unchanged source0bea/tests13c5/config7143. Executed entire root
@@ -288,6 +288,52 @@ analysis/reports/review/style commit. Current full/final types/UI/preview, wider
 B5/delete ACK/nonresurrection/native/R52/global/hosted/Copilot/CI/package/merge,
 certification/Task1/Task2/group/M3 remain open. Thresholds, acceptance/task checklists,
 Closing/M3B overlap and version remain unchanged; docs-role runtime0.
+
+### R55 generation checkpoint — functional approved / p95 still FAILED
+
+The actual two-call causal diagnostic at old source0bea/known synthetic input194
+is recorded in `guarded-query-cost-profile-report.md`, not as pytest cases/XML.
+It supports targeting repeated generation serialization/framing; nested inclusive
+costs are not summed. R55 source e783→4cbc changes only internal generation v2:
+fixed256-row batches, all actual ordered SQL inputs and real B fingerprint/snapshot
+preserved. This bounds rows, not bytes; large fields remain costly. Static v1→v2
+cursor-rejection reasoning is not a newly executed cross-version test.
+
+ALL THREE actual commands ran HEAD `b9f16b02740fb436c9ff69d7db21e2b90fe70568`
+plus ONLY staged new-test safe import-sort/mechanical format. Executed root
+`e59253d05f38716118a2d543bddd663e89987106`, source
+`e198e954658eefa15222476adfdfc06db797b8a8`, tests
+`a2acb894f96523dae6e871fc65a9e13d6c7eb4e5`, config7143. Post-release
+`1cb2442a69d47a14afc92662288ab579958ab00c` equals that entire executed tree;
+it is NOT the invocation HEAD. All80 raw bindings remained identical.
+
+New controls:10P/4.79s, XML10/internal4.614s; first-pass CONTROL, no invented RED.
+Actual819-document nonmatching/suppressed FTS-only mutations at255/256/257/final
+reject cursors before MATCH; fresh traversal and SECOND real B no-op are covered.
+A separate existing regression passed240/46.02s, XML240/internal45.744s:
+140 search+37 fallback+51 guard+11 facade+1 scale. New10 were not repeated;
+benchmark/opt-in were absent from both functional commands. Fresh R55 evidence
+is separate from the unchanged historical0bea records.
+
+Then unchanged query benchmark:1F/52.56s, XML1/internal51.151s. Valid setup11.5409553s
+outside warm intervals,5 warmups and40 complete correct public calls on the same
+1k/100k/98,901FTS/220records/221IDs/44hits workload. Inclusive p95
+**902.4132849997841ms still FAILS unchanged <500ms**. Raw40 and machine/input
+context remain in the XML/measurements artifact. The old1303.482595ms failure is
+preserved; a lower new measurement is not causal speedup certification.
+
+SAME Task1 FINAL bounded R55 SPEC/functional-quality review is APPROVED, no
+confirmed Critical/Important/Minor finding; complete Task1 NOT APPROVED and
+performance FAILED. Only new-test hygiene passed after retained I001/format
+findings; source Ruff/current mypy/full remain unrun. R55 UI observer/heartbeat
+NOT_RUN; old0bea Busy/INCOMPLETE is not transferred to this source. Diagnostic2
+R55/known input205 and refreshed passive UI observer are PREPARED ONLY and need
+new execution grants; no second source optimization is authorized.
+
+28 separate pytest records preserve all25 prior and the entire preview3. GLOBAL
+RELEASE immediately followed the last process BEFORE XML/metrics/reports/review/
+commit. All broader B/native/delete/UI/preview/types/full/global/hosted/task/group/
+M3 gates stay open, with unchanged thresholds/criteria/version and no certification.
 
 ## Dependencies and handoff during execution
 
