@@ -8,7 +8,7 @@
   "task_2_commit": "037fc036ef43467136bcf7b8e95c6f8395d1aa5e",
   "task_2_base_commit": "878e7d4b531d0b07599b373261279fbb6b440030",
   "task_2_integration_commit": "1cdaadb72f2ebee53ce3a7be2680a01d18de6ad2",
-  "evidence_level": "copilot1_fixes_implemented_local_full5_passed_independent_scoped_review_approved_hosted_gates_pending",
+  "evidence_level": "copilot2_C4_implemented_local_focus_and_installed_wheel_verified_final_scoped_review_and_exact_head_complete_Windows_CI_pending",
   "certified": false,
   "data_policy": "Temporary SQLite roots, authored synthetic PCM and transcripts, synthetic key; no private sessions or real .env.",
   "runs": [
@@ -195,11 +195,11 @@
     "handled_raw_io_rollback": "Restore previous bytes or remove fresh unpublished raw after metadata replace failure"
   },
   "task_3_progress": {
-    "state": "copilot1_fixes_integrated_full5_passed_independent_scoped_review_approved_hosted_gates_pending",
+    "state": "C4_integrated56af525_local_focus_wheel_passed_full_suite_gate_exact_head_Windows_CI_pending_R43",
     "candidate_suite_green": true,
     "task_accepted": false,
     "fix_round": 3,
-    "open_findings_count": 3,
+    "open_findings_count": 1,
     "prior_red_passed": 18,
     "prior_red_failed": 31,
     "author_duration_seconds": 2.5,
@@ -210,7 +210,7 @@
     "combined_root_log": "task-3-complete-root-red.log",
     "candidate_base": "1cdaadb",
     "fixture_commit": "efb73a92ea89bc53318ce1a811eaf61129a76fbf",
-    "candidate_source_commit": "61fb8e2815887c19a1d6dc64572e5f469ec5cee9",
+    "candidate_source_commit": "0a28842e9ac0a9f670a5e800077bf0fce8ae9e6d",
     "root_integrated": true,
     "hash_comparison_by_docs_author": "Read-only PowerShell Get-FileHash, no source execution",
     "stable_candidate_full_result": {
@@ -234,10 +234,10 @@
       "historical": true,
       "source_commit": "6c422f0b8671d2f736645abb6835d351783cbcc7"
     },
-    "independent_task_review": "Prior source7bfd/fixtureef70/docs8845877 accepted; current Copilot C1-C3 fixes pending independent scoped verdict",
+    "independent_task_review": "Previous approvals remain source-scoped historical; current C4 scoped final verdict pending committed supplement",
     "independent_whole_branch_review": "original_group_review_plus_single_scoped_re_review_final_approved_GR1_GR2_GR3_GD1_GD2_addressed",
-    "hosted_ci": "3394149 Windows tests/package passed historically; corrected current head pending",
-    "copilot": "5794475912 COMMENTED on3394149; three confirmed observations corrected locally, replies/new received review pending",
+    "hosted_ci": "D23 Windows966passed/2wheel skips/package passed historically; mandatory corrected exact-head complete suite/package pending under R43",
+    "copilot": "5794829768 COMMENTED D23 resolves C1-C3; C4 inline4488285573 unanswered, corrected published head/new received review pending",
     "historical_candidate_checkpoint": {
       "source_commit": "6c422f0b8671d2f736645abb6835d351783cbcc7",
       "fixture_commit": "efb73a92ea89bc53318ce1a811eaf61129a76fbf",
@@ -250,8 +250,8 @@
       "superseded_by": "round_1_integrated_checkpoint"
     },
     "initial_candidate_suite_green": true,
-    "integrated_full_failures_count": 0,
-    "root_integration_commit": "c3cdf085c03718ca6a9d5db87ea0de28fa9652b0",
+    "integrated_full_failures_count": null,
+    "root_integration_commit": "56af5253a8eec498c594bd6f1e1e456ad69f9453",
     "root_integration_commits": [
       "1277e19",
       "3370483",
@@ -261,7 +261,8 @@
       "8087e25",
       "7bfd0cb",
       "ef70f78",
-      "c3cdf08"
+      "c3cdf08",
+      "56af525"
     ],
     "green_fix_commits": [
       "16263c4180aa13036a812110a6e98554f1a7c56f",
@@ -269,10 +270,11 @@
       "944e358b2908a127d4380afeb4d645522a869cb3",
       "4a3cb7ced77a73046098e20cb34aeb00af0e6f61",
       "ec55b9564d3af01247d3367675a340a361f6b6ef",
-      "61fb8e2815887c19a1d6dc64572e5f469ec5cee9"
+      "61fb8e2815887c19a1d6dc64572e5f469ec5cee9",
+      "0a28842e9ac0a9f670a5e800077bf0fce8ae9e6d"
     ],
-    "src_tree": "b465d3198840f96d5d15a85eeb45e4312e4c4dec",
-    "tests_tree": "293bc5038bae501dee07631704899e5f385e9025",
+    "src_tree": "a17ec107c212d62e1984bb1cede094b579db5137",
+    "tests_tree": "c6a29f96af9ffc1e0c488ca73a430ef9a99b86b6",
     "root_green_src_tests_identical": true,
     "root_green_source_config_scripts_workflows_diff_empty": true,
     "round_2_red": {
@@ -293,11 +295,11 @@
     },
     "scoped_open_findings_count": 0,
     "whole_group_Important_findings_count": 0,
-    "current_execution_head": "c3cdf085c03718ca6a9d5db87ea0de28fa9652b0",
-    "current_tests_tree": "293bc5038bae501dee07631704899e5f385e9025"
+    "current_execution_head": "56af5253a8eec498c594bd6f1e1e456ad69f9453",
+    "current_tests_tree": "c6a29f96af9ffc1e0c488ca73a430ef9a99b86b6"
   },
   "task_3_protocol": {
-    "source_state": "copilot1_fixes_integrated_full5_passed_independent_scoped_review_approved_hosted_gates_pending",
+    "source_state": "C4_integrated56af525_local_focus_and_wheel_passed_exact_head_complete_Windows_CI_pending_R43",
     "rulings": [
       22,
       23,
@@ -411,7 +413,8 @@
     "receipt_envelope_isolation": "Require receipt/mapping/list-of-object/hash shapes before attribute use and referenced reads; retain malformed meeting with identified warning, continue valid siblings and repeat reconcile/discovery/maintenance JSON",
     "ordinary_precommit_rollback": "Ordinary Exception from precommit callback restores raw/segments/obsolete evidence before propagation; BaseException/process-kill unchanged; failed rollback retains backups and cause",
     "controller_default_catalog": "Initialize actual controller MemoryService first and share it with default SessionProcessor, including injected root; explicit processor unchanged",
-    "completed_rejected_replay": "Retain rejection as completed RecoveryCandidate with can_retry=false and readable error_summary before retry-audio probe; existing UI disables provider retry; marker/source/prior revision preserved; successful/no-marker controls hidden"
+    "completed_rejected_replay": "Retain rejection as completed RecoveryCandidate with can_retry=false and readable error_summary before retry-audio probe; existing UI disables provider retry; marker/source/prior revision preserved; successful/no-marker controls hidden",
+    "malformed_pending_visibility": "Catch ValueError only around read_pending_intent after metadata/ownership; re-raise UnsafeSessionPath; fixed bounded non-echoing warning preserves valid source as exact-status nonretryable candidate before WAV/provider; no fallback token/parent/evidence repair"
   },
   "task_3_intermediate_evidence": {
     "scope_limit": "Distinct evolving-source focused runs, not summed and not stable final verification",
@@ -733,8 +736,8 @@
     "superseded_by": "task_3_fix_round_1_review"
   },
   "evidence_levels": {
-    "implemented": "Copilot C1-C3 fixes integratedc3cdf08; current full5 passes961/7/371.80s. Current independent final scoped verdict pending; old review approval stays source-scoped historical",
-    "verified_automatically": "RED5fail/3controls, GREEN8, affected325/1skip, six-file static/no-new typing, new exact65-file wheel/probe and full5 961passed/7symlinkskips/371.80s with both wheel smokes pass; corrected hosted gates pending",
+    "implemented": "C4 integrated56af525 with local8-case GREEN and affected124 passing; final scoped verdict pending. Earlier C1-C3 resolved by received Copilot onD23",
+    "verified_automatically": "C4 RED6/2controls, GREEN8, affected124, no new typing, fresh65-file noneditable wheel/probe and4 distribution cases including both installed smokes pass. Mandatory exact-head complete Windows CI suite/package still pending under R43; no duplicate localfull6",
     "certified": "No new hardware/provider/clean-install certification; wheel and synthetic checks are automatic local evidence; two-hour acceptance omitted by ruling5"
   },
   "capture_harness_correction": {
@@ -780,7 +783,8 @@
     "PR/current-head Copilot received/responded/Windows CI/guarded merge pending; no M2A acceptance or closure.",
     "R35 future chats/branches/worktrees/executors/real merged-A bases pending, none created; contract-doc PR merges required after A before dispatch.",
     "No new process/protocol/deadline/dependency/version/DoD;0.2.0 current,0.3.0 at B/M2 close, final1.0.0 unchanged; two-hour acceptance omitted by ruling5.",
-    "Copilot5794475912 on339 confirmed C1-C3; current sourcec3cdf08 full5 passes961/7/371.80s but final scoped verdict pending. Prior approval/full4/hosted CI339 do not approve or verify current fixes. Replies, new received Copilot and exact-head CI required before merge."
+    "Copilot5794475912 on339 confirmed C1-C3; current sourcec3cdf08 full5 passes961/7/371.80s but final scoped verdict pending. Prior approval/full4/hosted CI339 do not approve or verify current fixes. Replies, new received Copilot and exact-head CI required before merge.",
+    "C4 source56af525 has local focus/installed-wheel evidence; current complete-suite gate remains mandatory and pending on exact-head Windows CI under R43, no localfull6 and no relabeling oldfull5/CI_D23. Final scoped verdict/reply/new received Copilot/exacthead CI/guarded merge pending."
   ],
   "pr20": {
     "url": "https://github.com/srodriguez-lefebre/here/pull/20",
@@ -890,9 +894,9 @@
     "current_disposition": "All five failures covered in round-2 61-case focus and addressed by scoped review; later full2 passes, original failed result retained"
   },
   "task_3_integrated_distribution_probe": {
-    "run": "M2A-INTEGRATED-WHEEL-c3cdf08",
-    "recorded_at_utc": "2026-11-05T22:47:42.753122-03:00",
-    "source_head": "c3cdf085c03718ca6a9d5db87ea0de28fa9652b0",
+    "run": "M2A-INTEGRATED-WHEEL-56af525",
+    "recorded_at_utc": "2026-11-05T23:26:03.485121-03:00",
+    "source_head": "56af5253a8eec498c594bd6f1e1e456ad69f9453",
     "python": "3.13.15",
     "platform": "Windows-11-10.0.26300-SP0",
     "package_version": "0.2.0",
@@ -902,19 +906,18 @@
     "schema_version": 2,
     "fts5": true,
     "artifact_sha256": {
-      "here-0.2.0-py3-none-any.whl": "acbc092001eda20bcf980bf9d74d2c53c01698322641e9f8a9d313c34efec051",
-      "here-0.2.0.tar.gz": "f7d80d8612aa6e2de13662324c16f670baa5022a2ad4dfcd976df1e6847b33ab"
+      "here-0.2.0-py3-none-any.whl": "cdc99d7b0b76bdce2d8c606edb7adabcd335984be4fc0bce000690648a5bc37a",
+      "here-0.2.0.tar.gz": "df30e3ffc9aa4e33d4b5b995f982d1c52097541ff1633b0035ee00074d686eb3"
     },
     "provider_used": false,
     "hardware_used": false,
-    "probe_file": ".superpowers/m2a-wheel-catalog-probe-c3cdf08.json",
-    "build_artifact_directory": ".superpowers/m2a-final-dist-c3cdf08",
+    "probe_file": ".superpowers/m2a-wheel-catalog-probe-56af525.json",
+    "build_artifact_directory": ".superpowers/m2a-final-dist-56af525",
     "fresh_wheel_and_sdist_build": "success",
     "off_repo_isolated_flag": "-I",
     "foreign_key_check": "empty, reported by root",
     "integrity_check": "ok, reported by root",
-    "certification_claimed": false,
-    "observed_by_docs_author": "Read actual probe JSON and root supplied FK/integrity evidence; no imports/runtime"
+    "certification_claimed": false
   },
   "post_M2A_dispatch_ruling_35": {
     "instruction": "Finish and merge M2 A with every gate, then merge required contract documentation PRs before root creates two separate project chats",
@@ -1196,6 +1199,34 @@
       "certification_claimed": false,
       "observed_by_docs_author": "Read-only probe JSON and root evidence; no imports or execution",
       "verified_unchanged_execution_head": "ef70f78cfc9c8f2910e77b2b2818ce2e6b4d71ae",
+      "historical": true
+    },
+    {
+      "run": "M2A-INTEGRATED-WHEEL-c3cdf08",
+      "recorded_at_utc": "2026-11-05T22:47:42.753122-03:00",
+      "source_head": "c3cdf085c03718ca6a9d5db87ea0de28fa9652b0",
+      "python": "3.13.15",
+      "platform": "Windows-11-10.0.26300-SP0",
+      "package_version": "0.2.0",
+      "source_files_equal": true,
+      "python_file_count": 65,
+      "editable": false,
+      "schema_version": 2,
+      "fts5": true,
+      "artifact_sha256": {
+        "here-0.2.0-py3-none-any.whl": "acbc092001eda20bcf980bf9d74d2c53c01698322641e9f8a9d313c34efec051",
+        "here-0.2.0.tar.gz": "f7d80d8612aa6e2de13662324c16f670baa5022a2ad4dfcd976df1e6847b33ab"
+      },
+      "provider_used": false,
+      "hardware_used": false,
+      "probe_file": ".superpowers/m2a-wheel-catalog-probe-c3cdf08.json",
+      "build_artifact_directory": ".superpowers/m2a-final-dist-c3cdf08",
+      "fresh_wheel_and_sdist_build": "success",
+      "off_repo_isolated_flag": "-I",
+      "foreign_key_check": "empty, reported by root",
+      "integrity_check": "ok, reported by root",
+      "certification_claimed": false,
+      "observed_by_docs_author": "Read actual probe JSON and root supplied FK/integrity evidence; no imports/runtime",
       "historical": true
     }
   ],
@@ -1491,22 +1522,22 @@
         "id": "C1",
         "inline": "4488007346",
         "contract": "Ordinary callback exception rollback",
-        "state": "independently_addressed_pending_thread_reply_and_new_hosted_review",
-        "reply": "pending"
+        "state": "resolved_confirmed_by_Copilot5794829768",
+        "reply": "4488243766"
       },
       {
         "id": "C2",
         "inline": "4488007374",
         "contract": "Default processor shares injected controller catalog",
-        "state": "independently_addressed_pending_thread_reply_and_new_hosted_review",
-        "reply": "pending"
+        "state": "resolved_confirmed_by_Copilot5794829768",
+        "reply": "4488243915"
       },
       {
         "id": "C3",
         "inline": "4488007407",
         "contract": "Blocked completed publication warning without provider retry",
-        "state": "independently_addressed_pending_thread_reply_and_new_hosted_review",
-        "reply": "pending"
+        "state": "resolved_confirmed_by_Copilot5794829768",
+        "reply": "4488244052"
       }
     ],
     "red": {
@@ -1547,10 +1578,11 @@
     "independent_technical_review_approved": true,
     "independent_review_report": "copilot-1-review-report.md",
     "reviewed_documentation_head": "f06b33b4d974158ca1236eb446c80a0120c8b48e",
-    "new_copilot": "pending_request_and_receipt_after_corrections",
+    "new_copilot": "Received5794829768 onD23, C1-C3 resolved; new C4 handled separately",
     "exact_corrected_head_ci": "pending",
     "group_accepted": false,
-    "certified": false
+    "certified": false,
+    "historical": true
   },
   "task_3_integrated_full_5": {
     "name": "M2A-INTEGRATED-FULL5-c3cdf08",
@@ -1583,7 +1615,8 @@
         "passed": true
       }
     ],
-    "observed_by_docs_author": "Read actual final log and parsed XML counts and both wheel-smoke nodes; no runtime execution"
+    "observed_by_docs_author": "Read actual final log and parsed XML counts and both wheel-smoke nodes; no runtime execution",
+    "historical": true
   },
   "hosted_ci_339_history": {
     "source_head": "339414913e790d48cd9baef22e4385eb780937ed",
@@ -1596,5 +1629,107 @@
     "package_state": "passed",
     "historical": true,
     "proves_corrected_source": false
+  },
+  "copilot_2_C4": {
+    "review": "5794829768",
+    "review_state": "COMMENTED",
+    "received_at_utc": "2026-11-06T02:09:04Z",
+    "reviewed_published_head": "d23b83d70b1a3da7fe0a3c579f1f34b109e2d5a3",
+    "inline": "4488285573",
+    "ruling": 43,
+    "ruling_recorded_before_code_commit": "3cf8726",
+    "green_commit": "0a28842e9ac0a9f670a5e800077bf0fce8ae9e6d",
+    "root_commit": "56af5253a8eec498c594bd6f1e1e456ad69f9453",
+    "source_tree": "a17ec107c212d62e1984bb1cede094b579db5137",
+    "tests_tree": "c6a29f96af9ffc1e0c488ca73a430ef9a99b86b6",
+    "source_files": 1,
+    "new_independent_test_files": 1,
+    "worker_diff": "source/tests/config/workflows empty",
+    "red": {
+      "failed": 6,
+      "controls_passed": 2,
+      "seconds": 6.69,
+      "report": "copilot-2-red-report.md"
+    },
+    "green": {
+      "passed": 8,
+      "failed": 0,
+      "seconds": 8.18,
+      "log": ".superpowers/copilot-2-green.txt"
+    },
+    "affected": {
+      "passed": 124,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 90.52,
+      "log": ".superpowers/copilot-2-compatibility.txt"
+    },
+    "quality": {
+      "ruff": "pass",
+      "format": "pass",
+      "files": 2,
+      "canonical_mypy_D23_errors": 79,
+      "current_errors": 79,
+      "new_messages": {},
+      "globally_clean": false
+    },
+    "implementation_report": "copilot-2-implementation-report.md",
+    "independent_final_verdict": "pending_committed_docs_supplement",
+    "published": false,
+    "reply": "pending_reachable_correcting_SHA",
+    "new_received_copilot": "pending",
+    "exact_head_complete_Windows_suite": "pending_mandatory_R43",
+    "exact_head_package_CI": "pending",
+    "group_accepted": false,
+    "certified": false
+  },
+  "copilot_2_distribution_smokes": {
+    "source_head": "56af5253a8eec498c594bd6f1e1e456ad69f9453",
+    "passed": 4,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 7.44,
+    "junit_tests": 4,
+    "junit_internal_seconds": 7.314,
+    "installed_wheel_cases": [
+      {
+        "entry": "cli_main",
+        "seconds": 3.928,
+        "passed": true
+      },
+      {
+        "entry": "gui_main",
+        "seconds": 2.748,
+        "passed": true
+      }
+    ],
+    "mutex_seconds": 0.005,
+    "inherited_path_seconds": 0.57,
+    "log": ".superpowers/m2a-copilot-2-wheel-smokes.txt",
+    "junit": ".superpowers/m2a-copilot-2-wheel-smokes.xml",
+    "observed_by_docs_author": "Read actual probe and parsed distribution XML; no runtime"
+  },
+  "current_complete_suite_gate": {
+    "state": "pending",
+    "required": true,
+    "execution": "mandatory Windows CI full suite on exact corrected published head before merge",
+    "ruling": 43,
+    "local_full_6": "not_run_intentionally_no_duplicate",
+    "no_waiver": true,
+    "prior_full5_and_D23_CI": "historical_only"
+  },
+  "hosted_ci_D23_history": {
+    "head": "d23b83d70b1a3da7fe0a3c579f1f34b109e2d5a3",
+    "tests_run": "42147566672",
+    "passed": 966,
+    "skipped": 2,
+    "skip_reason": "Wheel environment absent",
+    "seconds": 331.02,
+    "package_run": "42147566683",
+    "package_state": "passed",
+    "log": ".superpowers/m2a-ci-42147566672.log",
+    "historical": true,
+    "proves_56af525": false
   }
 }

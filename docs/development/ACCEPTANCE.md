@@ -12,7 +12,7 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M1 | Provider/timestamps and diarization | Synthetic real-provider run and segment output inspected | Single/multiple-source TTS smokes passed; long transcription/diarization omitted by explicit user instruction |
 | M1 | Failure/crash/network/disconnection/disk-pressure recovery | Fault-injection plus bounded hardware run | PR12 faults, writer/publication process kills and helper-owner death passed; native recoverable saved failure passed; no repeated installed fault matrix claim; long run omitted by user |
 | M1 | Installed application opens, records and uninstalls | Fresh Windows installation and bundled-runtime smoke | Incorporated-source `1740b2d` local Windows 11 frozen GUI/CLI, Start launch, active-update refusal, reinstall/uninstall and data preservation passed; recording retains earlier source evidence; distribution peer review/clean hosted package CI/merge pending |
-| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | Fuente actual c3cdf08 corrige C1–C3 de Copilot; GREEN 8 y afectado 325/1skip pasan; full 5 verde 961/7/371,80 s; review final pendiente. Aprobación/full4/CI339 históricos. CI del nuevo head/merge/B pendientes; sin cierre del grupo/hito |
+| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | C4 integrado 56af525:GREEN 8/afectado 124 y distribución4 pasan; review final/suite Windows completa exact-head pendientes bajo R43. Full5CDF/CI_D23 históricos. Grupo/merge/B abiertos; sin certificación |
 | M2 · criterio 2 | Grabación, archivo y retry comparten persistencia de aplicación | CLI delega a SessionProcessor, artefactos y fallos compatibles | Consolidación verificada en focos de tarea 2; integración de catálogo implementada en 7bfd0cb con foco final 26; full4 y review técnica final aceptados; CI pendiente |
 | M2 · criterios 6–7 | Segmentos nullable y pausa sin desplazar el WAV | Cinco recorridos con proveedor fake, procedencia y seek de marcas en WAV sintético | Verificados automáticamente en focos de tarea 2 y catálogo implementado en tarea 3; full4 y review técnica final aceptados; sin certificación de captura/proveedor |
 | M2 · criterio 8 | Migración transaccional, backup administrado y rechazo de esquema futuro | FK/integrity, rollback de DDL y snapshot SQLite API con WAL comprometido | Verificado automáticamente en local: M2A-T1-LOCK-GREEN-20261105 y M2A-T1-FINAL-20261105; CI del grupo pendiente |
@@ -30,7 +30,22 @@ must be synthetic; credentials and private conversations never enter evidence fi
 
 ## Current execution scope
 
-Checkpoint actual PR #21: fuente c3cdf08 integra C1/C2/C3 bajo R40, desde
+C4 actual 56af525 desde 0a28842, src a17ec107c212d62e1984bb1cede094b579db5137 y
+tests c6a29f96af9ffc1e0c488ca73a430ef9a99b86b6. RED 6 fallan/2 controles pasan/
+6,69 s; GREEN 8/8,18 s, afectado 124/90,52 s sin skips. Ruff/format 2 limpios y
+mypy D23/current 79/79 sin nuevos. Probe fresco no editable 65 archivos iguales,
+schema 2/FTS5 y FK/integrity informados por root. Distribución4 pasan 7,44 s, XML 4/
+0F/0E/0S/interno 7,314 s; wheel CLI 3,928/GUI 2,748, mutex 0,005 y path 0,570 pasan.
+Wheel SHA256 `cdc99d7b0b76bdce2d8c606edb7adabcd335984be4fc0bce000690648a5bc37a`;
+sdist `df30e3ffc9aa4e33d4b5b995f982d1c52097541ff1633b0035ee00074d686eb3`.
+Logs `.superpowers/m2a-copilot-2-wheel-smokes.*`, probe 56af525 de 02:26:03.485121Z.
+Review final pendiente. R43 conserva el gate de suite completa: Windows CI sobre
+el head exacto nuevo antes del merge; no duplicar con local full6. Full5CDF y
+CI_D23 (966 pasan/2 wheel skips/331,02 s,42147566672; package42147566683 pasa)
+son históricos. Copilot 5794829768 sobre D23 resolvió C1–C3 y abrió C4; aún faltan
+respuesta C4/nueva review recibida/CI exacto/merge. Sin cierre ni certificación.
+
+Checkpoint histórico PR #21: fuente c3cdf08 integra C1/C2/C3 bajo R40, desde
 61fb8e2, con src b465d3198840f96d5d15a85eeb45e4312e4c4dec y tests
 293bc5038bae501dee07631704899e5f385e9025. RED independiente 5 fallos/3 controles
 pasan/8 casos/26,91 s; GREEN 8 pasan 9,77 s; afectado 325 pasan/1 symlink skip/

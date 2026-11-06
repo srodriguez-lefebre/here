@@ -18,7 +18,16 @@
 **Goal:** Durable meeting identity, immutable transcript revisions and one
 application-owned persistence path, rebuildable from files and usable without a key.
 
-**Current PR #21 checkpoint:** Copilot `5794475912` on published `3394149`
+**Current PR #21 checkpoint:** Copilot 5794829768 COMMENTED on D23 resolves C1–C3
+and adds C4/inline 4488285573. R43 correction 56af525 from 0a28842 catches marker-data
+ValueError locally, re-raises UnsafeSessionPath, and retains a bounded nonretryable
+warning before WAV probing. RED 6 fail/2 controls in6.69s; GREEN 8 in 8.18s;
+affected 124 in 90.52s, no skips. Fresh65-file noneditable probe and 4 distribution
+cases pass, including both installed-wheel smokes. Scoped final verdict pending.
+R43 assigns the mandatory current complete suite to exact-head Windows CI before
+merge; no duplicate local full6. ReplyC4/new received Copilot/newhead CI/merge pending.
+
+**Historical PR #21 checkpoint:** Copilot `5794475912` on published `3394149`
 confirmed C1 ordinary callback rollback, C2 default-processor catalog composition
 and C3 blocked completed-replay visibility. R40 corrections are integrated as
 `c3cdf08` from `61fb8e2`; eight new cases pass 9.77s, affected 325/one symlink skip

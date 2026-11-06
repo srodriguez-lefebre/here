@@ -25,12 +25,17 @@ las definiciones de terminado y los tres niveles de evidencia. Versión vigente
   de dos wrappers de `tests/test_capture_recovery.py`, desde autor
   `c3a3ccbcf2928502cbf0d0881fdfee3d7f86d84a`. Fuente idéntica a `7bfd0cb`; tests
   tree `30c88848b3cf42c9ce4443328e3c8e0100e2af44`, 114 assertions/cortes intactos.
-- Fuente actual integrada `c3cdf085c03718ca6a9d5db87ea0de28fa9652b0`, desde Green
+- Fuente histórica Copilot1 `c3cdf085c03718ca6a9d5db87ea0de28fa9652b0`, desde Green
   `61fb8e2815887c19a1d6dc64572e5f469ec5cee9`: src tree
   `b465d3198840f96d5d15a85eeb45e4312e4c4dec`, tests tree
   `293bc5038bae501dee07631704899e5f385e9025`, iguales al worker. C1–C3 implementados
-  bajo R40, full 5 verde 961/7/371,80 s; review independiente final pendiente. Head publicado
-  de PR #21 sigue 339414913e790d48cd9baef22e4385eb780937ed.
+  bajo R40, full5 verde961/7/371,80 s. Copilot 5794829768 sobre D23 confirmó C1–C3
+  resueltos; respuestas4488243766/4488243915/4488244052, hilos resueltos.
+- Fuente actual 56af5253a8eec498c594bd6f1e1e456ad69f9453 desde Green
+  0a28842e9ac0a9f670a5e800077bf0fce8ae9e6d: src a17ec107c212d62e1984bb1cede094b579db5137,
+  tests c6a29f96af9ffc1e0c488ca73a430ef9a99b86b6, iguales al worker. C4 implementado
+  bajo R43, review independiente final pendiente. PR #21 publicado todavía en
+  d23b83d70b1a3da7fe0a3c579f1f34b109e2d5a3; C4 aún sin respuesta/publicación.
 - Los nueve grupos se conservan: M2 A (`M2_CATALOG`, 1–3), M2 B
   (`M2_LIFECYCLE`, 4–5), M3 A (`M3_SEARCH`, 1–2), M3 B (`M3_LIBRARY`, 3–4),
   M4 A (`M4_GROUNDED`, 1–3), M4 B (`M4_PRODUCT`, 4–5), M5 A
@@ -50,7 +55,8 @@ las definiciones de terminado y los tres niveles de evidencia. Versión vigente
 `docs/development/M2_CATALOG_PLAN.md`, tarea 3. SPEC `M2_CATALOG_SPEC.md`; hito
 `docs/MILESTONE_2_PLAN.md`. Tarea 3 implementada, verificada automáticamente en
 local y aceptada por review técnica independiente en la fuente previa a Copilot.
-Correcciones C1–C3 actuales con full 5 verde 961/7/371,80 s; review final pendiente; grupo A sigue abierto.
+C1–C3 resueltos por Copilot sobre D23; C4 actual verificado por focos/package local,
+review final y suite Windows completa del head corregido pendientes. Grupo A abierto.
 
 - Tarea 1: review independiente aceptada después del fix Busy. Foco 34 pasan/
   1 skip/4,70 s; full `M2A-T1-FINAL-20261105` 778 pasan/7 skips/173,68 s,
@@ -141,7 +147,7 @@ Review técnica independiente final APPROVED: GR1–GR3/GD1/GD2 ADDRESSED, cero
 hallazgos técnicos abiertos. Reporte `group-fix-review-report.md`, docs revisados
 `8845877d75342d1c0f65f1a6674155c7439ab4ce`. Gates hospedados/merge pendientes.
 
-### Copilot PR #21 — checkpoint vigente c3cdf08
+### Copilot PR #21 — checkpoint histórico c3cdf08
 
 Review 5794475912 COMMENTED recibida sobre 3394149 a 2026-11-06T01:21:05Z:
 C1 rollback de callback ordinario (`4488007346`), C2 catálogo compartido del
@@ -167,31 +173,33 @@ run 42142394863; package 42142395026 pasa solo sobre 339, no sobre el head corre
 
 ## Próxima acción obligatoria
 
-1. Full 5 local verde; finalizar review independiente acotada de C1–C3 con docs/evidencia;
-   conservar todos los fulls históricos, CI339 y aprobación previa en su fuente real.
-2. PR de A abierto: [#21](https://github.com/srodriguez-lefebre/here/pull/21),
-   no borrador, contra main; evidencia y review independiente APPROVED en la
-   descripción. Head publicado `339414913e790d48cd9baef22e4385eb780937ed`.
-   Copilot recibido: review `5794475912`, COMMENTED sobre ese head a
-   2026-11-06T01:21:05Z. Tres observaciones confirmadas: rollback de excepción
-   del callback (`4488007346`), catálogo del procesador por defecto (`4488007374`)
-   y aviso de replay completed rechazado (`4488007407`). Correcciones integradas
-   c3cdf08, full 5 verde y review independiente final APPROVED para fuente/tests
-   más docs f06b33b (`copilot-1-review-report.md`). C1–C3 ADDRESSED; faltan las
-   respuestas en hilos y la nueva recepción de Copilot sobre el head corregido.
-   No abrir un PR duplicado ni repetir la review/suite local ya aprobadas.
-3. Diff aceptado: responder cada hilo con el commit y pedir/recibir
-   Copilot en el nuevo head corregido.
-   Los tests Windows `42142394863` pasan 958/2 skips de wheel en 250,79 s y el
-   bundle `42142395026` pasa sobre 3394149; no sustituyen CI en un head corregido.
-   Luego verificar CI Windows verde en ese head exacto, merge guardado y ledger.
-   Gate Copilot/CI/merge de A pendientes; no están aprobados por evidencia local.
-   Se publica el head de correcciones/evidencia antes de pedir otra review de
-   Copilot; las corridas sobre 3394149 quedan históricas y no cierran el nuevo gate.
-4. Después del merge A y de los PRs de docs de contratos necesarios, root crea
-   dos chats de proyecto separados para M2 B y M3 A, con briefs completos y leases.
-   No usar `8087e25` como base de merge futura: la SHA real aún es desconocida.
+1. C4 integrado 56af525, focos/local package pasan; finalizar review independiente
+   acotada de fuente/docs. No local full6: R43 exige suite Windows completa en el
+   head exacto corregido antes del merge, además de packageCI.
+2. PR #21 sigue abierto/publicado en d23b83d70b1a3da7fe0a3c579f1f34b109e2d5a3.
+   Copilot 5794829768 COMMENTED2026-11-06T02:09:04Z resolvió C1–C3 y abrió C4
+   inline 4488285573. Responder C4 con SHA corregida alcanzable, publicar y pedir/
+   recibir nueva review Copilot sobre el head real. C4 aún no respondido.
+3. CI_D23 es histórico: tests42147566672,966 pasan/2 skips wheel/331,02 s;
+   package42147566683 pasa. No prueba56af525. Esperar suite/package Windows verde
+   del nuevo head exacto, todas las observaciones respondidas y review independiente
+   final; recién entonces merge guardado y ledger. No se omite ningún gate.
+4. Después del merge A y PRs docs de contratos necesarios, root crea chats separados
+   M2 B/M3 A con rama/worktree y brief sobre merge real. Ningún chat creado;
+   borradores futuros/rulings R39–R43 se conservan, sin implementación adelantada.
 
+### C4 — evidencia local actual
+
+Solo recovery.py y un nuevo test cambian; src a17ec107c212d62e1984bb1cede094b579db5137,
+tests c6a29f96af9ffc1e0c488ca73a430ef9a99b86b6. ValueError del marker se maneja
+localmente, UnsafeSessionPath se propaga; aviso fijo acotado no repite payload ni
+rutas. Candidato can_retryFalse antes de WAV/provider; bytes/identidad/estado real/
+siblings y controles de retry válido intactos. RED 6/2controles/6,69 s; GREEN 8/8,18 s;
+afectado 124/90,52 s sin skips, Ruff/format 2 limpios y mypy 79/79 sin nuevos.
+Probe56af525 fresco 65 archivos iguales/no editable/schema 2/FTS5/FK/integrity;
+distribución4 PASS7,44 s (XML 4/0F0E0S/interno 7,314), ambos wheel CLI 3,928/GUI 2,748
+pasan. Review final y suite completa CI actual pendientes. Full5CDF previo conserva
+961/7/371,80 s en su fuente; no se relabela como resultado de56af525.
 ## Dos frentes futuros — ruling 35, todavía pendientes
 
 Proyecto descubierto: `local-e307e59e09194b354122137b16ef6d77`, host `local`, Git

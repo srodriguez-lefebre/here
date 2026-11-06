@@ -1538,3 +1538,33 @@ requested. Root may publish, reply separately to inline4488007346/7374/7407 with
 c3cdf08, and request/receive Copilot on the actual corrected head. Windows CI on
 that head and guarded merge remain pending; no group/milestone closure or real
 certification is inferred from this technical acceptance.
+
+## 2026-11-06 — Copilot C4 integrated; exact-head complete Windows suite pending
+
+Review5794829768 COMMENTED on published D23 at02:09:04Z resolves C1–C3 and adds
+C4/4488285573. R43 was committed in3cf8726 before code. Source56af5253a8eec498c594bd6f1e1e456ad69f9453
+integrates0a28842e9ac0a9f670a5e800077bf0fce8ae9e6d: src a17ec107c212d62e1984bb1cede094b579db5137,
+tests c6a29f96af9ffc1e0c488ca73a430ef9a99b86b6, identical to worker. Only recovery.py
+and one new independent test change. Marker-data ValueError is caught locally,
+UnsafeSessionPath re-raised; fixed bounded non-echoing nonretryable warning retains
+valid identity/status before WAV probes. No fallback proof, byte changes or provider.
+
+Actual RED6 failures/2 controls in6.69s; GREEN8/8.18s; affected124/90.52s, zero
+skips; Ruff/format2 clean, canonical mypyD23/current79/79 with no new diagnostics.
+Fresh noneditable probe56af525 at2026-11-06T02:26:03.485121Z verifies65 equal source
+files/schema2/FTS5, root-reported FK/integrity. Wheel SHA256
+cdc99d7b0b76bdce2d8c606edb7adabcd335984be4fc0bce000690648a5bc37a; sdist
+df30e3ffc9aa4e33d4b5b995f982d1c52097541ff1633b0035ee00074d686eb3.
+Distribution file4 passed7.44s, XML4/0F0E0S/internal7.314s; installed wheel
+CLI3.928/GUI2.748 pass, mutex0.005/path0.570 pass. Docs read source diff/reports/
+probe and parsed actual XML; no runtime. Logs .superpowers/m2a-copilot-2-wheel-smokes.*.
+
+Final independent scoped verdict pending committed docs. R43 requires the complete
+Windows suite and package CI on the corrected exact head before merge; no duplicate
+localfull6 and no waived full-suite gate. Full5CDF and CI_D23 are historical only:
+D23 tests42147566672 passed966/2wheel skips/331.02s, package42147566683 passed.
+Published PR21 stillD23; C4 unanswered/unpublished. C1–C3 replies4488243766/
+4488243915/4488244052 resolved. Root must replyC4 with reachable correction SHA,
+request/receive new Copilot, obtain exact-head complete-suite/package CI green,
+then guarded merge. No group/M2 close, certification, version bump or future chats.
+R39–R43 and all historical failures/timeouts retain their scope; no new ruling here.

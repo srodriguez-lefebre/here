@@ -22,7 +22,16 @@ acceptance criteria: `../MILESTONE_2_PLAN.md`.
 
 ## Intent
 
-Current PR #21 correction source is `c3cdf08` (Green `61fb8e2`) under R40.
+Current C4 correction source is `56af525` (Green `0a28842`) under R43. Malformed
+marker ValueError is handled only around `read_pending_intent`; UnsafeSessionPath
+is re-raised. A valid session retains its real identity/status as an existing
+nonretryable warning candidate before WAV inspection, with fixed bounded text
+that echoes no payload/path. Bytes, owners, valid siblings and ordinary failed
+retry controls are preserved. Local8-case GREEN,124-case affected focus and fresh
+installed-wheel smokes pass. Final scoped review and mandatory complete Windows
+CI on the corrected exact head remain pending. No duplicate local full6 is run.
+
+Historical PR #21 correction source was `c3cdf08` (Green `61fb8e2`) under R40.
 C1 restores previous raw/segments/obsolete evidence for ordinary callback failure
 before propagating the original exception, retaining failed-rollback backups;
 BaseException/process termination is unchanged. C2 shares the controller's actual
