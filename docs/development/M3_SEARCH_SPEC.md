@@ -83,8 +83,13 @@ to exclusive, statuses, participant, `limit` 1–100, stable cursor), `SearchQue
 (text plus the same filters, limit, cursor), `MeetingPage` and `SearchPage` with
 `items` and `next_cursor`, reusing M2 B's `MeetingPatch` (title and user notes only)
 for editing rather than declaring a competing patch type. Dates are
-stored ISO UTC and presented in local time by the UI. An empty query lists meetings
-through `MeetingQuery`; it never issues an empty `MATCH`.
+stored ISO UTC and presented in local time by the UI. Under ruling 47, an empty
+normalized `SearchQuery` delegates to `list_meetings` with the same filters, limit
+and cursor and returns `MeetingPage`; nonempty search returns `SearchPage`. The
+service annotation is `SearchPage | MeetingPage`. It never issues an empty `MATCH`
+or fabricates a hit or segment for a meeting without a revision. The UI continues
+to send empty text directly through `MeetingQuery`, retaining the existing
+complete/partial visibility and listing keyset continuity.
 Consume accepted A identities and nullable source dates without inventing missing
 dates or speakers. Ruling 31's ordered `revision_audio_assets` association remains
 the source for a revision's evidence audio; a cumulative meeting asset inventory

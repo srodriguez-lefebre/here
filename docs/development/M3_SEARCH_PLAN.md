@@ -172,7 +172,7 @@ under root lease); tests in
 
 **Interfaces:** `SearchService(connection_factory)` with
 `list_meetings(query: MeetingQuery) -> MeetingPage`,
-`search(query: SearchQuery) -> SearchPage`, `reindex() -> ReindexReport`,
+`search(query: SearchQuery) -> SearchPage | MeetingPage`, `reindex() -> ReindexReport`,
 `capabilities() -> SearchCapabilities`; pure helpers `normalize_query_text(str) -> str`
 and `build_fts_expression(str) -> str`; typed errors `InvalidInput` (bad cursor or
 limit) reusing M2 error types. `SearchHit` carries `meeting_id`, `revision_id`,
@@ -180,6 +180,11 @@ limit) reusing M2 error types. `SearchHit` carries `meeting_id`, `revision_id`,
 The planned search `reindex` facade delegates to the accepted B maintenance
 operation; its exact adapter/result is a dependency to reconcile, not a new writer.
 Use the existing accepted FTS probe before adding any capability implementation.
+Ruling 47 fixes the empty normalized search branch: delegate to `list_meetings`
+with the same filters, limit and cursor and return its `MeetingPage`; nonempty
+search returns `SearchPage`. Do not invent a hit/segment or expand visibility for
+an audio-only reservation. The UI still dispatches empty text directly to listing,
+whose date/ID cursor remains outside the R45 search generation.
 
 - [ ] Write failing tests for `build_fts_expression`: accents, case, quotes, two-letter
   token, operator-looking tokens, unbalanced quotes; assert the raw string never
