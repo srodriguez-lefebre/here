@@ -88,18 +88,30 @@ human mapping, passive Enter target identity/raw text, measured zero versus abse
 timing, audio_path=None and custom-root/no-default-DB assertions. This is focused
 automatic read-consumer evidence, not B4 mutations or B5 acceptance.
 
-Independent `/root/task2_review` on frozen `825f3e6` returns **CHANGES REQUESTED**:
-T2-R1 Important, stale library after successful recording/catalog publication;
-T2-R2 Important, participant-load failure lacks durable feedback/retry; T2-R3 Minor,
-shared jobs' busy transition is not reflected when library work starts. Parent
-verified/accepted all three. The same RED role is preparing four targeted tests;
-no regression RED or corresponding source fix has run yet. Complete Task 2/group
-acceptance remains pending, and this same review continues after actual fixes.
+The original independent `825f3e6` review remains CHANGES REQUESTED historically.
+Its T2-R1/R2/R3 regressions ran before fixes on test-only
+`7044b12d0097164cea340e61846ba980d1420ac2`: four failures/28 deselected,
+zero errors/skips, 12.70s (XML four cases/internal 12.653s). Same GREEN fixed
+existing MEMORY_INGESTED refresh/generation/options, independent participant
+warning/retry/canonical replacement, and deduplicated shared-busy feedback in
+three source files; no tests changed. At exact clean worker
+`7e554f17ff6e3b89ae95786aa81edec3696b30d4`, all 42 focused cases passed in
+13.37s (XML 13.319s); nine-file Ruff check/format passed without edits/repeats.
 
-Coordinator explicitly released runtime immediately after focus6 commands, BEFORE
-reports/commit/review; root ACKed B's exclusive full/mypy window. This docs role
-has no runtime/import/lint grant. R50 remains preparation without dependent product
-source/real B5 acceptance. Real B4 mutations, B5 guard/reindex/delete notification,
+The same `/root/task2_review` scoped reassessment is **APPROVED IMPLEMENTED UI
+CHECKPOINT** at 7e554f1: R1/R2/R3 ADDRESSED, no new confirmed Critical/Important/
+Minor defect. This is separate from complete Task 2/group acceptance. Parent
+integration `5a81c046a5c8550c609aa0a1d2191c8c97fc41ae` matches all nine UI and
+three R48 backend blobs; its source/tests trees and equivalence are recorded in
+JSON. The 42-case invocation ran in worker 7e, never at parent 5a81. Parent search.py
+still matches reviewed e4d; neither prior core nor UI run transfers to a new full
+integrated run. Integrated mypy/baseline preparation has performed no scan yet.
+
+Coordinator released the latest runtime immediately after verification commands,
+before reports/scoped review/parent integration; root ACKed the reserved host.
+This docs role has no runtime/import/lint grant. R50 remains preparation without
+dependent product source/real B5 acceptance. Real B4 mutations, B5 guard/reindex/
+delete notification,
 guarded 1,000/100,000 p95/heartbeat, full suite, mypy delta and final task/group/
 hosted gates remain open. Small synthetic UI cases supply no large-corpus budget
 or new certification. Query-core e4d proof/review above remains unchanged.

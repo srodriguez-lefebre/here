@@ -357,6 +357,52 @@
       "tree_binding": "Executed content proven against subsequent committed trees by all nine pre-run blobs and unchanged post-run bindings; these are not the invocation HEAD887 trees.",
       "content_equivalent_subsequent_commit": "825f3e64570fdd1504050b4259a708376cfb88f6",
       "bindings_artifact": "task-2-focus-6-bindings.json"
+    },
+    {
+      "name": "M3A-T2-REVIEW-FIX-RED",
+      "head": "7044b12d0097164cea340e61846ba980d1420ac2",
+      "source_tree": "15b4872ee5bb3f8d69c4db8f7373103f74bf903d",
+      "tests_tree": "8c3626239d45885ae4d41476764f1d4352096377",
+      "workdir": "C:/Users/savar/.codex/worktrees/m3-ui-implementation/here",
+      "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -m pytest -vv tests/test_ui_library.py -k 'recording_ingestion_refreshes or ingestion_invalidates or participant_busy or slow_library_query_disables' --junitxml=C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN/task-2-review-red-1.xml",
+      "exit_code": 1,
+      "collected": 32,
+      "selected": 4,
+      "passed": 0,
+      "failed": 4,
+      "setup_errors": 0,
+      "skipped": 0,
+      "deselected": 28,
+      "duration_seconds": 12.7,
+      "xml_cases": 4,
+      "xml_internal_seconds": 12.653,
+      "log": "task-2-review-red-1.log",
+      "xml": "task-2-review-red-1.xml",
+      "report": "task-2-review-fix-report.md",
+      "scope": "Same RED four actual regression failures BEFORE source fixes: two R1 waits, erased R2 participant Busy warning and enabled R3 capture controls. Source exactly 825 unchanged, no harness/setup failures."
+    },
+    {
+      "name": "M3A-T2-REVIEW-FIX-FOCUS",
+      "head": "7e554f17ff6e3b89ae95786aa81edec3696b30d4",
+      "source_tree": "9467f003ed1d203c48706ed375328e6cb440d36c",
+      "tests_tree": "8c3626239d45885ae4d41476764f1d4352096377",
+      "workdir": "C:/Users/savar/.codex/worktrees/m3-ui-implementation/here",
+      "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -m pytest -vv tests/test_ui_library.py tests/test_ui_lifecycle.py --junitxml=C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN/task-2-review-focus-1.xml",
+      "exit_code": 0,
+      "collected": 42,
+      "selected": 42,
+      "passed": 42,
+      "failed": 0,
+      "setup_errors": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "duration_seconds": 13.37,
+      "xml_cases": 42,
+      "xml_internal_seconds": 13.319,
+      "log": "task-2-review-focus-1.log",
+      "xml": "task-2-review-focus-1.xml",
+      "report": "task-2-review-fix-report.md",
+      "scope": "Exact clean WORKER 7e invocation, all four new regressions and both actual R48 read consumers pass. NOT a run at parent 5a81; no full/B4 mutation/B5/performance/task/group acceptance."
     }
   ],
   "lint_checkpoint": {
@@ -407,14 +453,14 @@
     "runtime_count": 0,
     "parent_integrated": false,
     "report": "task-2-green-source-report.md",
-    "limits": "Historical source-only stage had runtime zero. Later focus1..4 retain failures; focus5/6 pass38 including actual R48 read consumers. Independent825 review requests changes; no Task2/B4/B5/group acceptance.",
+    "limits": "Historical source-only stage had runtime zero; later focused42 and same-reviewer scoped approval are recorded separately. No complete Task2/B4/B5/group acceptance.",
     "stage_scope": "Historical initial source-preparation report only, before later UI attempts; see ui_execution_checkpoint."
   },
   "remaining_gates": [
     "Accepted sole B5 R42 coherent suppression snapshot in reads and R45 generation; typed fail-closed invalid/inaccessible registry; suppression in SQL before cursor/LIMIT, including pending barrier when SQL hide failed and surviving receipts after DB loss/rebuild.",
     "Accepted sole B5 reindex facade, missing-FTS reporting, complete-only/include_partial before-after equivalence, actual no-op generation equivalence and changed-input cursor rejection.",
     "Actual B4 update_meeting optimistic row_version/title-index consistency remains pending. R48 temporary-catalog read consumers now complete all focused assertions, but this does not accept complete B4 or guarded B5/full integration.",
-    "Fix accepted independent UI findings T2-R1 stale post-ingest library, T2-R2 participant failure feedback/retry and T2-R3 shared-busy feedback after actual targeted RED; same-reviewer reassessment. Real B5 deletion notification/invalidation and complete Task2/group acceptance remain pending.",
+    "Implemented UI findings T2-R1/R2/R3 are ADDRESSED and same-reviewer scoped checkpoint approved. Real B4/B5 integration, delete notification/invalidation, final integrated full/mypy/preview/global review and complete Task2/group acceptance remain pending.",
     "Guarded 1,000/100,000 warm p95 below 500ms including final digest/guard work; actual Qt heartbeat no event-loop block above 50ms, under root exclusive runtime grant.",
     "Full offscreen suite and mypy baseline comparison/no new touched-file errors at eventual integrated head; appropriate checks for later relevant edits.",
     "Complete same Task1 assessment and task docs/evidence; root global integration docs only when capacity ready; Task2 and later single global review.",
@@ -425,7 +471,7 @@
     "guarded_p95": "NOT_RUN",
     "qt_heartbeat": "Guarded 1,000/100,000 corpus heartbeat NOT_RUN; small synthetic UI cases/probe do not establish this budget.",
     "real_B4_R48_B5_integration": "R48 real read consumers FOCUSED_AUTOMATIC_VERIFIED at focus5/6; B4 mutation/title-index and B5 guard/reindex/deletion integration NOT_RUN/PENDING.",
-    "ui_source_green": "FOCUSED_AUTOMATIC_GREEN_ONLY: focus5/6 pass38, independent825 review CHANGES_REQUESTED; targeted regression RED and fixes NOT_RUN.",
+    "ui_source_green": "FOCUSED_AUTOMATIC_GREEN_ONLY: 42 pass at exact worker 7e and scoped implemented UI checkpoint approved; no complete Task2/group or new parent-head runtime.",
     "full_suite": "NOT_RUN",
     "mypy_delta": "NOT_RUN",
     "build_install": "NOT_RUN",
@@ -435,7 +481,7 @@
     "certification": "NOT_RUN",
     "two_hour_recording": "OMITTED under ruling 5, never approved"
   },
-  "runtime_coordination": "Coordinator explicitly RELEASED runtime immediately after focus6 commands BEFORE reports/commit/review; root ACKed B exclusive full/mypy window. No M3 test/probe/Ruff process remains from that window; docs role executes no imports/tests/probes/lint/Python/runtime.",
+  "runtime_coordination": "Coordinator explicitly RELEASED latest runtime immediately after verification commands BEFORE reports/scoped re-review/parent integration; root ACKed reserved host. No M3 process remains; docs role uses static PowerShell JSON/XML/Git only, no imports/tests/probes/lint/Python.",
   "invariants": "No acceptance/DoD, product flow, dependency, schema, privacy or retention changes. No new hardware/provider/clean-install certification, no milestone closure or 0.4.0 bump.",
   "technical_supplements": [
     {
@@ -475,7 +521,7 @@
   ],
   "ui_execution_checkpoint": {
     "recorded_on": "2026-11-06",
-    "status": "FOCUSED_AUTOMATIC_GREEN_REVIEW_CHANGES_REQUESTED",
+    "status": "FOCUSED_AUTOMATIC_VERIFIED_APPROVED_IMPLEMENTED_UI_CHECKPOINT",
     "report": "task-2-focused-green-report.md",
     "source_worker": "C:/Users/savar/.codex/worktrees/m3-ui-implementation/here",
     "branch": "codex/m3-ui-green",
@@ -545,7 +591,7 @@
         "scope": "Post-release commit of formatter-only six-file diff after focus6; all nine executed blobs match. No test assertions/scenarios changed."
       }
     ],
-    "limits": "Focused38 GREEN and actual R48 read assertions are automatic synthetic evidence. Independent825 UI review CHANGES_REQUESTED; R1/R2/R3 regressions/fixes/reassessment remain. Complete B4/B5/full/mypy/guarded performance/hosted/group/certification gates remain open; e4d query-core proof unchanged.",
+    "limits": "Latest42 focused automatic worker run and same-reviewer approval establish implemented UI/R48 read checkpoint only. Real B4 mutations and B5 guard/reindex/delete event, integrated full/mypy/preview/global/hosted/performance/certification and complete Task2/group gates remain open. e4d query proof unchanged.",
     "historical_prepared_worker": {
       "head": "2389a7f191bd41baf1fc173b8d87c2ea26dacb1f",
       "status": "SOURCE_AND_TEST_PREPARED_NOT_RUN",
@@ -625,7 +671,8 @@
           "blob": "ffa86023a5813fbf6191471954b263503ba9c64c"
         }
       ],
-      "binding_verification": "All nine saved before focus6; unchanged after run, then exact match to post-release825 commit. No test result invented at subsequent HEAD."
+      "binding_verification": "All nine saved before focus6; unchanged after run, then exact match to post-release825 commit. No test result invented at subsequent HEAD.",
+      "stage_scope": "Historical825 review/content checkpoint before four-regression fixes and later parent integration; see ui_review_fix_checkpoint."
     }
   },
   "R50_preparation": {
@@ -704,6 +751,146 @@
     "next_stage": "Same independent RED role preparing four targeted tests only; no source fix/runtime yet. Actual RED under new root grant, same GREEN fixes, same reviewer reassesses scoped diff.",
     "task2_acceptance": "PENDING",
     "group_acceptance": "PENDING",
-    "limits": "No B4 mutation/title-index, B5 guard/reindex/delete event, guarded large-corpus p95/heartbeat, full/mypy, preview launch, hosted/merge or certification acceptance."
+    "limits": "No B4 mutation/title-index, B5 guard/reindex/delete event, guarded large-corpus p95/heartbeat, full/mypy, preview launch, hosted/merge or certification acceptance.",
+    "state_at_recording": "Historical original825 changes-requested assessment, kept with original finding dispositions at that stage. Later SAME-reviewer scoped approval in ui_review_fix_checkpoint addresses all three; original report remains immutable."
+  },
+  "ui_review_fix_checkpoint": {
+    "recorded_on": "2026-11-06",
+    "status": "APPROVED_IMPLEMENTED_UI_CHECKPOINT",
+    "report": "task-2-review-fix-report.md",
+    "red": {
+      "original_commit": "e5ba499377820def926865899a5a4d6852ff8fc9",
+      "worker_integration_commit": "7044b12d0097164cea340e61846ba980d1420ac2",
+      "source_unchanged_from": "825f3e64570fdd1504050b4259a708376cfb88f6",
+      "run": "M3A-T2-REVIEW-FIX-RED",
+      "tests": "Four appended regressions, previous 38 scenarios/assertions unchanged"
+    },
+    "green": {
+      "commit": "7e554f17ff6e3b89ae95786aa81edec3696b30d4",
+      "source_tree": "9467f003ed1d203c48706ed375328e6cb440d36c",
+      "tests_tree": "8c3626239d45885ae4d41476764f1d4352096377",
+      "files": [
+        "src/ui/app.py",
+        "src/ui/bridge.py",
+        "src/ui/library.py"
+      ],
+      "insertions": 49,
+      "deletions": 7,
+      "test_changes": false,
+      "causes_fixed": [
+        "R1: accepted existing MEMORY_INGESTED event refreshes current generation/page/participant choices and rejects pre-ingestion callbacks, retaining query/filter state; no B5 event invented.",
+        "R2: independent participant warning and accessible async retry; canonical ID replacement/deduplication retains valid selection; page success cannot erase failure.",
+        "R3: deduplicated busyChanged reports after pending/poll state and completion callbacks; HereDesktop consumes it without transient idle when callbacks enqueue work."
+      ]
+    },
+    "lint": {
+      "head": "7e554f17ff6e3b89ae95786aa81edec3696b30d4",
+      "files": [
+        "src/ui/library.py",
+        "src/ui/main_window.py",
+        "src/ui/app.py",
+        "src/ui/bridge.py",
+        "src/ui/contract.py",
+        "src/ui/fake_controller.py",
+        "src/ui/preview.py",
+        "tests/test_ui_library.py",
+        "tests/test_ui_lifecycle.py"
+      ],
+      "command_modules": [
+        "-m ruff check",
+        "-m ruff format --check"
+      ],
+      "result": "PASS; 9 files already formatted",
+      "logs": [
+        "task-2-review-ruff-check-1.log",
+        "task-2-review-ruff-format-check-1.log"
+      ],
+      "edits_after_focus": false,
+      "repeat_needed": false,
+      "warning": "Inherited root-only top-level select deprecation retained; no metadata edit"
+    },
+    "same_reviewer": {
+      "reviewer": "/root/task2_review",
+      "base": "825f3e64570fdd1504050b4259a708376cfb88f6",
+      "head": "7e554f17ff6e3b89ae95786aa81edec3696b30d4",
+      "verdict": "APPROVED IMPLEMENTED UI CHECKPOINT",
+      "report": "task-2-ui-fix-review-report.md",
+      "dispositions": {
+        "T2-R1": "ADDRESSED",
+        "T2-R2": "ADDRESSED",
+        "T2-R3": "ADDRESSED"
+      },
+      "new_critical": 0,
+      "new_important": 0,
+      "new_minor": 0,
+      "runtime": "NOT_RUN: scoped static reassessment",
+      "original_report": "task-2-ui-review-report.md remains immutable",
+      "complete_task2_group_merge_acceptance": "NOT_APPROVED"
+    },
+    "worker_bindings": [
+      {
+        "path": "src/ui/library.py",
+        "blob": "50d424465a8dc7083074c08953af5867dc6c267b"
+      },
+      {
+        "path": "src/ui/main_window.py",
+        "blob": "895cf73ae403bdfdca252e22a660207effb60d16"
+      },
+      {
+        "path": "src/ui/app.py",
+        "blob": "7b35895cddd1bb3340cb6eb345aaa1087ba7ddbc"
+      },
+      {
+        "path": "src/ui/bridge.py",
+        "blob": "b60f2464097705eafd51c4c3aa4cb4e3975d6554"
+      },
+      {
+        "path": "src/ui/contract.py",
+        "blob": "29f0252b7e9a013b66b981d1537b20b05485caee"
+      },
+      {
+        "path": "src/ui/fake_controller.py",
+        "blob": "4473979679fb9a74bef61a625739a73f35618ae5"
+      },
+      {
+        "path": "src/ui/preview.py",
+        "blob": "1c40ffd7eb80c78cd05ae96e233ceaf4d662a069"
+      },
+      {
+        "path": "tests/test_ui_library.py",
+        "blob": "ff86342075719c415d0735b0e003e9cdc6c9e0a6"
+      },
+      {
+        "path": "tests/test_ui_lifecycle.py",
+        "blob": "ffa86023a5813fbf6191471954b263503ba9c64c"
+      }
+    ],
+    "R48_backend_bindings": [
+      {
+        "path": "src/memory/models.py",
+        "blob": "7ac51f614e272d57479823fbcbb056844a924ca6"
+      },
+      {
+        "path": "src/memory/service.py",
+        "blob": "f4361ac2196720b7a52dcb65c246fba0abc6d64d"
+      },
+      {
+        "path": "src/application/controller.py",
+        "blob": "56dff8e7a64335d3b0ecc0f28168fab9e1f1e066"
+      }
+    ],
+    "parent_integration": {
+      "head": "5a81c046a5c8550c609aa0a1d2191c8c97fc41ae",
+      "source_tree": "ae2b4209b4466278a840bb6c8c0b5194071c941c",
+      "tests_tree": "7c1f2559162a71633e60734eed334eaa2f8baaf5",
+      "all_nine_UI_blobs_match_worker": true,
+      "all_three_R48_backend_blobs_match_worker": true,
+      "query_blob": "034624cb10cd5b85c67a742fdb45950d66c3bc6a",
+      "evidence_level": "Static bounded UI/R48 contract-content equivalence ONLY; not full tree equivalence or new runtime",
+      "pytest_at_parent": "NOT_RUN;42 invocation was exactcleanworker7e"
+    },
+    "latest_release": "Coordinator released immediately after final verification commands, BEFORE reports/scoped re-review/parent integration; root ACKed reserved host. No M3 process remains.",
+    "next_integrated_verification": "Preparing one coherent integrated-candidate/baseline mypy request only; NO scans yet. Integrated full/mypy and final preview remain NOT_RUN/PENDING.",
+    "held_obligations": "Complete Task2/group open. Actual B4 title/version/FTS source handoff awaits root acceptance/docs and real integration. B5 guard/delete event/sole reindex/fallback and no-op equivalence pending. Guarded1k/100k p95/heartbeat, integrated full/mypy/preview/global docs/final review, hosted Copilot/CI/package/guarded merge and certification unchanged. Coree4 proof remains at its own exact source."
   }
 }

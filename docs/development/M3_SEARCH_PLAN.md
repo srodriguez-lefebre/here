@@ -115,17 +115,29 @@ files, no scenarios/assertions. Both actual R48 consumers complete all roster,
 request-scoped speaker/passive-target/raw text/timing/custom-root assertions.
 This is focused automatic verification only, not B4 mutation or B5 acceptance.
 
-Independent `/root/task2_review` at frozen 825 returns **CHANGES REQUESTED**:
-T2-R1 Important post-recording/catalog stale UI; T2-R2 Important unrecoverable
-participant-load failure/erased warning; T2-R3 Minor missing shared-busy feedback.
-Parent accepted all findings. Same RED prepares four targeted regressions; actual
-RED and same-GREEN fixes await a new grant. The same reviewer will reassess the
-scoped fixes; Task 2/group remain open, no extra review seat or acceptance closure.
+Original 825 changes-requested review and findings remain immutable. The four new
+regressions on exact test-only `7044b12d0097164cea340e61846ba980d1420ac2` observed
+four failures/28 deselected/zero errors/skips/12.70s (XML four/internal 12.653s)
+before fixes. Same GREEN source-only 7e554f1 addresses accepted existing ingestion
+refresh/invalidation/options, separate participant failure/retry/canonical ID
+replacement and deduplicated shared-busy feedback; no tests changed. Exact clean
+worker `7e554f17ff6e3b89ae95786aa81edec3696b30d4` then passed all 42 cases in
+13.37s (XML 13.319s). Nine-file Ruff check/format passed with no edits/repeats.
 
-Coordinator explicitly released runtime immediately after focus6 commands and
-BEFORE reports/commit/review. Root ACKed B's exclusive full/mypy window; this docs
-stage has no imports/tests/probes/lint/runtime grant. R50 remains preparation only,
-without dependent product source or B5 acceptance. B4 mutations, B5 guard/reindex/
+Same `/root/task2_review` scoped 825..7e returns **APPROVED IMPLEMENTED UI CHECKPOINT**:
+R1/R2/R3 ADDRESSED, no new confirmed Critical/Important/Minor. Complete Task 2/group
+remain open. Parent `5a81c046a5c8550c609aa0a1d2191c8c97fc41ae` now integrates
+all nine exact UI and three R48 backend blobs, with search.py still reviewed e4d.
+Parent source/tests trees are `ae2b4209b4466278a840bb6c8c0b5194071c941c` /
+`7c1f2559162a71633e60734eed334eaa2f8baaf5`. This proves bounded UI/DTO contract
+equivalence; the 42-case invocation ran at worker 7e, not parent 5a81. No integrated
+full/mypy scan follows from it; the coherent-baseline request is only preparation.
+
+Coordinator released runtime immediately after the latest verification commands,
+before reports/scoped review/parent integration; root ACKed the reserved host.
+This docs stage has no imports/tests/probes/lint/runtime grant. R50 remains
+preparation only, without dependent product source or B5 acceptance. B4 mutations,
+B5 guard/reindex/
 delete notification, guarded p95/heartbeat, full/mypy and final hosted/group gates
 remain pending. `M3_SEARCH_EVIDENCE.json` binds commands, heads, nine executed blobs,
 review findings and retained failures. Core e4d proof/review remains unchanged.
