@@ -31,22 +31,27 @@ must be synthetic; credentials and private conversations never enter evidence fi
 
 ## Checkpoint de integración M3 A · 2026-11-13
 
-El candidato `31488693152067ae58eeacec08f0b01f47085fe4` reúne búsqueda y
-Biblioteca. La revisión independiente pidió corregir el cursor de consultas
-largas y la composición de recuperación con una raíz inyectada. También queda
-revisar un resultado duplicado observado. La corrida funcional del candidato
-falló. La resolución de hallazgos y la aceptación de M3 siguen abiertas.
+El candidato `31488693152067ae58eeacec08f0b01f47085fe4` reunió búsqueda y
+Biblioteca. La revisión independiente reprodujo duplicados FTS, un cursor de
+consulta larga que el propio servicio rechazaba y el uso de otro catálogo
+durante la recuperación del adaptador directo. Los tres hallazgos tienen
+corridas RED y GREEN focales. Queda pendiente la suite completa sobre la
+integración corregida.
 
 | Corrida y fuente | Resultado de nivel 2 | Alcance |
 |---|---|---|
 | `r63-query-benchmark-1` en `ca80f49`, fuente `64013ade` | Falló. p95 879,4833999891125 ms frente a 500 ms. Mediana 809,5637999940664 ms, cinco precalentamientos y 40 consultas medidas. | Fixture sintético original de 1.000 reuniones y 100.000 segmentos. XML SHA-256 `94F2CEA4A1025D397B3B618D49D57B601246DB3890B7756A527E5DB6E825EBD8`. |
 | `r52-b-r58-integrated-1` en `2ece845` | 107 pasan, 52,308 s en XML. Heartbeat máximo 7,6934 ms, 1.894 ticks y ocho consultas entregadas, con todos los workers drenados. | Windows 11 10.0.26300, AMD64 Family 25 Model 80, 16 CPUs lógicas, Python 3.13.15 y Qt 6.11.2 offscreen. Ejercitó la búsqueda bajo R50, el render y el drenaje sobre el fixture 1.000/100.000. XML SHA-256 `97013543102B24FA907A9B8E41A34B3B6436C3EA77FBAF4A8520018B0662275B`. |
 | `task-2-delete-ack-green-1` en `d8fb75b` | 2 pasan, 5,438 s en XML. | Una página tardía y un detalle tardío quedan invalidados tras el borrado. XML SHA-256 `9B1C89FFFA3307496EFFAA92450E32774254D0C49214CE57F3E10197031E10FD`. |
-| `m3-final-functional-1` en `3148869` | Falló. 1.538 pasan, 19 fallan, 21 omitidos, 769,32 s. | Dos incompatibilidades con el argumento `settings` del entrypoint. Ocho pruebas no tenían el oráculo de comparación. El override global de `TRANSCRIPTIONS_DIR` afectó ocho pruebas de rutas y un control que encontró cuatro journals en vez de uno. XML SHA-256 `BD72E33597A46AA414FFF4AA1E7671CA1E18DCAD896D39AD63CADB010CD26E1C`. |
+| `m3-final-functional-1` en `3148869` | 1.538 pasan, 19 fallan, 21 omitidos, 769,32 s. | El lanzador fijó `TRANSCRIPTIONS_DIR` (nueve fallos) y `HERE_SETTINGS_FILE` (dos), y dejó `HERE_R61_ORACLE_PATH` presente con valor vacío (ocho). XML SHA-256 `BD72E33597A46AA414FFF4AA1E7671CA1E18DCAD896D39AD63CADB010CD26E1C`. |
+| `m3-review-environment-focused-1` en `3148869` | 31 pasan, una omisión intencional de captura de oráculo. | Los 19 casos previos pasaron sin cambios de código y con las variables corregidas. XML SHA-256 `7B09CD7759DDBFB4154B60F3D42E781812BC2762D69BE37515446AAF71A879AD`. |
+| `m3-review-search-red-1` en `b146aae` y `m3-search-correctness-green-1` en `0c0f77b` | Tres fallos esperados en RED. En GREEN 260 pasan, una omisión intencional de captura de oráculo. | Deduplicación con rangos iguales y distintos, continuación larga, cursores v1/v2 y oráculos de generación. XML GREEN SHA-256 `11938D6CABBDED3CD45EB31B3ED82C84E77FE8F9201AD95BB1C8F6087BC70208`. |
+| `m3-review-adapter-red-1` en `7c73be5` y `m3-adapter-root-green-1` en `064b339` | Dos fallos esperados y un pase fake en RED. En GREEN 32 pasan. | Recuperación con catálogo inyectado y regresiones de R52, ACK, Qt y entrypoint. XML GREEN SHA-256 `6626B3ABE22C23AB43FD4E4CFDE92FDC2D30C143CBD89B57ED99BC95195D5C44`. |
 
 Cada corrida conserva el alcance de su fuente. El p95 y el heartbeat se
-midieron en fuentes distintas. Faltan la verificación del candidato corregido,
-el seek real y la aceptación de M3. Sin nueva certificación de nivel 3.
+midieron en fuentes distintas. Quedan pendientes la suite completa del
+candidato integrado, el seek real y la aceptación de M3. Sin nueva
+certificación de nivel 3.
 Dos horas sigue **omitida por ruling 5**.
 
 ### Diagnóstico aislado R66

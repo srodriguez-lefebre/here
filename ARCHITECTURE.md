@@ -407,9 +407,12 @@ carries a degraded flag. Search returns plain-text snippets and preserves
 nullable dates and segment bounds. Maintenance delegates once to
 `MemoryService.reindex()` on the same root.
 
-The opaque ranked cursor binds the normalized query, filters, backend and
-corpus generation. The generation includes the logical FTS documents and
-eligibility data, including the coherent suppression snapshot, in the same
+The version 2 cursor binds a fixed-size digest of the normalized query and
+filters. Ranked cursors also bind backend and corpus generation. Valid version
+1 continuations remain readable. The FTS route selects each segment's best BM25
+match before applying the cursor and limit. The generation includes every
+logical FTS document and the eligibility data, including the coherent
+suppression snapshot, in the same
 transaction as the page. An obsolete ranked continuation raises
 `InvalidInput(reason="corpus_changed")`. List continuations keep the date/ID
 keyset.

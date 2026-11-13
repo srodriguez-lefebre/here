@@ -1,11 +1,11 @@
 # Hito 3 — Memoria navegable
 
-Estado: M3 A en integración y verificación. El candidato `3148869` reúne
-búsqueda y Biblioteca sobre M2 B mergeado en `b4b3d1b`. La revisión
-independiente pidió corregir la continuación de consultas largas y la composición
-de recuperación con una raíz inyectada. La suite funcional integrada
-`m3-final-functional-1` falló. El benchmark de producto medido en `ca80f49`
-sigue por encima del límite y el diagnóstico aislado R66 también falló el
+Estado: M3 A en integración y verificación sobre M2 B mergeado en `b4b3d1b`.
+Los focos GREEN de búsqueda y Qt verificaron deduplicación FTS antes de paginar,
+cursores largos y recuperación con el catálogo inyectado. Un foco con el
+entorno corregido verificó los 19 casos que fallaron en la primera suite. La
+suite completa sobre el candidato corregido sigue pendiente. El benchmark de
+producto medido en `ca80f49` y el diagnóstico aislado R66 superaron el
 presupuesto. El contrato de M3 B se mergeó en PR #27 (`94e175f`). B espera el
 PR revisado de A abierto y el despacho de root según CLAUDE §11. El diseño está en
 [`development/PRODUCT_DESIGN.md`](development/PRODUCT_DESIGN.md), secciones 2, 3 y 5,
@@ -99,7 +99,7 @@ Las cuatro tareas de `PRODUCT_DESIGN.md` §5 se reparten así:
 
 | Grupo | Tareas del diseño | Documentos | Estado |
 |---|---|---|---|
-| A. Búsqueda y acciones | 1 `SearchService`, consultas y FTS sincronizado · 2 listado y detalle Qt con workers, filtros, edición y estados vacíos | `M3_SEARCH_SPEC.md`, `M3_SEARCH_PLAN.md` | Candidato en verificación, con correcciones de revisión pendientes |
+| A. Búsqueda y acciones | 1 `SearchService`, consultas y FTS sincronizado · 2 listado y detalle Qt con workers, filtros, edición y estados vacíos | `M3_SEARCH_SPEC.md`, `M3_SEARCH_PLAN.md` | Focos de corrección verificados, suite integrada pendiente |
 | B. Biblioteca, reproductor y CLI | 3 reproductor y salto a evidencia con target común · 4 comandos CLI y JSON estables | `M3_LIBRARY_SPEC.md`, `M3_LIBRARY_PLAN.md` | PR de contratos #27 mergeado, despacho de fuente pendiente |
 
 B depende del target de cita y los DTOs de búsqueda de A. CLAUDE §11 permite
