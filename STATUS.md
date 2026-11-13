@@ -11,6 +11,11 @@ seguía en `3e76a20` y Git conservaba ambas ramas de trabajo. Faltaban los
 checkouts `faab`, `2710`, `b5-w2-red` y `m2-native-owner-red`. Cada frente
 recupera sus archivos desde los commits registrados y confirma su nueva ruta.
 
+M2 B recuperó `codex/m2-lifecycle` en
+`C:/Users/savar/.codex/worktrees/m2-b-lifecycle-resume/here` con `89305c1`.
+El autor RED trabaja en `C:/Users/savar/.codex/worktrees/m2-b-r62-red-resume/here`
+sobre `ae00b44`. M3 A recuperó el checkout `2710/here` en `49baac0`.
+
 M2 B continúa con el RED de R62. M3 A verifica el cambio R63 guardado en
 `ca80f49` antes de volver a medir el presupuesto de búsqueda. La evidencia
 anterior conserva su fuente y alcance. Root coordina las ventanas de ejecución,
