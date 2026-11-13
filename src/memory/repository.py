@@ -6,7 +6,7 @@ import json
 import sqlite3
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from typing import TypeVar
 from uuid import uuid4
 
@@ -15,11 +15,14 @@ from here.memory.models import (
     AudioAsset,
     IngestSource,
     Meeting,
+    MeetingDetail,
+    MeetingParticipant,
     MeetingStatus,
     Participant,
     PendingOperation,
     RevisionAudioAsset,
     Segment,
+    SpeakerAssignment,
     TranscriptRevision,
 )
 
@@ -34,6 +37,35 @@ T = TypeVar(
     RevisionAudioAsset,
     Participant,
 )
+
+
+@dataclass(frozen=True, slots=True)
+class _PortableLifecycleEvent:
+    id: str
+    meeting_id: str
+    kind: str
+    occurred_at: str
+    recorded_duration_ms: int | None
+    payload: str
+
+
+@dataclass(frozen=True, slots=True)
+class _PortableMeetingRows:
+    detail: MeetingDetail
+    lifecycle_events: tuple[_PortableLifecycleEvent, ...]
+
+    @property
+    def meeting(self) -> Meeting:
+        return self.detail.meeting
+
+    @property
+    def audio_assets(self) -> tuple[AudioAsset, ...]:
+        return self.detail.audio_assets
+
+
+@dataclass(frozen=True, slots=True)
+class _PortableExportRows:
+    meetings: tuple[_PortableMeetingRows, ...]
 
 
 class MemoryRepository:
@@ -126,6 +158,76 @@ class MemoryRepository:
             "SELECT * FROM segments WHERE revision_id=? ORDER BY ordinal", (revision_id,)
         )
         return tuple(Segment(**dict(row)) for row in rows)
+
+    def meeting_detail(self, meeting: Meeting, warnings: tuple[object, ...] = ()) -> MeetingDetail:
+        meeting_id = meeting.id
+        revisions = tuple(
+            TranscriptRevision(**dict(row))
+            for row in self.library.execute(
+                "SELECT * FROM transcript_revisions WHERE meeting_id=? ORDER BY revision_number",
+                (meeting_id,),
+            )
+        )
+        return MeetingDetail(
+            meeting,
+            tuple(
+                AudioAsset(**dict(row))
+                for row in self.library.execute(
+                    "SELECT * FROM audio_assets WHERE meeting_id=? ORDER BY id", (meeting_id,)
+                )
+            ),
+            revisions,
+            tuple(segment for revision in revisions for segment in self.get_segments(revision.id)),
+            tuple(
+                link
+                for revision in revisions
+                for link in self.get_revision_audio_assets(revision.id)
+            ),
+            warnings,
+            tuple(
+                Participant(**dict(row))
+                for row in self.library.execute(
+                    "SELECT p.* FROM participants p JOIN meeting_participants l "
+                    "ON p.id=l.participant_id WHERE l.meeting_id=? ORDER BY p.id",
+                    (meeting_id,),
+                )
+            ),
+            tuple(
+                MeetingParticipant(**dict(row))
+                for row in self.library.execute(
+                    "SELECT * FROM meeting_participants WHERE meeting_id=? ORDER BY participant_id",
+                    (meeting_id,),
+                )
+            ),
+            tuple(
+                SpeakerAssignment(**dict(row))
+                for row in self.library.execute(
+                    "SELECT * FROM speaker_assignments WHERE meeting_id=? "
+                    "ORDER BY revision_id,speaker_key",
+                    (meeting_id,),
+                )
+            ),
+        )
+
+    def portable_export_rows(self, ids: tuple[str, ...]) -> _PortableExportRows:
+        """Detach the complete ordered state of each existing selection for revalidation."""
+        if not self.connection.in_transaction:
+            raise IntegrityFailure("Portable snapshot requires an explicit read transaction")
+        meetings = []
+        for meeting_id in sorted(ids):
+            meeting = self.get_meeting(meeting_id)
+            if meeting is None:
+                continue
+            events = tuple(
+                _PortableLifecycleEvent(**dict(row))
+                for row in self.library.execute(
+                    "SELECT id,meeting_id,kind,occurred_at,recorded_duration_ms,payload "
+                    "FROM lifecycle_events WHERE meeting_id=? ORDER BY occurred_at,id",
+                    (meeting_id,),
+                )
+            )
+            meetings.append(_PortableMeetingRows(self.meeting_detail(meeting), events))
+        return _PortableExportRows(tuple(meetings))
 
     def activate_revision(self, meeting_id: str, revision_id: str) -> None:
         self._require_transaction()
