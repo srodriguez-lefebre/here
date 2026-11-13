@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import stat
 import unicodedata
 import zlib
@@ -31,9 +32,25 @@ _MAX_COMPRESSION_RATIO = 100
 # Format-1 canonical paths and normal headers need only a fraction of these
 # caps even at 10,000 entries. Bound unused ZIP metadata and JSON padding.
 _MAX_CENTRAL_BYTES = 32 * 1024**2
-_MAX_MANIFEST_BYTES = 8 * 1024**2
+MAX_PORTABLE_MANIFEST_BYTES = 8 * 1024**2
+# Allow normal DEFLATE expansion even with nondefault compressor settings.
+# A decoded-byte cap alone cannot bound work spent on empty DEFLATE blocks.
+_MAX_COMPRESSED_MANIFEST_BYTES = MAX_PORTABLE_MANIFEST_BYTES + 9 * 128 * 1024
 _MANIFEST = "manifest.json"
 _GLOBAL_PAYLOADS = frozenset({"participants.json", "speaker_assignments.json"})
+_MANIFEST_ID_FIELDS = ("meeting_ids", "participant_ids", "answer_ids", "omitted")
+_MANIFEST_FIELDS = frozenset(
+    (
+        *_MANIFEST_ID_FIELDS,
+        "format_version",
+        "exporter_version",
+        "exported_at",
+        "audio_included",
+        "files",
+    )
+)
+_MANIFEST_ENTRY_FIELDS = frozenset({"path", "size", "sha256"})
+_SHA256 = re.compile(r"[0-9a-f]{64}")
 
 # PKWARE APPNOTE sections 4.3.12 and 4.3.14–16, little-endian.
 _EOCD = Struct("<4s4H2IH")
@@ -42,6 +59,11 @@ _ZIP64_EOCD = Struct("<4sQ2H2I4Q")
 _CENTRAL_HEADER = Struct("<4s6H3I5H2I")
 _LOCAL_HEADER_BYTES = 30
 _EXTRA_FIELD = Struct("<HH")
+_UNICODE_PATH_HEADER = Struct("<BI")
+_MAX_MEMBER_EXTRAS = 64
+_ZIP64_EXTRA = 0x0001
+_UNICODE_PATH_EXTRA = 0x7075
+_UTF8_NAME_FLAG = 1 << 11
 _MAX_ZIP_COMMENT = 0xFFFF
 _EOCD_SEARCH_BYTES = _EOCD.size + _MAX_ZIP_COMMENT
 _UINT16_MAX = 0xFFFF
@@ -81,9 +103,10 @@ class _ZipLayout:
 class _BoundedZipReader:
     """Reject an unbounded ZipFile read even if a source changes after preflight."""
 
-    def __init__(self, stream: BinaryIO, layout: _ZipLayout) -> None:
+    def __init__(self, stream: BinaryIO, layout: _ZipLayout, directory: bytes) -> None:
         self._stream = stream
         self._layout = layout
+        self._directory = directory
         self._opening = True
         self._central_read = False
 
@@ -91,6 +114,7 @@ class _BoundedZipReader:
         if not self._central_read:
             raise InvalidPackage("ZIP directory changed during inspection")
         self._opening = False
+        self._directory = b""
 
     def seek(self, offset: int, whence: int = 0) -> int:
         position = self._stream.seek(offset, whence)
@@ -100,6 +124,9 @@ class _BoundedZipReader:
 
     def tell(self) -> int:
         return self._stream.tell()
+
+    def seekable(self) -> bool:
+        return self._stream.seekable()
 
     def read(self, size: int = -1) -> bytes:
         # ZipFile also reads small fixed EOCD/ZIP64 records and may search the
@@ -115,9 +142,8 @@ class _BoundedZipReader:
         central = self._layout.central
         if size == central.size and self.tell() == central.start:
             self._central_read = True
-            data = self._stream.read(size)
-            _check_central_records(data, central.count)
-            return data
+            self._stream.seek(central.start + size)
+            return self._directory
         if size <= _EOCD_SEARCH_BYTES:
             return self._stream.read(size)
         raise InvalidPackage("ZIP directory changed during inspection")
@@ -216,22 +242,55 @@ def _check_central_records(data: bytes, count: int) -> None:
         header = _CENTRAL_HEADER.unpack_from(data, position)
         if header[0] != b"PK\x01\x02" or header[10] == 0 or header[13] != 0:
             raise InvalidPackage("Invalid ZIP central directory member header")
-        position += _CENTRAL_HEADER.size + sum(header[10:13])
+        flags = header[3]
+        name_length, extra_length, comment_length = header[10:13]
+        name_start = position + _CENTRAL_HEADER.size
+        extra_start = name_start + name_length
+        extra_end = extra_start + extra_length
+        position = extra_end + comment_length
+        if position > len(data):
+            raise InvalidPackage("ZIP central directory member header is truncated")
+        if extra_length:
+            raw_name = data[name_start:extra_start]
+            _check_member_extras(data, extra_start, extra_end, raw_name, flags)
     if position != len(data):
         raise InvalidPackage("ZIP central directory count does not match its records")
 
 
-def _check_member_extras(extra: bytes) -> None:
-    position = 0
-    while position < len(extra):
-        tag, length = _EXTRA_FIELD.unpack_from(extra, position)
-        position += _EXTRA_FIELD.size + length
-        if position > len(extra):
+def _check_member_extras(data: bytes, position: int, end: int, raw_name: bytes, flags: int) -> None:
+    tags: set[int] = set()
+    for _ in range(_MAX_MEMBER_EXTRAS):
+        if position == end:
+            return
+        if position + _EXTRA_FIELD.size > end:
             raise InvalidPackage("ZIP member extra field is truncated")
+        tag, length = _EXTRA_FIELD.unpack_from(data, position)
+        payload = position + _EXTRA_FIELD.size
+        position = payload + length
+        if position > end:
+            raise InvalidPackage("ZIP member extra field is truncated")
+        if tag in (_ZIP64_EXTRA, _UNICODE_PATH_EXTRA):
+            if tag in tags:
+                raise InvalidPackage("ZIP member repeats a directory identity field")
+            tags.add(tag)
         # PKWARE UNIX extra stores a link target after its 12-byte metadata
         # prefix. ASi UNIX is a legacy alternate file-type/link representation.
         if (tag == 0x000D and length != 12) or tag == 0x756E:
             raise InvalidPackage("ZIP member has link or special-file metadata")
+        if tag == _UNICODE_PATH_EXTRA:
+            if length < _UNICODE_PATH_HEADER.size:
+                raise InvalidPackage("ZIP member Unicode path field is truncated")
+            version, expected_crc = _UNICODE_PATH_HEADER.unpack_from(data, payload)
+            encoding = "utf-8" if flags & _UTF8_NAME_FLAG else "cp437"
+            unicode_name = data[payload + _UNICODE_PATH_HEADER.size : position].decode("utf-8")
+            if (
+                version != 1
+                or expected_crc != zlib.crc32(raw_name)
+                or unicode_name != raw_name.decode(encoding)
+            ):
+                raise InvalidPackage("ZIP member has an alternate Unicode path")
+    if position != end:
+        raise InvalidPackage("ZIP member has too many extra fields")
 
 
 def _central_members(
@@ -252,7 +311,6 @@ def _central_members(
         mode = stat.S_IFMT(info.external_attr >> 16)
         if mode not in (0, stat.S_IFREG) or info.external_attr & _NONREGULAR_DOS_ATTRIBUTES:
             raise InvalidPackage("Package members must be ordinary files")
-        _check_member_extras(info.extra)
         if info.compress_type not in (ZIP_STORED, ZIP_DEFLATED) or (
             info.flag_bits & _UNSUPPORTED_MEMBER_FLAGS
         ):
@@ -291,10 +349,12 @@ def _unique_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
 def _read_manifest(
     archive: ZipFile, info: ZipInfo, manifest_type: type[Manifest]
 ) -> tuple[Manifest, bytes]:
-    if info.file_size > _MAX_MANIFEST_BYTES:
+    if info.file_size > MAX_PORTABLE_MANIFEST_BYTES:
         raise InvalidPackage("Package manifest exceeds the metadata limit")
+    if info.compress_size > _MAX_COMPRESSED_MANIFEST_BYTES:
+        raise InvalidPackage("Package manifest exceeds the compressed metadata limit")
     with archive.open(info) as member:
-        data = member.read(_MAX_MANIFEST_BYTES + 1)
+        data = member.read(MAX_PORTABLE_MANIFEST_BYTES + 1)
     if len(data) != info.file_size:
         raise InvalidPackage("Package manifest size does not match the ZIP directory")
     document = json.loads(data, object_pairs_hook=_unique_json_object)
@@ -305,19 +365,49 @@ def _read_manifest(
         raise InvalidPackage("Package manifest format version is invalid")
     if schema > 1:
         raise UnsupportedSchema("This package requires a newer portability format")
-    if type(document.get("audio_included")) is not bool:
-        raise InvalidPackage("Package manifest audio flag is invalid")
-    files = document.get("files")
-    if not isinstance(files, list) or len(files) >= _MAX_ENTRIES:
-        raise InvalidPackage("Package manifest file inventory is invalid")
-    if any(not isinstance(entry, dict) or type(entry.get("size")) is not int for entry in files):
-        raise InvalidPackage("Package manifest file size must be an integer")
-    if type(document.get("exported_at")) is not str:
-        raise InvalidPackage("Package manifest export timestamp is invalid")
+    _check_manifest_shape(document)
     return manifest_type.model_validate(document), data
 
 
+def _check_manifest_shape(document: dict[str, object]) -> None:
+    # Reject a malformed item before Pydantic builds per-item validation
+    # diagnostics from untrusted lists or surplus object keys.
+    if document.keys() != _MANIFEST_FIELDS:
+        raise InvalidPackage("Package manifest fields do not match format 1")
+    if type(document.get("audio_included")) is not bool:
+        raise InvalidPackage("Package manifest audio flag is invalid")
+    if (
+        type(document.get("exported_at")) is not str
+        or type(document.get("exporter_version")) is not str
+    ):
+        raise InvalidPackage("Package manifest exporter version or timestamp is invalid")
+    for name in _MANIFEST_ID_FIELDS:
+        ids = document[name]
+        if not isinstance(ids, list) or any(
+            not isinstance(identity, str) or not _is_uuid(identity) for identity in ids
+        ):
+            raise InvalidPackage("Package manifest has an invalid identity list")
+    files = document.get("files")
+    if not isinstance(files, list) or len(files) >= _MAX_ENTRIES:
+        raise InvalidPackage("Package manifest file inventory is invalid")
+    for entry in files:
+        if not isinstance(entry, dict) or entry.keys() != _MANIFEST_ENTRY_FIELDS:
+            raise InvalidPackage("Package manifest entry fields are invalid")
+        size = entry["size"]
+        digest = entry["sha256"]
+        if (
+            not isinstance(entry["path"], str)
+            or type(size) is not int
+            or not 0 <= size <= _MAX_UNCOMPRESSED_BYTES
+            or not isinstance(digest, str)
+            or _SHA256.fullmatch(digest) is None
+        ):
+            raise InvalidPackage("Package manifest entry metadata is invalid")
+
+
 def _is_uuid(value: str) -> bool:
+    if len(value) != 36:
+        return False
     try:
         return str(UUID(value)) == value
     except ValueError:
@@ -343,8 +433,8 @@ def _check_manifest_inventory(
         manifest.omitted,
     )
     for ids in identity_lists:
-        if len(set(ids)) != len(ids) or any(not _is_uuid(identity) for identity in ids):
-            raise InvalidPackage("Package manifest has an invalid or repeated identity")
+        if len(set(ids)) != len(ids):
+            raise InvalidPackage("Package manifest has a repeated identity")
 
     required = (
         _GLOBAL_PAYLOADS
@@ -403,14 +493,20 @@ def open_inspected_package(
     """Hold one source through preflight, manifest parsing and any later payload reads."""
     try:
         stream = source.open("rb")
-    except OSError as error:
-        raise InvalidPackage("Could not open the portable package") from error
+    except (OSError, ValueError):
+        raise InvalidPackage("Could not open the portable package") from None
     with stream, ExitStack() as scope:
         try:
             layout = _find_zip_layout(stream)
             central = layout.central
             _check_central_bounds(central)
-            bounded = _BoundedZipReader(stream, layout)
+            stream.seek(central.start)
+            directory = stream.read(central.size)
+            if len(directory) != central.size:
+                raise InvalidPackage("ZIP central directory is truncated")
+            _check_central_records(directory, central.count)
+            bounded = _BoundedZipReader(stream, layout, directory)
+            del directory
             archive = scope.enter_context(ZipFile(bounded, mode="r"))
             bounded.finish_open()
             members, total = _central_members(archive, central)
@@ -429,8 +525,8 @@ def open_inspected_package(
             ValidationError,
             ValueError,
             zlib.error,
-        ) as error:
-            raise InvalidPackage("Could not validate ZIP metadata or manifest") from error
+        ):
+            raise InvalidPackage("Could not validate ZIP metadata or manifest") from None
         yield archive, summary, manifest_bytes
 
 
