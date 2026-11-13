@@ -4089,12 +4089,19 @@ class MemoryService:
     def begin_capture(self, meeting_id: str, *, started_at: str | None = None) -> None:
         if str(UUID(meeting_id)) != meeting_id:
             raise ValueError("Invalid capture identity")
-        if meeting_id not in self._owners:
+        acquired = meeting_id not in self._owners
+        if acquired:
             self._acquire_owner(meeting_id)
         with self._operation() as repo:
             records, _ = _deletion_registry(self.data_dir)
             if meeting_id in _suppression_snapshot(repo.library, records).suppressed_meeting_ids:
                 raise NotFound("Meeting has been deleted")
+            try:
+                self._require_portable_commit_sealed(repo, meeting_id)
+            except Busy:
+                if acquired:
+                    self._owners.pop(meeting_id).close()
+                raise
             with repo.transaction():
                 if repo.get_meeting(meeting_id) is None:
                     repo.insert_meeting(
@@ -4134,7 +4141,11 @@ class MemoryService:
             records, _ = _deletion_registry(self.data_dir)
             if meeting_id in _suppression_snapshot(repo.library, records).suppressed_meeting_ids:
                 raise NotFound("Meeting has been deleted")
-            self._require_portable_commit_sealed(repo, meeting_id)
+            try:
+                self._require_portable_commit_sealed(repo, meeting_id)
+            except Busy:
+                self._owners.pop(meeting_id).close()
+                raise
             with repo.transaction():
                 if repo.get_meeting(meeting_id) is None:
                     repo.insert_meeting(Meeting(id=meeting_id, status=MeetingStatus.PROCESSING))
