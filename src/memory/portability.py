@@ -19,15 +19,27 @@ from zipfile import ZIP_STORED, ZipFile, ZipInfo
 from here.memory.database import IntegrityFailure, LibraryError
 from here.memory.models import (
     AudioAsset,
-    MeetingStatus,
     Participant,
     RevisionAudioAsset,
     Segment,
+)
+from here.memory.portable_import import (
+    ImportCancelled as ImportCancelled,
+)
+from here.memory.portable_import import (
+    ImportReport as ImportReport,
+)
+from here.memory.portable_import import (
+    _EventPayload,
+    import_inventory,
+    stage_package_files,
+    validate_staged_import,
 )
 from here.memory.portable_package import (
     MAX_PORTABLE_MANIFEST_BYTES,
     PackageSummary,
     inspect_package,
+    open_inspected_package,
 )
 from here.memory.portable_package import (
     InvalidPackage as InvalidPackage,
@@ -96,16 +108,6 @@ class ExportResult(BaseModel):
     payload_bytes: int
     archive_bytes: int
     warnings: tuple[str, ...] = ()
-
-
-class _EventPayload(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    from_status: MeetingStatus | None = Field(default=None, alias="from")
-    to: MeetingStatus | None = None
-    fields: Annotated[list[Literal["title", "notes"]], Field(max_length=2)] = Field(
-        default_factory=list
-    )
 
 
 def _canonical_archive_id(value: str) -> str:
@@ -399,6 +401,27 @@ class PortabilityService:
 
     def inspect(self, source: Path) -> PackageSummary:
         return inspect_package(source, Manifest)
+
+    def import_archive(
+        self,
+        source: Path,
+        progress: Callable[[int], None],
+        cancellation: Callable[[], bool],
+    ) -> ImportReport:
+        if cancellation():
+            raise ImportCancelled("Portable import cancelled")
+        with open_inspected_package(source, Manifest) as (archive, summary, manifest_bytes):
+            manifest = summary.manifest
+            inventory = import_inventory(manifest)
+            if cancellation():
+                raise ImportCancelled("Portable import cancelled")
+            with self._memory._portable_import_stage(inventory) as stage:
+                stage_package_files(archive, stage.directory, inventory, progress, cancellation)
+                batch = validate_staged_import(
+                    stage, manifest, manifest_bytes, inventory, cancellation
+                )
+                outcomes = self._memory._publish_portable_import(batch, cancelled=cancellation)
+            return ImportReport(outcomes)
 
     def export(
         self,
