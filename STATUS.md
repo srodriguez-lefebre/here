@@ -3,7 +3,50 @@
 Actualizado: 2026-11-13. Leé CLAUDE.md primero; después este archivo y
 `docs/MASTER_PLAN.md`. Historial y rulings: `docs/development/DELIVERY.md`.
 
-## Checkpoint vigente — 2026-11-13
+## Pausa solicitada — 2026-11-13
+
+Se pausaron los frentes activos por pedido del usuario. Retomar desde estos
+commits locales y sus worktrees. M2 sigue cerrado en 0.3.0. Copilot sigue omitido
+por ruling 64 y la prueba de dos horas, **omitida por ruling 5**.
+
+| Frente | Rama | Worktree bajo `C:/Users/savar/.codex/worktrees/` | Head / responsable |
+| --- | --- | --- | --- |
+| M3 A, chat `01a1af04-e779-7363-be61-c840651b0b18` | `codex/m3-search` | `2710/here` | `07785b6`, chat M3 A |
+| M3 A, PR abierto | `codex/m3-a-product` | `m3-a-product/here` | `0c16065`, root |
+| M3 A, prototipo diagnóstico | `codex/m3-native-digest-probe` | `m3-native-digest-probe/here` | `ca80f49`, `search_budget_design` y chat M3 A |
+| M3 B, integración | `codex/m3-library` | `m3-library-group/here` | `0c16065`, root |
+| M3 B, RED de citas | `codex/m3-library-resolver-red` | `m3-library-resolver-red/here` | `f987ec6`, `portability_export_red` |
+| M3 B, RED Qt | `codex/m3-library-playback-red` | `m3-library-playback-red/here` | `9fbd450`, `portability_contract_review` |
+| M3 B, RED CLI | `codex/m3-library-cli-red` | `m3-library-cli-red/here` | `0c16065`, `portability_contracts`, solo preparación |
+| M5 B, exportación e inspección | `codex/m5-portability` | `m5-portability-core/here` | `c202604`, root |
+| M5 B, integración de importación | `codex/m5-portability-import-service` | `m5-portability-import-service/here` | `8083b91`, root |
+| M5 B, RED de recuperación de importación | `codex/m5-portability-import-recovery-red` | `m5-portability-import-recovery-red/here` | `fada4fc`, `portability_export_red` |
+
+[PR #28](https://github.com/srodriguez-lefebre/here/pull/28) queda abierto. La
+revisión independiente del head exacto aprobó el alcance funcional y la entrega
+de contratos a M3 B. Package Windows pasó en `43477815761`, CI `43477815724`
+seguía en curso al pausar. La suite local de ese head se interrumpió al 59 % y
+el heartbeat quedó sin ejecutar. Se conserva el log parcial y el recibo
+`m3-a-pause-checkpoint-1.json` en el scratch del chat. El prototipo aislado
+midió 621,37 ms p95, nivel 2 diagnóstico, y falló el requisito de 500 ms. Sin
+resultado de aceptación nuevo para búsqueda o playback.
+
+M5 B verificó 19 casos de exportación/recuperación en `29d5642` y 48 de
+inspección/exportación en `27c86d1`, nivel 2 focalizado. Importación en
+`52c7c5d` dio 10 pases y un fallo. La corrección `cf8e39f`, las correcciones de
+recuperación posteriores y los 11 casos de proceso de `fada4fc` quedan sin
+corrida nueva. El ruling 68 registra el límite JSON autorizado de 32 MiB,
+pendiente de implementación y pruebas. La certificación Windows de nivel 3
+queda pendiente para la entrega final. M4 y los demás grupos mantienen sus
+dependencias.
+
+También se preservaron los cambios remanentes de los worktrees de M2 en
+`e6bef92` (`b5-w3-red`), `04b31f9` (`m2-b-lifecycle-resume`), `3b6375e`
+(`m2-b-r62-regressions`) y `e701020` (`m2-b-release-docs-prep`). Quedan como
+commits locales de pausa en sus ramas. El log de instalación de `uv` quedó
+fuera de Git en `m2-ingestion/here`.
+
+## Checkpoint anterior — 2026-11-13
 
 M2 cerrado. Versión 0.3.0 mergeada por [PR #25](https://github.com/srodriguez-lefebre/here/pull/25)
 en `b4b3d1b`, head revisado `55d68e2`. Nivel 2. CI Windows `43461764790` pasó
@@ -27,9 +70,11 @@ el prototipo diagnóstico aislado en
 `codex/m3-native-digest-probe`, worktree
 `C:/Users/savar/.codex/worktrees/m3-native-digest-probe/here`, base `ca80f49`.
 `search_budget_design` escribe el agregado nativo, el chat M3 A coordina el
-adaptador y root coordina compilación y runtime. Compilación y smoke nativo
-focalizado pasaron en el host Windows, nivel 2 de diagnóstico. Se ejecutan sus
-controles de paridad y el benchmark condicionado. La preparación contractual de
+adaptador y root coordina compilación y runtime. Compilación, smoke nativo y
+268 controles por cada plan SQL pasaron, nivel 2 de diagnóstico. La medición
+`m3-native-subquery-p95-2` dio 621,37 ms p95 en 40 muestras y falló el gate de
+500 ms. Queda aislado y conserva pendiente la equivalencia de empates tipados.
+La preparación contractual de
 M3 B está en el [PR #27](https://github.com/srodriguez-lefebre/here/pull/27), rama
 `codex/m3-playback-handoff-docs` y worktree
 `C:/Users/savar/.codex/worktrees/m3-playback-handoff-docs/here`, head `dbc9d16`.
@@ -44,8 +89,8 @@ pasó ocho controles de capacidad en el host de desarrollo, sin symlinks.
 El RED `2c427d5` tuvo seis fallos esperados por falta de módulo y en `a69a490`
 pasaron los seis. La corrida de recuperación `fd57c23` pasó nueve controles y
 reprodujo cuatro fallos de publicación y recuperación. La revisión pidió cambios
-y aprobó el núcleo corregido `29d5642`. Corridas de nivel 2 focalizado, con
-la nueva ejecución sobre ese head en curso. El RED de inspección de ZIP
+y aprobó el núcleo corregido `29d5642`. La ejecución en ese head pasó los 19
+casos en 21,81 s, nivel 2 focalizado en NTFS local. El RED de inspección de ZIP
 `a326ccf` reprodujo 38 fallos esperados por ausencia de `inspect`, nivel 2.
 Worktrees bajo `C:/Users/savar/.codex/worktrees/`, cada uno con sufijo `/here`:
 
@@ -59,6 +104,7 @@ Worktrees bajo `C:/Users/savar/.codex/worktrees/`, cada uno con sufijo `/here`:
 | `m5-portability-export-evidence` | `portability_contracts` | evidencia RED y capacidad `ea57f69` |
 | `m5-portability-import-red` | `portability_export_red` | RED de inspección `a326ccf` |
 | `m5-portability-import-inspect-green` | `portability_export_green` | validación del directorio central, base `a326ccf` |
+| `m5-portability-import-stage-red` | `portability_export_red` | RED de importación y staging `4cb591d` |
 
 Root coordina el handoff, las ventanas de prueba y los archivos compartidos.
 Claims y respuestas esperan M4 B.

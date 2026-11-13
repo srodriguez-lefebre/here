@@ -1010,12 +1010,24 @@ Los rulings nuevos se escriben en español por el ruling 6.
     archivo abierto y admite hasta 32 MiB de directorio y 8 MiB de manifiesto.
     El formato exportado usa nombres de rol canónicos con UUIDs y números, una
     entrada compacta por archivo y sin comentarios de payload. Incluso con
-    10.000 roles, sus metadatos quedan por debajo de esos topes. Se rechaza
+    10.000 roles, sus metadatos quedan por debajo de esos topes. El manifiesto
+    comprimido admite 1,125 MiB extra para la expansión normal de DEFLATE.
+    Se revisan como máximo 64 campos extra por entrada antes de llamar a
+    `zipfile`, incluyendo la identidad de cualquier alias Unicode. Se rechaza
     relleno excesivo antes de cargarlo. Se preservan ZIP64 y los límites de
     10.000 entradas, 20 GiB declarados y ratio 100:1, sin extraer archivos al
     inspeccionar. Los checks de tamaños y SHA-256 de payload esperan staging.
     **Costo si falla:** ajustar el presupuesto de metadatos sobre archivos
     válidos y repetir pruebas hostiles, sin aflojar límites de payload.
+
+68. **2026-11-13 — Límite simétrico para el JSON de paquetes portables.** El
+    usuario autorizó 32 MiB acumulados para los documentos JSON de cada paquete,
+    aplicado antes de publicar una exportación y antes de cargar payloads en la
+    importación. Se conserva el límite total de 20 GiB y el de 8 MiB del
+    manifiesto. El usuario puede dividir selecciones grandes en varios paquetes.
+    La implementación y las pruebas de borde quedan pendientes en esta pausa.
+    **Costo si falla:** medir el uso de memoria y ajustar la lectura por lotes
+    bajo una nueva decisión de alcance, conservando la simetría del formato.
 
 ## Ledger histórico (append-only)
 
