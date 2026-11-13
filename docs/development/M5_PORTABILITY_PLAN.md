@@ -2,10 +2,9 @@
 
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
 > review, then independent agent review. Root owns dispatch, file leases, integration
-> and merges under rulings 20/35/64. Steps use checkbox syntax. **Status: preparation
-> ready for the contract PR, no implementation started.** M2 B is merged.
-> Core work starts after the contract PR merges and root dispatches the B5
-> handoff. Claims and answers wait for M4 B.
+> and merges under rulings 20/35/64. Steps use checkbox syntax. **Status: Task 1
+> export core dispatched.** M2 B is merged. The contract PR #26 merged at
+> `5286dd4`. Claims and answers wait for M4 B.
 
 **Goal:** Export selected meetings to a validated `.here.zip` and import such packages
 into any library root without losing identity, timing, citations or audio integrity,
@@ -183,6 +182,28 @@ locally validated managed audio references.
 - [ ] Implement the adapters and the single-meeting text/Markdown export from detail.
 - [ ] Run focused tests and the full offscreen suite; self-review; commit as
   "portability: validated export of meetings".
+
+**Pre-implementation evidence (2026-11-13)**
+
+- **Export RED.** Frozen tests `2c427d5653009f25aa440648360e3a03da8f6167`.
+  Selector `tests/test_portability_export.py` ran on Windows Python 3.13.15 in the
+  shared `.venv`, with `QT_QPA_PLATFORM=offscreen`, synthetic `OPENAI_API_KEY` and
+  `HERE_ENV_FILE` pointing to an absent file. Ruff passed. Pytest exited 1 in
+  5.25 s with six expected `ModuleNotFoundError` failures for
+  `here.memory.portability`, before any export assertions could run. This is a
+  baseline without the export implementation. Full cancellation, recovery,
+  free-space and claims coverage remains open.
+- **Windows ownership probe before GREEN.**
+  `.superpowers/m5-portability-windows-probe.py` in the M5 core worktree,
+  SHA-256 `69F7FB55D31F3EFEC10EFB35E17C04EBDBF69E7289EAB1D41B4DAF3805156F3F`.
+  The same development host returned exit 0 in 0.59 s using synthetic files. A held
+  ancestor could not be renamed, exclusive creation preserved an existing name,
+  and the duplicate stream retained the held file's identity. A blocked replacement
+  kept the old bytes, a same-parent atomic rename kept identity and bytes, and exact
+  reopen and disposition after killing a real child preserved unrelated and
+  published files. A hard link was rejected. Symlink privilege was unavailable.
+  This is level 2 capability evidence for the native binding. Product acceptance,
+  registry durability and clean-Windows certification remain pending.
 
 ### Task 2: Import
 
