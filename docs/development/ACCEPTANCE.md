@@ -20,7 +20,7 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M2 · criterio 15 | Suite completa en CI de Windows sin credencial real ni display | Corrida hospedada sobre el head exacto del PR M2 B | Nivel 2. CI `43461764790` pasó 1273 pruebas y omitió dos smokes de wheel, que pasaron en la corrida no editable. Head `55d68e2`. |
 | M2 | Deletion clears managed memory without resurrection | DB/FTS/files/backup inspection after restart | Nivel 2 en `r62-green-3-61a5088c` (110 pases) y CI `43461764790` (1273 pases). Incluye la matriz R42 de kill/reinicio y orígenes externos. Revisión independiente y PR #25 mergeados. |
 | M2 · 0.3.0 | Installed wheel and Windows package | Fresh wheel and stable installer artifact with checksums | Nivel 2. `m2-030-wheel-a4e464a319f7-a98d6f06` pasó 4 smokes. Package `43461764783` pasó la instalación estable con datos sintéticos y publicó el artefacto `14056018512`; sus seis hashes fueron verificados. |
-| M3 | Listing/filter/search and original moment navigation | End-to-end Qt selection and seek plus real WAV marker playback | Open |
+| M3 | Listing/filter/search and original moment navigation | End-to-end Qt selection and seek plus real WAV marker playback | Abierto. Focos históricos de búsqueda, Biblioteca y ACK de borrado registrados abajo. Resolver, reproducción y seek real pendientes. |
 | M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | Abierto. `r63-query-benchmark-1` en `ca80f49` con fuente `64013ade` falló por p95 de 879,4833999891125 ms frente al límite de 500 ms. Cinco precalentamientos y 40 muestras válidas, mediana 809,5637999940664 ms. Nivel 2 y review independiente aprobada para los focos R63 de oráculo (8), generación (10) y regresión (240). R58 `12774` verificó ocho consultas UI con máximo de 8,9216 ms en su propio alcance. Sin corrida combinada ni certificación nueva. |
 | M4 | Multi-meeting answers/extractions with valid evidence | Source-resolution and semantic synthetic corpus, provider smoke | Open |
 | M4 | Uncertainty/injection/cancellation/deletion remain honest | No-evidence, invalid-citation, concurrent delete/redaction tests | Open |
@@ -28,6 +28,57 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M5 | Portable data including optional audio and citations | Export/import on a fresh root, hashes and hostile ZIP tests | Open |
 | M5 | Install/update/uninstall preserve user memory | N to N+1 installation and separate uninstall test | Open |
 | All | PR groups reviewed and merged | PR URLs, reviewed heads, CI and merge SHAs, applicable review threads | M2 A mergeado en `53712c5` (PR21), M2 B en `b4b3d1b` (PR25). Siete grupos pendientes con revisión independiente, CI Windows y merge protegido. Ruling 64 omite Copilot. |
+
+## Checkpoint de integración M3 A · 2026-11-13
+
+El candidato `31488693152067ae58eeacec08f0b01f47085fe4` reunió búsqueda y
+Biblioteca. La revisión independiente reprodujo duplicados FTS, un cursor de
+consulta larga que el propio servicio rechazaba y el uso de otro catálogo
+durante la recuperación del adaptador directo. Los tres hallazgos tienen
+corridas RED y GREEN focales. Queda pendiente la suite completa sobre la
+integración corregida.
+
+| Corrida y fuente | Resultado de nivel 2 | Alcance |
+|---|---|---|
+| `r63-query-benchmark-1` en `ca80f49`, fuente `64013ade` | Falló. p95 879,4833999891125 ms frente a 500 ms. Mediana 809,5637999940664 ms, cinco precalentamientos y 40 consultas medidas. | Fixture sintético original de 1.000 reuniones y 100.000 segmentos. XML SHA-256 `94F2CEA4A1025D397B3B618D49D57B601246DB3890B7756A527E5DB6E825EBD8`. |
+| `r52-b-r58-integrated-1` en `2ece845` | 107 pasan, 52,308 s en XML. Heartbeat máximo 7,6934 ms, 1.894 ticks y ocho consultas entregadas, con todos los workers drenados. | Windows 11 10.0.26300, AMD64 Family 25 Model 80, 16 CPUs lógicas, Python 3.13.15 y Qt 6.11.2 offscreen. Ejercitó la búsqueda bajo R50, el render y el drenaje sobre el fixture 1.000/100.000. XML SHA-256 `97013543102B24FA907A9B8E41A34B3B6436C3EA77FBAF4A8520018B0662275B`. |
+| `task-2-delete-ack-green-1` en `d8fb75b` | 2 pasan, 5,438 s en XML. | Una página tardía y un detalle tardío quedan invalidados tras el borrado. XML SHA-256 `9B1C89FFFA3307496EFFAA92450E32774254D0C49214CE57F3E10197031E10FD`. |
+| `m3-final-functional-1` en `3148869` | 1.538 pasan, 19 fallan, 21 omitidos, 769,32 s. | El lanzador fijó `TRANSCRIPTIONS_DIR` (nueve fallos) y `HERE_SETTINGS_FILE` (dos), y dejó `HERE_R61_ORACLE_PATH` presente con valor vacío (ocho). XML SHA-256 `BD72E33597A46AA414FFF4AA1E7671CA1E18DCAD896D39AD63CADB010CD26E1C`. |
+| `m3-review-environment-focused-1` en `3148869` | 31 pasan, una omisión intencional de captura de oráculo. | Los 19 casos previos pasaron sin cambios de código y con las variables corregidas. XML SHA-256 `7B09CD7759DDBFB4154B60F3D42E781812BC2762D69BE37515446AAF71A879AD`. |
+| `m3-review-search-red-1` en `b146aae` y `m3-search-correctness-green-1` en `0c0f77b` | Tres fallos esperados en RED. En GREEN 260 pasan, una omisión intencional de captura de oráculo. | Deduplicación con rangos iguales y distintos, continuación larga, cursores v1/v2 y oráculos de generación. XML GREEN SHA-256 `11938D6CABBDED3CD45EB31B3ED82C84E77FE8F9201AD95BB1C8F6087BC70208`. |
+| `m3-review-adapter-red-1` en `7c73be5` y `m3-adapter-root-green-1` en `064b339` | Dos fallos esperados y un pase fake en RED. En GREEN 32 pasan. | Recuperación con catálogo inyectado y regresiones de R52, ACK, Qt y entrypoint. XML GREEN SHA-256 `6626B3ABE22C23AB43FD4E4CFDE92FDC2D30C143CBD89B57ED99BC95195D5C44`. |
+
+Cada corrida conserva el alcance de su fuente. El p95 y el heartbeat se
+midieron en fuentes distintas. Quedan pendientes la suite completa del
+candidato integrado, el seek real y la aceptación de M3. Sin nueva
+certificación de nivel 3.
+Dos horas sigue **omitida por ruling 5**.
+
+### Diagnóstico aislado R66
+
+El worktree de diagnóstico partió de `ca80f49a4427c1a047cac4c06d7d16c606560c88`.
+La primera corrida de controles por argumentos dio 264 pases y cuatro fallos.
+Los cuatro esperaban un error al invocar una función desde una vista TEMP.
+La corrección ajustó esa expectativa del arnés. Los resultados conservan
+alcance diagnóstico, con los desempates de tipos y la integración en el
+producto pendientes.
+
+| Corrida | Resultado | XML SHA-256 |
+|---|---|---|
+| `m3-native-argument-controls-2` | 268 pasan en 60,46 s. | `D03FC477E9BC3D71510A735BCDCA80C5A98D5A6462AE1C62F43BE0232C4C228D` |
+| `m3-native-subquery-controls-2` | 268 pasan en 68,20 s. | `101CF4910CB6296FB9047F70AC26759FBCA4B979F472055B143BD9667F2939D7` |
+| `m3-native-subquery-p95-2` | Falló. p95 621,3700499982224 ms frente al límite de 500 ms. | `16FC1A7061EE45BDB835564434DE5E8FBC6EAF12AFF79421223252B3CCA77A18` |
+
+El p95 usa cinco precalentamientos y 40 consultas medidas sobre el corpus
+original de 1.000 reuniones, 100.000 segmentos y 98.901 documentos FTS, con
+220 registros R50 y 221 IDs suprimidos. Los logs y XML están en
+`.superpowers/sdd/M3_SEARCH_PLAN/` del worktree del chat M3 A. Los controles
+son evidencia de nivel 2 para el diagnóstico. El criterio de rendimiento
+del producto sigue abierto con el mismo umbral.
+
+El PR documental [#27](https://github.com/srodriguez-lefebre/here/pull/27)
+mergeó en `94e175f` desde `dbc9d16`, con evidencia de nivel 2 para ese head.
+M3 B conserva pendiente el despacho de implementación sobre el PR revisado de A.
 
 ## Cierre de M2 · 0.3.0 · 2026-11-13
 

@@ -6,7 +6,7 @@ from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
 
-from ..application import (
+from here.application import (
     ApplicationController,
     ApplicationError,
     ApplicationEvent,
@@ -18,6 +18,20 @@ from ..application import (
     StartRequest,
     Unsubscribe,
 )
+from here.memory.models import (
+    Meeting,
+    MeetingDetail,
+    MeetingPage,
+    MeetingPatch,
+    MeetingStatus,
+    MeetingSummary,
+    Participant,
+    SearchHit,
+    SearchPage,
+    Segment,
+    TranscriptRevision,
+)
+from here.memory.service import Conflict
 
 
 class FakeApplicationController(ApplicationController):
@@ -150,3 +164,77 @@ class FakeApplicationController(ApplicationController):
             retryable=True,
         )
         self.set_state(ApplicationState.FAILED, recoverable=True, error=error)
+
+
+class FakeLibraryBackend:
+    """Explicit synthetic preview data, with no filesystem or persistence authority."""
+
+    def __init__(self):
+        meeting_id = "00000000-0000-0000-0000-000000000101"
+        revision_id = "00000000-0000-0000-0000-000000000102"
+        self.meeting = Meeting(
+            id=meeting_id,
+            title="Planificación · ejemplo sintético",
+            started_at="2026-11-05T12:00:00+00:00",
+            duration_ms=60000,
+            status=MeetingStatus.COMPLETED,
+            active_revision_id=revision_id,
+        )
+        self.revision = TranscriptRevision(
+            id=revision_id,
+            meeting_id=meeting_id,
+            revision_number=1,
+            raw_text="Revisamos el plan y los próximos pasos del ejemplo.",
+            provider="synthetic",
+            model="synthetic",
+            origin="preview",
+            content_hash="a" * 64,
+        )
+        self.segment = Segment(
+            id="00000000-0000-0000-0000-000000000103",
+            revision_id=revision_id,
+            ordinal=0,
+            text=self.revision.raw_text,
+        )
+
+    def list_meetings(self, query):
+        matches = (not query.statuses or self.meeting.status in query.statuses) and (
+            query.participant_id is None
+        )
+        return MeetingPage(items=(MeetingSummary(self.meeting),) if matches else ())
+
+    def search(self, query):
+        text = f"{self.meeting.title} {self.segment.text}".casefold()
+        if not all(token.casefold() in text for token in query.text.split()):
+            return SearchPage()
+        return SearchPage(
+            items=(
+                SearchHit(
+                    meeting_id=self.meeting.id,
+                    revision_id=self.revision.id,
+                    segment_id=self.segment.id,
+                    snippet=self.segment.text,
+                    title=self.meeting.title,
+                    started_at=self.meeting.started_at,
+                ),
+            )
+        )
+
+    def get_meeting(self, meeting_id):
+        if meeting_id != self.meeting.id:
+            return None
+        return MeetingDetail(self.meeting, revisions=(self.revision,), segments=(self.segment,))
+
+    def list_participants(self, meeting_id=None) -> tuple[Participant, ...]:
+        return ()
+
+    def update_meeting(self, meeting_id, patch: MeetingPatch, expected_version):
+        if meeting_id != self.meeting.id or expected_version != self.meeting.row_version:
+            raise Conflict("El ejemplo cambió; volvé a abrirlo.")
+        self.meeting = replace(
+            self.meeting,
+            title=self.meeting.title if patch.title is None else patch.title,
+            notes=self.meeting.notes if patch.notes is None else patch.notes,
+            row_version=self.meeting.row_version + 1,
+        )
+        return self.meeting

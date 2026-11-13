@@ -5,15 +5,16 @@ from __future__ import annotations
 from pathlib import Path
 from typing import cast
 
+from here.application import ApplicationController
+from here.memory.database import LibraryError
+from here.memory.service import MemoryService
+from here.ui.bridge import ApplicationEventBridge, BackgroundJobs, _DeleteAcknowledgement
+from here.ui.contract import ApplicationState, ApplicationUiAdapter, EventKind, VisualController
+from here.ui.main_window import MainWindow
+from here.ui.overlay import LiveLogoOverlay
+from here.ui.preferences import VisualPreferences
 from PySide6.QtCore import QSettings, Slot
 from PySide6.QtWidgets import QApplication
-
-from ..application import ApplicationController
-from .bridge import ApplicationEventBridge, BackgroundJobs
-from .contract import ApplicationState, ApplicationUiAdapter, EventKind, VisualController
-from .main_window import MainWindow
-from .overlay import LiveLogoOverlay
-from .preferences import VisualPreferences
 
 
 class HereDesktop:
@@ -38,7 +39,7 @@ class HereDesktop:
         self._refresh_pending = False
         self.preferences = VisualPreferences(settings)
         self.bridge = ApplicationEventBridge(controller)
-        self.main_window = MainWindow(controller, self.preferences)
+        self.main_window = MainWindow(controller, self.preferences, self.jobs)
         self.overlay = LiveLogoOverlay(controller, self.preferences)
 
         self.bridge.snapshotChanged.connect(self.main_window.set_snapshot)
@@ -53,11 +54,28 @@ class HereDesktop:
         self.main_window.recoveryRequested.connect(self._recover)
         self.jobs.finished.connect(self._job_finished)
         self.jobs.idleChanged.connect(self._jobs_changed)
+        self.jobs.busyChanged.connect(self._jobs_changed)
         self.bridge.snapshotChanged.connect(self._snapshot_changed)
         self.bridge.applicationEvent.connect(self._application_event)
         self.application.aboutToQuit.connect(self.bridge.close)
         self.application.aboutToQuit.connect(self.jobs.close)
+        self.application.aboutToQuit.connect(self.main_window.library.shutdown)
+        self._connect_delete_acknowledgement(controller)
         self._discover()
+
+    def _connect_delete_acknowledgement(self, controller: VisualController) -> None:
+        if not isinstance(controller, ApplicationUiAdapter):
+            return
+        try:
+            memory = controller._memory_backend()
+        except LibraryError:
+            return
+        if isinstance(memory, MemoryService):
+            view = self.main_window.library
+            acknowledgement = _DeleteAcknowledgement(
+                self.jobs, memory.before_delete, view._pause_for_delete, view
+            )
+            view._closing.connect(acknowledgement.close)
 
     def show(self) -> None:
         self.main_window.show()
@@ -108,7 +126,7 @@ class HereDesktop:
         elif error:
             self.main_window.set_recovery_error(error)
 
-    def _jobs_changed(self):
+    def _jobs_changed(self, _busy=None):
         if self._refresh_pending and not self.jobs.busy and not self._exit_intent:
             self._discover()
         self.main_window.set_background_busy(self.jobs.busy, exiting=self._exit_intent)
@@ -122,7 +140,11 @@ class HereDesktop:
         self._check_exit()
 
     def _application_event(self, event):
-        if event.kind is EventKind.WORKER_COMPLETED and not self._exit_intent:
+        if self._exit_intent:
+            return
+        if event.kind is EventKind.MEMORY_INGESTED:
+            self.main_window.library.invalidate_catalog()
+        elif event.kind is EventKind.WORKER_COMPLETED:
             self._discover()
         elif event.kind is EventKind.STATE_CHANGED and event.state is ApplicationState.PREPARING:
             # Immutable events retain fast lifecycle transitions even if queued snapshot
@@ -135,6 +157,7 @@ class HereDesktop:
             return
         self._exit_intent = True
         self._epoch += 1
+        self.main_window.library.shutdown()
         self.jobs.close()
         snapshot = self.controller.snapshot
         if snapshot.state in {

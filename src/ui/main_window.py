@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from here.ui.bridge import BackgroundJobs
 from here.ui.contract import ApplicationSnapshot, ApplicationState, VisualController
+from here.ui.library import LibraryView
 from here.ui.preferences import VisualPreferences
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QCloseEvent, QColor, QPalette
@@ -15,6 +17,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QProgressBar,
     QPushButton,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -32,6 +35,10 @@ STATE_LABELS = {
 }
 
 
+def _display_error(error: object) -> str:
+    return str(error) or type(error).__name__
+
+
 class MainWindow(QMainWindow):
     """Minimal controls backed exclusively by the shared application contract."""
 
@@ -44,6 +51,7 @@ class MainWindow(QMainWindow):
         self,
         controller: VisualController,
         preferences: VisualPreferences,
+        jobs: BackgroundJobs | None = None,
     ) -> None:
         super().__init__()
         self._controller = controller
@@ -160,7 +168,15 @@ class MainWindow(QMainWindow):
 
         central = QWidget()
         central.setLayout(layout)
-        self.setCentralWidget(central)
+        self.tabs = QTabWidget()
+        self.tabs.setAccessibleName("Captura y biblioteca")
+        self.tabs.addTab(central, "Captura")
+        self.library = LibraryView(controller, jobs if jobs is not None else BackgroundJobs())
+        self.library.recording_requested.connect(self._start_from_library)
+        self.tabs.addTab(self.library, "Biblioteca")
+        self.setCentralWidget(self.tabs)
+        for label in central.findChildren(QLabel):
+            label.setTextFormat(Qt.TextFormat.PlainText)
 
         self._preferences.accentChanged.connect(self._update_accent_button)
         self._update_accent_button(self._preferences.accent)
@@ -235,6 +251,12 @@ class MainWindow(QMainWindow):
             self._detail_label.setText(str(exc))
             self._detail_label.show()
 
+    def _start_from_library(self):
+        if self._controller.snapshot.has_active_work or self._background_busy or self._exiting:
+            return
+        self.tabs.setCurrentIndex(0)
+        self._invoke(self._controller.start_recording)
+
     def set_background_busy(self, busy, *, exiting=False):
         self._background_busy = busy
         self._exiting = exiting
@@ -259,8 +281,8 @@ class MainWindow(QMainWindow):
             self._detail_label.show()
 
     def set_diagnostics(self, value, error=None):
-        if error:
-            text = f"Error de audio: {error}"
+        if error is not None:
+            text = f"Error de audio: {_display_error(error)}"
         elif isinstance(value, tuple):
             text = " · ".join(f"{item.source}: {item.name}" for item in value)
         else:
@@ -270,7 +292,7 @@ class MainWindow(QMainWindow):
 
     def set_recovery_error(self, error):
         """A failed explicit retry leaves the current selection available to try again."""
-        self._recovery_label.setText(error)
+        self._recovery_label.setText(_display_error(error))
 
     def set_recovery(self, candidates, error=None):
         self._recovery_selector.clear()
@@ -280,8 +302,9 @@ class MainWindow(QMainWindow):
                 text += f" · {item.error_summary}"
             self._recovery_selector.addItem(text, item)
         self._recovery_label.setText(
-            error
-            or (
+            _display_error(error)
+            if error is not None
+            else (
                 "Sesiones recuperables"
                 if candidates
                 else "No hay sesiones pendientes de recuperación."

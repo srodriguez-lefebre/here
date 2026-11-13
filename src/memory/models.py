@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import StrEnum
+from pathlib import Path
 
 
 def _utc_now() -> str:
@@ -170,3 +171,92 @@ class ReindexReport:
     indexed_meetings: int = 0
     indexed_segments: int = 0
     warnings: tuple[object, ...] = ()
+
+@dataclass(frozen=True, slots=True)
+class MeetingQuery:
+    text: str = ""
+    from_utc: str | None = None
+    to_utc: str | None = None
+    statuses: tuple[MeetingStatus, ...] = ()
+    participant_id: str | None = None
+    limit: int = 50
+    cursor: str | None = None
+    include_partial: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class SearchQuery:
+    text: str = ""
+    from_utc: str | None = None
+    to_utc: str | None = None
+    statuses: tuple[MeetingStatus, ...] = ()
+    participant_id: str | None = None
+    limit: int = 50
+    cursor: str | None = None
+    include_partial: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class MeetingSummary:
+    meeting: Meeting
+    audio_available: bool = False
+    partial: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class MeetingPage:
+    items: tuple[MeetingSummary, ...] = ()
+    next_cursor: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class SearchHit:
+    meeting_id: str
+    revision_id: str
+    segment_id: str
+    snippet: str
+    title: str = ""
+    started_at: str | None = None
+    start_ms: int | None = None
+    end_ms: int | None = None
+    timing_source: str = "absent"
+    partial: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class SearchPage:
+    items: tuple[SearchHit, ...] = ()
+    next_cursor: str | None = None
+    degraded: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class SearchCapabilities:
+    fts_available: bool
+    warnings: tuple[object, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class CitationTarget:
+    meeting_id: str
+    revision_id: str
+    segment_id: str
+    title: str = ""
+    started_at: str | None = None
+    text: str = ""
+    speaker: str | None = None
+    start_ms: int | None = None
+    end_ms: int | None = None
+    timing_source: str = "absent"
+    audio_path: Path | None = None
+    status: str = "current"
+
+
+@dataclass(frozen=True, slots=True)
+class Citation:
+    meeting_id: str
+    revision_id: str
+    segment_id: str
+    quote: str | None = None
+    start_char: int | None = None
+    end_char: int | None = None

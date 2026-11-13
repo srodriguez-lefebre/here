@@ -1,5 +1,14 @@
 # What's new
 
+## M3 development — Find saved meetings
+
+Open **Biblioteca** to find a saved meeting by title or by words in its transcript.
+Filter by date, status or participant, then open the meeting to read the original
+segments and see who spoke where a speaker has been assigned. A title can be
+corrected from the same detail view. Search and browsing use the local catalog
+without a provider key. This note covers the M3 A candidate while its release
+checks are in progress.
+
 ## 0.3.0 — Local catalog and lifecycle
 
 Give saved meetings a useful title and link
