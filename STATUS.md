@@ -20,15 +20,23 @@ M2 B reprodujo R62 en `7455561` con siete fallos esperados y dos controles verde
 Los mismos nueve casos pasaron en `r62-green-1-25354948`, nivel 2 focalizado,
 con los deltas de productor `F027EA6D` y consumidor `07FEABE6` ensamblados en
 `C:/Users/savar/.codex/worktrees/m2-b-r62-green-check/here`. Siguen la review
-independiente, las regresiones y la integración.
+independiente, las regresiones y la integración. La review de `7994ebc` abrió
+dos casos adicionales, compensación con lease retenida y replay de un recibo
+válido tras reutilizar una ruta. `b5_w3_red` prepara el RED en
+`C:/Users/savar/.codex/worktrees/m2-b-r62-rollback-red/here` sobre ese commit.
+La preparación de integración de cuatro archivos de tests quedó en `f85e366`,
+rama `codex/m2-b-r62-product-prep`, worktree
+`C:/Users/savar/.codex/worktrees/m2-b-r62-product-prep/here`.
+`b5_docs` prepara la documentación de 0.3.0 sobre `89305c1` en
+`C:/Users/savar/.codex/worktrees/m2-b-release-docs-prep/here`.
 M3 A verificó automáticamente los focos de R63
 en `ca80f49`: Ruff, 8 comparaciones con el oráculo v2, 10 controles de
 generación y 240 regresiones de búsqueda. La review independiente aprobó ese
 alcance funcional. `r63-query-benchmark-1` midió p95 de 879,4833999891125 ms
 frente al requisito de menos de 500 ms. La sonda posterior midió 539,90 ms en
 generación y 222,99 ms en la entrada al guard en una llamada instrumentada.
-M3 A prepara una prueba de concepto aislada para reducir el costo de conversión
-de filas. El benchmark sigue fallido.
+M3 A descartó la proyección JSON1 tras medir 3.446,71 ms frente a 782,22 ms
+del control en la prueba de concepto. El benchmark sigue fallido.
 Root coordina las ventanas de ejecución, la integración, los PR y los merges.
 
 Preparación documental M5 B en `C:/Users/savar/.codex/worktrees/m2-segments/here`,
