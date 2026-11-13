@@ -16,7 +16,7 @@ from zipfile import ZipFile
 
 import pytest
 from here.memory import service as service_module
-from here.memory.database import Busy, LibraryConnection
+from here.memory.database import Busy, LibraryConnection, LibraryError
 from here.memory.models import AudioAsset
 from here.memory.service import Conflict, MemoryService
 from here.output.ownership import FileLease, LeaseBusy
@@ -394,3 +394,70 @@ def test_export_refuses_when_resolved_suppression_alias_changes_after_snapshot(
     assert record.read_bytes() == initial_record
     assert memory.show(MEETING_ID) is None
     assert not list(destination.parent.iterdir())
+
+
+def test_export_refuses_to_replace_an_existing_archive(
+    catalog: tuple[MemoryService, Path, Path],
+) -> None:
+    from here.memory.portability import PortabilityService
+
+    memory, _, destination = catalog
+    with ZipFile(destination, "x") as archive:
+        archive.writestr("existing.txt", b"synthetic archive from another operation")
+    before = destination.read_bytes()
+
+    with pytest.raises(LibraryError):
+        PortabilityService(memory).export(
+            (MEETING_ID,), destination, True, lambda _: None, lambda: False
+        )
+
+    assert destination.read_bytes() == before
+    assert set(destination.parent.iterdir()) == {destination}
+    assert not list((memory.data_dir / ".exports").glob("*.json"))
+
+
+def test_atomic_export_rename_preserves_a_destination_created_at_its_boundary(
+    catalog: tuple[MemoryService, Path, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from here.memory.portability import PortabilityService
+    from here.output.export_binding import _Windows
+
+    memory, _, destination = catalog
+    foreign = b"synthetic bytes created by a competing export"
+    at_native_rename = False
+    competed = False
+    rename = _Windows.rename
+
+    def enter_native_rename(
+        windows: _Windows,
+        handle: int,
+        name: str,
+        before_rename: Callable[[], None] | None,
+    ) -> None:
+        nonlocal at_native_rename
+        at_native_rename = True
+        try:
+            rename(windows, handle, name, before_rename)
+        finally:
+            at_native_rename = False
+
+    def check_cancellation() -> bool:
+        nonlocal competed
+        if at_native_rename:
+            assert _temporary(destination) in destination.parent.iterdir()
+            with destination.open("xb") as stream:
+                stream.write(foreign)
+            competed = True
+        return False
+
+    monkeypatch.setattr(_Windows, "rename", enter_native_rename)
+
+    with pytest.raises(LibraryError):
+        PortabilityService(memory).export(
+            (MEETING_ID,), destination, True, lambda _: None, check_cancellation
+        )
+
+    assert competed
+    assert destination.read_bytes() == foreign
+    assert set(destination.parent.iterdir()) == {destination}
+    assert not list((memory.data_dir / ".exports").glob("*.json"))
