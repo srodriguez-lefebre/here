@@ -2475,3 +2475,20 @@ has an existing stable AppId installation and Start group. The hosted Windows
 package job will exercise the stable installer lifecycle in its isolated runner.
 The local wheel verification uses a separate noneditable installation and
 synthetic roots. No level 3 certification is claimed.
+
+The corrected full `b5-full2-ec572046c277-38b8014c` on `ec57204` passed 1257
+of 1275 tests in 730.49 s, with 16 local symlink-privilege skips and two
+installed-wheel skips. Exit 0, JUnit time 730.426 s, SHA-256
+`66B21E06E22D965DB49010BC1760E73BED0EDCC61F94D75A74521809F009A041`.
+The subsequent release commits retain source, tests, packaging and config.
+This is level 2 evidence. The accepted B source contracts were handed to M3 A
+for the independent R52 consumer tests.
+
+`m2-030-wheel-a4e464a319f7-a98d6f06` built wheel and sdist on the same source
+and config at `a4e464a`, then installed the wheel in a fresh noneditable
+environment. Version metadata and the five memory subcommand help outputs
+matched the release documentation. Four distribution checks passed in 10.46 s.
+JUnit SHA-256 is `36CAC6038124FF3911E483729A6CDD067113D8803A7000EAFC062B75BA98B38A`.
+Wheel SHA-256 is `83D7496075BE671F40551ADB2287D963ACD33BF701FCCE0BB9F21E8960E0339C`.
+Sdist SHA-256 is `18D2276C38A22F0CC3F4C85336701F74FD5980D35074D63DD5A0619F25B8AE52`.
+This is local level 2 evidence. The hosted build generates its own artifacts.

@@ -14,9 +14,12 @@ en la vista R50. El foco de 19 casos pasó en `f626933`. La revisión aprobó
 también `ec57204`, con Ruff y formato limpios en 27 archivos Python y cero
 diagnósticos nuevos de mypy en los archivos modificados.
 
-El full corregido se ejecuta sobre `ec57204` en `m2-b-r62-product-prep`.
-La rama de entrega integra solo documentación después de ese commit. El wheel
-no editable, el paquete Windows, la CI final y el merge siguen pendientes.
+El full corregido `b5-full2-ec572046c277-38b8014c` pasó 1257 pruebas y omitió
+18 en `ec57204`, nivel 2. Son 16 omisiones por privilegio local de symlinks y
+dos del wheel, que tienen su corrida aparte. La rama de entrega integra solo
+documentación después de ese commit. El wheel 0.3.0 no editable pasó los cuatro
+smokes de distribución y la ayuda CLI se comprobó desde esa instalación. Nivel 2.
+El paquete Windows, la CI final y el merge siguen pendientes.
 El equipo de desarrollo tiene una instalación con el AppId y el grupo Inicio
 de here. La prueba de ese instalador estable usa el runner Windows del workflow.
 
