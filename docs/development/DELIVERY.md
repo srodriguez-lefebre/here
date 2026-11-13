@@ -2417,6 +2417,14 @@ This reproduces the defect and leaves GREEN, integration and acceptance open.
 This is scoped level 2 evidence. Independent review, broader regression checks
 and group integration remain open.
 
+The independent review of frozen candidate `7994ebc` requested four changes.
+`r62-review-red-1-009b46ae` on test-only `c8747aa` reproduced all four in 9.15 s
+(exit 1, XML 4 failures in 9.104 s): compensation with a held lease, exact
+committed replay on a reused path, early effects with a discordant receipt,
+and a WAV-only retry using a valid rebuilt parent. XML SHA-256 is
+`3369E9A5954FB21916D87C67AE22282DA6C45F65CF7C11B8C23C212C1A728E99`.
+The first nine-case GREEN remains evidence for its own cases and source.
+
 The M5 B preparation draft `e20c095cc39dc4f59fa55d04208cbffeae6b8ae8`
 received an independent static re-review after correcting temp-file recovery,
 group-bound import receipts, compression limits and the review gate. The eight

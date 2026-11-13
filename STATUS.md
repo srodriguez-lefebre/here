@@ -19,11 +19,13 @@ sobre `ae00b44`. M3 A recuperó el checkout `2710/here` en `49baac0`.
 M2 B reprodujo R62 en `7455561` con siete fallos esperados y dos controles verdes.
 Los mismos nueve casos pasaron en `r62-green-1-25354948`, nivel 2 focalizado,
 con los deltas de productor `F027EA6D` y consumidor `07FEABE6` ensamblados en
-`C:/Users/savar/.codex/worktrees/m2-b-r62-green-check/here`. Siguen la review
-independiente, las regresiones y la integración. La review de `7994ebc` abrió
-dos casos adicionales, compensación con lease retenida y replay de un recibo
-válido tras reutilizar una ruta. `b5_w3_red` prepara el RED en
-`C:/Users/savar/.codex/worktrees/m2-b-r62-rollback-red/here` sobre ese commit.
+`C:/Users/savar/.codex/worktrees/m2-b-r62-green-check/here`. La review de
+`7994ebc` encontró cuatro casos abiertos. `b5_w3_red` los reprodujo en
+`r62-review-red-1-009b46ae` con 4 fallos esperados en `c8747aa`, worktree
+`C:/Users/savar/.codex/worktrees/m2-b-r62-rollback-red/here`. Corresponden a
+compensación con lease retenida, recibo exacto con una tumba previa en la ruta,
+recibo discordante y retry WAV-only tras reconstruir el catálogo. Siguen la
+corrección, la nueva review, las regresiones y la integración.
 La preparación de integración de cuatro archivos de tests quedó en `f85e366`,
 rama `codex/m2-b-r62-product-prep`, worktree
 `C:/Users/savar/.codex/worktrees/m2-b-r62-product-prep/here`.
