@@ -24,8 +24,12 @@ con los deltas de productor `F027EA6D` y consumidor `07FEABE6` ensamblados en
 `r62-review-red-1-009b46ae` con 4 fallos esperados en `c8747aa`, worktree
 `C:/Users/savar/.codex/worktrees/m2-b-r62-rollback-red/here`. Corresponden a
 compensación con lease retenida, recibo exacto con una tumba previa en la ruta,
-recibo discordante y retry WAV-only tras reconstruir el catálogo. Siguen la
-corrección, la nueva review, las regresiones y la integración.
+recibo discordante y retry WAV-only tras reconstruir el catálogo. El control
+adicional de token ambiguo también falló en RED. La corrección `b365fa9` pasó
+los 14 casos en `r62-green-2-51dfbfff`, nivel 2 focalizado. El lote
+`r62-regressions-1-ceef8825` dio 82 pases y 13 fallos, incluidos errores de
+configuración del runner y un caso pendiente de aviso por SQLite ocupado.
+Siguen la segunda review, la verificación de esos fallos y la integración.
 La preparación de integración de cuatro archivos de tests quedó en `f85e366`,
 rama `codex/m2-b-r62-product-prep`, worktree
 `C:/Users/savar/.codex/worktrees/m2-b-r62-product-prep/here`.

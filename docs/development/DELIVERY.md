@@ -2425,6 +2425,16 @@ and a WAV-only retry using a valid rebuilt parent. XML SHA-256 is
 `3369E9A5954FB21916D87C67AE22282DA6C45F65CF7C11B8C23C212C1A728E99`.
 The first nine-case GREEN remains evidence for its own cases and source.
 
+`r62-ambiguous-red-1-3480b2d4` added a failing control on `62b1e8f` for
+an ambiguous committed token (1 failure in 5.67 s). The correction frozen in
+`b365fa9` passed all fourteen focused cases in `r62-green-2-51dfbfff` in
+18.16 s. XML SHA-256 is
+`A711922133A63C919F2C81FF5F38FDD7BE46E589299D5D2E32EC6588C8F286E0`.
+The broader `r62-regressions-1-ceef8825` run had 82 passes and 13 failures
+in 143.37 s. W3, R59 and R60 passed. Settings failures show an empty boolean
+from the runner, and the SQLite Busy warning case needs separate verification.
+This result keeps the regression gate open.
+
 The M5 B preparation draft `e20c095cc39dc4f59fa55d04208cbffeae6b8ae8`
 received an independent static re-review after correcting temp-file recovery,
 group-bound import receipts, compression limits and the review gate. The eight
