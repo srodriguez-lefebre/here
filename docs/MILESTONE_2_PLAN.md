@@ -1,14 +1,17 @@
 # Hito 2 — Memoria estructurada
 
-Estado: **en ejecución desde el2026-11-05**, ruling20 reemplaza ruling15.
-Grupo A **cerrado y mergeado** por PR21, merge53712c5beedafc2d40e2abf10c13362a1c3c9f78
-el2026-11-06T03:22:06Z; M2 sigue abierto hasta B/cierre del hito. Nivel: implementado
-y verificado automáticamente, sin certificación nueva de hardware/proveedor/instalación.
+Estado: **cerrado en 0.3.0**, nivel 2 verificado automáticamente. Grupo B
+mergeado el 2026-11-13 en `b4b3d1b` por [PR #25](https://github.com/srodriguez-lefebre/here/pull/25).
+CI `43461764790` pasó 1273 pruebas y package `43461764783` verificó el
+instalador estable. ACCEPTANCE registra las corridas de todos los criterios.
+Grupo A se mergeó por PR21 en `53712c5beedafc2d40e2abf10c13362a1c3c9f78`
+el 2026-11-06T03:22:06Z. Sin certificación nueva de hardware, proveedor o
+máquina Windows independiente.
 Head8a498e207812592ff84a0acc5ba4e9f392e02373: review independiente APPROVED;
 Copilot5795325438 recibido sin issues abiertos/cinco hilos respondidos y resueltos;
 suite Windows980/2 skips wheel/307,46 s (run42155415514) y package42155415501 success.
 Merge guardado y ledger en DELIVERY. Wheel fresco exacto cubre aparte distribución4/
-7,51 s, incluidos los dos smokes omitidos en CI. Versión0.2.0;0.3.0 al cerrar B/M2.
+7,51 s, incluidos los dos smokes omitidos en CI del grupo A.
 El diseño detallado está en
 [`development/PRODUCT_DESIGN.md`](development/PRODUCT_DESIGN.md), secciones 2, 3 y 4,
 que es decisión tomada (ruling 3). Este plan no lo repite: fija alcance, orden, criterios

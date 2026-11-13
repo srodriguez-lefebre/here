@@ -5,6 +5,28 @@ Actualizado: 2026-11-13. Leé CLAUDE.md primero; después este archivo y
 
 ## Checkpoint vigente — 2026-11-13
 
+M2 cerrado. Versión 0.3.0 mergeada por [PR #25](https://github.com/srodriguez-lefebre/here/pull/25)
+en `b4b3d1b`, head revisado `55d68e2`. Nivel 2. CI Windows `43461764790` pasó
+1273 pruebas y omitió los dos smokes de wheel, que pasaron en la corrida local
+no editable. Package `43461764783` verificó el instalador estable y los seis
+hashes del artefacto. El detalle está en ACCEPTANCE y DELIVERY.
+
+M3 A sigue en chat `01a1af04-e779-7363-be61-c840651b0b18`, rama
+`codex/m3-search`, worktree `C:/Users/savar/.codex/worktrees/2710/here`.
+El consumidor R52 pasó dos casos focalizados y review independiente en
+`2ece845`, worktree `C:/Users/savar/.codex/worktrees/m3-r52-integrated/here`.
+M3 prepara regresiones integradas de búsqueda y borrado. El p95 de 879,48 ms
+frente a 500 ms sigue fallido. M3 B espera el PR abierto de A y su handoff.
+
+El core de M5 B espera el PR de contratos de portabilidad, rama
+`codex/m5-portability-contracts`, worktree
+`C:/Users/savar/.codex/worktrees/m5-portability-contracts/here`. Root integra
+el handoff de B y coordina el próximo frente. Claims y respuestas esperan M4 B.
+M4 A/B y M5 A/C conservan sus dependencias. Sin certificación nueva de nivel 3.
+Dos horas sigue **omitida por ruling 5**. Ruling 64 sigue vigente.
+
+## Candidato 0.3.0 y reanudación — 2026-11-13
+
 M2 A está mergeado en PR21. M2 B prepara 0.3.0 en `codex/m2-lifecycle-release`,
 worktree `C:/Users/savar/.codex/worktrees/m2-lifecycle-release/here`, responsable
 root. La fuente `d00a1d4` pasó 110 casos y review independiente. El full de

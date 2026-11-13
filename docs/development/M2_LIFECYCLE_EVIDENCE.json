@@ -646,7 +646,7 @@
 
   "task5": {
     "recorded_on": "2026-11-13",
-    "status": "implemented_candidate_acceptance_open",
+    "status": "verified_automatically_and_merged",
     "scope": "Task 5 only. Existing top-level Task 4 evidence retains its source, tests, run IDs and results.",
     "contracts": {
       "R59": "Shared recovery read view with explicit data root and retained suppression scope",
@@ -769,11 +769,15 @@
         "junit_seconds": 7.429
       }
     },
-    "remaining_gates": [
-      "Final full suite, hygiene and comparative types",
-      "Handoff of the accepted B contracts for M3 UI integration",
-      "Installed-wheel and Windows distribution verification",
-      "Windows CI on final PR head and protected merge under CLAUDE.md §7 and ruling 64"
-    ]
+    "delivery": {
+      "version": "0.3.0",
+      "pr": 25,
+      "head": "55d68e2c333ccea5d1b3cd6672f66ece8908f536",
+      "merge": "b4b3d1beb9b05e33ae03ab8381e805aa6a23ffc8",
+      "windows_ci_run": 43461764790,
+      "windows_package_run": 43461764783,
+      "windows_artifact_id": 14056018512,
+      "evidence_level": 2
+    }
   }
 }
