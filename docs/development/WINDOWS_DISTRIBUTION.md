@@ -1,6 +1,6 @@
 # Building and verifying the Windows delivery
 
-The target is Windows 11 x64, here 0.2.0. The artifacts include Python; source
+The target is Windows 11 x64, here 0.3.0. The artifacts include Python; source
 development still uses the repository's normal wheel/uv commands.
 
 From PowerShell 7 at the repository root:
@@ -30,7 +30,7 @@ Run the actual frozen startup and isolated installer lifecycle:
 
 ```powershell
 ./scripts/smoke_windows.ps1 -BundlePath ./dist/windows/here `
-  -InstallerPath ./dist/windows/here-0.2.0-windows-x64-setup.exe
+  -InstallerPath ./dist/windows/here-0.3.0-windows-x64-setup.exe
 ```
 
 The script first refuses collisions with the chosen existing AppId and Start
@@ -59,5 +59,19 @@ not a product target and no Linux check gates anything.
 The user excluded the two-hour capture/resource run and long generated-audio
 transcription/timestamp/diarization run. These are omitted, not passing tests.
 Existing short native capture and synthetic-provider evidence retains its own
-source provenance. See [M1 evidence](M1_EVIDENCE.md) for the delivery audit; M2–M5
-are outside this implementation.
+source provenance. The historical 0.2.0 baseline is recorded in
+[M1 evidence](M1_EVIDENCE.md) and remains the source for the M5 upgrade run.
+
+## 0.3.0 verification
+
+Use a fresh development environment and a separate noneditable wheel
+installation. Build the wheel and sdist, verify installed metadata and package
+location, and run the distribution checks with `HERE_WHEEL_PYTHON` pointing to
+that fresh installation. For the full offscreen suite leave the global
+`TRANSCRIPTIONS_DIR` unset so tests can exercise the default path. Tests that
+need explicit native context supply their own synthetic session roots.
+
+Find the build inputs, installer lifecycle report and checksum manifest with the
+artifact of the successful [Windows package run](https://github.com/srodriguez-lefebre/here/actions/workflows/windows-package.yml).
+The installed-wheel and hosted checks retain their own source and artifact
+bindings in [acceptance evidence](ACCEPTANCE.md).

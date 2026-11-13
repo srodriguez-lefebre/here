@@ -276,6 +276,27 @@ con búsqueda independiente de M3 A; las acciones que dependan de B esperan su
 contrato aceptado. Tras B se permite adelantar M5 B, con claims pendientes hasta
 M4 B. No se reinicia trabajo, cambian criterios ni se anuncia versión 0.3.0 ahora.
 
+### Candidato 0.3.0 — 2026-11-13
+
+M2 B sigue abierto. Esta sección registra evidencia por corrida y prepara
+la documentación para el cierre según los criterios 11–16 ya definidos.
+
+| Alcance | Evidencia o comprobación pendiente |
+|---|---|
+| B4, verificación automática local | `M2B-T4-R1-FULL-4e1b2ce-20261106`: 1043 pasan, 9 skips, 390,03 s, exit 0. Dos skips de wheel y siete por privilegios de symlink. JUnit de 1052 casos, sin fallos ni errores, 389,952 s internos. |
+| B5, R62 RED | `r62-red-1-6adcd848` sobre `74555617426f4f760dca64735d0b28bec5fd6424`: 7 fallos y 2 controles que pasan. |
+| B5, R62 GREEN focal | `r62-green-1-25354948`: los 9 casos pasan en 7,91 s, exit 0. Productor `F027EA6D`, consumidor `07FEABE6` y test `99510E10`. La revisión independiente del candidato `7994ebc` registró cuatro hallazgos P2. |
+| B5, R62 GREEN2 | El candidato `b365fa9` conserva los bytes ejecutados. Pasan 14 casos en 18,16 s, sin fallos, errores ni skips. JUnit registra 18,103 s internos. |
+| B5, R62 GREEN3 integrado | `d00a1d4`: 110 pasan en 166,35 s, sin fallos, errores ni skips. JUnit registra 166,318 s internos. Incluye 15 casos R62 con el control I5 y 95 regresiones, entre ellas el aviso por SQLite Busy. |
+| Criterios 11–14 | Revisión independiente aprobada en `d00a1d4` y para los deltas `f626933` y `ec57204`. El foco `b5-full2-six-failures-focus-6e5183bb` pasó 19 casos. Ruff y formato limpios en 27 archivos. Comparación de mypy sin diagnósticos nuevos. |
+| Criterio 15 | Suite Windows y verificación del wheel según las corridas de `ACCEPTANCE.md`. |
+| Criterio 16 y distribución | 0.3.0 fijado en `350761a`. `ACCEPTANCE.md` registra la evidencia y `WINDOWS_DISTRIBUTION.md` enlaza el workflow y su artefacto. |
+
+Ruling 64 omite solicitar Copilot para los PR pendientes. Se mantienen review
+independiente, evidencia en el PR, CI verde en el head final, merge protegido y
+registro en DELIVERY. Los resultados anteriores conservan su alcance. La
+versión del candidato es 0.3.0. Las corridas de esta tabla usan datos sintéticos.
+
 ## Lo que queda pendiente de decidir
 
 - FTS5 ya adoptado e implementado en A como índice derivado sin consulta de producto;

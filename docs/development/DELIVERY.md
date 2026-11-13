@@ -808,6 +808,177 @@ Los rulings nuevos se escriben en español por el ruling 6.
     como productor aceptado. **Cost if wrong:** ajustar el documento y fijar sus
     bindings antes del dispatch, sin iniciar implementación con supuestos abiertos.
 
+57. **Ruling:** la limpieza automática de pytest eliminó el catálogo temporal205
+    después de sus corridas, no sus logs/muestras/bindings. Para el diagnóstico
+    residual M3 se admite una única reposición sintética nombrada, en un TEMP
+    dedicado fuera de `pytest-of-savar`, usando exactamente el generador/helper
+    aceptado, sin copia ni cambio de carga. Se documentan fuente/helper,1000
+    reuniones/100000 segmentos/98901 documentos FTS,220 registros/221 IDs, alias,
+    fingerprint real y manifest/DB antes/después. No se afirma igualdad binaria
+    con el input desaparecido. La materialización necesita ventana exclusiva y
+    queda fuera de intervalos; las consultas siguen leyendo guard/generación/
+    corpus completos, sin caché de resultados o digest. El fixture se preserva
+    durante los diagnósticos para no repetir trabajo por retención de pytest.
+    Warmups/control/instrumentación aportan diagnóstico, nunca un nuevo p95 ni
+    aceptación;500ms/50ms y todos los fallos previos permanecen. El observer UI
+    conserva su fixture original independiente. **Cost if wrong:** corregir el
+    launcher y repetir solo el diagnóstico invalidado con nueva procedencia,
+    conservando resultados y sin modificar producto, privacidad ni presupuestos.
+
+58. **Ruling:** la traza real R55 confirma contención propia entre las lecturas de
+    participantes, listado y búsqueda de la misma Biblioteca: la consulta vigente
+    termina Busy/Retry visible sin resultados. Se corrige su coordinación interna
+    de dispatch, conservando el último request/generation, descarte de callbacks
+    obsoletos, GUI no bloqueada, cierre y drain real de workers. No se amplía la
+    espera del lock, se debilita el guard ni se ocultan Busy externos/errores de
+    requests vigentes; Retry conserva su función. No hay pantalla, flujo público,
+    dependencia, proceso o setting nuevo. El RED público ya existente y la traza
+    justifican el fix; tests UI, ocho queries reales, review independiente y nueva
+    medición deben verificarlo. Sus tiempos instrumentados y gaps parciales no
+    aprueban50ms ni500ms. El UI GREEN trabaja en su worktree propio sin integrar
+    durante los bindings del diagnóstico query; cualquier integración espera su
+    release o rebind explícito. **Cost if wrong:** ajustar dispatch/cancelación
+    interna y repetir sus controles, manteniendo errores reales, ownership y los
+    presupuestos originales.
+
+59. **Ruling:** W3 y sus dos controles C5 se corrigen conservando ambos contratos.
+    Se fija el seam interno `MemoryService.recovery_read_view(directory,
+    declared_identity)`, context manager que devuelve la identidad resuelta real
+    (`str | None`), sin inventar padre/revisión ni otorgar autoridad sobre roots.
+    Usa el único parser B y una sola `.memory.lock`: valida primero todo registro
+    y todos los UUID directos pending/complete. Con cero pares de origen, aliases
+    vacíos están probados; una identidad conocida no depende de SQL innecesario.
+    Con cualquier par, conserva la resolución coherente de aliases SQL o falla
+    cerrado antes de audio/exposición. Un UUID de metadata o productor nativo
+    no exime de aliases. None/opacos conservan la resolución legado existente,
+    su ambigüedad/corrupción metadata-only y el control genuino sin catálogo ni
+    barreras; nunca se interpreta registro inválido como vacío.
+    El consumidor conserva los scopes de ownership existentes, revalida después
+    de adquirirlos y compara identidad resuelta/owner retenido antes de inspección.
+    El guard final mantiene la exclusión y, si necesaria, su vista SQL durante
+    audio/reconstrucción/construcción del candidato, incluso si create=False no
+    adquirió un owner-file ausente. No escapa un booleano desprotegido. Resolución
+    preliminar no autoriza audio. Se factoriza un primitivo privado ya locked,
+    sin nested public read view, segundo lock/BEGIN, parser o MemoryService.
+    Discovery sin catálogo no instancia MemoryService solo para consultar el
+    guard: su constructor normal inicializa SQL. Se conserva ese constructor y
+    se comparte un único primitivo de módulo `recovery_read_view(data_dir,
+    directory, declared_identity)`, con data_dir explícito y sin inicialización/
+    migración SQL innecesaria; el método de la instancia es una delegación al
+    mismo primitivo. Recovery usa la instancia ya inyectada cuando existe o ese
+    primitivo con su root de composición actual, nunca otra instancia por defecto.
+    La resolución/inspección read-only no introduce un SQLite nuevo; los writers
+    conservan su inicialización y semántica de padre/revisión reales.
+    Read scope no envuelve publish_memory/reconcile/provider ni otro writer;
+    su handoff usa leases reales retenidas y revalidación del writer existente.
+    Además catalog_read_view traduce fallos de SU setup, pero propaga intactos
+    ValueError/OSError/errores de dominio del caller después del yield, conservando
+    rollback/release. Service sigue con el GREEN principal; Recovery consume el
+    API congelado en su WT/archivo propio. Tests RED independientes deben cubrir
+    la matriz y lifetime, además de W3/C5 reales; no cambian expectativas.
+    **Cost if wrong:** ajustar seam/lifetime y sus callers antes del merge,
+    preservando supresión completa, errores reales y los guards de ownership.
+
+60. **Ruling:** W2 conserva el plan privado v1 de tres campos y sus assertions;
+    no agrega meeting_id, schema ni registro/inventario durable alternativo.
+    Con SQL utilizable, todo stage asociado a la reunión se valida por journal,
+    paths/plan/roles y R52 antes de purgar: se conserva ese journal o transfiere
+    su inventario validado al delete journal existente hasta terminar. Denegación,
+    unknown o inconsistencia conserva autoridad y pending/hidden.
+    En recuperación ya aceptada pending sin autoridad SQL utilizable para probar
+    el alcance, housekeeping R54 de copias privadas realmente no referenciadas
+    ocurre bajo la misma lock ANTES de completar. No necesita inventar asociación
+    stage→meeting para descartar copias que R54 ya autoriza. Si quedan restos que
+    no pueden excluirse con evidencia del alcance pendiente, se preservan/reportan
+    y esa recuperación no afirma complete; no se adjudican como owned ni se los
+    borra para resolver la duda. Se usa estado observable, no una supuesta historia
+    de pérdida de DB. No es rechazo global nuevo antes de aceptación ni regresión
+    automática de tombstones ya complete; SQL fiable que prueba un stage ajeno
+    conserva esa distinción. El costo conservador ante material inidentificable
+    es pending/diagnóstico, sin garantía inventada de finalización selectiva.
+    Todo cleanup B reutilizado mantiene preflight de TODOS los hijos/roles/paths
+    y la dependencia W1: WAV antes de session.json y prueba de publicación al final.
+    No basta mover un iterdir/unlink que pueda destruir primero su propia prueba;
+    prueba ya perdida no se reconstruye desde UUID/sufijo/hash u origen externo.
+    Tests intactos de SQL-loss/unknown/replay y controles A/W1 deben llegar a verde.
+    **Cost if wrong:** ajustar precedencia/límite de pending y repetir controles,
+    reteniendo incertidumbre y bytes desconocidos, sin ampliar autoridad de borrado.
+
+61. **2026-11-06 — M3 A puede eliminar wrappers de filas en generación sin
+    cambiar el token v2 ni sus inputs.** El RED de rendimiento sigue siendo el
+    benchmark público real fallido; los controles nuevos de equivalencia no se
+    presentan como RED si ya pasan. Solo los cursores de `_generation` pueden usar
+    `row_factory=None` y codificar directamente los tuples de `fetchmany(256)`.
+    La conexión canónica conserva `sqlite3.Row` para páginas/detalle y los demás
+    lectores. No se cambia SQL, orden, cobertura completa de FTS/schema/evidencia,
+    snapshot, supresión, framing v2, encoder ni tratamiento de valores/errores.
+    Se exige igualdad de bytes/digest con v2 previo, límites de batches, errores
+    y aislamiento de la factoría; no se promete mejora medida ni alcanzar 500 ms.
+    No hay cache, SQL packing, UDF, dependencia o índice nuevo. Instrumentación
+    con proxies necesita setters transparentes antes de otra corrida diagnóstica;
+    no se agregan detecciones de proxies o bypasses al producto. Fuente y controles
+    independientes en worktrees propios; runtime solo con ventana exclusiva.
+    **Costo si falla:** retirar este cambio de representación o corregirlo y
+    repetir equivalencia/regresiones; conservar todos los inputs y el presupuesto.
+
+62. **2026-11-06 — El replay de recuperación transfiere exclusión al writer antes
+    de tocar evidencia o reescribir el marker.** Un intent válido None/opaco puede
+    sobrevivir sin mapping; un claim no-op no prueba un lease. Se fija
+    `MemoryService.recovery_publication(directory, declared_identity,
+    *, expected_identity) -> ContextManager[None]` como scope interno writer del
+    MISMO servicio/root, después de salir del read guard. Antes de cualquier
+    validación de sello/material o escritura del publisher, obtiene una sola
+    `.memory.lock`, relee metadata/intent mínimos y revalida registro, aliases,
+    identidad y padres/reservas reales con el parser/resolver existentes. Compara
+    con la identidad cuyas leases reales retuvo el consumidor; un nuevo target
+    o dueño no cubierto se rechaza tipado para revalidar, sin efectos previos.
+    La comparación no es autoridad de ownership. Si sigue realmente unmapped,
+    conserva la exclusión hasta terminar publicación y cleanup del marker;
+    no inventa UUID/padre ni hace prepare_retry automático para este replay.
+    El publisher conserva sus checks/rechazos de padre, reserva, hashes e import.
+    Sus operaciones memory reutilizan un primitivo privado ya locked, acotado a
+    este scope/instancia: no segundo parser/lock/conexión/BEGIN ni repo/SQL expuesto
+    al consumidor. Ninguna transacción READ queda abierta durante FS/writer;
+    las transacciones SQL breves existentes y leases reales aplicables se conservan,
+    sin reacquirir recursivamente las ya retenidas. No es read scope alrededor de
+    un writer/proveedor. El consumidor deriva intent/revision/status frescos dentro
+    del scope, usando el publisher existente; processing.py conserva su lease
+    cerrado salvo necesidad concreta demostrada y asignada por root. No se agrega
+    warning deshabilitante, nueva política de ownership ni otra DoD. Productor
+    service y consumidor recovery tienen escritores distintos; RED independiente
+    de las intercalaciones mapping/owner/delete precede a GREEN y sus reviews.
+    Los 40 pases/review del reader R59 siguen válidos solo para ese scope previo.
+    **Costo si falla:** conservar intent y bytes, corregir el handoff y repetir
+    sus controles; nunca aceptar un rechazo SQL tardío como exclusión previa.
+
+63. **2026-11-06 — Generación puede reutilizar un encoder local y omitir chequeos
+    de ciclos imposibles en el dominio SQLite canónico.** Se permite un
+    JSONEncoder por operación, con los mismos parámetros de formato/error, y
+    `check_circular=False` solo para batches de tuples del cursor nativo R61:
+    open_library no habilita conversores detect_types, conserva text_factory str
+    y no hay serializer default personalizado. Las celdas nativas son escalares
+    None/int/float/str/bytes; no pueden referir al batch o a sus filas. No se
+    extiende esta prueba a fábricas/conversores que produzcan contenedores.
+    El encoder retiene configuración, nunca resultados/corpus/digests, y no se
+    comparte entre operaciones. Se conservan SQL, fuentes completas, guard/snapshot,
+    orden/batch256, bytes/framing v2, errores de BLOB/no finitos y memoria acotada
+    por filas. Review independiente verifica esa premisa y los controles reales
+    contra el oráculo v2; el RED de presupuesto vigente es p95 848,67978 ms fallido.
+    No se promete ahorro, C encoder reutilizado ni alcanzar 500 ms. No nuevo codec,
+    SQL packing/JSON/UDF, cache, índice, dependencia o menor corpus. Runtime y nueva
+    medición requieren sus ventanas concretas; no se repite fuente sin cambios.
+    **Costo si falla:** conservar chequeo de ciclos/corregir reutilización y repetir
+    equivalencia/regresiones, sin relajar inputs, errores ni presupuesto.
+
+64. **2026-11-13 — El usuario indicó que no se solicite review a Copilot.**
+    La indicación reemplaza el requisito de solicitar y recibir review de Copilot
+    de los rulings 17 y 20 para los PR pendientes. Se conserva la revisión
+    independiente, la evidencia en el PR, CI de Windows verde sobre el head
+    final, el merge protegido de §7 y el registro en DELIVERY. Las reviews de
+    Copilot ya recibidas conservan su historial y sus respuestas.
+    **Costo si falla:** si el usuario restablece ese requisito, pedir review sobre
+    el head vigente de cada PR que siga abierto antes de mergear.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
@@ -2154,3 +2325,170 @@ Merge commitc4d79b2759cb857094f5fa22adf5b1ad2865f69b at2026-11-06T09:47:58Z.
 This closes the records PR only. M2 B/M3 A, actual native/guarded interoperability,
 milestone versions, final suites and certification remain open. No gate or DoD
 changed; two hours stays **omitida por ruling 5**.
+
+## 2026-11-06 — M3 B preparation/contracts PR #24 merged
+
+PR [#24](https://github.com/srodriguez-lefebre/here/pull/24) publishes the prepared
+M3 B SPEC/PLAN, R53–56 and source-bound coordination/acceptance records. It changes
+six documentation files only. Independent reviewer parallel_contracts_review
+APPROVED final head3e2f6bff768de0a36b7b6f6704f5b36a9637ae90; publication/dispatch
+R1 and historical-checkpoint R2 ADDRESSED, no open findings. All11 acceptance
+criteria,14 full task blocks and Closing requirements remain; no M3 B dispatch.
+
+Copilot was requested on that exact head at2026-11-06T12:43:20Z. Actual bot review
+5800249014 COMMENTED at12:45:47Z recommends approval/no open issues. There were
+zero inline observations, so no reply/fix loop was necessary. Exact-head Windows
+CI42219811270 succeeded:980 passed/two installed-wheel environment skips/326.90s;
+Windows package42219811401 succeeded. Source5c66169c0a93a8f0606a011bd9570bbdd9137903,
+testsfb958d021eaf7d149c00a3a1be174e36fbef2a1c and config7143d4d remain identical to
+main/A. These checks do not validate unmerged B/M3 product changes.
+
+Root verified non-draft/main/exact head, independent verdict, received bot review,
+zero observations and both completed successful Windows runs before invoking
+`gh pr merge 24 --merge --admin --match-head-commit 3e2f6bff768de0a36b7b6f6704f5b36a9637ae90`.
+Merge3e76a207cf828b50b8e07cbd8136830b38fea80b at2026-11-06T12:52:24Z.
+Raw reviews/comments/checks/run metadata and complete CI log are retained as
+`.superpowers/m3-library-contracts-pr24-*`; the independent report is
+`m3-library-contracts-pr-review-report.md` under the root SDD reports.
+
+This closes documentation only. B whole-review W1/W2/W3, successful full, final
+types/docs/native/consumer integration and product delivery remain open. M3's
+valid R55 p95902.413285ms still fails500ms and UI heartbeat is incomplete.
+No new hardware/provider/clean-install certification or version change;0.2.0
+remains current. Two hours stays **omitida por ruling 5**, never passed. M3 B GO
+still requires the actual reviewed/open-A-PR handoff and accepted contracts;
+early M5 B still waits for actual M2 B merge.
+
+## Pausa explícita — 2026-11-06
+
+El usuario solicitó guardar el trabajo y cortar, con mensajes de commit en inglés.
+Se revocaron todos los grants de fuente/runtime y se detuvieron ambos frentes.
+Los cambios de código, tests y planes preparados se guardaron en commits locales
+`paused: ...`; STATUS contiene ramas, worktrees y SHAs de retoma. No se ejecutaron
+nuevas suites, builds, smokes o merges para este checkpoint. Los resultados previos
+conservan sus scopes; el p95 848,67978 ms sigue fallido y el writer R62 pendiente.
+Los logs/manifests ignorados y datos sintéticos de ejecución siguen locales;
+ninguna credencial ni biblioteca privada forma parte de los commits. La pausa no
+acepta WIP ni cierra otro grupo/hito. Reanudar solo por instrucción del usuario.
+
+## 2026-11-13 — Resumed search validation and measured performance
+
+The user resumed M2–M5 and removed Copilot review from pending PRs under ruling 64.
+The two existing work chats resumed from their preserved commits. `STATUS.md`
+records the restored paths and active responsibilities.
+
+R63 validation on head `ca80f49a4427c1a047cac4c06d7d16c606560c88`, source
+`64013ade05571517cdac5cc0fee43e49c58e1e30`, passed both Ruff checks,
+`r63-row-controls-1` (8 passed, capture deselected), `r63-generation-controls-1`
+(10 passed) and `r63-regression-1` (240 passed). Independent review approved
+the functional scope and checked the 162 file bindings and retained v2 oracle.
+Those runs are level 2 synthetic evidence.
+
+`r63-query-benchmark-1` used the same head and the original synthetic fixture,
+with five warmups and 40 measured calls. It failed the strict 500 ms limit
+with p95 879.4833999891125 ms and median 809.5637999940664 ms. XML time was
+51.261 s and SHA-256 was `94F2CEA4A1025D397B3B618D49D57B601246DB3890B7756A527E5DB6E825EBD8`.
+The logs, raw samples, XML and receipts are in the M3 chat worktree's
+`.superpowers/sdd/M3_SEARCH_PLAN/`. Performance acceptance remains open.
+The subsequent `r63-query-phase-probe-1` diagnostic used the same source,
+fixture and query, with one control and one observed call after warmup. The
+observed call took 777.44 ms, including 539.90 ms in generation and 222.99 ms
+at guard entry. SQLite execute and fetch in generation took 350.66 ms and JSON
+encoding took 148.28 ms. The receipt binds the synthetic fixture and matching
+page and cursor. This is phase evidence from a single diagnostic, with no new
+percentile or product change.
+There was no level 3 certification or version change. Two hours remains
+**omitida por ruling 5**.
+
+## 2026-11-13 — Recovery writer RED and portability preparation
+
+`r62-red-1-6adcd848` on `74555617426f4f760dca64735d0b28bec5fd6424`
+ran nine synthetic recovery cases. Seven failed and two stable-unmapped controls
+passed. The four mapping/owner/deletion handoffs and the two missing-authority
+cases observed source material or marker effects before rejection. The direct
+scope case failed because `MemoryService.recovery_publication` was absent.
+XML time was 8.582 s and SHA-256 was
+`76C307264BBEE5DF330AC587C23CBA11E086FBD930A3A86D62A9D4B9813B15A1`.
+This reproduces the defect and leaves GREEN, integration and acceptance open.
+
+`r62-green-1-25354948` then passed the same nine cases in 7.91 s with producer
+`F027EA6D`, consumer `07FEABE6` and unchanged test `99510E10`. Exit 0, XML time
+7.853 s, XML SHA-256 `B1886368A502F9790A3AA95FCC44ECA54C21DB85544F3D9F56B3090C6737547F`.
+This is scoped level 2 evidence. Independent review, broader regression checks
+and group integration remain open.
+
+The independent review of frozen candidate `7994ebc` requested four changes.
+`r62-review-red-1-009b46ae` on test-only `c8747aa` reproduced all four in 9.15 s
+(exit 1, XML 4 failures in 9.104 s): compensation with a held lease, exact
+committed replay on a reused path, early effects with a discordant receipt,
+and a WAV-only retry using a valid rebuilt parent. XML SHA-256 is
+`3369E9A5954FB21916D87C67AE22282DA6C45F65CF7C11B8C23C212C1A728E99`.
+The first nine-case GREEN remains evidence for its own cases and source.
+
+`r62-ambiguous-red-1-3480b2d4` added a failing control on `62b1e8f` for
+an ambiguous committed token (1 failure in 5.67 s). The correction frozen in
+`b365fa9` passed all fourteen focused cases in `r62-green-2-51dfbfff` in
+18.16 s. XML SHA-256 is
+`A711922133A63C919F2C81FF5F38FDD7BE46E589299D5D2E32EC6588C8F286E0`.
+The broader `r62-regressions-1-ceef8825` run had 82 passes and 13 failures
+in 143.37 s. W3, R59 and R60 passed. Settings failures show an empty boolean
+from the runner, and the SQLite Busy warning case needs separate verification.
+This result keeps the regression gate open.
+
+The M5 B preparation draft `e20c095cc39dc4f59fa55d04208cbffeae6b8ae8`
+received an independent static re-review after correcting temp-file recovery,
+group-bound import receipts, compression limits and the review gate. The eight
+SPEC acceptance clauses and fourteen PLAN checkbox blocks retain their text.
+The concrete B5 and Windows file-identity bindings remain for the contract PR
+after the M2 B merge. Claims still require the M4 B handoff. No M5 B runtime
+evidence or certification was produced.
+
+## 2026-11-13 — M2 B integrated source and release candidate
+
+`r62-green-3-61a5088c` passed 110 cases in 166.35 s on source `d00a1d4`.
+It includes the R62 review fixes, destination collision, SQLite Busy warning,
+W3/R59/R60 and publication/deletion recovery. The independent group review by
+`b5_handoff_review` approved the source and verified the exact test bindings.
+JUnit SHA-256 is `6595A12DA6AFCF2FC8B7619DD0908E79428BFEEF50E5F921644D6CDA8052583B`.
+
+The first full candidate suite `b5-full2-350761adfc76-37061fb5` reported
+1251 passes, 6 failures and 18 skips in 824.52 s. Five capture fixtures counted
+the newly created catalog lock under their sessions tree. `7b9f532` put the
+sessions and data roots in separate test directories, preserving all checks
+of captured data. The sixth failure reproduced missing translation of a raw
+SQLite error in `catalog_read_view`. `f626933` restored the R50 translation
+with R59 exception propagation for other caller errors. The independent review
+approved the delta. `b5-full2-six-failures-focus-6e5183bb` passed 19 cases.
+
+`ec57204` formats the five affected files and annotates the deletion warning
+tuple. The independent review verified unchanged assertions and warning values.
+Ruff and formatting checks passed for all 27 touched Python files. Canonical
+layout mypy comparison with `3e76a20` found 79 diagnostics in both trees and
+zero new diagnostics in changed source. The first version of the comparator
+inherited mypy's exit 1 from the known baseline despite an empty diagnostic
+delta. The receipt records each command result and the comparator now exits
+explicitly when that comparison passes.
+
+`350761a` sets version 0.3.0 in the project, local lock entry, packaging and
+build workflow without changing dependency pins or AppId. The development host
+has an existing stable AppId installation and Start group. The hosted Windows
+package job will exercise the stable installer lifecycle in its isolated runner.
+The local wheel verification uses a separate noneditable installation and
+synthetic roots. No level 3 certification is claimed.
+
+The corrected full `b5-full2-ec572046c277-38b8014c` on `ec57204` passed 1257
+of 1275 tests in 730.49 s, with 16 local symlink-privilege skips and two
+installed-wheel skips. Exit 0, JUnit time 730.426 s, SHA-256
+`66B21E06E22D965DB49010BC1760E73BED0EDCC61F94D75A74521809F009A041`.
+The subsequent release commits retain source, tests, packaging and config.
+This is level 2 evidence. The accepted B source contracts were handed to M3 A
+for the independent R52 consumer tests.
+
+`m2-030-wheel-a4e464a319f7-a98d6f06` built wheel and sdist on the same source
+and config at `a4e464a`, then installed the wheel in a fresh noneditable
+environment. Version metadata and the five memory subcommand help outputs
+matched the release documentation. Four distribution checks passed in 10.46 s.
+JUnit SHA-256 is `36CAC6038124FF3911E483729A6CDD067113D8803A7000EAFC062B75BA98B38A`.
+Wheel SHA-256 is `83D7496075BE671F40551ADB2287D963ACD33BF701FCCE0BB9F21E8960E0339C`.
+Sdist SHA-256 is `18D2276C38A22F0CC3F4C85336701F74FD5980D35074D63DD5A0619F25B8AE52`.
+This is local level 2 evidence. The hosted build generates its own artifacts.

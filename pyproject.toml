@@ -1,6 +1,6 @@
 [project]
 name = "here"
-version = "0.2.0"
+version = "0.3.0"
 description = "CLI para grabar y transcribir audio"
 readme = "README.md"
 requires-python = ">=3.12.6"

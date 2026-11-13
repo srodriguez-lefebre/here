@@ -24,8 +24,10 @@ from memory_fixtures import (
 )
 
 
-def _service(root):
-    return importlib.import_module("here.memory.service").MemoryService(root)
+def _service(root, *, sessions_root=None):
+    return importlib.import_module("here.memory.service").MemoryService(
+        root, sessions_root=sessions_root
+    )
 
 
 def _connection(root):
@@ -164,7 +166,7 @@ def test_retry_keeps_original_revision_and_publishes_new_evidence_atomically(tmp
 def test_failed_retry_preserves_previous_active_revision_and_managed_files(tmp_path, monkeypatch):
     corpus = make_corpus(tmp_path)
     root = tmp_path / "data"
-    service = _service(root)
+    service = _service(root, sessions_root=tmp_path / "sessions")
     service.ingest_session(corpus.identified.directory)
     previous = _revision(root, MEETING_ID)
     previous_files = {p: p.read_bytes() for p in (root / "meetings").rglob("*") if p.is_file()}
@@ -193,14 +195,14 @@ def test_failed_retry_preserves_previous_active_revision_and_managed_files(tmp_p
 _CRASH_SCRIPT = r"""
 import os, pathlib, shutil, sys, types
 from contextlib import contextmanager
-source_root, data, source, boundary = map(pathlib.Path, sys.argv[1:])
+source_root, data, source, boundary, sessions_root = map(pathlib.Path, sys.argv[1:])
 boundary = str(boundary)
 here = types.ModuleType("here")
 here.__path__ = [str(source_root / "src")]
 sys.modules["here"] = here
 from here.memory.service import MemoryService
 from here.memory.repository import MemoryRepository
-service = MemoryService(data)
+service = MemoryService(data, sessions_root=sessions_root)
 activated = [0]
 original_activate = MemoryRepository.activate_revision
 def activate(self, *args, **kwargs):
@@ -258,13 +260,14 @@ def test_process_kill_then_local_reconcile_and_retry_has_one_identity(
     tmp_path, monkeypatch, boundary
 ):
     root = tmp_path / "data"
-    service = _service(root)
+    service = _service(root, sessions_root=tmp_path / "sessions")
     source = make_session(tmp_path / "legacy")
     before = (source.audio.read_bytes(), source.metadata.read_bytes())
     env = dict(os.environ)
     env.pop("OPENAI_API_KEY", None)
     env["HERE_ENV_FILE"] = str(tmp_path / "absent.env")
     env["HERE_DATA_DIR"] = str(root)
+    env["TRANSCRIPTIONS_DIR"] = str(tmp_path / "sessions")
     process = subprocess.run(
         [
             sys.executable,
@@ -274,6 +277,7 @@ def test_process_kill_then_local_reconcile_and_retry_has_one_identity(
             str(root),
             str(source.directory),
             boundary,
+            str(tmp_path / "sessions"),
         ],
         env=env,
         capture_output=True,

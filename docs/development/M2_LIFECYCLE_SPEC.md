@@ -1,11 +1,17 @@
 # M2 lifecycle and deletion specification
 
-Status: planned, not in execution. Second PR group of milestone 2; the roadmap is
-authorized by ruling 20. Ruling 35 requires group A accepted/merged and the necessary
-contract documentation PRs merged before root creates the separate M2 B/M3 A
-project chats/worktrees. One cohesive docs PR may reconcile both contracts; no
-fixed PR count is required. Final merged-A base SHA: `53712c5beedafc2d40e2abf10c13362a1c3c9f78`. Based on
-`M2_CATALOG_SPEC.md`.
+Status: task 4 implemented and automatically verified locally with synthetic data;
+independent source review and distinct docs/evidence complete.
+Task 5 has an integrated implementation candidate and scoped automated evidence.
+Group B and milestone M2 remain open. The 0.3.0 build candidate is under verification.
+Execution base: `73d3cb384bd422de6899d8c7b761f3f3159ea3f1` (accepted A merge
+`53712c5beedafc2d40e2abf10c13362a1c3c9f78` is an ancestor). Task-4 source:
+`4e1b2cead486563516b69e09fb45543ee85b53aa`; source tree
+`4ca55bbe7e88ff59f79dee47e8740fef2253718e`, tests tree
+`bf4f471a87ad84df8ac41f8da375f8fd1025f42e`.
+Based on `M2_CATALOG_SPEC.md`. Exact local runs and remaining group gates are
+recorded in `M2_LIFECYCLE_EVIDENCE.json`; synthetic verification is not hardware,
+provider, installed-wheel or clean-install certification.
 Governing design: `PRODUCT_DESIGN.md` §4 "Estados, publicación y recuperación" and
 "Borrado íntegro", a taken decision (ruling 3). Spanish plan and acceptance criteria:
 `../MILESTONE_2_PLAN.md`.
@@ -33,11 +39,10 @@ threads. Complete Windows CI 42155415514 passed 980 cases/two wheel-environment
 skips in 307.46s; package CI 42155415501 passed on that same head. Fresh local
 installed-wheel distribution checks passed all four cases in 7.51s. These are
 automatic synthetic evidence, not hardware/provider/clean-install certification.
-This contract documentation still needs its own independent review, received and
-answered current-head Copilot, exact-head Windows CI and guarded merge before
-dispatch. Root records its actual reviewed head/merge and execution bases in
-DELIVERY/STATUS; neither future chat exists yet. Planned B/M3 APIs below are not
-A implementations and do not become accepted integration through this docs PR.
+The contract-documentation preparation described here is historical; group B now
+executes from the merged contract base pinned above. Root owns global dispatch,
+integration and hosted gates. Task-4 contracts below are implemented locally;
+planned task-5/M3 work is not accepted integration through this checkpoint.
 
 `MemoryService.ingest_session(session_dir, *, revision_of=None)` publishes immutable
 revisions. Only a trusted explicit retry supplies the expected active revision ID
@@ -128,11 +133,12 @@ evidence rather than deriving a new identity from display text.
 
 ### Optimistic editing
 
-Planned B4 contract: `MeetingPatch` carries optional title and user notes only;
-no free SQL fields. These edit/result DTOs are not A implementations.
+Implemented B4 contract: `MeetingPatch` carries optional title and user notes only;
+None leaves a field unchanged; no free SQL fields. These are B APIs, added after A.
 `update_meeting(meeting_id, patch, expected_version)` compares `meetings.row_version`
 inside `BEGIN IMMEDIATE`, increments it on success and returns `Conflict` when the
-stored version differs. The CLI and the GUI both pass the version they displayed.
+stored version differs. The CLI passes the displayed/current version; actual M3
+GUI integration must pass its displayed version and remains a separate gate.
 Edits never touch transcript revisions or audio.
 
 ### Durable status transitions
@@ -165,9 +171,10 @@ or probing its journal; existing manifests preserve their optional/opaque IDs.
 
 ### Reconciliation
 
-`MemoryService.reconcile() -> RecoveryReport` runs at startup and on demand. It
-first validates the R42 suppression registry, restores its origin tombstones and
-pending-delete state, then uses the existing group-A reconcile/rebuild path. It
+`MemoryService.reconcile() -> RecoveryReport` runs at startup and on demand.
+Implemented task4 uses the existing group-A reconcile/rebuild path and extends
+local state/event and asset recovery. Planned task5 first validates the R42
+suppression registry and restores its origin tombstones/pending-delete state. It
 never reads a suppressed receipt as authority to restore a meeting or FTS rows;
 such receipts can only prove owned cleanup inventory. It walks `pending_operations`
 with `phase='prepared'` and either completes or reverts each
@@ -223,7 +230,7 @@ receipt container/hash types before mapping or data-derived reads, retaining
 malformed evidence and warnings while valid meeting siblings rebuild. These fixes
 are technically accepted A contracts; B extends them rather than duplicating them.
 
-### Deletion
+### Deletion (Task 5)
 
 The GUI confirms once what will be removed; the CLI requires `--yes`. The service
 rejects deletion of a meeting with capture, processing, import or export in progress
@@ -315,13 +322,12 @@ A committed edit is not reported as rolled back when later receipt work is pendi
 deletion still requires its defined file/backup purge before reporting completion.
 Observed A uses `IngestResult(status, meeting_id, warnings, error_category)` with
 `invalid_input`, `conflict` and `io` categories mapped to CLI exits 2/3/4;
-`OwnershipBusy` subclasses catalog `Busy`, and `RecoveryReport` currently carries
-`warnings` only. B's detailed recovery, edit and deletion result types are planned
-extensions below, not existing A APIs. Pin their adapters to the final accepted A
-contract, preserving `ApplicationSnapshot.memory_warning` separately from real
-capture errors.
+`OwnershipBusy` subclasses catalog `Busy`. A's `RecoveryReport` carried warnings
+only; task4 extends it compatibly with detailed outcomes and typed edit results
+as specified below. The Task 5 candidate provides typed deletion results. Preserve
+`ApplicationSnapshot.memory_warning` separately from real capture errors.
 
-### FTS consistency
+### FTS consistency (Task 4 edits and Task 5 candidate)
 
 The `segments_fts` FTS5 index created by group A is updated in the same transactions that
 activate a revision or delete a meeting. `reindex` rebuilds it from unsuppressed
@@ -344,8 +350,9 @@ delegates to that accepted operation. B task 4 owns `MeetingPatch`/`update_meeti
 and optimistic title editing, including keeping indexed titles consistent in the
 edit transaction. M3 consumes those contracts rather than implementing mutations.
 B5 also supplies the shared R42 suppression guard used by B/M3 reads and ordinary
-ingest/rebuild. Its exact private adapter is finalized with root before integration;
-neither service duplicates registry parsing or treats the future guard as an A API.
+ingest/rebuild. Root has fixed its exact future R50 API and ownership contract
+below; implementation and real integration remain task5 work. Neither service
+duplicates registry parsing or treats the future guard as an A API.
 
 Root grants exclusive leases for shared memory/UI files and serializes schema,
 dependency/lockfile, version and global documentation writes. Independent M3
@@ -354,6 +361,69 @@ database and UI integration cannot have two writers. Do not add another persiste
 path, reindexer or module layout to avoid leases. Detailed front scopes are in both
 implementation plans. Existing synthetic fixtures transfer only after acceptance;
 do not regenerate or duplicate them for another front.
+
+## Task 5 recovery and deletion boundaries (R59–R62)
+
+R59 provides `MemoryService.recovery_read_view(directory, declared_identity)`
+and a shared module-level primitive with an explicit data root. Both yield the
+resolved identity under the same publication lock and use the same suppression
+parser. Known identity with no origin pairs needs no SQL alias lookup. With
+origin pairs, recovery resolves aliases coherently or fails closed. Missing or
+opaque identity follows the existing legacy resolver. An invalid registry
+cannot authorize inspection. The consumer revalidates against the owner leases
+it actually holds and keeps the read view through material inspection and
+candidate construction. Discovery can inspect a catalog-free root without
+initializing SQLite. Publishing and reconciliation occur outside the read scope.
+
+R60 keeps the existing three-field private stage plan. Journaled stage cleanup
+validates the journal, paths, inventory roles and native ownership. The journal
+or the delete operation's validated inventory retains cleanup authority until
+completion. After durable acceptance, if SQL cannot prove scope, R54 may clean
+verified private orphans under the same lock before completing. Unresolved
+residue keeps deletion pending and hidden. The cleanup preflights all children,
+removes WAV before the metadata needed to identify it, and removes publication
+proof last. Uncertainty grants no additional ownership.
+
+R61 is an M3 search generation change. Cursor row representation can change
+under its existing snapshot and token contract. B supplies the guard and
+preserves the same suppression scope for the consumer.
+
+R62 transfers recovery from the reader to
+`MemoryService.recovery_publication(directory, declared_identity, *, expected_identity)`
+on the same service and data root. After the read guard exits, the writer holds
+the publication lock and checks fresh minimal metadata and intent, suppression,
+aliases, identity and actual parent or reservation before opening publication
+material or changing the marker. It checks the resolved identity against the
+consumer's retained ownership. A genuinely unmapped replay keeps the lock
+through publication and marker cleanup. The existing publisher runs with its
+short write transactions and the applicable real leases. No read transaction
+spans writer or filesystem work. Proof of a committed replay must match the
+sealed material and be unambiguous. Compensation cannot claim a destination
+the writer did not create. The consumer preserves the SQLite Busy warning and
+applies the final read guard before exposing a local recovery candidate.
+
+### Source and verification status
+
+The integrated Task 5 source `d00a1d4` passed 110 focused cases in 166.35 s,
+including 15 R62 cases and 95 regressions. JUnit records 166.318 s with zero
+failures, errors and skips. Independent source review approved the integrated
+group and the focused I5/Busy changes on that tree.
+
+The follow-up `f626933` restores the established R50 SQLite error translation
+for raw `sqlite3.Error` from the body of `catalog_read_view` while preserving the
+cause. Non-SQL caller exceptions such as `ValueError`, `OSError` and domain
+errors propagate intact. Rollback and lock release still run. This delta
+received static approval. The combined fixture and SQL-boundary focus on
+`f626933` passed 19 cases in 7.59 s (JUnit 7.429 s) with zero failures, errors
+or skips. The run ID is `b5-full2-six-failures-focus-6e5183bb`.
+
+Full2 completed on `350761a` with 1,275 cases: 1,251 passed, 6 failed and 18
+skipped, with zero errors. The run took 824.52 s (JUnit 824.414 s). Five failures
+came from capture recovery fixtures that placed `data/.memory.lock` inside the
+scanned capture tree. The sixth surfaced a raw `sqlite3.OperationalError`.
+The fixture change in `7b9f532` separates the two roots. Final full, hygiene,
+types, the B contract handoff, installed wheel, distribution and Windows CI remain
+gates for acceptance.
 
 ## Acceptance
 
@@ -408,3 +478,101 @@ group defines and M4 fills; this group's tests use a synthetic table in its plac
   content does not linger in the `-wal` file.
 - [Windows file deletion semantics](https://learn.microsoft.com/windows/win32/api/fileapi/nf-fileapi-deletefilew):
   a file opened without `FILE_SHARE_DELETE` cannot be removed; retry on reconciliation.
+
+## Task 4 implementation and verification boundary (2026-11-06)
+
+Task 4 adds manual participant creation/linking, reversible assignment of the exact
+stored request-scoped speaker key within its meeting/revision, and optimistic
+title/notes edits. Duplicate display names never merge people. Edit, row_version,
+FTS title and allowlisted lifecycle event metadata commit in one transaction.
+The CLI participant command validates and creates/links/assigns atomically; rename,
+participant and detailed reconcile use structured JSON and exits 0/2/3/4.
+
+R46 defines one canonical `InvalidInput(LibraryError)` in memory.service:
+`InvalidInput(message, *, reason='invalid_input')`, exposing `.reason`.
+`Conflict` and `NotFound` are canonical service errors. Committed housekeeping
+warnings are not precommit rejection. No dependency, migration or version changes.
+
+R48 provides `get_meeting(id) -> MeetingDetail` and
+`list_participants(meeting_id=None) -> tuple[Participant, ...]`, materializing
+frozen detached DTOs in one explicit read transaction. MeetingDetail retains its
+original six positional fields (including warnings) and appends default-empty
+participants, participant_links and speaker_assignments tuples.
+`MeetingParticipant(meeting_id, participant_id, role=None)` and
+`SpeakerAssignment(meeting_id, revision_id, speaker_key, participant_id)` retain
+nullable role/participant and the original stored key. The controller's read-only
+memory_service getter returns its actual injected/default service and custom root.
+This is a local B4 read contract; applying the future suppression guard before
+exposure and actual M3 title/query integration remain separate gates.
+
+RecoveryReport retains warnings first and adds completed/reverted/marked/skipped
+RecoveryOutcome(identity, reason) tuples. Existing bounded publication/owner locks,
+startup reconciliation and local pending-marker recovery are reused. Asset health
+is measured as available/missing/corrupt; absent or corrupt audio does not hide
+independently validated text or grant read authority to an unreceipted asset.
+No startup provider retry, parallel rebuild or alternate journal is introduced.
+
+State schema 2 adds linked participants/roles, exact assignments, events, assets,
+origins and source_kind through the existing immutable states writer and the one
+validated read_meeting_snapshot helper. Schema 1/read_meeting_state compatibility
+remains. Receipt 2/3 establishes immutable revision/audio authority before state
+supplements reconstruct it; recorded origins are restored without external reads.
+Per-meeting snapshots recover linked attribution. Unlinked global participants
+remain SQL-durable only and are not recovered after total catalog loss by a global
+snapshot protocol. Marker 1–3 compatibility, receipt 2/3 proof/replay, immutable
+raw text, A→B→A exact audio associations and audio-only NULL capture dates/origin
+revision with zero historical revisions remain inherited contracts.
+
+R49 registers existing persist_state work in the SAME SQL transaction as terminal
+status/version/event changes in stale reconciliation, set_status and finish_attempt.
+Postcommit file/completion failure leaves prepared retry authority. Healthy local
+reconcile persists the exact committed event ID/occurred_at/payload/duration,
+row_version and updated_at without a duplicate event. finish_attempt retains the
+successful unchanged result, canonical identity and bounded warning after committed
+housekeeping failure, including the real failed/cancelled status-only processor
+wrapper. set_status keeps its existing void/no-op and postcommit exception behavior.
+No file I/O moves into BEGIN IMMEDIATE and no new persistence protocol is added.
+
+Independent original review found one Important/P2 B4-R1; scoped re-review of
+9e10c9c..4e1b2ce marks it ADDRESSED and SPEC/quality APPROVED. The historical full
+on 9e10c9c passed while that finding remained open. It does not prove the fix.
+Current comparative mypy has 79 inherited diagnostics on each exact head and an
+empty normalized delta; this is no-new-errors evidence, not a type-clean claim.
+Corrected full on exact source4e1b2ce passes 1043 tests with 9 skips in 390.03s
+(1052 collected; JUnit 0 failures/0 errors, internal389.952s), exit0. The skips
+are two absent fresh noneditable-wheel acceptance cases and seven unavailable
+symlink-privilege cases (one database, one writer, five artifact-safety).
+Historical RED failures, failed 129-case compatibility run and separately justified
+one-case owner assertion correction are retained in the evidence ledger.
+
+### B5 shared read guard (R50)
+
+`memory.service.catalog_read_view(library)` is a context manager yielding an
+immutable SuppressionSnapshot with EXACTLY two public fields:
+`suppressed_meeting_ids: tuple[str, ...]` (sorted unique UUIDs) and `fingerprint: str`.
+Canonical registry entries remain PRIVATE to B. Caller opens/closes a fresh
+LibraryConnection with no active transaction. B acquires its bounded 250 ms
+publication lock BEFORE its sole explicit BEGIN and holds both through alias
+resolution, generation and the entire page fetch. No BEGIN IMMEDIATE for reads,
+second connection, recursive/nested operation, foreign-transaction rollback,
+migration, repair, publication, rebuild or provider work; no unbounded retry.
+Cleanup affects only the owned transaction/lock, never the supplied connection;
+translate SQL/lock failures through existing LibraryError/Busy handling.
+Writers already holding the operation lock reuse one internal parser/snapshot helper.
+
+Pending and complete records suppress canonical UUIDs UNION every meeting matching
+the EXACT normalized origin_path + origin_fingerprint pair in ingest_sources; either
+identity or that conjunctive pair is sufficient. No hash-only/fingerprint-only
+matching or external read. Resolve aliases in the same SQL snapshot. The versioned
+framed canonical digest includes private canonical entries AND sorted resolved IDs,
+so alias changes invalidate R45 even with unchanged registry bytes; no persistent
+cache. Genuinely absent registry is empty; invalid/inaccessible/unsafe fails exposure
+closed with existing LibraryError. Unknown/temp material never grants purge authority.
+
+M3 replaces its transaction with this context, keeps factory/finally close exactly
+once, includes fingerprint in R45, retains the ENTIRE complete FTS corpus in its
+generation (suppressed indexed documents still affect BM25), and excludes IDs in SQL
+BEFORE keyset/LIMIT. It does not parse registry or duplicate alias policy. Actual
+B5/M3 query/reindex/R41 integration and quiet-host p95/heartbeat including the whole
+lock/validation/alias/generation/fetch cost are future evidence. Static R50 approval
+is no implementation, functional integration, performance or milestone acceptance.
