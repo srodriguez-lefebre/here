@@ -1005,6 +1005,18 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Costo si falla:** descartar el prototipo, conservar el candidato funcional y
     mantener abierto el criterio de rendimiento.
 
+67. **2026-11-13 — Lectura acotada de metadatos ZIP de portabilidad v1.**
+    La inspección comprueba los encabezados del directorio central en el mismo
+    archivo abierto y admite hasta 32 MiB de directorio y 8 MiB de manifiesto.
+    El formato exportado usa nombres de rol canónicos con UUIDs y números, una
+    entrada compacta por archivo y sin comentarios de payload. Incluso con
+    10.000 roles, sus metadatos quedan por debajo de esos topes. Se rechaza
+    relleno excesivo antes de cargarlo. Se preservan ZIP64 y los límites de
+    10.000 entradas, 20 GiB declarados y ratio 100:1, sin extraer archivos al
+    inspeccionar. Los checks de tamaños y SHA-256 de payload esperan staging.
+    **Costo si falla:** ajustar el presupuesto de metadatos sobre archivos
+    válidos y repetir pruebas hostiles, sin aflojar límites de payload.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
@@ -2557,3 +2569,19 @@ Windows CI [43461764790](https://github.com/srodriguez-lefebre/here/actions/runs
 reported 1273 passes, two installed-wheel skips and 456.71 s. The CI wheel and
 sdist built successfully. The independent fresh wheel run covered the two skips.
 The merge tree is identical to the reviewed head and the package build tree.
+
+## 2026-11-13 — PR #27 merged the M3 B playback and CLI contract
+
+[PR #27](https://github.com/srodriguez-lefebre/here/pull/27) was opened against
+main as non-draft at `dbc9d16e3118fa1551a43634a1966ae95870b3d7`. Independent
+review by `portability_contract_review` approved that exact revision after the
+correction forwarding the affected meeting ID through the tracked Qt deletion
+acknowledgement. The 11 SPEC acceptance clauses, 14 PLAN task blocks and 18
+milestone criteria kept their text. Copilot was omitted under ruling 64.
+[Windows CI 43471461976](https://github.com/srodriguez-lefebre/here/actions/runs/43471461976)
+passed at the reviewed head with 1,273 passed and 2 skipped in 499.33 s and built
+the wheel and sdist. [Windows package 43471461975](https://github.com/srodriguez-lefebre/here/actions/runs/43471461975)
+passed at that head. Root used `--merge --admin --match-head-commit` and verified
+merge `94e175f933d3e2fa320df42bdfae1b2ead121285` at 17:27:41 UTC. Level 2 workflow
+evidence covers the documentation PR. M3 B source dispatch still requires the
+reviewed M3 A handoff with its PR open. M3 A performance acceptance is open.

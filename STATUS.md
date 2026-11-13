@@ -33,8 +33,9 @@ controles de paridad y el benchmark condicionado. La preparación contractual de
 M3 B está en el [PR #27](https://github.com/srodriguez-lefebre/here/pull/27), rama
 `codex/m3-playback-handoff-docs` y worktree
 `C:/Users/savar/.codex/worktrees/m3-playback-handoff-docs/here`, head `dbc9d16`.
-`portability_contracts` escribió y `portability_contract_review` aprobó. Package
-Windows pasó y CI está en curso. M3 B espera el PR abierto de A y su handoff.
+`portability_contracts` escribió y `portability_contract_review` aprobó. CI y
+package Windows pasaron y el PR se mergeó en `94e175f`. M3 B espera el PR abierto
+de A y su handoff.
 
 El PR de contratos de portabilidad [#26](https://github.com/srodriguez-lefebre/here/pull/26)
 se mergeó en `5286dd4`. La rama de grupo M5 B `codex/m5-portability` queda en
@@ -43,8 +44,8 @@ pasó ocho controles de capacidad en el host de desarrollo, sin symlinks.
 El RED `2c427d5` tuvo seis fallos esperados por falta de módulo y en `a69a490`
 pasaron los seis. La corrida de recuperación `fd57c23` pasó nueve controles y
 reprodujo cuatro fallos de publicación y recuperación. La revisión pidió cambios
-y se congelaron las correcciones en `71a6f16`. Corridas de nivel 2 focalizado,
-con nueva ejecución y review exactas pendientes. El RED de inspección de ZIP
+y aprobó el núcleo corregido `29d5642`. Corridas de nivel 2 focalizado, con
+la nueva ejecución sobre ese head en curso. El RED de inspección de ZIP
 `a326ccf` reprodujo 38 fallos esperados por ausencia de `inspect`, nivel 2.
 Worktrees bajo `C:/Users/savar/.codex/worktrees/`, cada uno con sufijo `/here`:
 
@@ -54,7 +55,7 @@ Worktrees bajo `C:/Users/savar/.codex/worktrees/`, cada uno con sufijo `/here`:
 | `m5-portability-export-recovery-red` | `portability_export_red` | nuevo RED de proceso y recuperación sobre `2c427d5` |
 | `m5-portability-export-green` | `portability_export_green` | fachada, repositorio y nombres `cde01fd` |
 | `m5-portability-export-native` | `portability_windows_binding` | handle de Windows `701e992` y `49982b5` |
-| `m5-portability-export-service` | root | integración y correcciones de export en `71a6f16` |
+| `m5-portability-export-service` | root | integración y correcciones de export en `29d5642` |
 | `m5-portability-export-evidence` | `portability_contracts` | evidencia RED y capacidad `ea57f69` |
 | `m5-portability-import-red` | `portability_export_red` | RED de inspección `a326ccf` |
 | `m5-portability-import-inspect-green` | `portability_export_green` | validación del directorio central, base `a326ccf` |
