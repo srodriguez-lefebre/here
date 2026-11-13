@@ -1,19 +1,15 @@
 # M3 playback, evidence navigation and CLI specification
 
-Status: preparation only, not in execution. The M2–M5 roadmap is authorized by
-ruling 20; M3 B may use the same-milestone overlap permitted by CLAUDE §11.
-
-Preparation foundation: M2 A merge
-`53712c5beedafc2d40e2abf10c13362a1c3c9f78`; lifecycle/search contract PR #22 merge
-`73d3cb384bd422de6899d8c7b761f3f3159ea3f1`. The latter accepts planning contracts,
-not M3 A or M2 B implementation. Actual frozen/reviewed M3 A code/DTO handoff
-and verified PR head remain **pending**. Under CLAUDE §11, root may dispatch M3 B
-on that branch while M3 A's PR is open, once the actual interfaces are accepted
-and any necessary contract-documentation PR is merged. M3 A's eventual merge SHA
-remains **pending** for rebase and final integration/provenance; it is not a
-prerequisite for preparation, the formal contract PR or this permitted root GO.
-R35 leaves root sole owner of leases, integration and merges. Rebase B after A
-merges; this preparation starts no implementation or new chat/front.
+Status: preparation only, held before dispatch. M2 B merged in PR #25 at
+`b4b3d1beb9b05e33ae03ab8381e805aa6a23ffc8`. The interface comparison uses
+integrated M3 A candidate `31488693152067ae58eeacec08f0b01f47085fe4`.
+M3 A's PR is unopened and its final review and acceptance remain pending.
+The measured R63 warm-search
+p95 of 879.48 ms exceeds the 500 ms gate. That measurement predates this candidate.
+Under CLAUDE §11 and rulings 20/35/56, root may dispatch B after reviewing the
+actual M3 A head and opening its PR, accepting the interfaces and merging any
+required contract-documentation PR. Rebase B after A merges. Root owns file
+leases, integration and merges.
 Governing design: `PRODUCT_DESIGN.md` §3 and §5, a taken decision (ruling 3).
 Spanish plan and acceptance criteria: `../MILESTONE_3_PLAN.md`.
 
@@ -29,7 +25,7 @@ have, never recapture itself through loopback, and never start on its own.
 
 ### Inherited foundation and pending integration
 
-Merged M2 A supplies immutable revisions, schema 2's ordered
+Merged M2 supplies immutable revisions, schema 2's ordered
 `revision_audio_assets`, `MemoryService.show`, receipt 3 and marker 3. Keep
 receipt-2/marker-1/2 compatibility, exact committed-publication proof and retained
 uncertain evidence. Reading a target never authorizes ingestion, replay or retry.
@@ -38,22 +34,19 @@ WAV-only legacy lineage with no historical revision. Metadata-only nonretryable
 catalog warnings grant no media/provider/mutation authority; existing ownership
 and path guards remain fail-closed.
 
-M3 A's accepted plan supplies query/page and citation DTO contracts, R39 keysets,
-R41 partial/fallback routing and R45 search generations. Actual implementations,
-error shapes and UI hooks remain an accepted handoff dependency. M2 B4 owns real
-editing/participant adapters; B5 owns deletion suppression R42 and reindex.
-Consume those accepted adapters without another persistence path, index writer
-or registry parser. Final integration cannot be claimed from fakes.
+The candidate implements the R39 keysets, R41 partial/fallback routing and R45
+search generations. Its frozen DTOs in `memory.models` include `MeetingQuery`
+and `SearchQuery` with `text`, `from_utc`, `to_utc`, `statuses`,
+`participant_id`, `limit=50`, `cursor` and `include_partial=False`.
+`MeetingPage.items` holds `MeetingSummary(meeting, audio_available, partial)`.
+`SearchPage.items` holds `SearchHit` with the meeting/revision/segment IDs,
+snippet, title, nullable date/bounds, timing source and partial flag.
+Both pages have `next_cursor` and search has `degraded`. Merged B4/B5 provide
+editing, participants, suppression and reindex. Final integration uses those
+services on the actual roots. Before dispatch, verify these bindings against
+the reviewed M3 A PR head.
 
-The preparation contract PR may publish with these handoffs pending. Before root
-dispatch/execution, pin the frozen/reviewed M3 A PR head,
-query/page/Citation/CitationTarget definitions, structured errors, library/request
-hooks and B4/B5 action/guard adapters; accept any further contract-document changes
-before dispatch if the actual handoff changes a contract. The interfaces below are planned B contracts,
-not functions verified present in the merged M2 A source.
-
-R53 binds the formerly pending reindex facade, implemented/reviewed at frozen
-`d8ec92b`: `SearchService(connection_factory, *, reindexer=None).reindex()`
+R53's `SearchService(connection_factory, *, reindexer=None).reindex()`
 delegates exactly once to the callback on the same injected MemoryService, returns
 the identical R51 ReindexReport and propagates canonical errors without retry,
 wrapping or recounting. Construction only stores the callback; delegation acquires
@@ -61,8 +54,8 @@ no factory connection, snapshot, lock, probe or migration. Without it, only rein
 raises existing LibraryError; reads remain available. ApplicationUiAdapter keeps
 an explicit query override and binds maintenance through a separate optional typed
 capability on the real memory/root, not a second service or required read protocol.
-This closes the facade binding only; real B5/R52/UI handoffs, performance and group
-acceptance remain their existing gates, not evidence supplied by this draft.
+Merged `MemoryService.reindex()` supplies the callback. Reindex rebuilds a
+derived index and does not call `before_delete` or unload playback.
 
 ### Common citation target
 
@@ -76,15 +69,16 @@ A UI-supplied `CitationTarget` is not proof of its path, status or text: navigat
 resolves authoritative memory and guards before exposing a playable target.
 Optional quote/span fields do not fill null timing or change exact audio links.
 
-`CitationTarget` (planned in M3 A's `src/memory/models.py`, actual handoff pending)
-carries meeting title and date, source text, visible speaker, optional
-`start_ms`/`end_ms`, an optional
-validated local audio path and a state `current`, `historical` or `missing`.
-The planned `MemoryService.resolve_citation(Citation) -> CitationTarget` resolves
-it from the database only: titles, dates, paths and times never come from free text. List,
-search and M4 citations all produce a `Citation` and open the same detail through
-the same resolver. Reconcile exact DTO/error spelling with the actual accepted
-handoff instead of creating competing target types.
+`CitationTarget` exists in the candidate's `memory.models` with
+`meeting_id`, `revision_id`, `segment_id`, `title`, nullable `started_at`,
+`text`, nullable `speaker`, nullable `start_ms`/`end_ms`, `timing_source`,
+nullable `audio_path: Path` and `status`. B implements
+`MemoryService.resolve_citation(Citation) -> CitationTarget` from guarded database
+evidence and validated managed files. The existing `LibraryView.meeting_selected`
+emits a meeting ID. Its `segment_selected` emits a passive `CitationTarget` with
+no audio path. Use its three IDs as reference input. Route selected list/detail
+segments, search hits and later M4 citations through the same resolver. Opening
+the meeting alone supplies no segment or seek position.
 
 Validate meeting/revision/segment membership together. Resolve audio through the
 selected revision's ordered `revision_audio_assets` links (`meeting_id`,
@@ -94,15 +88,15 @@ cannot select the consumed audio; A→B→A reuse retains its explicit links. Mi
 or ambiguous evidence provides no guessed playable path. Shared role/path guards
 validate containment and redirects before media access; the UI consumes a DTO.
 
-Consume the accepted B5 R42 guard before exposing target text/audio paths, including
+Consume the merged B5 R42 guard before exposing target text/audio paths, including
 historical targets. Old receipts, a lost SQL catalog or stale selections cannot
 bypass deletion suppression. Invalid/unavailable suppression fails exposure closed
 with the accepted typed recoverable outcome, without inventing purge authority.
-Its exact adapter and deletion/playback handoff are pending B5/root acceptance.
+The resolver consumes the merged guard. Its Qt playback binding remains B work.
 
-R50 approves `memory.service.catalog_read_view(library)` as the shared read
-boundary; B5 implementation and integration remain pending. The caller opens a
-fresh connection without an active transaction and closes it; B acquires the lock
+Merged B5 provides `memory.service.catalog_read_view(library)` as the R50 read
+boundary. The caller opens and closes a fresh connection without an active
+transaction. The guard acquires the lock
 before BEGIN and owns the single read transaction through generation/fetch.
 Consume its immutable `SuppressionSnapshot`: sorted `suppressed_meeting_ids`
 and `fingerprint` cover registry UUIDs plus identities resolved from exact
@@ -142,9 +136,10 @@ contract and M4 may only select a target, never start playback.
 
 ### Deletion and composition bindings (R51/R52)
 
-These are approved contracts, not verified B5/native implementations or final UI
-signatures. Reconcile the actual accepted handoff in the normal documentation PR
-before M3 B source work; neither this binding nor static review grants GO.
+Merged B5 provides the deletion phases, native ownership checks and SQL hook
+below. The M3 A candidate carries the R52 composition and the ACK implementation
+from `d8fb75b37691cc9c4e57fa84bb545190b3b9304b`. This is the baseline for B's
+player release binding.
 
 R51's `DeletionResult(status, meeting_id=None, reason='', warnings=(),
 error_category=None)` distinguishes completed/pending/rejected. Before acceptance,
@@ -156,17 +151,23 @@ complete purge plus durable complete permits completed/exit 0. Consumers use fix
 reason/category fields, never exception or transcript text. Invalid registry state
 fails closed and does not prove that an earlier attempt was rejected.
 
-The future `before_delete` adapter must complete stop/unload/invalidation on the
-Qt thread and return only after a bounded worker-side ACK; merely queueing a signal
-is insufficient. Do not block the Qt thread or touch the player from the worker.
+Desktop composition registers `_DeleteAcknowledgement` once on the real
+`MemoryService.before_delete`. It sends a queued Qt ticket from a tracked
+`BackgroundJobs` worker, calls `LibraryView._pause_for_delete(request)` on the Qt
+thread and waits up to 1 s in the worker. The view invalidates page, participant
+and detail requests, suppresses replacement reads and refreshes only after the
+worker settles. B extends this same Qt invalidation step to stop/unload playback
+and invalidate pending loads/seeks before successful ACK. Keep teardown and
+ticket cancellation on view close. Never wait on the Qt thread or touch player
+state from the worker.
 The callback runs without a transaction or catalog lock needed by the GUI.
 After ACK or failure, check the current durable phase; then reacquire/revalidate
 identity, ownership, phase and inventory before a new barrier. Under R52 as clarified
 by `f09c0fc`, acquire and retain the applicable native leases and canonical lease
 after this lock-free ACK/revalidation, from before the durable barrier through
 cleanup completion. Pre-ACK preflight is not acceptance; an owner appearing during
-ACK must be detected. The concrete Qt timeout remains an implementation decision;
-no new IPC or user flow is introduced.
+ACK must be detected. Keep the existing bounded timeout and use B5's pending
+outcome if an already-accepted deletion cannot complete.
 
 R51's `_derived_row_purgers` is a private trusted-code SQL registry, not a citation
 resolver or UI hook. It runs in order at the start of the same final cleanup
@@ -183,9 +184,9 @@ default MemoryService. No durable root registry, origin/receipt/manifest/package
 probing or external-root discovery is authorized. Destructive work without explicit
 context fails closed with existing recoverable LibraryError/io4, not a Busy claiming
 a proven owner; an existing barrier remains pending/hidden. Reads and non-destructive
-repair remain available. Revalidate declared root/lock roles after ACK and consume
-the actual B5/native cleanup lifetime handoff rather than implementing another owner
-protocol in playback or CLI.
+repair remain available. Playback and CLI reuse the merged B5 cleanup and lease
+lifetime. The candidate composes desktop recovery from the
+controller's `memory_service` and explicit output directory.
 
 ### CLI
 
@@ -204,13 +205,40 @@ here meetings reindex
 here meetings delete ID --yes
 ```
 
-Commands delegate to accepted memory/search services and the application-owned
-explicit retry path; the CLI implements no search, persistence or producer of its
-own. Merged M2 A has catalog ingest/show/reconcile and application retry, not the
-future search/lifecycle/citation APIs. Confirm actual facade/error/result adapters
-at handoff; do not invent `MemoryService.retry` or parse warning prose.
+The merged `here memory` group already exposes ingest, reconcile, show, rename,
+participant, delete and reindex. Keep that group compatible and reuse its
+service bindings for `meetings`: `show`, `update_meeting(MeetingPatch,
+expected_version)` on the resolved ID, atomic `add_meeting_participant(...,
+speaker_key=...)`, `ingest_session`, `delete_meeting` and `reindex`.
+The optional speaker key belongs to the active revision. Use
+`SearchService.list_meetings` and `search` for query operations. The candidate
+`SearchQuery` has no meeting-ID filter. Task 4 adds an optional `meeting_id`
+scope to the canonical query DTOs under root's shared-file lease, after A is
+frozen. Bind the resolved UUID in SQL before keyset and LIMIT, and include it in
+the cursor scope. Apply it to all query routes, including empty search delegated
+to listing. The scoped query
+still uses corpus-wide BM25 and R45 generation. Apply meeting-ID resolution
+under R42 before exposing candidates or operating on a canonical ID.
+
+`ApplicationController.retry(session_dir)` and `wait_until_terminal()` provide
+the application retry path. B resolves the selected meeting to one eligible
+recovery candidate in the configured session root, using B5/R62 suppression,
+lineage and ownership checks on the same MemoryService. Apply the recovery
+candidate's `can_retry` and materialization guards before calling the controller.
+Use a targeted lookup that reuses the accepted recovery checks. Full
+`RecoveryService.discover()` can reconcile or replay unrelated sessions, so it
+cannot serve as a read-only ID resolver. A path exposed by `show` or a revision
+origin is insufficient authority to retry. Inspect the terminal snapshot for the
+result. Its current `ApplicationError(stage, error_type, message, retryable, ...)`
+and the CLI expose no canonical `ProviderUnavailable` type. B needs a structured
+provider outcome from the application boundary before mapping retry exit 5.
+Preserve catalog, ownership and I/O categories and keep other commands provider-free.
 Exit codes: 0 success, 2 invalid input, 3 not found or
 conflict, 4 integrity or I/O failure, 5 provider (only `retry` can return it).
+`Busy`/storage uses exit 4. Honor `IngestResult.error_category` and the
+phase-aware `DeletionResult` fields. Existing `memory` lifecycle errors carry
+`error` and `error_category`; expose `InvalidInput.reason` for structured
+`meetings` errors such as `corpus_changed`.
 `--json` emits full IDs and ISO UTC dates; abbreviations are accepted only when the
 resolution is unambiguous, otherwise exit 2 with the candidates. `delete` without
 `--yes` exits 2 and prints what would be removed. `play` opens a minimal Qt window
