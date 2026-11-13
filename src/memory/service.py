@@ -514,6 +514,14 @@ def _read_import_work(
     return result
 
 
+def _portable_stage_io_path(path: Path) -> Path:
+    """Use Windows long-path syntax only after a managed path is validated."""
+    if os.name != "nt" or str(path).startswith("\\\\?\\"):
+        return path
+    name = str(path)
+    return Path("\\\\?\\UNC\\" + name[2:] if name.startswith("\\\\") else "\\\\?\\" + name)
+
+
 def _import_tree_entries(
     root: Path, plan: _ImportMeetingPlan, *, published: bool
 ) -> tuple[list[Path], list[Path]]:
@@ -545,7 +553,7 @@ def _import_tree_entries(
                 if entry.name not in hashes:
                     raise ValueError("Unknown portable revision material retained")
                 file = session_artifact_path(revision, entry.name)
-                if published and file_hash(file) != hashes[entry.name]:
+                if published and file_hash(_portable_stage_io_path(file)) != hashes[entry.name]:
                     raise ValueError("Portable revision material changed during cleanup")
                 files.append(file)
             directories.append(revision)
@@ -571,7 +579,7 @@ def _stage_payload_tree(
                 inspect(entry)
             elif relative in inventory:
                 path = session_artifact_path(directory, entry.name)
-                if path.stat().st_size > inventory[relative]:
+                if _portable_stage_io_path(path).stat().st_size > inventory[relative]:
                     raise ValueError("Portable import stage payload exceeded its registered size")
                 present_files.append(path)
             else:
@@ -619,7 +627,7 @@ def _purge_import_stage_payload(stage_root: Path, registration: _ImportRegistrat
             work_directories.extend(member_directories)
         work_directories.append(work)
     for file in (*files, *work_files):
-        session_artifact_path(file.parent, file.name).unlink()
+        _portable_stage_io_path(session_artifact_path(file.parent, file.name)).unlink()
     for directory in (*directories, *work_directories):
         validate_session_directory(directory)
         directory.rmdir()
@@ -1525,11 +1533,18 @@ class MemoryService:
                 path = Path(asset.relative_path)
                 target = session_artifact_path(root / "revisions" / path.parent.name, path.name)
                 source = managed_path(stage.directory, relative)
-                with source.open("rb") as incoming, target.open("xb") as output:
+                io_target = _portable_stage_io_path(target)
+                with (
+                    _portable_stage_io_path(source).open("rb") as incoming,
+                    io_target.open("xb") as output,
+                ):
                     shutil.copyfileobj(incoming, output, 1024 * 1024)
                     output.flush()
                     os.fsync(output.fileno())
-                if target.stat().st_size != asset.size_bytes or file_hash(target) != asset.sha256:
+                if (
+                    io_target.stat().st_size != asset.size_bytes
+                    or file_hash(io_target) != asset.sha256
+                ):
                     raise IntegrityFailure(
                         "Prepared import audio does not match its registered proof"
                     )
@@ -1549,10 +1564,11 @@ class MemoryService:
             for identity in sorted(plans):
                 self._retain_native_owners(identity, owners)
                 self._retain_catalog_owner(identity, owners)
-            for bundle in batch.meetings:
-                outcome = self._portable_import_outcome(repo, bundle, batch)
-                if outcome is not None:
-                    outcomes[outcome.meeting_id] = outcome
+            with _catalog_snapshot_locked(repo.library):
+                for bundle in batch.meetings:
+                    outcome = self._portable_import_outcome(repo, bundle, batch)
+                    if outcome is not None:
+                        outcomes[outcome.meeting_id] = outcome
             blocked = any(
                 outcome.status in {"conflict", "rejected"} for outcome in outcomes.values()
             )
