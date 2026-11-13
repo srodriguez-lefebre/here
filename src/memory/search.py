@@ -36,6 +36,7 @@ from here.memory.service import FtsUnavailable, InvalidInput, catalog_read_view,
 
 _LIST_ORDER = "date-desc-null-last/id-asc"
 _SEARCH_ORDER = "rank-asc/date-desc-null-last/id-asc/segment-asc"
+_CURSOR_VERSION = 2
 _ROUTES = {"fts", "hybrid", "literal", "literal-partial"}
 _GENERATION_BATCH_ROWS = 256
 _Query = TypeVar("_Query", MeetingQuery, SearchQuery)
@@ -107,6 +108,11 @@ def _scope(query: MeetingQuery | SearchQuery) -> list[object]:
     ]
 
 
+def _scope_digest(scope: list[object]) -> str:
+    encoded = json.dumps(scope, ensure_ascii=True, separators=(",", ":"), allow_nan=False)
+    return hashlib.sha256(encoded.encode("ascii")).hexdigest()
+
+
 def _encode(value: list[object]) -> str:
     payload = json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
     return base64.urlsafe_b64encode(payload.encode("utf-8")).decode("ascii").rstrip("=")
@@ -131,12 +137,19 @@ def _decode(cursor: object, kind: str, scope: list[object]) -> list[Any] | None:
             or len(payload) != (6 if kind == "list" else 8)
             or payload[0] != "here-search"
             or type(payload[1]) is not int
-            or payload[1] != 1
+            or payload[1] not in (1, _CURSOR_VERSION)
             or payload[2] != kind
-            or json.dumps(payload[3], ensure_ascii=False) != json.dumps(scope, ensure_ascii=False)
             or payload[4] != expected_order
         ):
             raise ValueError("Cursor scope or version mismatch")
+        if payload[1] == 1:
+            matches_scope = json.dumps(payload[3], ensure_ascii=False) == json.dumps(
+                scope, ensure_ascii=False
+            )
+        else:
+            matches_scope = payload[3] == _scope_digest(scope)
+        if not matches_scope:
+            raise ValueError("Cursor scope mismatch")
         keys = payload[5]
         if not isinstance(keys, list) or len(keys) != (3 if kind == "list" else 5):
             raise ValueError("Invalid cursor keys")
@@ -365,9 +378,9 @@ class SearchService:
             next_cursor = _encode(
                 [
                     "here-search",
-                    1,
+                    _CURSOR_VERSION,
                     "list",
-                    scope,
+                    _scope_digest(scope),
                     _LIST_ORDER,
                     [int(last.started_at is None), last.started_at, last.id],
                 ]
@@ -536,9 +549,19 @@ class SearchService:
             )
             # Materialization keeps FTS auxiliary functions inside their MATCH
             # context. It also prevents branch-local LIMITs from losing global hits.
-            sql = (
-                "WITH complete AS MATERIALIZED (" + complete + "), hits AS (SELECT * FROM complete"
-            )
+            sql = "WITH complete AS MATERIALIZED (" + complete + ")"
+            if indexed:
+                # A segment has one canonical row but may have multiple FTS matches.
+                # Select its best match before the global keyset can split those copies.
+                sql += (
+                    ", ranked AS (SELECT *,row_number() OVER (PARTITION BY segment_id "
+                    "ORDER BY rank,excerpt COLLATE BINARY) AS match_number FROM complete), "
+                    "hits AS (SELECT rank,excerpt,meeting_id,revision_id,segment_id,title,"
+                    "started_at,start_ms,end_ms,timing_source,text,partial "
+                    "FROM ranked WHERE match_number=1"
+                )
+            else:
+                sql += ", hits AS (SELECT * FROM complete"
             if normalized.include_partial:
                 sql += " UNION ALL " + self._branch(
                     normalized, suppression, fts=False, partial=True, parameters=parameters
@@ -577,9 +600,9 @@ class SearchService:
             next_cursor = _encode(
                 [
                     "here-search",
-                    1,
+                    _CURSOR_VERSION,
                     "search",
-                    scope,
+                    _scope_digest(scope),
                     _SEARCH_ORDER,
                     [
                         last["rank"],

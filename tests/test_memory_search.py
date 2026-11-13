@@ -433,12 +433,11 @@ def test_malformed_cursor_is_rejected_before_page_sql(catalog, cursor):
 def _malformed_envelope(cursor, path, value):
     """Mutate the actual private array codec, preserving unrelated real keys.
 
-    Semantic field names keep rejection scenarios readable; positions follow the
-    source-only ec39fe5 codec rather than the provisional object-envelope design.
+    Semantic field names keep rejection scenarios readable across cursor versions.
     """
     padded = cursor + "=" * (-len(cursor) % 4)
     payload = json.loads(base64.urlsafe_b64decode(padded).decode("utf-8"))
-    field_positions = {"v": 1, "kind": 2, "order": 4, "keys": 5}
+    field_positions = {"v": 1, "kind": 2, "scope": 3, "order": 4, "keys": 5}
     if len(path) == 1:
         payload[field_positions[path[0]]] = value
     else:
@@ -458,12 +457,17 @@ def _malformed_envelope(cursor, path, value):
 @pytest.mark.parametrize(
     ("path", "value"),
     [
-        (("v",), 2),
+        (("v",), 3),
         (("v",), True),
         (("v",), "1"),
         (("v",), None),
         (("kind",), "unrecognized-kind"),
         (("kind",), 1),
+        (("scope",), None),
+        (("scope",), []),
+        (("scope",), "abc"),
+        (("scope",), "G" * 64),
+        (("scope",), "0" * 64),
         (("order",), "unrecognized-order"),
         (("order",), None),
         (("keys",), []),

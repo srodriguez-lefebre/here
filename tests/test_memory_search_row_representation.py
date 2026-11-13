@@ -219,12 +219,18 @@ def test_real_old_v2_cursor_fresh_connections_noop_and_named_page_detail_are_pre
     query = models.SearchQuery(text="r61needle", include_partial=True, limit=2)
     first = search.SearchService(_Factory(root)).search(query)
     old_cursor = packet["public"]["cursor"]  # Real measured token, never reconstructed.
-    assert first.next_cursor == old_cursor
+    assert first.next_cursor and first.next_cursor != old_cursor
     continued = search.SearchService(_Factory(root)).search(replace(query, cursor=old_cursor))
     assert [hit.segment_id for hit in continued.items] == list(visible[2][2:4])
+    continued_v2 = search.SearchService(_Factory(root)).search(
+        replace(query, cursor=first.next_cursor)
+    )
+    assert continued_v2 == continued
     assert memory.reindex() == normalized  # SECOND real operation is the no-op.
     after = search.SearchService(_Factory(root)).search(query)
-    assert after.next_cursor == old_cursor
+    assert after.next_cursor == first.next_cursor
+    continued_after = search.SearchService(_Factory(root)).search(replace(query, cursor=old_cursor))
+    assert continued_after == continued
     hits = _search_all(search.SearchService(_Factory(root)), query)
     assert [hit.segment_id for hit in hits] == packet["public"]["all_segment_ids"]
     assert len({hit.segment_id for hit in hits}) == 5

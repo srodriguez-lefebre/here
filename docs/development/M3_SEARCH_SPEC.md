@@ -121,9 +121,11 @@ all visibility filters including R42 suppression apply before the keyset and
 
 Cursors are versioned opaque strings containing the last typed keys (rank only
 for search, explicit NULL flag and nullable date, meeting ID and segment ID for
-search), plus normalized query/filters, `include_partial` and backend/route/order
-identity. A malformed
-or mismatched cursor is `InvalidInput`; no raw SQL or invented timestamp is encoded.
+search), backend/route/order identity and, in version 2, a fixed-size SHA-256
+digest of the canonical normalized query and filters, including `include_partial`.
+Valid version 1 cursors remain readable with their embedded scope.
+A malformed or mismatched cursor is `InvalidInput`. The token encodes neither
+raw SQL nor an invented timestamp.
 The NULL flag is exactly `0` with a valid UTC date or `1` with a NULL date; reject
 inconsistent types/flags and non-finite rank keys before issuing SQL.
 Use lexicographic keyset comparisons with these mixed directions, expanded without
