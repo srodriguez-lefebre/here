@@ -12,6 +12,8 @@ from pathlib import Path
 from typing import BinaryIO, TypeVar
 from uuid import uuid4
 
+from here.output.paths import UnsafeSessionPath, validate_session_directory
+
 # Volume GUID path, FILE_ID_INFO serial and 128-bit ID, FILE_BASIC_INFO creation time.
 type ExportIdentity = tuple[str, int, str, int]
 
@@ -19,6 +21,8 @@ _VOLUME_GUID = re.compile(r"\\\\\?\\volume\{[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a
 _TEMPORARY = re.compile(r"\.here-export-[0-9a-f]{32}\.partial")
 _FILE_ID = re.compile(r"[0-9a-f]{32}")
 _DEVICE = re.compile(r"\\Device\\HarddiskVolume[0-9]+", re.IGNORECASE)
+_DRIVE_ANCHOR = re.compile(r"[A-Za-z]:\\")
+_UNC_DRIVE = re.compile(r"\\\\([^\\]+)\\([^\\]+)")
 _RESERVED_NAMES = {"CON", "PRN", "AUX", "NUL", "CONIN$", "CONOUT$"} | {
     f"{prefix}{digit}" for prefix in ("COM", "LPT") for digit in "123456789¹²³"
 }
@@ -36,6 +40,9 @@ _FILE_CREATED = 2  # IoStatusBlock.Information after exclusive creation.
 _MISSING = {0xC0000034, 0xC000000F}  # OBJECT_NAME_NOT_FOUND, NO_SUCH_FILE
 _COLLISION = 0xC0000035  # OBJECT_NAME_COLLISION
 _INVALID_HANDLE = ctypes.c_void_p(-1).value
+_OPEN_DIRECTORY = 0x02200000  # BACKUP_SEMANTICS | OPEN_REPARSE_POINT
+_SMB_PROTOCOL = 0x00020000
+_REMOTE_OFFLINE = 0x2
 
 
 class ExportBindingError(OSError):
@@ -90,6 +97,21 @@ class _FileBasicInfo(ctypes.Structure):
 
 class _FileAttributeTagInfo(ctypes.Structure):
     _fields_ = [("FileAttributes", wintypes.DWORD), ("ReparseTag", wintypes.DWORD)]
+
+
+class _FileRemoteProtocolInfo(ctypes.Structure):
+    _fields_ = [
+        ("StructureVersion", wintypes.USHORT),
+        ("StructureSize", wintypes.USHORT),
+        ("Protocol", wintypes.ULONG),
+        ("ProtocolMajorVersion", wintypes.USHORT),
+        ("ProtocolMinorVersion", wintypes.USHORT),
+        ("ProtocolRevision", wintypes.USHORT),
+        ("Reserved", wintypes.USHORT),
+        ("Flags", wintypes.ULONG),
+        ("GenericReserved", wintypes.ULONG * 8),
+        ("ProtocolSpecific", wintypes.ULONG * 16),
+    ]
 
 
 class _FileStandardInfo(ctypes.Structure):
@@ -188,16 +210,49 @@ def _name_bytes(component: str) -> bytes:
     return encoded
 
 
-def _absolute_path(path: Path, *, require_absolute: bool, directory: bool = False) -> Path:
+def _absolute_path(path: Path, *, require_absolute: bool) -> Path:
     if not path.is_absolute():
         if require_absolute or path.anchor:
             raise ExportBindingError("An absolute local drive path is required")
         path = Path.cwd() / path
-    if re.fullmatch(r"[A-Za-z]:\\", path.anchor) is None or (not directory and len(path.parts) < 2):
-        raise ExportBindingError("An absolute local drive path is required")
+    if _DRIVE_ANCHOR.fullmatch(path.anchor) is None or len(path.parts) < 2:
+        raise ExportBindingError("An absolute local drive file path is required")
     for component in path.parts[1:]:
         _name_bytes(component)
     return path
+
+
+def _configured_root_path(path: Path) -> str:
+    if not path.is_absolute():
+        if path.anchor:
+            raise ExportBindingError("The configured library directory is ambiguous")
+        path = Path.cwd() / path
+    # Accept regular DOS and UNC path forms, including their extended-length spelling.
+    name = str(path)
+    if name.startswith("\\\\?\\"):
+        name = name[4:]
+        if name[:4].upper() == "UNC\\":
+            name = "\\\\" + name[4:]
+    path = Path(name)
+    if _DRIVE_ANCHOR.fullmatch(path.anchor):
+        native_name = "\\\\?\\" + name
+    else:
+        share = _UNC_DRIVE.fullmatch(path.drive)
+        if share is None or not path.is_absolute():
+            raise ExportBindingError("The configured library directory has no supported path")
+        server, share_name = share.groups()
+        _name_bytes(server)
+        _name_bytes(share_name)
+        if share_name.lower() in {"pipe", "mailslot", "ipc$"}:
+            raise ExportBindingError("The configured library path must name a file share")
+        native_name = "\\\\?\\UNC\\" + name[2:].rstrip("\\")
+    for component in path.parts[1:]:
+        _name_bytes(component)
+    try:
+        validate_session_directory(path)
+    except (OSError, UnsafeSessionPath) as exc:
+        raise ExportBindingError("The configured library directory is unsafe") from exc
+    return native_name
 
 
 class _Windows:
@@ -353,15 +408,22 @@ class _Windows:
         return volume
 
     @contextmanager
-    def volume_root(self, volume: str) -> Iterator[int]:
-        # BACKUP_SEMANTICS | OPEN_REPARSE_POINT. The trailing slash opens the root
-        # directory of the named volume, as opposed to a direct-access volume handle.
-        handle = self.create_file(
-            volume, _DIRECTORY_ACCESS, _SHARE_READ_WRITE, None, 3, 0x02200000, None
-        )
+    def _hold_directory_path(self, path: str, access: int) -> Iterator[int]:
+        handle = self.create_file(path, access, _SHARE_READ_WRITE, None, 3, _OPEN_DIRECTORY, None)
         if handle is None or handle == _INVALID_HANDLE:
             raise _win32_failure("CreateFileW")
+        directory = int(handle)
         try:
+            self._verify_type(directory, directory=True)
+            yield directory
+        finally:
+            self.close(directory)
+
+    @contextmanager
+    def volume_root(self, volume: str) -> Iterator[int]:
+        # The trailing slash opens the root directory of the named volume,
+        # as opposed to a direct-access volume handle.
+        with self._hold_directory_path(volume, _DIRECTORY_ACCESS) as handle:
             file_system = ctypes.create_unicode_buffer(32)
             if not self.volume_information(
                 handle, None, 0, None, None, None, file_system, len(file_system)
@@ -370,10 +432,7 @@ class _Windows:
             if file_system.value != "NTFS":
                 raise ExportBindingError("Export requires a local NTFS volume")
             self.verify_name(handle, volume)
-            self._verify_type(handle, directory=True)
-            yield int(handle)
-        finally:
-            self.close(int(handle))
+            yield handle
 
     def close(self, handle: int) -> None:
         if not self.close_handle(handle):
@@ -450,17 +509,42 @@ class _Windows:
         with ExitStack() as stack:
             ancestors = stack.enter_context(self.hold_directory(parent_path, volume))
             if excluded_root is not None:
-                excluded_root = _absolute_path(
-                    excluded_root, require_absolute=False, directory=True
+                source = stack.enter_context(
+                    self._hold_directory_path(
+                        _configured_root_path(excluded_root), _READ_ATTRIBUTES
+                    )
                 )
-                excluded_volume = self.volume_for(excluded_root)
-                excluded = stack.enter_context(self.hold_directory(excluded_root, excluded_volume))
-                excluded_key = self.file_key(excluded[-1])
-                if excluded_volume == volume and any(
-                    self.file_key(ancestor) == excluded_key for ancestor in ancestors
-                ):
+                excluded_key = self.source_key(source)
+                if any(self.file_key(ancestor) == excluded_key for ancestor in ancestors):
                     raise ExportBindingError("The export destination is inside the library")
             yield ancestors[-1]
+
+    def source_key(self, handle: int) -> tuple[int, str]:
+        name = ctypes.create_unicode_buffer(32768)
+        # VOLUME_NAME_NT | FILE_NAME_OPENED reports the device of the held object.
+        # It avoids normalization queries for each component of an SMB path.
+        length = self.final_path(handle, name, len(name), 0xA)
+        device = "\\".join(name.value.split("\\", 3)[:3]) if 0 < length < len(name) else ""
+
+        try:
+            if _DEVICE.fullmatch(device):
+                return self.file_key(handle)
+
+            protocol = self._information(handle, 13, _FileRemoteProtocolInfo)
+            if (
+                protocol.StructureSize != ctypes.sizeof(protocol)
+                or protocol.Protocol != _SMB_PROTOCOL
+                or protocol.ProtocolMajorVersion != 3
+                or protocol.Flags & _REMOTE_OFFLINE
+            ):
+                raise ExportBindingError("The configured library has no comparable remote identity")
+            # SMB 3 FileIdInformation returns the underlying object's own ID and
+            # volume serial. This also catches SMB loopback aliases of local paths.
+            return self.file_key(handle)
+        except ExportBindingError as exc:
+            raise ExportBindingError(
+                "The configured library directory identity is unavailable"
+            ) from exc
 
     def verify_name(self, handle: int, expected: str) -> None:
         name = ctypes.create_unicode_buffer(len(expected.encode("utf-16-le")) // 2 + 1)
