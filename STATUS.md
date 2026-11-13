@@ -16,9 +16,11 @@ M2 B recuperó `codex/m2-lifecycle` en
 El autor RED trabaja en `C:/Users/savar/.codex/worktrees/m2-b-r62-red-resume/here`
 sobre `ae00b44`. M3 A recuperó el checkout `2710/here` en `49baac0`.
 
-M2 B reprodujo R62 en `7455561`. Los nueve casos del RED dieron siete fallos
-esperados y dos controles verdes. El productor y el consumidor avanzan en
-archivos separados a partir de ese RED.
+M2 B reprodujo R62 en `7455561` con siete fallos esperados y dos controles verdes.
+Los mismos nueve casos pasaron en `r62-green-1-25354948`, nivel 2 focalizado,
+con los deltas de productor `F027EA6D` y consumidor `07FEABE6` ensamblados en
+`C:/Users/savar/.codex/worktrees/m2-b-r62-green-check/here`. Siguen la review
+independiente, las regresiones y la integración.
 M3 A verificó automáticamente los focos de R63
 en `ca80f49`: Ruff, 8 comparaciones con el oráculo v2, 10 controles de
 generación y 240 regresiones de búsqueda. La review independiente aprobó ese

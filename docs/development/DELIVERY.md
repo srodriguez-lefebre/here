@@ -2411,6 +2411,12 @@ XML time was 8.582 s and SHA-256 was
 `76C307264BBEE5DF330AC587C23CBA11E086FBD930A3A86D62A9D4B9813B15A1`.
 This reproduces the defect and leaves GREEN, integration and acceptance open.
 
+`r62-green-1-25354948` then passed the same nine cases in 7.91 s with producer
+`F027EA6D`, consumer `07FEABE6` and unchanged test `99510E10`. Exit 0, XML time
+7.853 s, XML SHA-256 `B1886368A502F9790A3AA95FCC44ECA54C21DB85544F3D9F56B3090C6737547F`.
+This is scoped level 2 evidence. Independent review, broader regression checks
+and group integration remain open.
+
 The M5 B preparation draft `e20c095cc39dc4f59fa55d04208cbffeae6b8ae8`
 received an independent static re-review after correcting temp-file recovery,
 group-bound import receipts, compression limits and the review gate. The eight
