@@ -32,6 +32,7 @@ _SHARE_READ_WRITE = 0x3
 _SHARE_ALL = 0x7
 _FILE_OPEN = 1
 _FILE_CREATE = 2
+_FILE_CREATED = 2  # IoStatusBlock.Information after exclusive creation.
 _MISSING = {0xC0000034, 0xC000000F}  # OBJECT_NAME_NOT_FOUND, NO_SUCH_FILE
 _COLLISION = 0xC0000035  # OBJECT_NAME_COLLISION
 _INVALID_HANDLE = ctypes.c_void_p(-1).value
@@ -187,13 +188,13 @@ def _name_bytes(component: str) -> bytes:
     return encoded
 
 
-def _absolute_path(path: Path, *, require_absolute: bool) -> Path:
+def _absolute_path(path: Path, *, require_absolute: bool, directory: bool = False) -> Path:
     if not path.is_absolute():
         if require_absolute or path.anchor:
             raise ExportBindingError("An absolute local drive path is required")
         path = Path.cwd() / path
-    if re.fullmatch(r"[A-Za-z]:\\", path.anchor) is None or len(path.parts) < 2:
-        raise ExportBindingError("An absolute local drive file path is required")
+    if re.fullmatch(r"[A-Za-z]:\\", path.anchor) is None or (not directory and len(path.parts) < 2):
+        raise ExportBindingError("An absolute local drive path is required")
     for component in path.parts[1:]:
         _name_bytes(component)
     return path
@@ -397,8 +398,10 @@ class _Windows:
         )
         handle = wintypes.HANDLE()
         status_block = _IoStatusBlock()
-        # FILE_OPEN_REPARSE_POINT | FILE_SYNCHRONOUS_IO_NONALERT | type restriction.
-        options = 0x00200020 | (0x1 if directory else 0x40)
+        # OPEN_REPARSE_POINT | SYNCHRONOUS_IO_NONALERT. Directory opens verify
+        # the held type before use; DIRECTORY_FILE does not list OPEN_REPARSE_POINT
+        # as a compatible option.
+        options = 0x00200020 | (0 if directory else 0x40)  # NON_DIRECTORY_FILE
         status = self.nt_create(
             ctypes.byref(handle),
             access,
@@ -412,17 +415,21 @@ class _Windows:
             None,
             0,
         )
-        if status < 0:
+        if status != 0:
             raise _NativeError("NtCreateFile", status)
         if handle.value is None or handle.value == _INVALID_HANDLE:
             raise ExportBindingError("NtCreateFile did not return a usable handle")
+        if create and status_block.Information != _FILE_CREATED:
+            self.close(handle.value)
+            raise ExportBindingError("NtCreateFile did not confirm exclusive creation")
         return handle.value
 
     @contextmanager
-    def hold_parent(self, path: Path, volume: str) -> Iterator[int]:
+    def hold_directory(self, path: Path, volume: str) -> Iterator[tuple[int, ...]]:
         with ExitStack() as stack:
             parent = stack.enter_context(self.volume_root(volume))
-            for name in path.parent.parts[1:]:
+            chain = [parent]
+            for name in path.parts[1:]:
                 parent = self.open_relative(
                     parent,
                     name,
@@ -432,8 +439,28 @@ class _Windows:
                 )
                 stack.callback(self.close, parent)
                 self._verify_type(parent, directory=True)
-            self.verify_name(parent, volume + "\\".join(path.parent.parts[1:]))
-            yield parent
+                chain.append(parent)
+            self.verify_name(parent, volume + "\\".join(path.parts[1:]))
+            yield tuple(chain)
+
+    @contextmanager
+    def hold_export_parent(
+        self, parent_path: Path, volume: str, excluded_root: Path | None
+    ) -> Iterator[int]:
+        with ExitStack() as stack:
+            ancestors = stack.enter_context(self.hold_directory(parent_path, volume))
+            if excluded_root is not None:
+                excluded_root = _absolute_path(
+                    excluded_root, require_absolute=False, directory=True
+                )
+                excluded_volume = self.volume_for(excluded_root)
+                excluded = stack.enter_context(self.hold_directory(excluded_root, excluded_volume))
+                excluded_key = self.file_key(excluded[-1])
+                if excluded_volume == volume and any(
+                    self.file_key(ancestor) == excluded_key for ancestor in ancestors
+                ):
+                    raise ExportBindingError("The export destination is inside the library")
+            yield ancestors[-1]
 
     def verify_name(self, handle: int, expected: str) -> None:
         name = ctypes.create_unicode_buffer(len(expected.encode("utf-16-le")) // 2 + 1)
@@ -464,11 +491,16 @@ class _Windows:
 
     def identity(self, handle: int, volume: str, *, directory: bool = False) -> ExportIdentity:
         self._verify_type(handle, directory=directory)
-        identity = self._information(handle, 18, _FileIdInfo)
+        serial, file_id = self.file_key(handle)
         basic = self._information(handle, 0, _FileBasicInfo)
-        return validate_export_identity(
-            (volume, identity.VolumeSerialNumber, bytes(identity.FileId).hex(), basic.CreationTime)
-        )
+        return validate_export_identity((volume, serial, file_id, basic.CreationTime))
+
+    def file_key(self, handle: int) -> tuple[int, str]:
+        identity = self._information(handle, 18, _FileIdInfo)
+        file_id = bytes(identity.FileId)
+        if not identity.VolumeSerialNumber or not any(file_id):
+            raise ExportBindingError("The held file has no usable native identity")
+        return identity.VolumeSerialNumber, file_id.hex()
 
     def free_space(self, parent: int) -> int:
         info = _FileFsSizeInformation()
@@ -476,7 +508,7 @@ class _Windows:
         status = self.nt_volume_size(
             parent, ctypes.byref(status_block), ctypes.byref(info), ctypes.sizeof(info), 3
         )
-        if status < 0:
+        if status != 0:
             raise _NativeError("NtQueryVolumeInformationFile(FileFsSizeInformation)", status)
         if (
             not 0 <= info.AvailableAllocationUnits <= info.TotalAllocationUnits
@@ -486,22 +518,7 @@ class _Windows:
             raise ExportBindingError("The export volume returned invalid space information")
         return info.AvailableAllocationUnits * info.SectorsPerAllocationUnit * info.BytesPerSector
 
-    def check_destination(self, parent: int, destination: Path, volume: str) -> None:
-        try:
-            handle = self.open_relative(
-                parent, destination.name, access=_READ_ATTRIBUTES | _SYNCHRONIZE, share=_SHARE_ALL
-            )
-        except _NativeError as exc:
-            if exc.status not in _MISSING:
-                raise
-            return
-        try:
-            self._verify_type(handle, directory=False)
-            self.verify_name(handle, volume + "\\".join(destination.parts[1:]))
-        finally:
-            self.close(handle)
-
-    def verify_absent(self, parent: int, name: str) -> None:
+    def verify_absent(self, parent: int, name: str, *, message: str) -> None:
         try:
             handle = self.open_relative(
                 parent, name, access=_READ_ATTRIBUTES | _SYNCHRONIZE, share=_SHARE_ALL
@@ -511,7 +528,7 @@ class _Windows:
                 return
             raise
         self.close(handle)
-        raise ExportBindingError("The removed export sibling is still present")
+        raise ExportBindingError(message)
 
     def stream(self, handle: int) -> BinaryIO:
         import msvcrt
@@ -539,7 +556,7 @@ class _Windows:
         name = _name_bytes(destination)
         buffer = ctypes.create_string_buffer(ctypes.sizeof(_FileRenameInformation) + len(name) + 2)
         info = _FileRenameInformation.from_buffer(buffer)
-        info.ReplaceIfExists = True
+        info.ReplaceIfExists = False
         # Native FileRenameInformation with a simple name and NULL RootDirectory
         # changes only the basename in the source handle's own directory.
         info.RootDirectory = None
@@ -551,7 +568,9 @@ class _Windows:
         if before_rename is not None:
             before_rename()
         status = self.nt_set(handle, ctypes.byref(status_block), buffer, ctypes.sizeof(buffer), 10)
-        if status < 0:
+        if status != 0:
+            if (status & 0xFFFFFFFF) == _COLLISION:
+                raise ExportBindingError("The export destination already exists")
             raise _NativeError("NtSetInformationFile(FileRenameInformation)", status)
 
     def dispose(self, handle: int) -> None:
@@ -635,7 +654,6 @@ class WindowsExportSibling:
             raise ExportBindingError("The export stream must finish before publication")
         if self._windows.volume_for(self._destination) != self._parent_identity[0]:
             raise ExportBindingError("The export destination drive changed")
-        self._windows.check_destination(self._parent, self._destination, self._parent_identity[0])
         self._windows.rename(self._held_file(), self._destination.name, before_rename)
         self._published = True
 
@@ -645,7 +663,9 @@ class WindowsExportSibling:
         self._windows.dispose(handle)
         self._removed = True
         self._close()
-        self._windows.verify_absent(self._parent, self.path.name)
+        self._windows.verify_absent(
+            self._parent, self.path.name, message="The removed export sibling is still present"
+        )
 
     def _close(self) -> None:
         if self._file is not None:
@@ -654,16 +674,23 @@ class WindowsExportSibling:
 
 
 @contextmanager
-def open_export_sibling(destination: Path) -> Iterator[WindowsExportSibling]:
-    """Create the sibling exclusively and hold its chain without granting deletion sharing."""
+def open_export_sibling(
+    destination: Path, *, excluded_root: Path | None = None
+) -> Iterator[WindowsExportSibling]:
+    """Hold an exclusive empty sibling for the caller to register before streaming.
+
+    A process kill before the durable registration can leave only the empty sibling.
+    """
     windows = _Windows()
     destination = _absolute_path(destination, require_absolute=False)
     if _TEMPORARY.fullmatch(destination.name.casefold()):
         raise ExportBindingError("The destination name is reserved for export temporaries")
     volume = windows.volume_for(destination)
-    with windows.hold_parent(destination, volume) as parent:
+    with windows.hold_export_parent(destination.parent, volume, excluded_root) as parent:
         parent_identity = windows.identity(parent, volume, directory=True)
-        windows.check_destination(parent, destination, volume)
+        windows.verify_absent(
+            parent, destination.name, message="The export destination already exists"
+        )
         for _ in range(4):
             path = destination.with_name(f".here-export-{uuid4().hex}.partial")
             try:
@@ -683,7 +710,12 @@ def open_export_sibling(destination: Path) -> Iterator[WindowsExportSibling]:
             if file_identity[:2] != parent_identity[:2]:
                 raise ExportBindingError("The export sibling is not on its parent's volume")
         except BaseException:
-            windows.close(file)
+            # FILE_CREATE succeeded and this is the original exclusive handle.
+            # The sibling has not been handed to a caller or received any payload.
+            try:
+                windows.dispose(file)
+            finally:
+                windows.close(file)
             raise
 
         sibling = WindowsExportSibling(
@@ -695,7 +727,9 @@ def open_export_sibling(destination: Path) -> Iterator[WindowsExportSibling]:
             sibling._close()
 
 
-def recover_export_sibling(path: Path, parent_identity: object, file_identity: object) -> None:
+def recover_export_sibling(
+    path: Path, parent_identity: object, file_identity: object, *, excluded_root: Path | None = None
+) -> None:
     """Remove a registered temporary or verify its absence in the registered parent."""
     windows = _Windows()
     path = _absolute_path(path, require_absolute=True)
@@ -706,7 +740,7 @@ def recover_export_sibling(path: Path, parent_identity: object, file_identity: o
     volume = windows.volume_for(path)
     if expected_parent[0] != volume or expected_parent[:2] != expected_file[:2]:
         raise ExportBindingError("The registered export volume differs from its binding")
-    with windows.hold_parent(path, volume) as parent:
+    with windows.hold_export_parent(path.parent, volume, excluded_root) as parent:
         if windows.identity(parent, volume, directory=True) != expected_parent:
             raise ExportBindingError("The registered export parent identity changed")
         try:
@@ -721,4 +755,6 @@ def recover_export_sibling(path: Path, parent_identity: object, file_identity: o
             windows.dispose(handle)
         finally:
             windows.close(handle)
-        windows.verify_absent(parent, path.name)
+        windows.verify_absent(
+            parent, path.name, message="The removed export sibling is still present"
+        )
