@@ -14,18 +14,37 @@ hashes del artefacto. El detalle está en ACCEPTANCE y DELIVERY.
 M3 A sigue en chat `01a1af04-e779-7363-be61-c840651b0b18`, rama
 `codex/m3-search`, worktree `C:/Users/savar/.codex/worktrees/2710/here`.
 El consumidor R52 pasó dos casos focalizados y review independiente en
-`2ece845`, worktree `C:/Users/savar/.codex/worktrees/m3-r52-integrated/here`.
-M3 prepara regresiones integradas de búsqueda y borrado. El p95 de 879,48 ms
-frente a 500 ms sigue fallido. M3 B espera el PR abierto de A y su handoff.
+`2ece845`. El ACK de borrado pasó los dos casos de no resurrección y review
+independiente en `d8fb75b`, nivel 2. Candidato integrado `3148869` en
+`codex/m3-final-integration`, worktree
+`C:/Users/savar/.codex/worktrees/m3-final-integration/here`, a cargo del chat M3 A.
+Su corrida integrada sigue pendiente. El p95 medido de 879,48 ms frente a 500 ms
+sigue fallido. Ruling 66 autoriza el prototipo diagnóstico aislado en
+`codex/m3-native-digest-probe`, worktree
+`C:/Users/savar/.codex/worktrees/m3-native-digest-probe/here`, base `ca80f49`.
+`search_budget_design` escribe el agregado nativo, el chat M3 A coordina el
+adaptador y root coordina compilación y runtime. M3 B espera el PR abierto de A
+y su handoff.
 
 El PR de contratos de portabilidad [#26](https://github.com/srodriguez-lefebre/here/pull/26)
-se mergeó en `5286dd4`. M5 B empezó el RED de exportación en
-`codex/m5-portability-export-red`, worktree
-`C:/Users/savar/.codex/worktrees/m5-portability-export-red/here`, a cargo de
-`portability_export_red`. La rama de grupo `codex/m5-portability` queda en
-`C:/Users/savar/.codex/worktrees/m5-portability-core/here`. Root coordina el
-handoff, las ventanas de prueba y los archivos compartidos. Claims y respuestas
-esperan M4 B.
+se mergeó en `5286dd4`. La rama de grupo M5 B `codex/m5-portability` queda en
+`C:/Users/savar/.codex/worktrees/m5-portability-core/here`. La sonda Windows
+pasó ocho controles de capacidad en el host de desarrollo, sin symlinks.
+El RED `2c427d5` tuvo seis fallos esperados por falta de módulo. Ambas corridas
+son nivel 2 focalizado. El candidato GREEN y su review siguen pendientes.
+Worktrees bajo `C:/Users/savar/.codex/worktrees/`, cada uno con sufijo `/here`:
+
+| Directorio y rama `codex/<directorio>` | Responsable | Fuente |
+| --- | --- | --- |
+| `m5-portability-export-red` | `portability_export_red` | `2c427d5` |
+| `m5-portability-export-recovery-red` | `portability_export_red` | nuevo RED de proceso y recuperación sobre `2c427d5` |
+| `m5-portability-export-green` | `portability_export_green` | fachada, repositorio y nombres `cde01fd` |
+| `m5-portability-export-native` | `portability_windows_binding` | handle de Windows `701e992` y `49982b5` |
+| `m5-portability-export-service` | root | contexto de MemoryService y registro local |
+| `m5-portability-export-evidence` | `portability_contracts` | evidencia RED y capacidad `ea57f69` |
+
+Root coordina el handoff, las ventanas de prueba y los archivos compartidos.
+Claims y respuestas esperan M4 B.
 M4 A/B y M5 A/C conservan sus dependencias. Sin certificación nueva de nivel 3.
 Dos horas sigue **omitida por ruling 5**. Ruling 64 sigue vigente.
 

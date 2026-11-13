@@ -979,6 +979,32 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Costo si falla:** si el usuario restablece ese requisito, pedir review sobre
     el head vigente de cada PR que siga abierto antes de mergear.
 
+65. **2026-11-13 — Defaults internos del export portable v1.** La fachada recibe
+    la instancia compuesta de `MemoryService`. El callback de progreso recibe
+    bytes acumulados de payload y la cancelación se consulta con un callable
+    sin argumentos. Cancelar antes de publicar levanta `ExportCancelled`, una
+    categoría local de `LibraryError`, y ejecuta la limpieza del temporal propio.
+    `manifest.json` lista `files` con `path`, `size` y `sha256` en hex minúsculo.
+    `meeting.json` contiene `audio_assets` y cada `revision.json` sus `audio_links`
+    con nombre fuente seguro. El audio omitido conserva metadatos y enlaces,
+    usa estado `missing` y ruta portable nula. El modo inicial usa ZIP_STORED
+    para mantener los límites de ratio del importador. Los defaults se comparten
+    con el importador y quedan sujetos a los tests de round-trip. Claims y
+    respuestas esperan el handoff de M4 B.
+    **Costo si falla:** ajustar el contrato privado y sus fixtures antes de
+    publicar formato 1, conservando identidad, hashes y aceptación.
+
+66. **2026-11-13 — Prototipo SQLite nativo acotado para el p95 de M3 A.** El
+    usuario autorizó un prototipo de diagnóstico en worktree separado, con
+    corpus sintético y el mismo recorrido público, guard, proyecciones completas,
+    oráculos y presupuesto estricto de menos de 500 ms. Los insumos de compilación
+    quedan en el scratch del worktree con versiones y hashes registrados. La
+    autorización cubre la medición. Incorporar una dependencia compilada al
+    producto requiere una decisión posterior. El resultado queda como evidencia
+    de diagnóstico y no modifica la definición de terminado ni el criterio.
+    **Costo si falla:** descartar el prototipo, conservar el candidato funcional y
+    mantener abierto el criterio de rendimiento.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
