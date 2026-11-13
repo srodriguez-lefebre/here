@@ -32,12 +32,12 @@ jobs:
         run: ./scripts/build_windows.ps1 -Python (uv python find --managed-python 3.13.15)
       - name: Verify actual delivered stable-AppId installation and data preservation
         shell: pwsh
-        run: ./scripts/smoke_windows.ps1 -BundlePath ./dist/windows/here -InstallerPath ./dist/windows/here-0.2.0-windows-x64-setup.exe
+        run: ./scripts/smoke_windows.ps1 -BundlePath ./dist/windows/here -InstallerPath ./dist/windows/here-0.3.0-windows-x64-setup.exe
       - name: Upload installer, bundle, provenance, checksums and runtime evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: here-0.2.0-windows-x64
+          name: here-0.3.0-windows-x64
           path: |
             dist/windows/*.exe
             dist/windows/*.zip
