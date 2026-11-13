@@ -20,6 +20,8 @@ type ExportIdentity = tuple[str, int, str, int]
 _VOLUME_GUID = re.compile(r"\\\\\?\\volume\{[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\}\\")
 _TEMPORARY = re.compile(r"\.here-export-[0-9a-f]{32}\.partial")
 _FILE_ID = re.compile(r"[0-9a-f]{32}")
+# MS-FSCC 2.1.10 reserves these values for unsupported or unidentified files.
+_UNAVAILABLE_FILE_IDS = {"0" * 32, "f" * 32}
 _DEVICE = re.compile(r"\\Device\\HarddiskVolume[0-9]+", re.IGNORECASE)
 _DRIVE_ANCHOR = re.compile(r"[A-Za-z]:\\")
 _UNC_DRIVE = re.compile(r"\\\\([^\\]+)\\([^\\]+)")
@@ -184,7 +186,7 @@ def validate_export_identity(value: object) -> ExportIdentity:
         or not 0 < serial < 2**64
         or not isinstance(file_id, str)
         or _FILE_ID.fullmatch(file_id) is None
-        or file_id == "0" * 32
+        or file_id in _UNAVAILABLE_FILE_IDS
         or type(created) is not int
         or not 0 < created < 2**63
     ):
@@ -581,10 +583,10 @@ class _Windows:
 
     def file_key(self, handle: int) -> tuple[int, str]:
         identity = self._information(handle, 18, _FileIdInfo)
-        file_id = bytes(identity.FileId)
-        if not identity.VolumeSerialNumber or not any(file_id):
+        file_id = bytes(identity.FileId).hex()
+        if not identity.VolumeSerialNumber or file_id in _UNAVAILABLE_FILE_IDS:
             raise ExportBindingError("The held file has no usable native identity")
-        return identity.VolumeSerialNumber, file_id.hex()
+        return identity.VolumeSerialNumber, file_id
 
     def free_space(self, parent: int) -> int:
         info = _FileFsSizeInformation()
