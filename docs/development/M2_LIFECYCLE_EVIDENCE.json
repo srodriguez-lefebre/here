@@ -1,0 +1,779 @@
+{
+  "milestone": "M2",
+  "group": "B",
+  "recorded_on": "2026-11-06",
+  "status": "task4_implemented_and_locally_automatically_verified_reviewed_documented_task5_planned_groupB_M2_open",
+  "product_version": "0.2.0",
+  "certified": false,
+  "evidence_level": {
+    "implemented": "Task4 source exists, corrected exact-source full passes, and independent original review plus bounded R1 re-review approves source/test contracts.",
+    "automatically_verified": "Synthetic local focused tests/probes and corrected full1052 collected/1043 passed/9 skipped/0 failures/0 errors; exact-source scope below. No real M3 integration/performance claim.",
+    "certified": "No new hardware/provider/wheel/clean-install certification; no hosted CI/Copilot or merge claim."
+  },
+  "base_commit": "73d3cb384bd422de6899d8c7b761f3f3159ea3f1",
+  "foundation_merge": "53712c5beedafc2d40e2abf10c13362a1c3c9f78",
+  "source_commit": "4e1b2cead486563516b69e09fb45543ee85b53aa",
+  "commit_tree": "6712176d290a39f592ec01a64b3861abd6db8a4c",
+  "source_tree": "4ca55bbe7e88ff59f79dee47e8740fef2253718e",
+  "tests_tree": "bf4f471a87ad84df8ac41f8da375f8fd1025f42e",
+  "production_service_sha256": "927a3abaff1e196a8c49a25877f6034884b13e7db84f4731238823b8f506f73e",
+  "commits": {
+    "original_red": "9d311a9b0e250f59ca456451966c743d1e9b8ed7",
+    "dtos": "246faec39b17a965b1ceaed6510a00f7cea89206",
+    "r46": "0452945167909ffd657ce8d39b2ed8a4a0b40e2f",
+    "r48_red": "1f4d22d9dfd6c759779afc0fbbc71aa1fbdffc6a",
+    "r48_handoff": "e0d083ae2aebb0ef1b1d428f6b3beba42ac9030f",
+    "original_source": "9e10c9cb1e0d385feea8cd73c8912b9ebd8a3929",
+    "r1_red": "87f9a30262a36c5e95a87761a33039ab9b505474",
+    "r1_outcome_red": "eaf6b4d3e51cdfd4b72fa0e322b737a03a9fccd4",
+    "authorized_harness": "f244018ad9476b3b6687c85ae3ef7efb07b93868",
+    "r49_fix": "4e1b2cead486563516b69e09fb45543ee85b53aa"
+  },
+  "data_policy": "Synthetic temporary SQLite roots and authored PCM/text only; shared read-only Python; no private sessions/library/.env, provider/network, fixture regeneration or venv mutation.",
+  "environment": {
+    "workdir": "C:/Users/savar/.codex/worktrees/faab/here",
+    "python": "C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe",
+    "python_version": "3.13.15",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "QT_QPA_PLATFORM": "offscreen",
+    "OPENAI_API_KEY": "synthetic-test-key",
+    "HERE_ENV_FILE": "absent TEMP file",
+    "HERE_WHEEL_PYTHON": "absent for final fulls; old A wheel deliberately excluded",
+    "HERE_PROVIDER_SMOKE_KEY": "absent",
+    "pwsh": "bundled PowerShell 7"
+  },
+  "runs": [
+    {
+      "name": "original_initial_red",
+      "scope": "original RED before semantic marker harness correction and five extra cases; no production B4 implementation",
+      "command": null,
+      "command_authority": "Exact selection/command retained in referenced author report; not reconstructed here.",
+      "passed": 63,
+      "failed": 43,
+      "errors": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "selected": 106,
+      "duration_seconds": 76.65,
+      "exit_code": 1,
+      "log": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-red-initial.log",
+      "junit": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-red-initial.xml"
+    },
+    {
+      "name": "original_final_red",
+      "scope": "original independent RED; tests committed9d311a9; accepted A/M1 controls are not B4 success",
+      "command": "C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe -m pytest -vv tests/test_memory_participants.py tests/test_memory_reconcile.py tests/test_cli.py tests/test_memory_review1_recovery.py tests/test_memory_processing_ownership.py::test_busy_failed_retry_replays_only_failed_state_and_preserves_completed_evidence tests/test_memory_publication_replay.py tests/test_memory_group_publication_recovery.py tests/test_memory_group_receipt_shapes.py tests/test_memory_group_capture_cancel.py tests/test_memory_legacy_discovery_ownership.py tests/test_memory_legacy_materialization_ownership.py tests/test_memory_recovery_ownership.py::test_separate_reconciler_preserves_real_live_owner_then_detects_process_death tests/test_memory_artifacts.py::test_hostile_pending_paths_do_not_touch_external_files_or_block_valid_sibling --junitxml=.superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-red.xml",
+      "command_authority": "Recorded author command; initial RED log saved under initial stem after first execution.",
+      "passed": 64,
+      "failed": 47,
+      "errors": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "selected": 111,
+      "duration_seconds": 76.66,
+      "exit_code": 1,
+      "log": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-red.log",
+      "junit": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-red.xml"
+    },
+    {
+      "name": "original_green",
+      "scope": "original dirty B4 candidate before R48/final typing fixes; historical source scope retained in implementation report",
+      "command": "C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe -m pytest -vv tests/test_memory_participants.py tests/test_memory_reconcile.py tests/test_cli.py tests/test_memory_review1_recovery.py tests/test_memory_processing_ownership.py::test_busy_failed_retry_replays_only_failed_state_and_preserves_completed_evidence tests/test_memory_publication_replay.py tests/test_memory_group_publication_recovery.py tests/test_memory_group_receipt_shapes.py tests/test_memory_group_capture_cancel.py tests/test_memory_legacy_discovery_ownership.py tests/test_memory_legacy_materialization_ownership.py tests/test_memory_recovery_ownership.py::test_separate_reconciler_preserves_real_live_owner_then_detects_process_death tests/test_memory_artifacts.py::test_hostile_pending_paths_do_not_touch_external_files_or_block_valid_sibling --junitxml=.superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-green-1.xml",
+      "command_authority": "Same original111 selection per author report; --junitxml matches actual artifact.",
+      "passed": 111,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "selected": 111,
+      "duration_seconds": 76.83,
+      "exit_code": 0,
+      "log": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-green-1.log",
+      "junit": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-green-1.xml"
+    },
+    {
+      "name": "original_affected_focus",
+      "scope": "original dirty B4 candidate before R48/final typing fixes; no final-source attribution",
+      "command": null,
+      "command_authority": "Exact selection/command retained in referenced author report; not reconstructed here.",
+      "passed": 294,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "deselected": 4,
+      "selected": 294,
+      "duration_seconds": 162.35,
+      "exit_code": 0,
+      "log": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-focus-1.log",
+      "junit": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-focus-1.xml"
+    },
+    {
+      "name": "r48_red",
+      "scope": "committed0452945 plus recorded dirty B4 source digests; supplemental tests committed1f4d22",
+      "command": "C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe -m pytest -vv tests/test_memory_participants.py tests/test_memory_reconcile.py -k r48 --junitxml=.superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r48-red.xml",
+      "command_authority": "Recorded author command; initial RED log saved under initial stem after first execution.",
+      "passed": 0,
+      "failed": 11,
+      "errors": 0,
+      "skipped": 0,
+      "deselected": 39,
+      "selected": 11,
+      "duration_seconds": 5.26,
+      "exit_code": 1,
+      "log": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r48-red.log",
+      "junit": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r48-red.xml"
+    },
+    {
+      "name": "r48_green",
+      "scope": "original plus R48 candidate before final formatter; not R49 fix evidence",
+      "command": "C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe -m pytest -vv tests/test_memory_participants.py tests/test_memory_reconcile.py tests/test_cli.py tests/test_memory_review1_recovery.py tests/test_memory_processing_ownership.py::test_busy_failed_retry_replays_only_failed_state_and_preserves_completed_evidence tests/test_memory_publication_replay.py tests/test_memory_group_publication_recovery.py tests/test_memory_group_receipt_shapes.py tests/test_memory_group_capture_cancel.py tests/test_memory_legacy_discovery_ownership.py tests/test_memory_legacy_materialization_ownership.py tests/test_memory_recovery_ownership.py::test_separate_reconciler_preserves_real_live_owner_then_detects_process_death tests/test_memory_artifacts.py::test_hostile_pending_paths_do_not_touch_external_files_or_block_valid_sibling --junitxml=.superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r48-green-1.xml",
+      "command_authority": "Recorded author command; initial RED log saved under initial stem after first execution.",
+      "passed": 122,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "selected": 122,
+      "duration_seconds": 78.72,
+      "exit_code": 0,
+      "log": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r48-green-1.log",
+      "junit": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r48-green-1.xml"
+    },
+    {
+      "name": "historical_full_1",
+      "scope": "9e10c9cb1e0d385feea8cd73c8912b9ebd8a3929 while Important B4-R1 remained OPEN; no task acceptance",
+      "command": "C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe -m pytest -vv --junitxml=.superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-full-1.xml",
+      "command_authority": "Recorded author command; initial RED log saved under initial stem after first execution.",
+      "passed": 1036,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 9,
+      "deselected": 0,
+      "selected": 1045,
+      "duration_seconds": 391.45,
+      "exit_code": 0,
+      "log": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-full-1.log",
+      "junit": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-full-1.xml"
+    },
+    {
+      "name": "r1_red",
+      "scope": "production9e10c9c; exact committed SQL/event snapshot repair assertions fail",
+      "command": "C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe -m pytest -vv tests/test_memory_reconcile.py -k test_r1_committed_terminal_state_repairs_snapshot_before_catalog_loss --junitxml=.superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-red.xml",
+      "command_authority": "Exact author command transcribed from referenced report.",
+      "passed": 0,
+      "failed": 5,
+      "errors": 0,
+      "skipped": 0,
+      "deselected": 20,
+      "selected": 5,
+      "duration_seconds": 4.1,
+      "exit_code": 1,
+      "log": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-red.log",
+      "junit": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-red.xml"
+    },
+    {
+      "name": "r1_outcome_red",
+      "scope": "journal-only candidate AFC79F3A8B4E0B9DB9AE295E261E3744AE37D890D3B840CA3CA1DACD9378D312; real status-only failed/cancelled wrapper rejected after commit",
+      "command": "C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe -m pytest -vv tests/test_memory_reconcile.py -k test_r1_status_only_processor_reports_committed_outcome_with_pending_snapshot_warning --junitxml=.superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-outcome-red.xml",
+      "command_authority": "Exact author command transcribed from referenced report.",
+      "passed": 0,
+      "failed": 2,
+      "errors": 0,
+      "skipped": 0,
+      "deselected": 25,
+      "selected": 2,
+      "duration_seconds": 3.05,
+      "exit_code": 1,
+      "log": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-outcome-red.log",
+      "junit": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-outcome-red.xml"
+    },
+    {
+      "name": "r1_green",
+      "scope": "final production927A3ABAFF1E196A8C49A25877F6034884B13E7DB84F4731238823B8F506F73E; seven real durability/outcome tests",
+      "command": "C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe -m pytest -vv tests/test_memory_reconcile.py -k test_r1 --junitxml=.superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-green-1.xml",
+      "command_authority": "Recorded author command; initial RED log saved under initial stem after first execution.",
+      "passed": 7,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "deselected": 20,
+      "selected": 7,
+      "duration_seconds": 5.24,
+      "exit_code": 0,
+      "log": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-green-1.log",
+      "junit": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-green-1.xml"
+    },
+    {
+      "name": "r1_compatibility_129",
+      "scope": "same final production; old owner-test whole-table singleton-complete assertion failed because R49 adds legitimate persist_state; real failure retained",
+      "command": "C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe -m pytest -vv tests/test_memory_participants.py tests/test_memory_reconcile.py tests/test_cli.py tests/test_memory_review1_recovery.py tests/test_memory_processing_ownership.py::test_busy_failed_retry_replays_only_failed_state_and_preserves_completed_evidence tests/test_memory_publication_replay.py tests/test_memory_group_publication_recovery.py tests/test_memory_group_receipt_shapes.py tests/test_memory_group_capture_cancel.py tests/test_memory_legacy_discovery_ownership.py tests/test_memory_legacy_materialization_ownership.py tests/test_memory_recovery_ownership.py::test_separate_reconciler_preserves_real_live_owner_then_detects_process_death tests/test_memory_artifacts.py::test_hostile_pending_paths_do_not_touch_external_files_or_block_valid_sibling --junitxml=.superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-focus-129.xml",
+      "command_authority": "Recorded author command; initial RED log saved under initial stem after first execution.",
+      "passed": 128,
+      "failed": 1,
+      "errors": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "selected": 129,
+      "duration_seconds": 86.28,
+      "exit_code": 1,
+      "log": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-focus-129.log",
+      "junit": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-focus-129.xml"
+    },
+    {
+      "name": "r1_affected_callers",
+      "scope": "same final production; affected ownership/controller/producer callers",
+      "command": "C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe -m pytest -vv tests/test_memory_processing_ownership.py tests/test_memory_recovery_ownership.py tests/test_memory_review1_producers.py tests/test_application_controller.py tests/test_memory_capture_ownership.py --deselect=tests/test_memory_processing_ownership.py::test_busy_failed_retry_replays_only_failed_state_and_preserves_completed_evidence --deselect=tests/test_memory_recovery_ownership.py::test_separate_reconciler_preserves_real_live_owner_then_detects_process_death --junitxml=.superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-callers-1.xml",
+      "command_authority": "Exact author command transcribed from implementation report.",
+      "passed": 40,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "deselected": 3,
+      "selected": 40,
+      "duration_seconds": 30.1,
+      "exit_code": 0,
+      "log": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-callers-1.log",
+      "junit": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-callers-1.xml"
+    },
+    {
+      "name": "r1_corrected_owner_case",
+      "scope": "same final production; authorized SAME independent RED author binds original publication ID plus state operation and GLOBAL empty prepared; NOT a fresh129-pass run",
+      "command": "C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe -m pytest -vv tests/test_memory_reconcile.py::test_held_owner_skips_status_and_prepared_operation_then_residual_file_allows_recovery --junitxml=.superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-owner-focus-1.xml",
+      "command_authority": "Exact author command transcribed from referenced report.",
+      "passed": 1,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "selected": 1,
+      "duration_seconds": 3.15,
+      "exit_code": 0,
+      "log": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-owner-focus-1.log",
+      "junit": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-owner-focus-1.xml"
+    }
+  ],
+  "current_static": {
+    "baseline": "9e10c9cb1e0d385feea8cd73c8912b9ebd8a3929",
+    "current": "4e1b2cead486563516b69e09fb45543ee85b53aa",
+    "config_blob": "7143d4deff5acb55e524baa5ee15c101bce9b3b5",
+    "scope": "All 65 tracked src modules mapped under here in TEMP; unchanged pyproject; -p here; separate TEMP caches",
+    "baseline_errors": 79,
+    "current_errors": 79,
+    "delta": [],
+    "normalization": "Strip TEMP prefix and line number; compare complete file+message multisets",
+    "interpretation": "Inherited errors retained; no-new-errors evidence only",
+    "artifact": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-mypy-comparison.json"
+  },
+  "corrected_full": {
+    "status": "passed_coordinator_inspected_log_JUnit_source_freeze_and_DOCS_GO",
+    "source_commit": "4e1b2cead486563516b69e09fb45543ee85b53aa",
+    "source_tree": "4ca55bbe7e88ff59f79dee47e8740fef2253718e",
+    "tests_tree": "bf4f471a87ad84df8ac41f8da375f8fd1025f42e",
+    "command": "C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe -m pytest -vv --junitxml=.superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-full-2.xml",
+    "exit_code": 0,
+    "collected": 1052,
+    "passed": 1043,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 9,
+    "duration_seconds": 390.03,
+    "junit_internal_seconds": 389.952,
+    "skip_reasons": [
+      "2 HERE_WHEEL_PYTHON absent; fresh noneditable-wheel acceptance not executed",
+      "7 unavailable symlink privilege:1 memory_database,1 output_session_writer,5 session_artifact_safety"
+    ],
+    "log": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-full-2.log",
+    "junit": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-full-2.xml",
+    "limits": "No source/test/index mutation during frozen full; runtime released by author and coordinator before docs. No build/wheel/provider/CI certification."
+  },
+  "probes": [
+    {
+      "name": "schema2_snapshot_TEMP",
+      "scenarios": 4,
+      "exit_code": 0,
+      "seconds": 2.97,
+      "scope": "Original candidate before R48/final fixes; diagnostic author probe, not independent RED or current full",
+      "log": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-snapshot-probe-1.log"
+    },
+    {
+      "name": "r48_exact_isolated_tree",
+      "checks": 9,
+      "exit_code": 0,
+      "seconds": 2.55,
+      "tree": "0545151d409b35d0fd6f12c1d73a1e54d28b88c7",
+      "service_blob": "f4361ac2196720b7a52dcb65c246fba0abc6d64d",
+      "scope": "Narrow e0d083a tree without dirty B4 mutators; local read contract only",
+      "log": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r48-isolation-probe-1.log"
+    }
+  ],
+  "review": {
+    "original": "SPEC NOT COMPLIANT / quality NEEDS FIXES; one Important/P2 B4-R1; R48 no findings",
+    "fix_scope": "9e10c9c..4e1b2ce only, same independent reviewer, no new global audit",
+    "r1": "ADDRESSED",
+    "scoped_spec": "APPROVED",
+    "scoped_quality": "APPROVED",
+    "report": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-re-review-report.md",
+    "limits": "Read-only source/test review; reviewer did not rerun tests; full/static were pending at review time."
+  },
+  "boundaries": [
+    "State2 reconstructs linked participants only; unlinked global participants have SQL-only durability. No invented global snapshot protocol.",
+    "Receipt2/3, marker1-3, exact replay/proof, immutable revisions/raw text, A-to-B-to-A audio links and R37 NULL capture dates/audio-only reservations remain inherited.",
+    "R49 reuses persist_state in existing SQL transaction; final real wrapper returns unchanged identity+warning on postcommit housekeeping failure.",
+    "Withdrawn unexecuted eight-line guard draft was removed before supplemental RED/runtime; not committed implementation or a run.",
+    "R50 is an approved future contract only: catalog_read_view and SuppressionSnapshot have exactly suppressed_meeting_ids and fingerprint public fields; entries private.",
+    "Task5 deletion/reindex/suppression and real M3 integration/performance remain PLANNED; M2/group B OPEN; version0.2.0 unchanged.",
+    "Historical 129 run remains 128P/1F; separate authorized owner1P is not a fresh129-pass run.",
+    "Full1 skips: two absent noneditable-wheel acceptance cases and seven missing symlink-privilege cases; no omitted case is passing."
+  ],
+  "remaining_gates": [
+    "Root accepts this distinct Task4 docs/evidence checkpoint and reconciles root-owned global documentation.",
+    "Task5 independent RED/GREEN/review/docs; nine R42 crash/purge boundaries and actual accepted M3/R50 integration.",
+    "Group review, exact-head Windows CI/package/wheel as authorized, current-head received/responded Copilot and guarded merge.",
+    "Milestone original DoD and acceptance plus serialized0.3.0 change only at actual closure."
+  ],
+  "artifacts": [
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-red-report.md",
+      "sha256": "7a9ffaf9499720fd282d4ca1c62c1d3265770ed2bf3f979c6537b33a7feef6f8",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r48-red-report.md",
+      "sha256": "6dd5ecb8c689f360847a85384e22742cec505b4343800c4efa16d9a1f1396035",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-implementation-report.md",
+      "sha256": "282f987ac6fe12bf091f849b6f8dfb0b595fd2f76501458529a13e9df70b052e",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-review-report.md",
+      "sha256": "b20193b2f2c91b21f64f59a2c38223d661a54b9bc27d8276b1a94c7b614493bc",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-re-review-report.md",
+      "sha256": "ad53b9b6e8e999b087979997225276ba2c830ded321dbfeb81b68ecbb576c0af",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-red-report.md",
+      "sha256": "19501fa5f277fc5e64abdd7c11823e6b4f070b5e5ae982c370d91931f160fbb8",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-outcome-red-report.md",
+      "sha256": "843e8313d923e178646d38cf1879943a84d5469a0cfb226ef5ea09e5ba26074a",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-harness-report.md",
+      "sha256": "5f3420c05d60fd540ca0cf445f047dc93e348b4b93902e28a84765a3a81b2e71",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r48-isolated-tree.json",
+      "sha256": "aa31631903ca4151589994eaa8b7f3f4cb5f808484f881eea8f658be21758751",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r48-isolation-probe.py",
+      "sha256": "1c9204cb8dfa88de3050f7e68e07764e9de4c89332268db917f5289ce75dfee4",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r48-isolation-probe-1.log",
+      "sha256": "227653c95c7b6cb3f24f573fb115d82b9604f5dfdf7a07bc02364e0e9fba8ae6",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-snapshot-probe.py",
+      "sha256": "4361a7fa7a4e47848a543f4ceb96d8e2593130a1739d37a3662c802b2ae1a07c",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-snapshot-probe-1.log",
+      "sha256": "a86efd7d8dd47f737e33f59f6c26cf919a1827069110d3d25b5c401ffb6dfcf5",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r48-mypy-comparison.json",
+      "sha256": "8bedb521d8c803fa797b109b2fcc43efa4099148f0c57e9e61ca40b84b0aff18",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-mypy-comparison.json",
+      "sha256": "de5ddb50f73fc451669578e0aae43ef05a89fa45e5d62e19a777962d34cc2be4",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-mypy-context.json",
+      "sha256": "d260abc709cee09e85cc6c4d924925914c4c18f9147ff2a0cfe535413d2bf034",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-mypy-baseline.log",
+      "sha256": "db2bc82f44d06da26336c55631dfcad6b140c719630c7b33d88675c6c10e5493",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-mypy-current.log",
+      "sha256": "d786a1e24b5dd95ba85a3f5de0110101e7dbfdbe4d1cb197f58797c6b7b01bfd",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-format.log",
+      "sha256": "44384d93d277c6d82913a7d4117ab93040c4e5bda9e3146b4ad1c07543390dde",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-ruff.log",
+      "sha256": "8f2fa4f85387c880b2a8a3c544e75b008a3be3dcaa4cb3545aff763d957fdaf8",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/b5-r50-contract.md",
+      "sha256": "d6a92d5ef8db0cbd62114f3f3d1359cc5c712778d4f6815244ea612338229df8",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/b5-guard-proposal.md",
+      "sha256": "cbb6b3dde7b801711ebb7059f17254d1d80a47fe6765478a80f73ac1b45f0efe",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-red-initial.log",
+      "sha256": "2a0aa4167913fb13ffd3d210a0846a843e0f389c323ed727b0c4befc7abad25d",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-red-initial.xml",
+      "sha256": "3609217ea9264388cf89baababde35aeef0f3ebdce6e49fa2b50a034c63d1b12",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-red.log",
+      "sha256": "546cdcef620e8c7d98d92d955d49e80afd032a9c1aa93adffd9ffdf51a95f4dd",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-red.xml",
+      "sha256": "1c9e83a8e082889c83ab271136232a1f867d8c973fb360c0b926a6a094853c0d",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-green-1.log",
+      "sha256": "49950a31828bdd661079bf853fe96644d5daad601530e8bf7e5ee3c5d30e21a1",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-green-1.xml",
+      "sha256": "4b6bdf2461a2dd00d7ad81da86a6164b2af0bcfcc79f8c70e3e03b0c3c8b2e22",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-focus-1.log",
+      "sha256": "57301912d53626da212cb2a647ecf983a582532abfc61ce590195c454776660e",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-focus-1.xml",
+      "sha256": "22c1b283b06710b3f0d50714fdb1839636b0a02c75f728dd3ed8a6426714a486",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r48-red.log",
+      "sha256": "79141da1617a6d42fbf6bcf914e8ef370ec116ec77a13c6c2585f63a89806c05",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r48-red.xml",
+      "sha256": "93c7f5e035d47489d3b6ad2fc8db28fcfc366279cbbf42495a7961bfc7b39b53",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r48-green-1.log",
+      "sha256": "4cc8be8a77c3f4ee6d4b6966f6ad390e9acbfad0122cbcebfd95058cecf89798",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r48-green-1.xml",
+      "sha256": "652aa41a3faaab2b095a884fee85be40c8f19e2915b71f1ed6f146f94c73cd68",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-full-1.log",
+      "sha256": "b0f8bc95258c06431c0ff588df7219d4e79b4400a010054aa9179d53dfd689b6",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-full-1.xml",
+      "sha256": "72f87d6f9d8cb876e6e4212f7b9776efcc2a9b0f90b50b71eb6c8cf938266f93",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-red.log",
+      "sha256": "e1608278b1e4b90eb916326e5a280fb9e346a0a5c378082d5c31a4d3dda68eb7",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-red.xml",
+      "sha256": "59f3c18d11842aadc71bb5cce2d47540d1f0803683e9115588818d61a7a31f65",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-outcome-red.log",
+      "sha256": "c28d7f71f8b8336b5efad4844b1a16f6f0004b6ec71d0532653d7b1fafbb0916",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-outcome-red.xml",
+      "sha256": "ab66bb44aa6108d9decf5b0ab97815ed47c3ecfc61dd1af54473ac8a2073b8f1",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-green-1.log",
+      "sha256": "02f1d892cf8e60e0510662c9683722ec4909f15e385f63ee4454e71ca36d2ff3",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-green-1.xml",
+      "sha256": "7b9e09faec9d923dc5230ac6e6b45f7bb090f61d02a0cbccd433a36881b13957",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-focus-129.log",
+      "sha256": "ea64c8f3d6bed463396a8754fb9a64840a88a691f50b724cc3ee6a6c72281619",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-focus-129.xml",
+      "sha256": "1e73bdd9811c26d422eabe775f4cc5c88f9f68ae303a995d714d6b3e65845012",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-callers-1.log",
+      "sha256": "6a61df4478967596433a045ae977a0db709a81c95ca08f07494f5471818874e6",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-callers-1.xml",
+      "sha256": "aea4e4b4ef5b28cdd065598ff6e6f77613b5488e79c553c8ed906b592b1f84cb",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-owner-focus-1.log",
+      "sha256": "e05612871b25dcdfb2a17ee01020c169a00ffcdcbde5b1cd6d3d8de833ff2ea3",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r1-owner-focus-1.xml",
+      "sha256": "fdfdad28f4dc83795c43463921533f5495bfc56b66e86ec4869c3ffcc838fad1",
+      "storage": "ignored local evidence; hash identifies bytes read at docs checkpoint"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-full-2.log",
+      "sha256": "d2ebea36408a8f5a2690899280cefd483959295718714834b67640ebf8e91606",
+      "storage": "ignored local exact-source final full evidence"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-full-2.xml",
+      "sha256": "ffdd8b431f8f96c8bdcbfb3e01a85c5fdb262a90f631069b91395b14cbc7da46",
+      "storage": "ignored local exact-source final full evidence"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-ruff-initial.log",
+      "sha256": "9c9ecae620cebae8294a4d374c07f763f564d4bac78936eef3e456674ed952cf",
+      "storage": "ignored local diagnostic history; not final-source full evidence"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-ruff-2.log",
+      "sha256": "402882769f3812b13c9ffb4ad5980c1262c6eb0156a044b274d51313e4347c0e",
+      "storage": "ignored local diagnostic history; not final-source full evidence"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-ruff-final.log",
+      "sha256": "8f2fa4f85387c880b2a8a3c544e75b008a3be3dcaa4cb3545aff763d957fdaf8",
+      "storage": "ignored local diagnostic history; not final-source full evidence"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-format-final.log",
+      "sha256": "24aff8965a929c30b58f04636a78a2ff61ec819452bc59f0af2003e3471a1aad",
+      "storage": "ignored local diagnostic history; not final-source full evidence"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-mypy-baseline.log",
+      "sha256": "cdb669b4b921632c46b1b059146700aa3a0fbdc8d8b975d55fd5456671a62454",
+      "storage": "ignored local diagnostic history; not final-source full evidence"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-mypy-candidate-1.log",
+      "sha256": "216cdf77de987aa0e8ef72a99ad60124fb18a98df97ce799136c3129ca04ce87",
+      "storage": "ignored local diagnostic history; not final-source full evidence"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-mypy-mapped-baseline.log",
+      "sha256": "6e12ea7fe6467a14f6b6a6b0aecd96e37bdfa1fb979cbfbcbc7232073ef3a915",
+      "storage": "ignored local diagnostic history; not final-source full evidence"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-mypy-mapped-candidate-1.log",
+      "sha256": "399b8c1cd730a92dc7fc155e58fd30ebf5997d306e7338ab8940d9e0f7e78d64",
+      "storage": "ignored local diagnostic history; not final-source full evidence"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-mypy-mapped-final.log",
+      "sha256": "2f8aa09807b376f474039c5508087a4c92ebfc0f02d9ef2b5a7c07289688b632",
+      "storage": "ignored local diagnostic history; not final-source full evidence"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r48-ruff.log",
+      "sha256": "8f2fa4f85387c880b2a8a3c544e75b008a3be3dcaa4cb3545aff763d957fdaf8",
+      "storage": "ignored local diagnostic history; not final-source full evidence"
+    },
+    {
+      "path": ".superpowers/sdd/M2_LIFECYCLE_PLAN/task-4-r48-format-final.log",
+      "sha256": "9c2fcded1190c2e2deecd53fb7104594e61744a793d2e8e9b49f80271ee908a5",
+      "storage": "ignored local diagnostic history; not final-source full evidence"
+    }
+  ],
+  "diagnostic_history": [
+    "Original Ruff found17 E501s; formatter fixed16 and one comment wrapped; final check/format passed with inherited settings-deprecation warning.",
+    "Original flat-layout mypy baseline263/candidate268 included two layout import diagnostics and three genuine reader typing errors; reader errors corrected without ignores. Namespace-correct baseline79/candidate80 revealed one reused-local DTO typing conflict; renamed before final79→79.",
+    "Authorized owner-harness preparation retained two patch metadata/context errors before normal successful git apply; intermediate format --check failed on two wraps then passed after permitted formatting. No runtime/source change was hidden by those diagnostics."
+  ],
+
+  "task5": {
+    "recorded_on": "2026-11-13",
+    "status": "implemented_candidate_acceptance_open",
+    "scope": "Task 5 only. Existing top-level Task 4 evidence retains its source, tests, run IDs and results.",
+    "contracts": {
+      "R59": "Shared recovery read view with explicit data root and retained suppression scope",
+      "R60": "Validated stage inventory and conservative pending deletion cleanup",
+      "R61": "M3 generation representation under the existing read contract",
+      "R62": "Same-service writer handoff before material or marker effects"
+    },
+    "runs": [
+      {
+        "run_id": "r62-red-1-6adcd848",
+        "commit": "74555617426f4f760dca64735d0b28bec5fd6424",
+        "scope": "Independent R62 RED",
+        "passed": 2,
+        "failed": 7,
+        "errors": 0,
+        "skipped": 0,
+        "seconds": 8.64,
+        "junit_seconds": 8.582,
+        "exit_code": 1,
+        "junit_sha256": "76C307264BBEE5DF330AC587C23CBA11E086FBD930A3A86D62A9D4B9813B15A1"
+      },
+      {
+        "run_id": "r62-green-1-25354948",
+        "commit": "7994ebcd9cefcabc336db39bab5d48f555902a7a",
+        "scope": "Frozen bytes of original R62 focus",
+        "passed": 9,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "seconds": 7.91,
+        "junit_seconds": 7.853,
+        "exit_code": 0,
+        "junit_sha256": "B1886368A502F9790A3AA95FCC44ECA54C21DB85544F3D9F56B3090C6737547F",
+        "review": "Four P2 findings on this candidate"
+      },
+      {
+        "run_id": "R62 GREEN2",
+        "commit": "b365fa9e10ad03fc6f43a2f6869a653de4e33c44",
+        "scope": "Frozen corrected producer and R62 focused cases",
+        "passed": 14,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "seconds": 18.16,
+        "junit_seconds": 18.103,
+        "exit_code": 0,
+        "junit_sha256": "A711922133A63C919F2C81FF5F38FDD7BE46E589299D5D2E32EC6588C8F286E0"
+      },
+      {
+        "run_id": "R62 GREEN3",
+        "commit": "d00a1d46fc305c04b338ba1094954545e2bdd362",
+        "source_tree": "bb1b7fd8b6ca106c90de54ab6c5e2735452bfafe",
+        "tests_tree": "c1673f5f833030c30b9d97a5fde3fbc4875eb2c7",
+        "scope": "15 R62 cases including I5 and 95 regressions including SQLite Busy warning, W3/R59/R60, publication, ownership, reconcile and R42",
+        "passed": 110,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "seconds": 166.35,
+        "junit_seconds": 166.318,
+        "exit_code": 0,
+        "log_sha256": "F5AD26AD8CFAEF4DDDBB0ACBC4F17022D318ED99FB72A11E99063C74BE95DD40",
+        "junit_sha256": "6595A12DA6AFCF2FC8B7619DD0908E79428BFEEF50E5F921644D6CDA8052583B"
+      }
+    ],
+    "reviews": [
+      {
+        "commit": "d00a1d46fc305c04b338ba1094954545e2bdd362",
+        "scope": "I5 and SQLite Busy re-review",
+        "verdict": "approved",
+        "report": "r62-final-re-review.md",
+        "report_sha256": "CDDAE327BFEEFD835550BC381CD4B7C4F01D1048F0F816A65837E66D3EA74795"
+      },
+      {
+        "commit": "d00a1d46fc305c04b338ba1094954545e2bdd362",
+        "scope": "Independent integrated group source review",
+        "verdict": "approved",
+        "report": "m2-b-final-group-review.md",
+        "report_sha256": "D4E11DF4CC19E88C17E1904A54215B4D646DDBA13482AC7DDA2026BC4FD9466F"
+      },
+      {
+        "commit": "f6269332893419eb83f27fa1c8d67a426ba709f4",
+        "scope": "R50/R59 SQL boundary only",
+        "verdict": "approved_static",
+        "runtime_focus": "passed_on_reviewed_candidate"
+      }
+    ],
+    "full2_observation": {
+      "commit": "350761adfc766558feb8b0975978352b3eecc198",
+      "state_at_checkpoint": "completed",
+      "observed_failures": 6,
+      "failures_observed_by_scope": {
+        "capture_recovery_fixture_roots": 5,
+        "catalog_read_view_sql_exception_boundary": 1
+      },
+      "final_result": {
+        "collected": 1275,
+        "passed": 1251,
+        "failed": 6,
+        "errors": 0,
+        "skipped": 18,
+        "seconds": 824.52,
+        "junit_seconds": 824.414,
+        "verdict": "failed"
+      },
+      "log": "b5-full2-350761adfc76-37061fb5.log"
+    },
+    "follow_up": {
+      "fixture_commit": "7b9f532aa0851712e5f0d4b12e804da44b02a0da",
+      "sql_commit": "f6269332893419eb83f27fa1c8d67a426ba709f4",
+      "scope": "Capture fixtures use distinct data and sessions roots. Raw SQLite errors escaping the catalog read body translate with cause. Other caller errors and rollback/release retain their behavior.",
+      "combined_focus": {
+        "run_id": "b5-full2-six-failures-focus-6e5183bb",
+        "commit": "f6269332893419eb83f27fa1c8d67a426ba709f4",
+        "passed": 19,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "seconds": 7.59,
+        "junit_seconds": 7.429
+      }
+    },
+    "remaining_gates": [
+      "Final full suite, hygiene and comparative types",
+      "Handoff of the accepted B contracts for M3 UI integration",
+      "Installed-wheel and Windows distribution verification",
+      "Windows CI on final PR head and protected merge under CLAUDE.md §7 and ruling 64"
+    ]
+  }
+}

@@ -1,5 +1,6 @@
 """Local, explicit and idempotent recovery. Discovery never invokes a provider."""
 
+import sqlite3
 from collections.abc import Callable, Iterator
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
@@ -9,14 +10,37 @@ from uuid import UUID
 from here.application.processing import SessionProcessor, _validated_recovery_source
 from here.config.paths import get_data_dir
 from here.memory.artifacts import managed_path, read_pending_intent
-from here.memory.database import LibraryError
-from here.memory.service import MemoryService, OwnershipBusy
+from here.memory.database import Busy, LibraryError
+from here.memory.service import (
+    Conflict,
+    MemoryService,
+    NotFound,
+    OwnershipBusy,
+    recovery_read_view,
+)
 from here.output.metadata import ErrorMetadataDocument, SessionMetadata
 from here.output.ownership import FileLease, LeaseBusy
 from here.output.paths import UnsafeSessionPath, session_artifact_path, validate_session_directory
 from here.output.session_writer import ERRORS_FILE, read_session_metadata
 from here.recording.journal import CaptureJournal
 from here.recording.models import CaptureFailed
+
+_INVALID_PENDING_MARKER = "Invalid pending catalog marker; local recovery required"
+_PENDING_PUBLICATION = "Library publication pending local recovery"
+
+
+def _pending_replay(directory: Path, metadata: SessionMetadata) -> tuple[bool, str | None]:
+    """Check replay eligibility and any warning using the current pending marker."""
+    marker = session_artifact_path(directory, "memory_pending.json")
+    if not marker.exists():
+        return False, None
+    pending = read_pending_intent(directory, metadata.meeting_id)
+    if metadata.status != "pending":
+        return True, None
+    # A final seal cannot make an uncommitted manifest final.
+    if pending.hashes is not None:
+        return False, "Final catalog evidence is uncommitted; pending intent retained"
+    return False, None
 
 
 def validate_recovery_audio(directory: Path, metadata: SessionMetadata) -> bool:
@@ -58,34 +82,64 @@ class _CatalogOwnershipUnavailable(LibraryError):
 
 
 class RecoveryService:
-    def __init__(self, root: Path) -> None:
+    def __init__(self, root: Path, *, memory_service: MemoryService | None = None) -> None:
         self.root = root.absolute()
+        self._memory = memory_service
+        self._data_dir = memory_service.data_dir if memory_service is not None else get_data_dir()
+        self._data_dir = self._data_dir.absolute()
+        if self._memory is not None:
+            self._memory._register_sessions_root(self.root)
 
-    def _owner_identity(self, directory: Path, source_id: str | None) -> str | None:
-        """A legacy manifest keeps its ID; its normalized origin locates its owner."""
-        try:
-            if source_id is not None and str(UUID(source_id)) == source_id:
-                return source_id
-        except ValueError:
-            pass
-        data_dir = get_data_dir()
-        if (data_dir / "library.sqlite3").exists():
+    def _memory_service(self) -> MemoryService:
+        """Initialize only for existing writer operations, outside read guards."""
+        if self._memory is None:
+            self._memory = MemoryService(self._data_dir, sessions_root=self.root)
+        return self._memory
+
+    @contextmanager
+    def _read_view(self, directory: Path, source_id: str | None) -> Iterator[str | None]:
+        """Translate only unresolved legacy setup failures, never caller errors."""
+        with ExitStack() as view:
             try:
-                parent = MemoryService(data_dir).retry_parent(directory, source_id)
-            except (OwnershipBusy, UnsafeSessionPath):
+                context = (
+                    self._memory.recovery_read_view(directory, source_id)
+                    if self._memory is not None
+                    else recovery_read_view(self._data_dir, directory, source_id)
+                )
+                identity = view.enter_context(context)
+            except (NotFound, Busy, UnsafeSessionPath):
                 raise
             except (LibraryError, ValueError) as exc:
+                try:
+                    canonical = source_id is not None and str(UUID(source_id)) == source_id
+                except ValueError:
+                    canonical = False
+                if canonical:
+                    raise
                 raise _CatalogOwnershipUnavailable(
                     "Library ownership unavailable; local recovery required"
                 ) from exc
-            if parent is not None:
-                return parent[0]
-        return source_id
+            yield identity
+
+    def _owner_identity(self, directory: Path, source_id: str | None) -> str | None:
+        """Resolve the ownership target only; this closed view grants no audio access."""
+        with self._read_view(directory, source_id) as identity:
+            return identity
+
+    @contextmanager
+    def _inspection(
+        self, directory: Path, source_id: str | None, owned_identity: str | None
+    ) -> Iterator[None]:
+        """Keep final suppression/alias exclusion through protected material inspection."""
+        with self._read_view(directory, source_id) as identity:
+            if identity != owned_identity:
+                raise OwnershipBusy("Recovery ownership changed; rediscover the session")
+            yield
 
     @contextmanager
     def _ownership(
         self, identity: str | None, *, directory: Path | None = None
-    ) -> Iterator[Callable[[], None]]:
+    ) -> Iterator[tuple[str | None, Callable[[], None]]]:
         """Guard inspection/replay and recheck a stale selection before mutation."""
         if directory is not None:
             identity = self._owner_identity(directory, identity)
@@ -94,7 +148,7 @@ class RecoveryService:
         except ValueError:
             canonical = False
         if not canonical:
-            yield lambda: None
+            yield identity, lambda: None
             return
         assert identity is not None
         with ExitStack() as owners:
@@ -104,7 +158,7 @@ class RecoveryService:
                 def acquire(*, create: bool) -> None:
                     for path in (
                         CaptureJournal.owner_path(self.root, identity),
-                        managed_path(get_data_dir(), f".owners/{identity}.lock"),
+                        managed_path(self._data_dir, f".owners/{identity}.lock"),
                     ):
                         if path in held:
                             continue
@@ -118,16 +172,68 @@ class RecoveryService:
                         held.add(path)
 
                 acquire(create=False)
-                yield lambda: acquire(create=True)
+                yield identity, lambda: acquire(create=True)
             except LeaseBusy as exc:
                 raise OwnershipBusy(str(exc)) from exc
+
+    def _replay_pending_publication(
+        self, directory: Path, source_id: str | None, owner: str | None
+    ) -> tuple[bool, str | None] | Busy:
+        """Replay under the writer scope or defer SQLite contention to the final read."""
+        memory = self._memory_service()
+        with ExitStack() as writer:
+            try:
+                writer.enter_context(
+                    memory.recovery_publication(directory, source_id, expected_identity=owner)
+                )
+            except UnsafeSessionPath:
+                raise
+            except ValueError:
+                return True, _INVALID_PENDING_MARKER
+            except Conflict:
+                return True, _PENDING_PUBLICATION
+            except Busy as exc:
+                if type(exc) is not Busy or not isinstance(exc.__cause__, sqlite3.Error):
+                    raise
+                # The final read can revalidate a declared canonical identity directly.
+                # An unmapped legacy origin may still require the writer's seal checks.
+                if source_id is None or source_id != owner:
+                    raise
+                try:
+                    canonical = str(UUID(source_id)) == source_id
+                except ValueError:
+                    canonical = False
+                if not canonical:
+                    raise
+                return exc
+
+            metadata = read_session_metadata(directory)
+            if metadata is None or metadata.meeting_id != source_id:
+                raise UnsafeSessionPath("Recovery identity changed")
+            try:
+                should_replay, warning = _pending_replay(directory, metadata)
+            except UnsafeSessionPath:
+                raise
+            except ValueError:
+                return True, _INVALID_PENDING_MARKER
+            if not should_replay:
+                return False, warning
+            result = SessionProcessor(memory_service=memory).publish_memory(directory)
+
+        if result.status != "rejected":
+            return False, None
+        details = "; ".join(
+            str(getattr(warning, "message", warning)) for warning in result.warnings
+        )
+        return False, f"{_PENDING_PUBLICATION}: {details}" if details else _PENDING_PUBLICATION
 
     def discover(self) -> list[RecoveryCandidate]:
         validate_session_directory(self.root)
         try:
-            data_dir = get_data_dir()
-            if (data_dir / "library.sqlite3").exists() or (data_dir / "meetings").exists():
-                MemoryService(data_dir).reconcile()
+            if (self._data_dir / "library.sqlite3").exists() or (
+                self._data_dir / "meetings"
+            ).exists():
+                self._memory_service().reconcile()
         except (OSError, ValueError, RuntimeError):
             pass
         if not self.root.exists():
@@ -141,87 +247,77 @@ class RecoveryService:
                 metadata = read_session_metadata(directory)
                 if metadata is None:
                     continue
-                catalog_warning = None
-                invalid_marker = False
-                with self._ownership(metadata.meeting_id, directory=directory) as claim:
-                    marker = session_artifact_path(directory, "memory_pending.json")
-                    if marker.exists():
+                local_recovery_only = False
+                publication_busy: Busy | None = None
+                source_id = metadata.meeting_id
+                with self._ownership(source_id, directory=directory) as (owner, claim):
+                    with self._inspection(directory, source_id, owner):
+                        metadata = read_session_metadata(directory)
+                        if metadata is None or metadata.meeting_id != source_id:
+                            raise UnsafeSessionPath("Recovery identity changed")
                         try:
-                            pending = read_pending_intent(directory, metadata.meeting_id)
+                            should_replay, catalog_warning = _pending_replay(directory, metadata)
                         except UnsafeSessionPath:
                             raise
                         except ValueError:
-                            # Invalid data grants no replay or provider authority.
-                            # Do not echo untrusted contents or inspect its audio.
-                            pending = None
-                            invalid_marker = True
-                            catalog_warning = (
-                                "Invalid pending catalog marker; local recovery required"
-                            )
-                        if pending is not None and metadata.status != "pending":
-                            claim()
-                            result = SessionProcessor().publish_memory(
-                                directory,
-                                revision_of=pending.revision_of,
-                                status_only=pending.intent == "status",
-                            )
-                            if result.status == "rejected":
-                                details = "; ".join(
-                                    str(getattr(warning, "message", warning))
-                                    for warning in result.warnings
+                            should_replay = False
+                            local_recovery_only = True
+                            catalog_warning = _INVALID_PENDING_MARKER
+                    if should_replay:
+                        # Retain the upgraded leases while the writer revalidates authority.
+                        claim()
+                        replay = self._replay_pending_publication(directory, source_id, owner)
+                        if isinstance(replay, Busy):
+                            publication_busy = replay
+                        else:
+                            local_recovery_only, catalog_warning = replay
+                    with self._inspection(directory, source_id, owner):
+                        metadata = read_session_metadata(directory)
+                        if metadata is None or metadata.meeting_id != source_id:
+                            raise UnsafeSessionPath("Recovery identity changed")
+                        if publication_busy is not None:
+                            if metadata.status != "completed":
+                                continue
+                            catalog_warning = f"{_PENDING_PUBLICATION}: {publication_busy}"
+                        # A copied manifest does not own another directory with the same ID.
+                        key = (metadata.meeting_id or directory.name, directory)
+                        if metadata.status == "completed" or local_recovery_only:
+                            if catalog_warning:
+                                candidates[key] = RecoveryCandidate(
+                                    directory,
+                                    metadata.session_id,
+                                    metadata.duration_seconds,
+                                    metadata.status,
+                                    catalog_warning,
+                                    False,
+                                    metadata.meeting_id,
                                 )
-                                catalog_warning = "Library publication pending local recovery"
-                                if details:
-                                    catalog_warning += f": {details}"
-                        elif pending is not None and pending.hashes is not None:
-                            # A final seal cannot make an uncommitted manifest final.
-                            # Preserve both pieces of evidence without acquiring a
-                            # writer lease or adopting the previous transcript.
-                            catalog_warning = (
-                                "Final catalog evidence is uncommitted; pending intent retained"
+                            else:
+                                completed.add(key)
+                            continue
+                        available = validate_recovery_audio(directory, metadata)
+                        error_summary = metadata.failure_stage
+                        errors_path = session_artifact_path(directory, ERRORS_FILE)
+                        if errors_path.exists():
+                            errors = ErrorMetadataDocument.model_validate_json(
+                                errors_path.read_text(encoding="utf-8")
                             )
-                # A copied manifest does not own other directories with the same ID.
-                key = (metadata.meeting_id or directory.name, directory)
-                if metadata.status == "completed" or invalid_marker:
-                    if catalog_warning:
-                        # This warning needs local catalog recovery only.
-                        # Do not inspect retry audio or offer another provider call.
+                            if errors.errors:
+                                last_error = errors.errors[-1]
+                                error_summary = last_error.cause_message or last_error.message
+                        if catalog_warning:
+                            error_summary = "; ".join(
+                                message for message in (error_summary, catalog_warning) if message
+                            )
                         candidates[key] = RecoveryCandidate(
                             directory,
                             metadata.session_id,
                             metadata.duration_seconds,
                             metadata.status,
-                            catalog_warning,
-                            False,
+                            error_summary,
+                            available,
                             metadata.meeting_id,
                         )
-                    else:
-                        completed.add(key)
-                    continue
-                with self._ownership(metadata.meeting_id, directory=directory):
-                    available = validate_recovery_audio(directory, metadata)
-                error_summary = metadata.failure_stage
-                errors_path = session_artifact_path(directory, ERRORS_FILE)
-                if errors_path.exists():
-                    errors = ErrorMetadataDocument.model_validate_json(
-                        errors_path.read_text(encoding="utf-8")
-                    )
-                    if errors.errors:
-                        last_error = errors.errors[-1]
-                        error_summary = last_error.cause_message or last_error.message
-                if catalog_warning:
-                    error_summary = "; ".join(
-                        message for message in (error_summary, catalog_warning) if message
-                    )
-                candidates[key] = RecoveryCandidate(
-                    directory,
-                    metadata.session_id,
-                    metadata.duration_seconds,
-                    metadata.status,
-                    error_summary,
-                    available,
-                    metadata.meeting_id,
-                )
             except _CatalogOwnershipUnavailable as exc:
                 # Metadata passed path validation, but unknown ownership permits
                 # no marker, error-document or audio inspection, nor mutation.
@@ -246,22 +342,25 @@ class RecoveryService:
             journals = []
         for directory in journals:
             try:
-                with self._ownership(directory.name):
-                    journal = CaptureJournal.load(self.root, directory.name)
-                    # Only metadata at this journal's validated reservation supersedes it.
-                    key = (journal.document.capture_id, journal.destination)
-                    if key in completed or key in candidates:
-                        continue
-                    recording = journal.recording_session()
-                candidates[key] = RecoveryCandidate(
-                    journal.destination,
-                    journal.document.started_at.strftime("%Y%m%d_%H%M%S"),
-                    recording.duration_seconds,
-                    "interrupted",
-                    "Capture interrupted before final persistence",
-                    recording.duration_seconds > 0,
-                    journal.document.capture_id,
-                )
+                if str(UUID(directory.name)) != directory.name:
+                    raise UnsafeSessionPath("Invalid capture identity")
+                with self._ownership(directory.name, directory=directory) as (owner, _):
+                    with self._inspection(directory, directory.name, owner):
+                        journal = CaptureJournal.load(self.root, directory.name)
+                        # Only metadata at this validated reservation supersedes the journal.
+                        key = (journal.document.capture_id, journal.destination)
+                        if key in completed or key in candidates:
+                            continue
+                        recording = journal.recording_session()
+                        candidates[key] = RecoveryCandidate(
+                            journal.destination,
+                            journal.document.started_at.strftime("%Y%m%d_%H%M%S"),
+                            recording.duration_seconds,
+                            "interrupted",
+                            "Capture interrupted before final persistence",
+                            recording.duration_seconds > 0,
+                            journal.document.capture_id,
+                        )
             except (OSError, ValueError, RuntimeError):
                 continue
         return [item for key, item in candidates.items() if key not in completed]
@@ -269,43 +368,56 @@ class RecoveryService:
     def materialize(self, candidate: RecoveryCandidate) -> Path:
         if candidate.session_dir.absolute().parent != self.root:
             raise UnsafeSessionPath("Recovery destination is outside sessions root")
-        with self._ownership(candidate.capture_id, directory=candidate.session_dir) as claim:
-            if read_session_metadata(candidate.session_dir) is None:
-                if candidate.capture_id is None:
-                    raise ValueError("Recovery metadata no longer exists")
-                if str(UUID(candidate.capture_id)) != candidate.capture_id:
-                    raise UnsafeSessionPath("Invalid capture identity")
-                # Recognize an actual owned journal before creating its writer
-                # leases; pure manifest inspection leaves no protocol artifacts.
-                journal_path = session_artifact_path(
-                    self.root / ".captures" / candidate.capture_id, "journal.json"
-                )
-                if not journal_path.is_file():
-                    raise FileNotFoundError(journal_path)
+        with self._ownership(candidate.capture_id, directory=candidate.session_dir) as (
+            owner,
+            claim,
+        ):
+            with self._inspection(candidate.session_dir, candidate.capture_id, owner):
+                missing_metadata = read_session_metadata(candidate.session_dir) is None
+                if missing_metadata:
+                    if candidate.capture_id is None:
+                        raise ValueError("Recovery metadata no longer exists")
+                    if str(UUID(candidate.capture_id)) != candidate.capture_id:
+                        raise UnsafeSessionPath("Invalid capture identity")
+                    # Recognize the actual journal before creating writer leases;
+                    # pure manifest inspection leaves no owner-file artifacts.
+                    journal = CaptureJournal.load(self.root, candidate.capture_id)
+                    if journal.destination != candidate.session_dir.absolute():
+                        raise UnsafeSessionPath("Recovery destination changed")
+            if missing_metadata:
                 claim()
-            return self._materialize_owned(candidate)
+            return self._materialize_owned(candidate, owner, reconstruct=missing_metadata)
 
-    def _materialize_owned(self, candidate: RecoveryCandidate) -> Path:
+    def _materialize_owned(
+        self,
+        candidate: RecoveryCandidate,
+        owned_identity: str | None,
+        *,
+        reconstruct: bool,
+    ) -> Path:
         directory = candidate.session_dir.absolute()
         if directory.parent != self.root:
             raise UnsafeSessionPath("Recovery destination is outside sessions root")
-        metadata = read_session_metadata(directory)
-        if metadata is not None:
-            if metadata.meeting_id != candidate.capture_id:
-                raise UnsafeSessionPath("Recovery identity changed")
-            validate_recovery_audio(directory, metadata)
-            return directory
-        if candidate.capture_id is None:
-            raise ValueError("Recovery metadata no longer exists")
-        journal = CaptureJournal.load(self.root, candidate.capture_id)
-        if journal.destination != directory:
-            raise UnsafeSessionPath("Recovery destination changed")
-        session = journal.recording_session()
-        failure = CaptureFailed(
-            session, RuntimeError("Capture interrupted before final persistence")
-        )
+        with self._inspection(directory, candidate.capture_id, owned_identity):
+            metadata = read_session_metadata(directory)
+            if metadata is not None:
+                if metadata.meeting_id != candidate.capture_id:
+                    raise UnsafeSessionPath("Recovery identity changed")
+                validate_recovery_audio(directory, metadata)
+                return directory
+            if candidate.capture_id is None or not reconstruct:
+                raise ValueError("Recovery metadata no longer exists")
+            journal = CaptureJournal.load(self.root, candidate.capture_id)
+            if journal.destination != directory:
+                raise UnsafeSessionPath("Recovery destination changed")
+            session = journal.recording_session()
+            failure = CaptureFailed(
+                session, RuntimeError("Capture interrupted before final persistence")
+            )
+        # The writer revalidates under its own publication lock. Existing real
+        # native/canonical leases stay retained by materialize across this handoff.
         return (
-            SessionProcessor()
+            SessionProcessor(memory_service=self._memory_service())
             .persist_capture_failure(
                 failure,
                 self.root,

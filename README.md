@@ -19,15 +19,15 @@ offline fallback if the live transcription pipeline fails.
 ## Installation
 
 For the Windows 11 x64 packaged application, run the generated
-`here-0.2.0-windows-x64-setup.exe`. It installs for the current user under
+`here-0.3.0-windows-x64-setup.exe`. It installs for the current user under
 `%LOCALAPPDATA%\Programs\here` and creates Start entries for here and its
 uninstaller. Exit here before reinstalling or updating: the installer refuses
 to replace a running application. Uninstalling preserves `%LOCALAPPDATA%\here`
 and any configured data directory. It never enables automatic startup or recording.
 
-The installer and portable onedir ZIP are build/CI artifacts; no public release
-download or Authenticode application signature is claimed. See
-[Windows build instructions](docs/development/WINDOWS_DISTRIBUTION.md).
+The Windows package workflow uploads the installer and portable onedir ZIP.
+[Workflow](https://github.com/srodriguez-lefebre/here/actions/workflows/windows-package.yml) ·
+[Build instructions](docs/development/WINDOWS_DISTRIBUTION.md)
 
 For source development, from the repository root:
 
@@ -140,7 +140,7 @@ pause/resume and processing lifecycle events without storing raw audio blocks.
 The project produces transcripts and processing metadata. It does not currently
 generate summaries or action items.
 
-## Local catalog (M2 in progress)
+## Local catalog
 
 The merged catalog implementation supports cataloging of recordings, file transcriptions
 and explicit retries under the configured user data root. It keeps managed copies
@@ -193,13 +193,37 @@ ownership mappings leave bounded, nonretryable recovery warnings, without readin
 audio or guessing identity while ownership is uncertain. Actual owner/path guards
 remain strict.
 
-The final Windows suite passes980 tests with two installed-wheel cases omitted;
-the fresh exact-source wheel separately passes all four distribution checks,
-including both installed entries. These are automatic synthetic checks, not new
-hardware/provider/clean-install certification. M2 remains in progress pending
-lifecycle/deletion and milestone acceptance. Version0.2.0 stays current; the
-packaged delivery above retains its M1 scope. Current status and named evidence:
-[STATUS.md](STATUS.md) and [ACCEPTANCE.md](docs/development/ACCEPTANCE.md).
+### Catalog maintenance
+
+Local editing of titles and notes preserves stored
+transcript revisions. Edits compare the version read before the change so a
+concurrent edit produces a conflict. Participants can be linked manually, and
+speaker attribution can be changed or removed. Speaker keys belong to a
+transcription request and do not identify a person across requests.
+
+These commands use the meeting UUID returned by `memory ingest`.
+
+```powershell
+here memory rename $result.meeting_id "Weekly planning" --json
+here memory participant $result.meeting_id "Alex" --speaker $speakerKey --json
+here memory reconcile --json
+here memory reindex --json
+here memory delete $result.meeting_id --yes --json
+```
+
+Use a speaker key from the meeting's segment data, or omit `--speaker` to link
+the participant without assigning a speaker. Reindex rebuilds the local search
+index from active complete revisions. Reconcile retries local catalog work.
+Both commands run without a provider key.
+
+Deletion requires explicit confirmation. A busy meeting can refuse deletion
+before it starts. After deletion has been accepted, a `pending` result means
+local cleanup is still outstanding. Reconcile can resume it. A `completed`
+result means the managed data and derivatives were removed. Cleanup preserves
+unrecognized files and the external folder of an imported session. A minimal
+deletion record prevents automatic restoration or reimport of the deleted
+meeting. Named runs and their scope are in
+[ACCEPTANCE.md](docs/development/ACCEPTANCE.md).
 
 ## Audio Diagnostics
 

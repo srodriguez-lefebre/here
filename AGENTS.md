@@ -10,8 +10,8 @@ Resumen para no perder tiempo, con la sección de `CLAUDE.md` que lo detalla:
   `docs/MASTER_PLAN.md` no se pisan.
 - Entorno y comandos: §5 y §6. La suite necesita `QT_QPA_PLATFORM=offscreen`, una
   `OPENAI_API_KEY` sintética y `pwsh`.
-- Git, Copilot y merge: §7. Mergeás tus propios PRs solo con CI verde, review de
-  Copilot respondida y review de un subagente independiente (rulings 16 y 17).
+- Git y merge: §7. Mergeás tus propios PRs con CI verde y review de un subagente
+  independiente. Para los PR pendientes se omite Copilot por ruling 64.
 - Orquestación con subagentes y qué se puede solapar: §11.
 - Rulings vigentes: `docs/development/DELIVERY.md`, sección "Rulings vigentes".
 

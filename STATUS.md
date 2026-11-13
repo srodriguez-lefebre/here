@@ -1,7 +1,154 @@
 # Estado de here
 
-Actualizado: 2026-11-06. Leé CLAUDE.md primero; después este archivo y
+Actualizado: 2026-11-13. Leé CLAUDE.md primero; después este archivo y
 `docs/MASTER_PLAN.md`. Historial y rulings: `docs/development/DELIVERY.md`.
+
+## Checkpoint vigente — 2026-11-13
+
+M2 A está mergeado en PR21. M2 B prepara 0.3.0 en `codex/m2-lifecycle-release`,
+worktree `C:/Users/savar/.codex/worktrees/m2-lifecycle-release/here`, responsable
+root. La fuente `d00a1d4` pasó 110 casos y review independiente. El full de
+`350761a` terminó con 1251 pases, 18 omisiones y seis fallos. Se corrigieron
+la separación de raíces de cinco fixtures y la traducción de errores SQLite
+en la vista R50. El foco de 19 casos pasó en `f626933`. La revisión aprobó
+también `ec57204`, con Ruff y formato limpios en 27 archivos Python y cero
+diagnósticos nuevos de mypy en los archivos modificados.
+
+El full corregido `b5-full2-ec572046c277-38b8014c` pasó 1257 pruebas y omitió
+18 en `ec57204`, nivel 2. Son 16 omisiones por privilegio local de symlinks y
+dos del wheel, que tienen su corrida aparte. La rama de entrega integra solo
+documentación después de ese commit. El wheel 0.3.0 no editable pasó los cuatro
+smokes de distribución y la ayuda CLI se comprobó desde esa instalación. Nivel 2.
+El paquete Windows, la CI final y el merge siguen pendientes.
+El equipo de desarrollo tiene una instalación con el AppId y el grupo Inicio
+de here. La prueba de ese instalador estable usa el runner Windows del workflow.
+
+M3 A sigue en el chat `01a1af04-e779-7363-be61-c840651b0b18`, rama
+`codex/m3-search`, worktree `C:/Users/savar/.codex/worktrees/2710/here`.
+R63 tiene verificación funcional de nivel 2 y el benchmark sigue fallido en
+879,48 ms p95 frente a 500 ms. Los dos tests RED de R52 quedan preparados para
+el handoff de B. Root coordina las ventanas de runtime y la integración.
+
+M5 B tiene el borrador revisado de contratos en `codex/m5-portability-contracts`,
+worktree `C:/Users/savar/.codex/worktrees/m5-portability-contracts/here`, commit
+`2c25a54`. Root coteja los bindings y publica el PR de contratos después de
+mergear M2 B. Los claims esperan M4 B. Evidencia estática solamente.
+
+Ruling 64 omite la review de Copilot. Siguen la revisión independiente, el PR
+con evidencia, CI Windows verde en el head final, merge protegido y registro.
+Dos horas permanece **omitida por ruling 5**. Sin bloqueo humano en este punto.
+
+## Historial de reanudación — 2026-11-13
+
+El usuario reanudó los hitos 2 a 5. Los chats originales de M2 B y M3 A
+retoman desde los commits de pausa. Al verificar la reanudación, `origin/main`
+seguía en `3e76a20` y Git conservaba ambas ramas de trabajo. Faltaban los
+checkouts `faab`, `2710`, `b5-w2-red` y `m2-native-owner-red`. Cada frente
+recupera sus archivos desde los commits registrados y confirma su nueva ruta.
+
+M2 B recuperó `codex/m2-lifecycle` en
+`C:/Users/savar/.codex/worktrees/m2-b-lifecycle-resume/here` con `89305c1`.
+El autor RED trabaja en `C:/Users/savar/.codex/worktrees/m2-b-r62-red-resume/here`
+sobre `ae00b44`. M3 A recuperó el checkout `2710/here` en `49baac0`.
+
+M2 B reprodujo R62 en `7455561` con siete fallos esperados y dos controles verdes.
+Los mismos nueve casos pasaron en `r62-green-1-25354948`, nivel 2 focalizado,
+con los deltas de productor `F027EA6D` y consumidor `07FEABE6` ensamblados en
+`C:/Users/savar/.codex/worktrees/m2-b-r62-green-check/here`. La review de
+`7994ebc` encontró cuatro casos abiertos. `b5_w3_red` los reprodujo en
+`r62-review-red-1-009b46ae` con 4 fallos esperados en `c8747aa`, worktree
+`C:/Users/savar/.codex/worktrees/m2-b-r62-rollback-red/here`. Corresponden a
+compensación con lease retenida, recibo exacto con una tumba previa en la ruta,
+recibo discordante y retry WAV-only tras reconstruir el catálogo. El control
+adicional de token ambiguo también falló en RED. La corrección `b365fa9` pasó
+los 14 casos en `r62-green-2-51dfbfff`, nivel 2 focalizado. El lote
+`r62-regressions-1-ceef8825` dio 82 pases y 13 fallos, incluidos errores de
+configuración del runner y un caso pendiente de aviso por SQLite ocupado.
+Siguen la segunda review, la verificación de esos fallos y la integración.
+La preparación de integración de cuatro archivos de tests quedó en `f85e366`,
+rama `codex/m2-b-r62-product-prep`, worktree
+`C:/Users/savar/.codex/worktrees/m2-b-r62-product-prep/here`.
+`b5_docs` entregó el borrador de 0.3.0 sobre `89305c1` desde
+`C:/Users/savar/.codex/worktrees/m2-b-release-docs-prep/here`.
+El integrado `d00a1d4` pasó los 110 casos de `r62-green-3-61a5088c` y la
+revisión independiente de fuente. Root recibió el worktree `m2-b-r62-product-prep`,
+integró la documentación y subió la versión del candidato en `350761a`.
+El full `b5-full2-350761adfc76-37061fb5` terminó con seis fallos.
+Cinco fixtures de captura incluyen el lock del catálogo en su árbol de sesiones.
+El sexto requiere recuperar la traducción SQLite de R50 en la vista de lectura.
+Se prepararon el arreglo de fixtures `7b9f532` y la corrección de fuente
+`f626933` en worktrees separados.
+M3 A verificó automáticamente los focos de R63
+en `ca80f49`: Ruff, 8 comparaciones con el oráculo v2, 10 controles de
+generación y 240 regresiones de búsqueda. La review independiente aprobó ese
+alcance funcional. `r63-query-benchmark-1` midió p95 de 879,4833999891125 ms
+frente al requisito de menos de 500 ms. La sonda posterior midió 539,90 ms en
+generación y 222,99 ms en la entrada al guard en una llamada instrumentada.
+M3 A descartó la proyección JSON1 tras medir 3.446,71 ms frente a 782,22 ms
+del control en la prueba de concepto. El benchmark sigue fallido.
+Root coordina las ventanas de ejecución, la integración, los PR y los merges.
+
+Preparación documental M5 B en `C:/Users/savar/.codex/worktrees/m2-segments/here`,
+rama `codex/m2-segments`, base `1085a6e`, borrador `e20c095`.
+`portability_contracts` ajustó el SPEC y el PLAN. `portability_contract_review`
+aprobó la preparación estática. Quedan las comprobaciones contra el merge real
+de M2 B y el PR de contratos antes de implementar.
+
+El usuario indicó que no se pida review de Copilot por falta de cuota
+(ruling 64). Para los PR pendientes siguen vigentes la revisión independiente,
+CI de Windows sobre el head final, el merge protegido y el registro de evidencia.
+
+## Pausa histórica — 2026-11-06
+
+El usuario pidió guardar todo y cortar; luego precisó el mensaje en inglés:
+`paused: checkpoint work in progress`. Todos
+los grants de fuente/runtime están revocados; solo se permite cerrar procesos y
+guardar el checkpoint. No reanudar automáticamente: esperar nueva instrucción.
+Los apartados operativos siguientes son historia anterior a esta pausa.
+
+Punto de retoma: M2 B conserva W1/W2 y reader R59 aprobados en sus scopes;
+W3 parcial pasó7P/11,33s sobre5926/C234. El writer atómico R62 sigue pendiente
+de RED/GREEN/review y bloquea SOURCE COMPLETE. Faltan regresiones finales,
+tipos/full2, integración, versión0.3.0, distribución y gates del PR.
+M3 A conserva UI R58 verificada automáticamente y R61 funcional; p95 real
+848,67978ms sigue fallido frente a500ms. R63 es trabajo preparado sin verificación
+nueva; R52 UI sigue pendiente. No hay aceptación ni certificación nueva de hito.
+Versión vigente0.2.0. M5 B early core no empezó; claims esperan M4 B.
+
+Los reportes/logs/manifests ignorados permanecen en sus worktrees y no se agregan
+al repositorio. Los commits de pausa preservan WIP, no aprueban código ni planes.
+Las filas de evidencia y omisiones conservan su alcance; dos horas sigue
+**omitida por ruling 5**.
+
+Checkpoints locales de pausa; carpetas bajo `C:/Users/savar/.codex/worktrees/`,
+cada una termina en `/here`. Los diez WTs de los dos frentes quedaron limpios,
+sin procesos propios activos. No hubo tests/builds nuevos durante la pausa.
+
+| Worktree | Rama | Commit de pausa |
+|---|---|---|
+| faab | codex/m2-lifecycle | 89305c1 |
+| b5-w2-red | codex/m2-b5-r62-red | ae00b44 |
+| b5-w3-red | codex/m2-b5-w3-green | 3d97ed3 |
+| m2-native-owner-red | codex/m2-b5-w2-red | 90fc7e2 |
+| 2710 | codex/m3-search | 49baac0 |
+| m3-search-evidence | codex/m3-search-evidence | f0db68d |
+| m3-search-green | codex/m3-search-green | ca80f49 |
+| m3-search-red | codex/m3-search-red | 8f37a9a |
+| m3-ui-implementation | codex/m3-ui-green | 1ffa174 |
+| m3-ui-red | codex/m3-ui-red | 348c567 |
+| m2-preparation | codex/m2-preparation | 8a0aae7 |
+| m2-segments | codex/m2-segments | 1085a6e |
+| m4-grounded-preparation | codex/m4-grounded-preparation | fa6fa7b |
+| m2-copilot-red | codex/m2-copilot-red-3 | d36e800 |
+| five-milestones | codex/m1-desktop-recovery | 9d63d80 |
+| ruling19-review | codex/pausado-ruling19-review | 7faf8e7 |
+
+Orquestación y evidencia global: `m2-catalog/here`, rama
+`codex/m3-library-contracts`, commit de pausa que contiene este registro. Los
+borradores históricos/fixtures preservados no sustituyen los contratos vigentes;
+no integrar ramas de preparación completas por el solo hecho de estar commiteadas.
+`m2-ingestion/here` conserva únicamente `uv-setup.log` como artefacto local ajeno
+al código. El checkout original no tenía cambios antes de registrar la pausa.
 
 ## Objetivo y checkpoint vigente
 
@@ -47,6 +194,14 @@ tipográfica respondida4491036067/hilo resuelto. CI42196684370:980P/2skips wheel
 277,06s; package42196683781 success sobre13f. Merge guardado, ledger root1f3d0ec.
 Sin source/tests/config/version nuevos; no valida B5/M3 por arrastre.
 
+PR documental [#24](https://github.com/srodriguez-lefebre/here/pull/24) mergeado
+3e76a207cf828b50b8e07cbd8136830b38fea80b a2026-11-06T12:52:24Z. Head3e2f6bff768de0a36b7b6f6704f5b36a9637ae90,
+review independiente APPROVED/R1–R2 ADDRESSED. Copilot5800249014 recibido12:45:47Z
+tras solicitud12:43:20Z, sin observaciones. CI42219811270:980P/2skips wheel/326,90s;
+package42219811401 success, ambos head exacto. Merge commit guardado y ledger
+en DELIVERY. SPEC/PLAN M3 B preparados y R53–56 publicados; no GO de ejecución.
+Los checks validan fuente A sin cambios, no el producto B/M3 aún no mergeado.
+
 Root creó los dos chats pedidos en el mismo proyecto, cada uno con worktree y
 rama propios. Ambos se inicializaron clean en contratos73d3cb3 con A53712c5 como
 ancestro; hoy contienen el trabajo detallado debajo. No recrearlos ni reiniciarlos.
@@ -54,9 +209,10 @@ ancestro; hoy contienen el trabajo detallado debajo. No recrearlos ni reiniciarl
 Proyecto `local-e307e59e09194b354122137b16ef6d77`, host `local`; raíz original
 `C:/Users/savar/Documents/proyects/here` preservada. Root orquesta desde
 `C:/Users/savar/.codex/worktrees/m2-catalog/here`, rama
-`codex/m3-library-contracts`, con base de contratos73d3cb3 y mainc4d79b2 integrado.
+`codex/m3-library-contracts`, con base de contratos73d3cb3 y main3e76a20 integrado.
 La rama anterior `codex/m2b-m3a-orchestration` preserva sus checkpoints hasta883e3cd.
-Esta rama prepara el PR documental de contratos de M3 B; no inicia su implementación.
+Esta rama publicó el PR24 de contratos de M3 B; conserva ahora su anotación posterior
+al merge. No inicia la implementación B.
 
 | Frente / responsable ejecutor | Chat ID | Rama | Worktree | Base |
 |---|---|---|---|---|
@@ -72,7 +228,9 @@ trabajo previo ni duplicar fixtures. Monitorear los dos chats con wait_threads;
 pedidos de leases/handoffs se registran en su progreso/reporte local.
 
 Leases actuales: B posee models/repository/database/service, artifacts solo para
-estado2/compatibilidad1, recovery y CLI. DTOs R46/errores canónicos y B4 completos
+estado2/compatibilidad1 y CLI. El principal conserva service.py para W2/R59;
+recovery.py fue liberado en todos sus WTs y transferido al consumidor distinto
+en `b5-w3-red/here`, rama `codex/m2-b5-w3-green`. DTOs R46/errores canónicos y B4 completos
 ya se integraron en M3; esto no concede un escritor libre de core al chat M3.
 M3 posee search.py/tests y UI enumerada. B no tiene writer UI; la futura línea
 app.py R52 espera API B verificada y RED consumidor, en la misma instancia/customroot.
@@ -83,30 +241,103 @@ Hasta esa transferencia no hay otro writer. Processing continúa sin concesión.
 Cualquier handoff adicional se concede explícitamente. Migraciones/pyproject/uv.lock/versiones
 siguen seriales y requieren permiso de root. Global docs son root-only.
 
-Runtime del checkpoint: B posee ventana EXCLUSIVA para RED W1 (nuevo archivo4
-casos v1), tras el release completo M3. W2/W3 tienen briefs y autores RED nuevos,
-solo preparación en worktrees separados sobre624be55: b5_w2_red en
+Runtime del checkpoint: productor R59 liberó53479 y M3 benchmark R61 liberó92885
+antes de reportar. B completó cuatro controles R60 en m2-native-owner-red:
+sourceC20E/test814BF580, runner17F5E82D/freeze84B926A2,4P/11,55s y XML11,520,
+0F/0E/0S;71 pins sin delta. Reporte actual confirma sesión28939 y dos hijos cerrados,
+GLOBAL RELEASE antes de análisis. Root concedió ahora W3 PARCIAL exclusivo:
+WTb5-w3-red/here, source5926/C234, siete casos originales; runnerCBABF69E/bindingA939943C,
+151hashes/149tracked verificados por coordinador. Terminó7P/11,33s, XML11,266,
+0F/0E/0S; GLOBAL RELEASE10689, sin timeout y procesos/pipes cerrados. Review W3
+acotada pendiente; SOURCE COMPLETE/R62 siguen abiertos. Host libre, sin otro grant.
+No trasladar4P deC20E a5926/C234/R62.
+W1 terminó con release completo:
+RED3F/1P/16,63s → GREEN4P/19,91s y regresión delete79P/5symlink skips/182,92s.
+Fuente42a29fbfaef83c30b895ed6e75af95562313623a, src01400e51c9ac19d66309aaa6bf91976a95c91992;
+misma re-review W1 ADDRESSED/SPEC y calidad del alcance APPROVED, sin nuevos C/I.
+Los RED W2/W3 se ejecutaron separadamente sobre624be55; sus fallos conservan esa
+base y no se atribuyen al fix posterior. Briefs y autores RED distintos:
+b5_w2_red en
 `C:/Users/savar/.codex/worktrees/b5-w2-red/here` (detached624 al crear),
 b5_w3_red en `C:/Users/savar/.codex/worktrees/b5-w3-red/here`, rama
 `codex/m2-b5-w3-red`. El ledger B registra bindings y ramas posteriores.
+W2/R60 pasó5P/0F/0E/0S/35,41s, XML35,359 sobre service DIRTY
+`C20E1FA450E33B940713F876383954BFC59F552CDDC22159EEAC60E94D00C38F`, patch
+`27F620F6664F3AF98300263EE24856BDF3A660A383982AB03DFFDF0E6872D53F`.
+HEADd480317988a8f355f64034a782637a63f97f1ae4 es test-only sobre42a; no es un commit
+del source ejecutado. La review posterior `task-5-whole-w2-re-review-report.md`
+declara W2 ADDRESSED/SPEC-R60 y calidad APPROVED solo para C20E/27F, sin nuevos
+hallazgos. Regresiones/finaltypes/full2 y Task5/grupo B/M2 siguen abiertos.
+RED59 real:40 collected,38F/2P/0E/0S/14,57s, XML14,528;29 fallos por método
+ausente y7 por módulo ausente, dos regresiones de identidad de excepción del
+caller y dos controles Busy que pasan. Runner real en `b5-w2-red/here`, rama
+`codex/m2-b5-r59-red`, HEAD05c9fed2449cab24d16f96a9997bcdd86cb461bc/base624,
+serviceA987; testAC636ACC3E2003E67B261EB32829A297F1739350B37BDBE05944FDDEDF154C36.
+No es corrida sobre C20E ni prueba de los cuerpos de guard ausentes.
+Checkpoint B-R59-PRODUCER-20261106: GREEN2 real40P/13,85s/XML13,818 sobre
+service DIRTY5926969BA9466288AC1F1A96EACE91CC7ED677A944A0128CC6736D44BA8038E4 y
+testF70551A820D2568196DB0A88996AFF08D559341F11D75DF948F7C72367DB04E6;71pins intactos.
+RunnerWT b5-w2-red recibió65 fuentes MAIN, no source Git624 como si fuera5926.
+Apéndice final task-5-r59-producer-review-report.md APPROVED productor/SPEC/calidad,
+0hallazgos; su headerNOT_RUN es histórico. ConsumerC234/W3 sigue parcial: edge
+marker unmapped confirmado. R62/dd59c82 fija scope WRITER/revalidación antes de
+material/marker sobre mismo servicio, sin inventarID/padre; nuevo RED asignado.
+Contrato R62 APPROVED estático en análisis raíz; no GREEN de ese writer.
+Reader40P no prueba ese writer ni SOURCE COMPLETE/aceptación del consumidor.
+Productor service y consumidor recovery conservan sus writers/WT separados.
+
 M3 terminó10 controles R55 y240 de regresión, sin fallos; benchmark40 válido
-p95=902,413285ms FALLA500. Prepara perfil residual2 y observer sin ejecutarlos.
+p95=902,413285ms FALLA500. Perfil residual2 exit0 liberado: control5207ms/perfil2744ms,
+diagnóstico frío no comparable al gate warm. Observer R55 aporta diagnóstico de
+contención, sin aceptación UI nueva. Pytest eliminó su catálogo temporal205; R57 materializó
+un input sintético dedicado con el helper aceptado intacto, nueva procedencia y
+sin afirmar igualdad binaria. Fixture READY y diagnóstico CPU terminaron exit0:
+cinco warmups y dos llamadas públicas, estado DIAGNOSTIC_COMPLETED_NOT_BENCHMARK;
+no pytest ni p95 nuevo, no causa general del host inferida. Fuentee198/tests a2ac/
+config7143 invariantes en la corrida9406c72; docs posteriores31e9 no son su HEAD.
+Checkpoint M3-R58-UI-2b66246-20261106: en WT propio `m3-ui-implementation/here`,
+commit2b66246198965eaca7a3df5d326837f4851b8942,
+src12774a1e6702ab943934280d05d0de6897e8378d: solo library.py/bridge.py, sin integración
+en primary al reporte. Dos corridas separadas: r58-ui-focus-1 pasó44P/16,36s/
+XML16,294 y r58-ui-heartbeat-1 pasó1P/23,56s/XML22,725. Gate original de ocho
+callbacks IDs3–10/render/drain completo:1788 ticks/1789 gaps/8941,6032ms,
+máximo8,9216ms<50ms, errors=[], drained=True;83 pins intactos. Verificado
+automáticamente solo ese gate/contexto; review Task2 posterior APPROVED acotada
+en r58-ui-review-report.md sobre el mismo2b/source12774, sin findings. Coordina auxiliares
+con páginas; page/page/título/crossview/externos conservan límites. No p95<500ms,
+full/grupo/certificación. Reporte r58-ui-verification-report.md; hashes en ACCEPTANCE.
+R61commit62a5197 autoriza query source-only: representación local del cursor y
+equivalencia de bytesv2. Checkpoint M3-R61-2e69-20261106: ownWT m3-search-green,
+HEAD2e69c117c66f2ed1763b4e507c76947729dd9647/src04f3fd9802b378efc588df393d92e238915f203f,
+tests1ebd4f67002a13300f454e18dcb49580d9d416e0/config7143. Existentes10P/4,95s +
+240P/52,48s enab837 con misma producción04f3; captura old7821/e198/f303 real1P/
+1,78s/XML1,656, oráculo11E2CF6B data-only. Comparación actual8P/1,96s/XML1,912,
+capture DESELECTED/cero hidden skips,84bindings. Benchmark original cinco warmups+
+40 correctas FALLA p95=848,6797799909255ms frente a<500,1F/49,08s/XML48,730,
+0E/0S y siete hashes invariantes; muestras retenidas, sin rerun ni causa inventada.
+R61 no integrado al reporte; no pase combinado con R58. Propuesta query siguiente
+solo texto autorizada; R52 UI RED preparado sin handoff aceptado. Reports/hashes
+en ACCEPTANCE; no full/tipos/Task1/grupo/certificación.
+Handback posterior: M3 integró mecánicamente R58 como
+`38cff90dba7bd2914e44491ec60e8cf58771a2f4`; src12774/tests a2ac/config7143
+son idénticos a2b (diff de source/tests/config vacío). No es otra corrida.
 B liberó full1
 con1F/310P/110,55s, detenido25% por -x: el override global TRANSCRIPTIONS_DIR del
 runner interfirió con test_config_paths. No editar producto/test para ese fallo;
 corregir runner después de conservar intento. Mypy fresco B4→624 válido/estable:
 65 módulos,79→79 errores/115→115 diagnósticos, multiset delta vacío, NO type-clean.
-Review whole Task5 CHANGES REQUESTED, Critical0/Important3: W1/P2 pierde la prueba
+Review whole Task5 original CHANGES REQUESTED, Critical0/Important3: W1/P2 pierde la prueba
 del WAV v1 durante purge; W2/P1 puede completar con staging publicado identificado
 todavía presente; W3/P2 discovery de journal nativo omite supresión antes de audio/
 candidato. Root leyó informe completo y acepta los tres como defectos del contrato
-existente. RED independientes primero; service.py conserva GREEN principal para
-W1/W2. Recovery.py podrá transferirse exclusivamente a otro GREEN tras RED W3,
-pero esa transferencia aún no está activada. El lote v2 sobre
+existente. Sus continuaciones acotadas cerraron W1/W2 y aceptaron solo el reader
+R59; W3/C5 y handoff writer R62 siguen abiertos.
+service.py conserva GREEN principal para W2/R59; recovery.py ya está transferido
+al consumidor distinto, con W3 parcial7P sobre5926/C234 y R62 aún abierto. El lote v2 sobre
 624be55 terminó sin fallos: native31P/4skips, CORECOMPAT-A98P/5skips,
 CORECOMPAT-B47P, SERVICE-FULL13P y guard/privacy20P. Son cinco corridas separadas,
 no un full agregado. R54-R1 ADDRESSED/SPEC y calidad APPROVED por la misma review
-independiente. M3 prepara controles de la optimización y timeline UI sin runtime.
+independiente. M3 conserva R57 READY; R58 verificó sus dos corridas y liberó runtime.
 Sin full/build/uv/mypy/benchmark concurrente. Consultar SIEMPRE
 los dos ledgers antes de reasignar: este owner es snapshot, no permiso permanente.
 READERS7 terminó7P/5,10s, incluido primer uso con raíz vacía. M3 verificó44P/14,42s
@@ -186,7 +417,8 @@ completos de bytes, owner, row/outcome y orphan genuino. Misma re-review acotada
 R54-R1 ADDRESSED/SPEC y calidad APPROVED, sin nuevos hallazgos; los cinco XML v2
 confirman el lote amplio anterior sin fallos/errores. Los tipos frescos no agregan
 diagnósticos; el full de esta fuente todavía no pasó. Review whole Task5/grupo y docs distintos en
-curso; hallazgo v1 y el fallo de runner se registran por separado.
+curso; W1 y W2 corregidos/revisados en sus bindings propios, W3/R59 abiertos y
+fallo de runner se registran separados.
 No transferir R52 ni cerrar Task5. Warning Ruff heredado queda para root/config
 serial. Cero writer UI B.
 
@@ -411,9 +643,13 @@ no provee selección meeting_ids ni OR del retrieval M4: handoff interno pendien
 sin asumir MemoryService.search, SQL directo de intelligence o filtro post-LIMIT.
 Root resolverá ese contrato; no es bloqueo humano ni aceptación de un adapter.
 
-No hay bloqueo humano actual. Próximo: RED W1/W2/W3 y correcciones/re-review B;
-perfil residual R55 y timeline Busy M3 antes de otra optimización; PR documental
-de contratos M3 B antes de habilitar ese frente. Alternar host tras release confirmado.
+No hay bloqueo humano actual. Próximo: recibo de controles R60, RED writer
+R62 y productor/consumidor reales; regresiones/finaltypes/full2 B. R58 conserva su
+handoff aprobado; R61 mantiene p95 FALLIDO848,6798ms y próxima propuesta solo texto.
+R52 UI espera handoff aceptado. W3 parcial7P liberó10689; review acotada pendiente;
+R57 sigue siendo diagnóstico, no aceptación.
+PR documental24 ya mergeado; M3 B todavía espera GO y handoffs reales.
+Alternar host tras release confirmado.
 Consultar ledgers antes de rotar
 host o asignar archivos; los planes/fixtures/reviews ya preparados no se reinician.
 Reanudar desde estos IDs/reportes sin recrear los chats ni repetir el catálogo A.
