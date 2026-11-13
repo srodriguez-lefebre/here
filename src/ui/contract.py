@@ -8,13 +8,9 @@ transcription, persistence, or concrete controller implementations.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
-from here.application.diagnostics import AudioDiagnosticsService
-from here.application.recovery import RecoveryService
-from here.config.settings import require_provider_key, settings_operation
-
-from ..application import (
+from here.application import (
     ApplicationController,
     ApplicationEvent,
     ApplicationSnapshot,
@@ -26,6 +22,54 @@ from ..application import (
     StartRequest,
     Unsubscribe,
 )
+from here.application.diagnostics import AudioDiagnosticsService
+from here.application.recovery import RecoveryService
+from here.config.settings import require_provider_key, settings_operation
+from here.memory.database import LibraryError, open_library
+from here.memory.models import (
+    MeetingDetail,
+    MeetingPage,
+    MeetingPatch,
+    MeetingQuery,
+    Participant,
+    ReindexReport,
+    SearchPage,
+    SearchQuery,
+)
+from here.memory.search import SearchService
+
+
+class _MemoryBackend(Protocol):
+    def get_meeting(self, meeting_id: str) -> MeetingDetail: ...
+
+    def list_participants(self, meeting_id: str | None = None) -> tuple[Participant, ...]: ...
+
+    def update_meeting(
+        self, meeting_id: str, patch: MeetingPatch, expected_version: int
+    ) -> MeetingDetail: ...
+
+
+class _QueryBackend(Protocol):
+    def list_meetings(self, query: MeetingQuery) -> MeetingPage: ...
+
+    def search(self, query: SearchQuery) -> SearchPage | MeetingPage: ...
+
+
+@runtime_checkable
+class _MemoryOwner(Protocol):
+    @property
+    def memory_service(self) -> _MemoryBackend: ...
+
+
+@runtime_checkable
+class _CatalogRoot(Protocol):
+    @property
+    def data_dir(self) -> Path: ...
+
+
+@runtime_checkable
+class _MaintenanceBackend(Protocol):
+    def reindex(self) -> ReindexReport: ...
 
 
 class VisualController(Protocol):
@@ -62,6 +106,16 @@ class VisualController(Protocol):
 
     def diagnose(self, source): ...
 
+    def list_meetings(self, query: MeetingQuery) -> MeetingPage: ...
+
+    def search(self, query: SearchQuery) -> SearchPage | MeetingPage: ...
+
+    def get_meeting(self, meeting_id: str) -> MeetingDetail: ...
+
+    def list_participants(self, meeting_id: str | None = None) -> tuple[Participant, ...]: ...
+
+    def update_meeting(self, meeting_id: str, patch: MeetingPatch, expected_version: int): ...
+
 
 class ApplicationUiAdapter:
     """Translate visual intent into the stable application-core contract."""
@@ -73,11 +127,49 @@ class ApplicationUiAdapter:
         *,
         diagnostics_service=None,
         recovery_service=None,
+        memory_service: _MemoryBackend | None = None,
+        search_service: _QueryBackend | None = None,
     ) -> None:
         self._controller = controller
         self._output_dir = output_dir
         self._diagnostics = diagnostics_service or AudioDiagnosticsService()
         self._recovery = recovery_service or RecoveryService(output_dir)
+        self._memory = memory_service
+        self._search = search_service
+
+    def _memory_backend(self) -> _MemoryBackend:
+        # The controller's accepted R48 getter preserves injected/custom data roots.
+        # Missing handoff is explicit; opening another default-root service is forbidden.
+        backend = self._memory
+        if backend is not None:
+            return backend
+        if isinstance(self._controller, _MemoryOwner):
+            return self._controller.memory_service
+        raise LibraryError("La biblioteca aún no está disponible. Reintentá más tarde.")
+
+    def _query_backend(self) -> _QueryBackend:
+        if self._search is not None:
+            return self._search
+        memory = self._memory_backend()
+        if not isinstance(memory, _CatalogRoot):
+            raise LibraryError("El backend de consultas de biblioteca aún no está disponible.")
+        reindexer = memory.reindex if isinstance(memory, _MaintenanceBackend) else None
+        return SearchService(lambda: open_library(memory.data_dir), reindexer=reindexer)
+
+    def list_meetings(self, query: MeetingQuery) -> MeetingPage:
+        return self._query_backend().list_meetings(query)
+
+    def search(self, query: SearchQuery) -> SearchPage | MeetingPage:
+        return self._query_backend().search(query)
+
+    def get_meeting(self, meeting_id: str) -> MeetingDetail:
+        return self._memory_backend().get_meeting(meeting_id)
+
+    def list_participants(self, meeting_id: str | None = None) -> tuple[Participant, ...]:
+        return self._memory_backend().list_participants(meeting_id)
+
+    def update_meeting(self, meeting_id: str, patch: MeetingPatch, expected_version: int):
+        return self._memory_backend().update_meeting(meeting_id, patch, expected_version)
 
     @property
     def snapshot(self) -> ApplicationSnapshot:

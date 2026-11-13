@@ -5,16 +5,22 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from .app import application_instance, create_desktop
-from .fake_controller import FakeApplicationController
+from here.ui.app import HereDesktop, application_instance
+from here.ui.contract import ApplicationUiAdapter
+from here.ui.fake_controller import FakeApplicationController, FakeLibraryBackend
 
 
 def main() -> int:
     application = application_instance(sys.argv)
-    desktop = create_desktop(
+    library = FakeLibraryBackend()
+    desktop = HereDesktop(
         application,
-        FakeApplicationController(),
-        output_dir=Path.cwd() / "transcriptions",
+        ApplicationUiAdapter(
+            FakeApplicationController(),
+            Path.cwd() / "transcriptions",
+            memory_service=library,
+            search_service=library,
+        ),
     )
     desktop.show()
     return application.exec()
