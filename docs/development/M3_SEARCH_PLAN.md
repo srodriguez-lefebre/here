@@ -1,9 +1,9 @@
 # M3 search and library actions implementation plan
 
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
-> review, then independent agent review. Root coordinates file leases and merges
-> only after current-head received/responded Copilot, Windows CI and independent
-> review. Steps use checkbox syntax. **Status: planned, not in execution.** The
+> review, then independent agent review. Root coordinates file leases and follows
+> `CLAUDE.md` §7 and ruling 64 for independent review, exact-head Windows CI and
+> the guarded merge. Steps use checkbox syntax. See `STATUS.md` for the active checkpoint. The
 > latest explicit user instruction permits M3 A alongside M2 B only after M2 A closes
 > with all gates and the necessary contract documentation PRs are merged. One
 > cohesive docs PR may cover both fronts. Root creates
@@ -34,11 +34,9 @@ pytest-qt; no new runtime dependency.
   skips in 307.46s; package CI 42155415501 passed on that same head. Fresh local
   installed-wheel distribution checks passed all four cases in 7.51s. These are
   automatic synthetic evidence, not hardware/provider/clean-install certification.
-  This contract documentation still needs its own independent review, received and
-  answered current-head Copilot, exact-head Windows CI and guarded merge before
-  dispatch. Root records its actual reviewed head/merge and execution bases in
-  DELIVERY/STATUS; neither future chat exists yet. Planned B/M3 APIs below are not
-  A implementations and do not become accepted integration through this docs PR.
+  The contract documentation was reviewed and merged in PR #22. `DELIVERY.md` and
+  `STATUS.md` record the reviewed head, merge and execution bases. B/M3 APIs below
+  describe planned integration on top of the accepted A foundation.
 - `src/memory/` imports neither Qt nor Typer; `src/ui/` never runs SQL or reads
   session files.
 - User text never reaches `MATCH` unquoted; every token is quoted and escaped.
@@ -284,9 +282,9 @@ root reserves any common UI/contract file against B's concurrent GUI integration
   flow), `docs/MILESTONE_3_PLAN.md` (criteria 1–10, 17–18 status), `ACCEPTANCE.md`
   (M3 responsiveness row with the benchmark run) and `WHATS_NEW.md`.
 - Open one PR with the two task commits, self-review and independent agent review in
-  the description. Root integrates any required accepted B changes, verifies the
-  exact head and merges only after received/responded Copilot and green Windows CI
-  plus independent review. No unmet title-edit/reindex dependency is marked complete.
+  the description. Root integrates any required accepted B changes and follows
+  `CLAUDE.md` §7 and ruling 64, including green Windows CI on the exact head.
+  Title editing and reindex integration require their accepted B handoffs.
   M3 B starts from the merged target and DTOs; milestone criteria remain unchanged.
 - Root aligns the M3 milestone agenda with ruling 35 in the contract docs PR
   without changing acceptance criteria. After M2 B merges, M5 B may advance with

@@ -1,9 +1,9 @@
 # M2 lifecycle and deletion implementation plan
 
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
-> review, then independent agent review. Root merges after received/responded
-> current-head Copilot, green Windows CI and independent review (rulings 16/17/20).
-> Steps use checkbox syntax. **Status: planned, not in execution.** The roadmap is authorized by ruling
+> review, then independent agent review. Root follows `CLAUDE.md` §7 and ruling 64:
+> independent review, exact-head Windows CI and a guarded merge.
+> Steps use checkbox syntax. See `STATUS.md` for the active checkpoint. The roadmap is authorized by ruling
 > 20. Ruling 35 requires accepted/merged A and merged necessary contract docs PRs before
 > root creates separate M2 B/M3 A project chats/worktrees. One cohesive docs PR may
 > cover both plans. Final merged-A base SHA: `53712c5beedafc2d40e2abf10c13362a1c3c9f78`; pin the accepted A API
@@ -61,11 +61,9 @@ threads. Complete Windows CI 42155415514 passed 980 cases/two wheel-environment
 skips in 307.46s; package CI 42155415501 passed on that same head. Fresh local
 installed-wheel distribution checks passed all four cases in 7.51s. These are
 automatic synthetic evidence, not hardware/provider/clean-install certification.
-This contract documentation still needs its own independent review, received and
-answered current-head Copilot, exact-head Windows CI and guarded merge before
-dispatch. Root records its actual reviewed head/merge and execution bases in
-DELIVERY/STATUS; neither future chat exists yet. Planned B/M3 APIs below are not
-A implementations and do not become accepted integration through this docs PR.
+The contract documentation was reviewed and merged in PR #22. `DELIVERY.md` and
+`STATUS.md` record the reviewed head, merge and execution bases. B/M3 APIs below
+describe planned integration on top of the accepted A foundation.
 
 Preserve these inherited contracts:
 
@@ -315,8 +313,8 @@ private fields/guard adapter; no transcript/title/audio/participant data is stor
   version to edit; invoke it with the new installer path. Check the wheel metadata,
   compiler override and fallback all report 0.3.0, then build/smoke the actual artifacts.
 - Open one PR with the two task commits, self-review and independent agent review in
-  the description. Root merges only after exact-head Windows CI and received/responded
-  Copilot plus independent review; no gate is waived by a local pass or delay.
+  the description. Root follows `CLAUDE.md` §7 and ruling 64, including green
+  Windows CI on the exact head and a guarded merge.
   M3 A's independently dispatched query work may already run under ruling 35; hand
   off accepted B4 title/B5 reindex contracts for its remaining integration.
 - After B merges, root may advance M5 B portability with its claims hook pending
