@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import stat
 import struct
+import zlib
 from dataclasses import replace
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
@@ -17,7 +18,9 @@ from memory_fixtures import MEETING_ID
 from portability_fixtures import (
     DUPLICATE_NAME_PAIRS,
     HOSTILE_NAMES,
+    ZIP_TIMESTAMP,
     ArchiveEntry,
+    manifest_bytes,
     write_archive,
     write_future_manifest,
 )
@@ -131,6 +134,96 @@ def test_inspect_accepts_empty_entry_with_zero_compressed_size(
     )
     source = write_archive(tmp_path / "empty-entry.here.zip", _manifest(entries), entries)
     assert service.inspect(source).meeting_ids == (MEETING_ID,)
+
+
+def test_inspect_accepts_a_small_commented_zip_with_zip64_local_header(
+    service: portability.PortabilityService, tmp_path: Path
+) -> None:
+    source = tmp_path / "zip64.here.zip"
+    with ZipFile(source, "x") as archive:
+        archive.comment = b"Synthetic portable package"
+        with archive.open("manifest.json", "w", force_zip64=True) as manifest:
+            manifest.write(manifest_bytes(_manifest()))
+        for entry in _BASE:
+            archive.writestr(entry.name, entry.data)
+
+    assert service.inspect(source).meeting_ids == (MEETING_ID,)
+
+
+def test_inspect_caps_compressed_manifest_input_before_opening_it(
+    service: portability.PortabilityService, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "oversized-manifest.here.zip"
+    document = manifest_bytes(_manifest())
+    compressed_bytes = 10 * 1024**2
+    # A valid DEFLATE stream can consume input without producing any output.
+    # Begin with non-final empty stored blocks and finish with the small manifest.
+    empty_block = b"\x00\x00\x00\xff\xff"
+    final_block = b"\x01" + struct.pack("<HH", len(document), 0xFFFF - len(document))
+    raw = empty_block * (compressed_bytes // len(empty_block)) + final_block + document
+    with ZipFile(source, "x") as archive:
+        manifest = ZipInfo("manifest.json", ZIP_TIMESTAMP)
+        manifest.compress_type = ZIP_DEFLATED
+        manifest.file_size = len(document)
+        manifest.compress_size = len(raw)
+        manifest.CRC = zlib.crc32(document)
+        manifest.header_offset = 0
+        archive.fp.write(manifest.FileHeader())
+        archive.fp.write(raw)
+        archive.start_dir = archive.fp.tell()
+        archive.filelist.append(manifest)
+        for entry in _BASE:
+            archive.writestr(entry.name, entry.data)
+
+    with ZipFile(source) as archive:
+        info = archive.getinfo("manifest.json")
+        next_offset = archive.getinfo(_MEETING).header_offset
+        assert info.header_offset + 30 + len(info.orig_filename) + info.compress_size == next_offset
+        assert info.compress_type == ZIP_DEFLATED
+        assert info.compress_size > compressed_bytes
+        assert info.file_size == len(document)
+
+    def forbid_member(*args, **kwargs):
+        pytest.fail("Opened a manifest exceeding the compressed-byte budget")
+
+    monkeypatch.setattr(ZipFile, "open", forbid_member)
+    _assert_refused(service, source, tmp_path)
+
+
+def _archive_with_meeting_extra(source: Path, extra: bytes) -> None:
+    with ZipFile(source, "x") as archive:
+        archive.writestr("manifest.json", manifest_bytes(_manifest()))
+        for entry in _BASE:
+            info = ZipInfo(entry.name, ZIP_TIMESTAMP)
+            if entry.name == _MEETING:
+                info.extra = extra
+            archive.writestr(info, entry.data)
+
+
+def test_inspect_rejects_excess_extra_fields_before_constructing_zipfile(
+    service: portability.PortabilityService, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "extra-field-count.here.zip"
+    _archive_with_meeting_extra(source, struct.pack("<HH", 0xAFFF, 0) * 65)
+
+    def forbid_zipfile(*args, **kwargs):
+        pytest.fail("Constructed ZipFile before bounding central extra-field count")
+
+    monkeypatch.setattr(ZipFile, "__init__", forbid_zipfile)
+    _assert_refused(service, source, tmp_path)
+
+
+def test_inspect_rejects_nul_hidden_in_unicode_path_extra(
+    service: portability.PortabilityService, tmp_path: Path
+) -> None:
+    source = tmp_path / "unicode-path-alias.here.zip"
+    raw_name = _MEETING.encode()
+    unicode_path = b"\x01" + struct.pack("<I", zlib.crc32(raw_name)) + raw_name + b"\x00alias"
+    _archive_with_meeting_extra(
+        source, struct.pack("<HH", 0x7075, len(unicode_path)) + unicode_path
+    )
+
+    _assert_refused(service, source, tmp_path)
 
 
 @pytest.mark.parametrize("name", HOSTILE_NAMES.values(), ids=HOSTILE_NAMES.keys())
