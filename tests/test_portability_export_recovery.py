@@ -16,7 +16,7 @@ from zipfile import ZipFile
 
 import pytest
 from here.memory import service as service_module
-from here.memory.database import Busy, LibraryConnection, LibraryError
+from here.memory.database import Busy, LibraryConnection, LibraryError, UnsupportedSchema
 from here.memory.models import AudioAsset
 from here.memory.service import Conflict, MemoryService
 from here.output.ownership import FileLease, LeaseBusy
@@ -461,3 +461,63 @@ def test_atomic_export_rename_preserves_a_destination_created_at_its_boundary(
     assert destination.read_bytes() == foreign
     assert set(destination.parent.iterdir()) == {destination}
     assert not list((memory.data_dir / ".exports").glob("*.json"))
+
+
+def test_export_reports_committed_archive_when_registration_retirement_fails(
+    catalog: tuple[MemoryService, Path, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from here.memory.portability import PortabilityService
+    from here.memory.service import _ExportCleanupPending
+
+    memory, sessions, destination = catalog
+
+    def fail_retirement(service: MemoryService, registration: Path) -> None:
+        assert registration == _registration(service)
+        assert set(destination.parent.iterdir()) == {destination}
+        raise _ExportCleanupPending()
+
+    with monkeypatch.context() as failure:
+        failure.setattr(MemoryService, "_retire_export", fail_retirement)
+        result = PortabilityService(memory).export(
+            (MEETING_ID,), destination, True, lambda _: None, lambda: False
+        )
+
+    registration = _registration(memory)
+    before = destination.read_bytes()
+    assert result.path == destination
+    assert result.archive_bytes == len(before)
+    assert isinstance(result.warnings, tuple) and result.warnings
+    for warning in result.warnings:
+        assert isinstance(warning, str)
+        assert str(destination) not in warning and destination.name not in warning
+        assert str(registration) not in warning and registration.name not in warning
+    with ZipFile(destination) as archive:
+        assert archive.testzip() is None
+        assert json.loads(archive.read("manifest.json"))["meeting_ids"] == [MEETING_ID]
+
+    MemoryService(memory.data_dir, sessions_root=sessions).reconcile()
+    assert not registration.exists()
+    assert destination.read_bytes() == before
+
+
+def test_reconcile_cleans_owned_export_sibling_before_refusing_future_catalog(
+    catalog: tuple[MemoryService, Path, Path],
+) -> None:
+    memory, sessions, destination = catalog
+    with _paused_export(memory, sessions, destination) as process:
+        registration = _registration(memory)
+        sibling = _temporary(destination)
+        _kill(process)
+
+    with closing(sqlite3.connect(memory.data_dir / "library.sqlite3")) as connection:
+        connection.execute("PRAGMA user_version=12345")
+
+    fresh = MemoryService(memory.data_dir, sessions_root=sessions)
+    with pytest.raises(UnsupportedSchema):
+        fresh.reconcile()
+
+    assert not registration.exists()
+    assert not sibling.exists()
+    assert not destination.exists()
+    with closing(sqlite3.connect(memory.data_dir / "library.sqlite3")) as connection:
+        assert connection.execute("PRAGMA user_version").fetchone() == (12345,)
