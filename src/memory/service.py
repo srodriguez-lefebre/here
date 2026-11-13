@@ -586,15 +586,22 @@ class _PortableExportView:
 
                 raise ExportCancelled("Export cancelled")
 
-        with closing(_catalog_publication_lock(self._memory.data_dir)):
-            try:
-                suppression, rows = self._memory._portable_rows_locked(self._ids)
-            except NotFound as exc:
-                raise Conflict("Catalog changed during export; select the meetings again") from exc
-            if self._suppression != suppression or self.rows != rows:
-                raise Conflict("Catalog changed during export; select the meetings again")
-            temporary.replace_destination(before_rename=before_rename)
-            self._published = True
+        try:
+            with closing(_catalog_publication_lock(self._memory.data_dir)):
+                try:
+                    suppression, rows = self._memory._portable_rows_locked(self._ids)
+                except NotFound as exc:
+                    raise Conflict(
+                        "Catalog changed during export; select the meetings again"
+                    ) from exc
+                if self._suppression != suppression or self.rows != rows:
+                    raise Conflict("Catalog changed during export; select the meetings again")
+                temporary.replace_destination(before_rename=before_rename)
+                self._published = True
+        except OSError:
+            if not self._published:
+                raise
+            self.warnings += (str(_ExportCleanupPending()),)
 
 
 @contextmanager
@@ -926,7 +933,9 @@ class MemoryService:
         if len(set(ids)) != len(ids):
             raise InvalidInput("Select each meeting once for export")
         ids = tuple(sorted(ids))
-        with ExitStack() as owners:
+        owners = ExitStack()
+        view: _PortableExportView | None = None
+        try:
             with closing(_catalog_publication_lock(self.data_dir)):
                 suppression, rows = self._portable_rows_locked(ids)
                 if any(
@@ -938,10 +947,18 @@ class MemoryService:
                     self._retain_native_owners(identity, owners)
                     self._retain_catalog_owner(identity, owners)
             view = _PortableExportView(self, ids, suppression, rows)
-            try:
-                yield view
-            finally:
+            yield view
+        finally:
+            if view is not None:
                 view._active = False
+            try:
+                owners.close()
+            except OSError:
+                if view is None or not view._published:
+                    raise
+                warning = str(_ExportCleanupPending())
+                if warning not in view.warnings:
+                    view.warnings += (warning,)
 
     def _register_export(self, ids: tuple[str, ...], temporary: WindowsExportSibling) -> Path:
         match = _EXPORT_SIBLING_NAME.fullmatch(temporary.path.name)

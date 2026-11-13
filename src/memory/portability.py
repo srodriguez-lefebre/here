@@ -485,11 +485,11 @@ class PortabilityService:
                         os.fsync(stream.fileno())
                         archive_bytes = stream.tell()
                 view.publish(temporary, cancelled=cancellation)
-            return ExportResult(
-                path=destination,
-                included_answer_ids=manifest.answer_ids,
-                omitted_answer_ids=manifest.omitted,
-                payload_bytes=payload_bytes,
-                archive_bytes=archive_bytes,
-                warnings=view.warnings,
-            )
+        return ExportResult(
+            path=destination,
+            included_answer_ids=manifest.answer_ids,
+            omitted_answer_ids=manifest.omitted,
+            payload_bytes=payload_bytes,
+            archive_bytes=archive_bytes,
+            warnings=view.warnings,
+        )
