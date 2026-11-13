@@ -18,6 +18,7 @@ from here.application import (
     AudioLevel,
     EventKind,
     EventListener,
+    HereApplicationController,
     SourceMode,
     StartRequest,
     Unsubscribe,
@@ -37,6 +38,7 @@ from here.memory.models import (
     SearchQuery,
 )
 from here.memory.search import SearchService
+from here.memory.service import MemoryService
 
 
 class _MemoryBackend(Protocol):
@@ -133,7 +135,13 @@ class ApplicationUiAdapter:
         self._controller = controller
         self._output_dir = output_dir
         self._diagnostics = diagnostics_service or AudioDiagnosticsService()
-        self._recovery = recovery_service or RecoveryService(output_dir)
+        if recovery_service is None:
+            recovery_memory = memory_service
+            if recovery_memory is None and isinstance(controller, HereApplicationController):
+                recovery_memory = controller.memory_service
+            catalog = recovery_memory if isinstance(recovery_memory, MemoryService) else None
+            recovery_service = RecoveryService(output_dir, memory_service=catalog)
+        self._recovery = recovery_service
         self._memory = memory_service
         self._search = search_service
 

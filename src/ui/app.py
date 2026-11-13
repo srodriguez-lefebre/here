@@ -5,8 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import cast
 
-from here.application import ApplicationController, HereApplicationController
-from here.application.recovery import RecoveryService
+from here.application import ApplicationController
 from here.memory.database import LibraryError
 from here.memory.service import MemoryService
 from here.ui.bridge import ApplicationEventBridge, BackgroundJobs, _DeleteAcknowledgement
@@ -188,12 +187,9 @@ def create_desktop(
 ) -> HereDesktop:
     """Compose a real application controller with the visual adapter."""
 
-    recovery = None
-    if isinstance(controller, HereApplicationController):
-        recovery = RecoveryService(output_dir, memory_service=controller.memory_service)
     return HereDesktop(
         application,
-        ApplicationUiAdapter(controller, output_dir, recovery_service=recovery),
+        ApplicationUiAdapter(controller, output_dir),
         settings=settings,
     )
 
