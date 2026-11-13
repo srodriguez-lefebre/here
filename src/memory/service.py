@@ -8,12 +8,12 @@ import os
 import re
 import shutil
 import sqlite3
-from contextlib import ExitStack, contextmanager
+from contextlib import ExitStack, closing, contextmanager
 from contextvars import ContextVar
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path, PureWindowsPath
-from typing import Any, Callable, Iterable, Iterator
+from typing import Any, BinaryIO, Callable, Iterable, Iterator
 from uuid import UUID, uuid4
 
 from here.memory.artifacts import (
@@ -32,6 +32,7 @@ from here.memory.artifacts import (
 )
 from here.memory.database import (
     Busy,
+    IntegrityFailure,
     LibraryConnection,
     LibraryError,
     migrate,
@@ -44,7 +45,6 @@ from here.memory.models import (
     IngestSource,
     Meeting,
     MeetingDetail,
-    MeetingParticipant,
     MeetingPatch,
     MeetingStatus,
     Participant,
@@ -52,11 +52,18 @@ from here.memory.models import (
     ReindexReport,
     RevisionAudioAsset,
     Segment,
-    SpeakerAssignment,
     SuppressionSnapshot,
     TranscriptRevision,
 )
-from here.memory.repository import MemoryRepository
+from here.memory.repository import MemoryRepository, _PortableExportRows
+from here.output.export_binding import (
+    ExportBindingError,
+    ExportIdentity,
+    WindowsExportSibling,
+    open_export_sibling,
+    recover_export_sibling,
+    validate_export_identity,
+)
 from here.output.metadata import SessionMetadata
 from here.output.ownership import FileLease, LeaseBusy
 from here.output.paths import UnsafeSessionPath, session_artifact_path, validate_session_directory
@@ -115,6 +122,11 @@ class OwnershipBusy(Busy):
 class _DeleteScopeUnavailable(LibraryError):
     def __init__(self) -> None:
         super().__init__("Private staging retained; pending deletion scope cannot be verified")
+
+
+class _ExportCleanupPending(LibraryError):
+    def __init__(self) -> None:
+        super().__init__("Export temporary cleanup pending local recovery")
 
 
 def _is_uuid(value: object) -> bool:
@@ -225,6 +237,85 @@ class _DeletionRecord:
             ],
             "phase": self.phase,
         }
+
+
+_EXPORT_SIBLING_NAME = re.compile(r"\.here-export-([0-9a-f]{32})\.partial")
+_EXPORT_REGISTRY_FIELDS = frozenset(
+    {"schema_version", "operation_id", "meeting_ids", "sibling", "parent_identity", "file_identity"}
+)
+
+
+@dataclass(frozen=True, slots=True)
+class _ExportRegistration:
+    operation_id: str
+    meeting_ids: tuple[str, ...]
+    sibling: Path
+    parent_identity: ExportIdentity
+    file_identity: ExportIdentity
+
+    def document(self) -> dict[str, object]:
+        return {
+            "schema_version": 1,
+            "operation_id": self.operation_id,
+            "meeting_ids": self.meeting_ids,
+            "sibling": str(self.sibling),
+            "parent_identity": self.parent_identity,
+            "file_identity": self.file_identity,
+        }
+
+    @classmethod
+    def read(cls, value: object, operation_id: str) -> _ExportRegistration:
+        if not isinstance(value, dict) or value.keys() != _EXPORT_REGISTRY_FIELDS:
+            raise ValueError("Invalid export registration fields")
+        ids = value["meeting_ids"]
+        sibling = value["sibling"]
+        if (
+            type(value["schema_version"]) is not int
+            or value["schema_version"] != 1
+            or not _is_uuid(operation_id)
+            or value["operation_id"] != operation_id
+            or not isinstance(ids, (list, tuple))
+            or not ids
+            or not all(_is_uuid(identity) for identity in ids)
+            or tuple(ids) != tuple(sorted(set(ids)))
+            or not isinstance(sibling, str)
+        ):
+            raise ValueError("Invalid export registration values")
+        path = Path(sibling)
+        match = _EXPORT_SIBLING_NAME.fullmatch(path.name)
+        if (
+            match is None
+            or str(UUID(hex=match[1])) != operation_id
+            or str(path) != sibling
+            or not path.is_absolute()
+            or ".." in path.parts
+        ):
+            raise ValueError("Invalid export temporary role")
+        parent = validate_export_identity(value["parent_identity"])
+        file = validate_export_identity(value["file_identity"])
+        if parent[:2] != file[:2] or parent[2] == file[2]:
+            raise ValueError("Export temporary and parent identities disagree")
+        return cls(operation_id, tuple(ids), path, parent, file)
+
+
+def _export_registrations(data_dir: Path) -> Iterator[tuple[Path, _ExportRegistration]]:
+    directory = managed_path(data_dir, ".exports", directory=True)
+    try:
+        entries = sorted(directory.iterdir(), key=lambda entry: entry.name)
+    except FileNotFoundError:
+        return
+    for entry in entries:
+        path = session_artifact_path(directory, entry.name)
+        if path.suffix == ".json" and _is_uuid(path.stem):
+            yield (
+                path,
+                _ExportRegistration.read(json.loads(path.read_text(encoding="utf-8")), path.stem),
+            )
+            continue
+        stage = re.fullmatch(r"\.([0-9a-f-]{36})\.json\.[A-Za-z0-9_-]{8}\.stage", path.name)
+        if stage is None or not _is_uuid(stage[1]):
+            raise ValueError("Unrecognized export registry entry retained")
+        # Interrupted registry writes were never sufficient to start streaming.
 
 
 class _CatalogRepository(MemoryRepository):
@@ -370,15 +461,13 @@ def _suppression_snapshot(
 
 
 @contextmanager
-def catalog_read_view(library: LibraryConnection) -> Iterator[SuppressionSnapshot]:
-    """Own only the bounded publication lease and a fresh caller's read transaction."""
+def _catalog_snapshot_locked(library: LibraryConnection) -> Iterator[SuppressionSnapshot]:
+    """Read one snapshot while the caller owns the catalog publication lease."""
     if library.connection.in_transaction:
         raise LibraryError("Catalog read view requires a fresh connection without a transaction")
-    lock: _FileLock | None = None
     owned_transaction = False
     try:
         try:
-            lock = _FileLock(managed_path(library.data_dir, ".memory.lock"))
             library.execute("BEGIN")
             owned_transaction = True
             records, _ = _deletion_registry(library.data_dir)
@@ -392,12 +481,119 @@ def catalog_read_view(library: LibraryConnection) -> Iterator[SuppressionSnapsho
         except sqlite3.Error as exc:
             raise storage_error(exc) from exc
     finally:
+        if owned_transaction:
+            library.connection.rollback()
+
+
+def _catalog_publication_lock(data_dir: Path) -> _FileLock:
+    try:
+        return _FileLock(managed_path(data_dir, ".memory.lock"))
+    except (OSError, ValueError) as exc:
+        raise LibraryError("Catalog read view unavailable") from exc
+
+
+@dataclass(slots=True)
+class _PortableExportView:
+    _memory: MemoryService
+    _ids: tuple[str, ...]
+    _suppression: SuppressionSnapshot
+    rows: _PortableExportRows
+    _active: bool = True
+    _temporary: WindowsExportSibling | None = None
+    _publish_attempted: bool = False
+    _published: bool = False
+
+    @contextmanager
+    def open_audio(self, asset: AudioAsset) -> Iterator[BinaryIO]:
+        if not self._active or not any(asset in item.audio_assets for item in self.rows.meetings):
+            raise InvalidInput("Audio is outside the selected export snapshot")
         try:
-            if owned_transaction:
-                library.connection.rollback()
+            path = managed_path(self._memory.data_dir, asset.relative_path)
+            revision_parent = self._memory.data_dir / "meetings" / asset.meeting_id / "revisions"
+            if (
+                asset.status != "available"
+                or path.parent.parent != revision_parent
+                or not _is_uuid(path.parent.name)
+                or path.suffix.lower() != ".wav"
+            ):
+                raise ValueError("Invalid managed export audio role")
+            plan = _delete_publication_plan(path.parent)
+            if plan["hashes"].get(path.name) != asset.sha256:
+                raise ValueError("Managed audio disagrees with its publication proof")
+            validate_artifact_roles(path.parent, (path.name,))
+            stream = path.open("rb")
+        except (OSError, ValueError, TypeError, KeyError) as exc:
+            raise IntegrityFailure("Selected audio is unavailable or invalid") from exc
+        with stream:
+            yield stream
+
+    @contextmanager
+    def _open_export_destination(self, destination: Path) -> Iterator[WindowsExportSibling]:
+        if not self._active or self._temporary is not None or self._publish_attempted:
+            raise InvalidInput("Export destination scope is unavailable")
+        if not destination.name.casefold().endswith(".here.zip"):
+            raise InvalidInput("Export destination must name a .here.zip archive")
+        destination = destination.absolute()
+        # Application-managed directories recognize a fixed set of owned roles.
+        # A user package must not become unknown material in those directories.
+        if destination.parent.is_relative_to(self._memory.data_dir):
+            raise InvalidInput("Choose a package destination outside the managed library")
+        registration: Path | None = None
+        cleanup_verified = False
+        try:
+            with ExitStack() as native_scope:
+                try:
+                    temporary = native_scope.enter_context(open_export_sibling(destination))
+                    self._temporary = temporary
+                    registration = self._memory._register_export(self._ids, temporary)
+                    yield temporary
+                finally:
+                    if self._temporary is not None and not self._published:
+                        try:
+                            self._temporary.remove()
+                        except ExportBindingError as exc:
+                            raise _ExportCleanupPending() from exc
+                        cleanup_verified = True
+                    self._temporary = None
+        except ExportBindingError as exc:
+            raise LibraryError("Could not open or publish the owned export temporary") from exc
         finally:
-            if lock is not None:
-                lock.close()
+            if registration is not None and (self._published or cleanup_verified):
+                self._memory._retire_export(registration)
+
+    def publish(self, temporary: WindowsExportSibling, *, cancelled: Callable[[], bool]) -> None:
+        if not self._active or temporary is not self._temporary or self._publish_attempted:
+            raise InvalidInput("Export publication requires its active temporary")
+        self._publish_attempted = True
+
+        def before_rename() -> None:
+            if cancelled():
+                from here.memory.portability import ExportCancelled
+
+                raise ExportCancelled("Export cancelled")
+
+        with closing(_catalog_publication_lock(self._memory.data_dir)):
+            try:
+                suppression, rows = self._memory._portable_rows_locked(self._ids)
+            except NotFound as exc:
+                raise Conflict("Catalog changed during export; select the meetings again") from exc
+            if self._suppression != suppression or self.rows != rows:
+                raise Conflict("Catalog changed during export; select the meetings again")
+            temporary.replace_destination(before_rename=before_rename)
+            self._published = True
+
+
+@contextmanager
+def catalog_read_view(library: LibraryConnection) -> Iterator[SuppressionSnapshot]:
+    """Own only the bounded publication lease and a fresh caller's read transaction."""
+    if library.connection.in_transaction:
+        raise LibraryError("Catalog read view requires a fresh connection without a transaction")
+    lock = _catalog_publication_lock(library.data_dir)
+    try:
+        with _catalog_snapshot_locked(library) as snapshot:
+            yield snapshot
+    finally:
+        lock.close()
 
 
 def _legacy_retry_parent(
@@ -686,6 +882,106 @@ class MemoryService:
         except (OSError, ValueError) as exc:
             raise LibraryError("Native ownership context could not be verified") from exc
 
+    def _retain_catalog_owner(self, identity: str, leases: ExitStack) -> None:
+        path = managed_path(self.data_dir, f".owners/{identity}.lock")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        leases.enter_context(closing(_FileLock(path, timeout=0)))
+
+    def _portable_rows_locked(
+        self, ids: tuple[str, ...]
+    ) -> tuple[SuppressionSnapshot, _PortableExportRows]:
+        with (
+            closing(open_library(self.data_dir)) as library,
+            _catalog_snapshot_locked(library) as suppression,
+        ):
+            if set(ids).intersection(suppression.suppressed_meeting_ids):
+                raise NotFound("Selected meeting does not exist")
+            rows = MemoryRepository(library).portable_export_rows(ids)
+            if tuple(item.meeting.id for item in rows.meetings) != ids or any(
+                item.meeting.status == MeetingStatus.DELETING for item in rows.meetings
+            ):
+                raise NotFound("Selected meeting does not exist")
+            return suppression, rows
+
+    @contextmanager
+    def _portable_export_view(self, ids: tuple[str, ...]) -> Iterator[_PortableExportView]:
+        if not ids:
+            raise InvalidInput("Select at least one meeting for export")
+        for identity in ids:
+            self._identity(identity)
+        if len(set(ids)) != len(ids):
+            raise InvalidInput("Select each meeting once for export")
+        ids = tuple(sorted(ids))
+        with ExitStack() as owners:
+            with closing(_catalog_publication_lock(self.data_dir)):
+                suppression, rows = self._portable_rows_locked(ids)
+                if any(
+                    item.meeting.status in {MeetingStatus.RECORDING, MeetingStatus.PROCESSING}
+                    for item in rows.meetings
+                ):
+                    raise Busy("Capture or processing must finish before export")
+                for identity in ids:
+                    self._retain_native_owners(identity, owners)
+                    self._retain_catalog_owner(identity, owners)
+            view = _PortableExportView(self, ids, suppression, rows)
+            try:
+                yield view
+            finally:
+                view._active = False
+
+    def _register_export(self, ids: tuple[str, ...], temporary: WindowsExportSibling) -> Path:
+        match = _EXPORT_SIBLING_NAME.fullmatch(temporary.path.name)
+        if match is None:
+            raise InvalidInput("Export sibling has an invalid operation role")
+        operation_id = str(UUID(hex=match[1]))
+        entry = _ExportRegistration(
+            operation_id, ids, temporary.path, temporary.parent_identity, temporary.file_identity
+        )
+        try:
+            with closing(_catalog_publication_lock(self.data_dir)):
+                directory = managed_path(self.data_dir, ".exports", directory=True)
+                directory.mkdir(exist_ok=True)
+                path = session_artifact_path(directory, f"{operation_id}.json")
+                if path.exists():
+                    raise Conflict("Export registration already exists")
+                write_durable_json(path, entry.document())
+                return path
+        except (OSError, ValueError) as exc:
+            raise LibraryError("Export temporary registration could not be committed") from exc
+
+    def _retire_export(self, registration: Path) -> None:
+        try:
+            with closing(_catalog_publication_lock(self.data_dir)):
+                session_artifact_path(registration.parent, registration.name).unlink()
+        except (OSError, ValueError, LibraryError) as exc:
+            raise _ExportCleanupPending() from exc
+
+    def _recover_exports_locked(self, *, deleting: str | None = None) -> bool:
+        """Recover a stale sibling only after claiming its selected meeting leases."""
+        pending = False
+        try:
+            registrations = tuple(_export_registrations(self.data_dir))
+            for path, entry in registrations:
+                if deleting is not None and deleting not in entry.meeting_ids:
+                    continue
+                try:
+                    with ExitStack() as owners:
+                        for identity in entry.meeting_ids:
+                            if identity != deleting:
+                                self._retain_native_owners(identity, owners)
+                                self._retain_catalog_owner(identity, owners)
+                        recover_export_sibling(
+                            entry.sibling, entry.parent_identity, entry.file_identity
+                        )
+                        session_artifact_path(path.parent, path.name).unlink()
+                except (OSError, ValueError, LibraryError):
+                    pending = True
+        except (OSError, ValueError, LibraryError):
+            pending = True
+        if pending and deleting is not None:
+            raise _ExportCleanupPending()
+        return pending
+
     @contextmanager
     def _operation(self) -> Iterator[MemoryRepository]:
         validate_session_directory(self.data_dir)
@@ -895,10 +1191,7 @@ class MemoryService:
         self, repo: MemoryRepository, identity: str, leases: ExitStack, *, accepted: bool = False
     ) -> None:
         self._retain_native_owners(identity, leases)
-        path = managed_path(self.data_dir, f".owners/{identity}.lock")
-        path.parent.mkdir(parents=True, exist_ok=True)
-        lease = _FileLock(path, timeout=0)
-        leases.callback(lease.close)
+        self._retain_catalog_owner(identity, leases)
         meeting = repo.get_meeting(identity)
         if (
             not accepted
@@ -1078,6 +1371,7 @@ class MemoryService:
         self, repo: MemoryRepository, record: _DeletionRecord, operation: PendingOperation
     ) -> DeletionResult:
         warnings = self._prepare_delete(repo, record, operation)
+        self._recover_exports_locked(deleting=record.meeting_id)
         self._recover_delete_staging(repo, record)
         self._purge_delete_stages(repo, record.meeting_id)
         self._purge_delete_files(operation, record)
@@ -1127,7 +1421,7 @@ class MemoryService:
         warnings: tuple[str, ...] = (
             "Deletion pending local recovery" if accepted else "Deletion could not start",
         )
-        if isinstance(error, _DeleteScopeUnavailable):
+        if isinstance(error, (_DeleteScopeUnavailable, _ExportCleanupPending)):
             warnings += (str(error),)
         return DeletionResult(
             "pending" if accepted else "rejected",
@@ -2584,6 +2878,8 @@ class MemoryService:
             records, stages = _deletion_registry(self.data_dir)
             if stages:
                 warnings.append("Uncommitted deletion metadata stages retained")
+            if self._recover_exports_locked():
+                warnings.append(str(_ExportCleanupPending()))
             # Restore suppression/origins BEFORE the one existing receipt rebuild.
             # A record never grants arbitrary-file authority; A proof still does.
             for record in records:
@@ -2602,7 +2898,7 @@ class MemoryService:
                         completed.append(RecoveryOutcome(record.meeting_id, "Deletion completed"))
                 except Exception as exc:
                     warnings.append("Deletion remains pending local recovery")
-                    if isinstance(exc, _DeleteScopeUnavailable):
+                    if isinstance(exc, (_DeleteScopeUnavailable, _ExportCleanupPending)):
                         warnings.append(str(exc))
                     skipped.append(RecoveryOutcome(record.meeting_id, "Deletion cleanup pending"))
             suppressed = set(_suppression_snapshot(repo.library, records).suppressed_meeting_ids)
@@ -2983,53 +3279,7 @@ class MemoryService:
         repo: MemoryRepository, meeting_id: str, warnings: tuple[object, ...] = ()
     ) -> MeetingDetail:
         meeting = MemoryService._meeting(repo, meeting_id)
-        revisions = tuple(
-            TranscriptRevision(**dict(row))
-            for row in repo.library.execute(
-                "SELECT * FROM transcript_revisions WHERE meeting_id=? ORDER BY revision_number",
-                (meeting_id,),
-            )
-        )
-        return MeetingDetail(
-            meeting,
-            tuple(
-                AudioAsset(**dict(row))
-                for row in repo.library.execute(
-                    "SELECT * FROM audio_assets WHERE meeting_id=? ORDER BY id", (meeting_id,)
-                )
-            ),
-            revisions,
-            tuple(segment for revision in revisions for segment in repo.get_segments(revision.id)),
-            tuple(
-                link
-                for revision in revisions
-                for link in repo.get_revision_audio_assets(revision.id)
-            ),
-            warnings,
-            tuple(
-                Participant(**dict(row))
-                for row in repo.library.execute(
-                    "SELECT p.* FROM participants p JOIN meeting_participants l "
-                    "ON p.id=l.participant_id WHERE l.meeting_id=? ORDER BY p.id",
-                    (meeting_id,),
-                )
-            ),
-            tuple(
-                MeetingParticipant(**dict(row))
-                for row in repo.library.execute(
-                    "SELECT * FROM meeting_participants WHERE meeting_id=? ORDER BY participant_id",
-                    (meeting_id,),
-                )
-            ),
-            tuple(
-                SpeakerAssignment(**dict(row))
-                for row in repo.library.execute(
-                    "SELECT * FROM speaker_assignments WHERE meeting_id=? "
-                    "ORDER BY revision_id,speaker_key",
-                    (meeting_id,),
-                )
-            ),
-        )
+        return repo.meeting_detail(meeting, warnings)
 
     @contextmanager
     def _read_operation(self) -> Iterator[MemoryRepository]:
