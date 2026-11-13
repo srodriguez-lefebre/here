@@ -1,10 +1,9 @@
 # M3 playback, evidence navigation and CLI implementation plan
 
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
-> review, then independent agent review. Root owns leases/integration/merges after
-> received/responded current-head Copilot, exact-head Windows CI and independent
-> review (rulings 16/17/20/35). Steps use checkbox syntax.
-> **Status: preparation only, not in execution.** Root may dispatch B on the
+> review, then independent agent review. Root owns leases, integration and merges
+> under CLAUDE §7 and rulings 16/20/35/64. Steps use checkbox syntax.
+> **Status: preparation only, held before dispatch.** Root may dispatch B on the
 > frozen/reviewed M3 A branch with its PR open after accepted interface handoff
 > and any necessary contract-docs PR merge; rebase B after A merges (CLAUDE §11).
 
@@ -25,7 +24,7 @@ its plugins).
 - Titles, dates, paths and times for navigation come only from the database through
   the resolver; never from free text or a search snippet.
 - A segment without timing never seeks; no control implies precision that does not exist.
-- Playback starts only from a user click; selection never plays.
+- Playback starts only from a user click. Selection only opens the evidence.
 - Controls are disabled while the snapshot reports preparing, recording or paused.
 - The CLI implements no search or persistence; it calls the services.
 - Tests use synthetic fixtures, generated WAVs and temporary roots; the real-marker
@@ -34,33 +33,25 @@ its plugins).
 
 ## Dependencies and exclusive scope before execution
 
-Preparation foundation: M2 A merge
-`53712c5beedafc2d40e2abf10c13362a1c3c9f78`; lifecycle/search contract PR #22 merge
-`73d3cb384bd422de6899d8c7b761f3f3159ea3f1`. The latter accepts planning contracts,
-not M3 A or M2 B implementation. Actual frozen/reviewed M3 A code/DTO handoff
-and verified PR head remain **pending**. Under CLAUDE §11, root may dispatch M3 B
-on that branch while M3 A's PR is open, once the actual interfaces are accepted
-and any necessary contract-documentation PR is merged. M3 A's eventual merge SHA
-remains **pending** for rebase and final integration/provenance; it is not a
-prerequisite for preparation, the formal contract PR or this permitted root GO.
-R35 leaves root sole owner of leases, integration and merges. Rebase B after A
-merges; this preparation starts no implementation or new chat/front.
-
-Use the accepted root M3_SEARCH/M2_LIFECYCLE documents at `73d3cb3`, not older
-prepared drafts. This preparation maintenance PR may publish with handoffs pending.
-Root supplies the actual accepted M3 A source, reviewed PR head and exact signatures
-before dispatch/execution, with further contract docs accepted first if that handoff
-changes a contract; future API names below are planned,
-not proof that those methods/types exist in M2 A. Fakes do not close integration.
+M2 B merged in PR #25 at `b4b3d1beb9b05e33ae03ab8381e805aa6a23ffc8`, with
+Windows CI `43461764790` and package workflow `43461764783` on reviewed head
+`55d68e2`. The interface comparison pins integrated M3 A candidate
+`31488693152067ae58eeacec08f0b01f47085fe4` and the reviewed deletion ACK
+`d8fb75b37691cc9c4e57fa84bb545190b3b9304b`. This is a static comparison.
+The earlier warm-search p95 of 879.48 ms fails the 500 ms gate. M3 A's PR is
+unopened and its final reviewed head and gates remain pending. Root holds B until
+that head is reviewed, the PR opens, the interfaces are accepted and any required
+contract documentation is merged. Under CLAUDE §11, B can then start on A's
+branch and rebase after A merges.
 
 | Handoff / shared scope | Required owner or dependency |
 |---|---|
-| Query/page/Citation/CitationTarget/error definitions | Accepted M3 A DTOs, structured reasons and frozen/reviewed PR head; eventual merge SHA for rebase/final provenance, not initial GO. |
-| Library/detail/request lifecycle | Accepted M3 A UI hooks/stale-callback handling; playback extends them under exclusive file leases. |
-| Revision/audio evidence | Merged A schema2 links and receipt3/marker3 semantics, nullable dates and original timing. |
-| Title/participant/assignment CLI actions | Real accepted M2 B4 APIs and version/error contract. |
-| Deletion/reindex/R42 read guard | Real accepted B5 adapter and playback/delete handoff; no duplicate registry parser/index writer. |
-| memory service/models/repository/database, CLI, application adapters | Root serializes writes with active M2 B/M3 A; no access to their owned worktrees. |
+| Query/page/Citation/CitationTarget/error definitions | Candidate DTOs and structured reasons in the SPEC. Confirm them on the final reviewed A PR head and record the merge SHA at rebase. |
+| Library/detail/request lifecycle | Candidate generation and worker hooks. Playback extends the reviewed ACK in the existing UI lifecycle. |
+| Revision/audio evidence | Merged schema 2 links and receipt 3/marker 3 semantics, nullable dates and original timing. |
+| Title/participant/assignment CLI actions | Merged B4 version and error contracts. |
+| Deletion/reindex/R42 read guard | Merged B5, candidate R53 facade and R52 ACK. Player release on deletion is Task 3 work. |
+| Memory service/models/repository/search, CLI, UI and application adapters | Root serializes all shared writes with M3 A and M5 B. Work from separate worktrees and keep the M3 A candidate frozen during its verification. |
 | Shared UI/tests, packaging, dependencies/version/global docs | Root grants exact file leases and serializes integration/metadata and milestone closure. |
 
 Heavy tests/builds/mypy, benchmark/deadline suites and real seek observations require
@@ -76,15 +67,14 @@ Carry these inherited requirements into the existing tasks below:
   span/membership/bounds validation; do not use byte offsets or trust UI-provided
   target path, status or text. Resolve those values from guarded memory without
   inventing timestamps or replacing the selected revision's audio links.
-- R50 approves `memory.service.catalog_read_view(library)`, with actual B5
-  implementation/handoff still pending: caller opens/closes a fresh connection
-  without an active transaction; B takes the lock before BEGIN and owns the single
+- Merged B5 supplies R50's `memory.service.catalog_read_view(library)`. The caller
+  opens and closes a fresh connection without an active transaction. The guard
+  takes the lock before BEGIN and owns the single
   read transaction through generation/fetch. Consume SuppressionSnapshot's sorted
   `suppressed_meeting_ids` and `fingerprint`, including exact origin/fingerprint
   aliases resolved in that DB view, before exposure/keyset/LIMIT. Pending and
   complete suppress; invalid/inaccessible state fails closed with LibraryError.
-  No second parser, nested lock/transaction or accepted deletion/reindex UI hook
-  is implied by the approved contract.
+  Use the same parser and transaction boundary.
 - R47 empty normalized search returns `MeetingPage` with listing filters, limit
   and cursor intact; nonempty search returns `SearchPage`. CLI delegates and
   formats the real page type, never manufacturing a SearchHit or segment. Bind
@@ -97,7 +87,7 @@ Carry these inherited requirements into the existing tasks below:
 - Keep absent capture dates/bounds unknown, measured zero valid and recording offsets
   applied once. No seek inferred from text, chunk order, pauses or processing dates.
   Nonretryable catalog warnings grant no media/provider/mutation authority.
-- Consume accepted B5 R42 suppression before target/detail/path and CLI exposure,
+- Consume merged B5 R42 suppression before target/detail/path and CLI exposure,
   including old selections/receipts after catalog loss. Uncertain guards fail closed;
   actual ownership/path guards stay intact. Add no alternate suppression parser.
 - Pass through R39 keysets and R41 complete/partial literal/fallback/degraded behavior
@@ -108,34 +98,35 @@ Carry these inherited requirements into the existing tasks below:
 
 ## R51/R52 bindings within the existing tasks
 
-These approved contracts remain pending verified B5/native implementation and final
-handoff signatures; reconcile them through the normal docs PR before M3 B source.
+Use merged B5 and the reviewed ACK carried by the M3 A candidate.
 - Bind existing delete/error tests to phase-aware DeletionResult: after a valid
   durable barrier, including a prior attempt, ordinary failure is pending with
   canonical UUID, fixed reason and io/exit 4, never rejected/NotFound for absent SQL.
   Complete/exit 0 requires verified purge plus durable complete. Pre-acceptance typed
   errors retain their mappings; consume structured fields, not exception prose.
-- The future before_delete adapter finishes Qt-thread stop/unload/load invalidation
-  and waits for bounded ACK from the worker without blocking Qt or touching player
-  off-thread. Invoke without SQL transaction/catalog locks the GUI may require.
+- Extend `_DeleteAcknowledgement` to carry the canonical `meeting_id` from
+  `before_delete` alongside the tracked request through its queued Qt ticket.
+  `LibraryView._pause_for_delete(request, meeting_id)` stops/unloads matching
+  current media and invalidates matching pending loads/seeks before ACK. Leave
+  other meetings' playback intact. Broad list/detail invalidation may remain.
+  Keep the 1 s wait, settled-worker refresh and close cancellation. B5 invokes
+  the callback without SQL transaction/catalog locks the GUI may require.
   After ACK/failure reread phase, reacquire/revalidate identity, ownership and
   inventory; per R52/f09c0fc retain applicable native and canonical leases from
   before durable barrier through cleanup. Pre-ACK preflight is not acceptance,
   and ownership appearing during ACK must be caught before a new barrier.
-  Choose the concrete timeout during adapter implementation, not in this draft.
 - Never invoke private _derived_row_purgers as a resolver. Trusted SQL purgers run
   on the same final cleanup connection/transaction before relationships/core/FTS
   removal, with no own transaction/commit/I/O/provider; failure rolls back together.
-- Future composition/CLI/retry use the same injected MemoryService and explicit
+- Composition/CLI/retry use the same injected MemoryService and explicit
   configured/StartRequest root; register request output_dir before worker launch.
   CLI destructive operations use existing settings_operation/get_settings root.
   No second default service, core settings/.env reader, durable root registry or
   origin-derived probing. Bare destructive context fails closed with LibraryError/
   io4; a valid barrier remains pending/hidden, while reads/non-destructive repair
-  continue. Validate declared roots/lock roles again after ACK. Actual B5/native
-  cleanup ordering and lease lifetime remain a handoff dependency, not a UI rewrite.
+  continue. Merged B5 revalidates declared roots and lock roles after ACK.
 
-R53 facade binding is now concrete at frozen/reviewed `d8ec92b`:
+The candidate carries the reviewed R53 facade:
 `SearchService(connection_factory, *, reindexer=None).reindex()` calls the same
 injected MemoryService callback once, returns its identical R51 report and propagates
 canonical errors unchanged. Constructor performs no maintenance; reindex owns no
@@ -143,8 +134,9 @@ factory/connection/snapshot/lock/probe/migration and does not retry or recount.
 Missing callback fails only reindex with existing LibraryError, preserving reads.
 Consume ApplicationUiAdapter's explicit query override and separate optional typed
 maintenance capability; do not expand required read protocols or create another
-backend, indexer, MemoryService or root. Existing B5/R52/UI and performance/group
-handoff gates remain open; the facade checkpoint does not approve them.
+backend, indexer, MemoryService or root. Reindex delegates to merged B5 and does
+not call the deletion ACK. Verify unchanged playback and identical report/error
+propagation with the real delegate.
 
 ## Review focus
 
@@ -153,17 +145,26 @@ handoff gates remain open; the facade checkpoint does not approve them.
 - A citation whose revision is historical or whose audio is missing.
 - Playback enabled while a recording is active.
 - Any path that triggers play without a click.
+- Tracked-worker deletion ACK carries the affected UUID and returns only after
+  matching media is released on Qt. A late load or seek cannot revive it. Use a
+  negative control with a different UUID playing and verify its source and play
+  state are preserved. Timeout or teardown remains phase-aware and replacement
+  reads wait for worker settlement. Reindex leaves current playback intact.
 - Exit codes and JSON shape drifting between commands.
 - Frozen bundle missing QtMultimedia plugins (coordinate with `packaging/windows.spec`).
 
 ### Task 3: Playback adapter and evidence navigation
 
-**Files:** `src/ui/playback.py` (new), `src/ui/library.py` (group A),
+**Files:** `src/ui/playback.py` (new), `src/ui/library.py` (shared with A),
 `src/ui/main_window.py`, `src/ui/contract.py`, `src/ui/fake_controller.py`,
-`src/memory/service.py` (M2, add `resolve_citation`), `src/memory/models.py`
-(`Citation`, `CitationTarget` from group A), `packaging/windows.spec` (QtMultimedia
+`src/memory/service.py` (shared with M5 B, add `resolve_citation`),
+`src/memory/models.py` (consume existing `Citation` and `CitationTarget`),
+`packaging/windows.spec` (QtMultimedia
 plugins); tests in `tests/test_memory_citation.py`, `tests/test_ui_playback.py`,
-`tests/test_ui_library.py`, `tests/test_distribution_smoke.py` (plugin presence).
+`tests/test_ui_library.py`, `tests/test_ui_delete_ack.py`,
+`tests/test_distribution_smoke.py` (plugin presence). The ACK composition in
+`src/ui/app.py` and ticket bridge in `src/ui/bridge.py` are existing interfaces.
+Root grants their leases if wiring needs edits there.
 
 **Planned B interfaces (bind to actual accepted A DTOs before execution):**
 `MemoryService.resolve_citation(citation: Citation) -> CitationTarget`;
@@ -171,8 +172,10 @@ plugins); tests in `tests/test_memory_citation.py`, `tests/test_ui_playback.py`,
 `seek_ms(int)`, `set_volume(float)`, `set_rate(float)`, `stop_and_unload()`,
 signals `position_changed(int)`, `duration_changed(int)`, `state_changed(str)`,
 `error(str)`; planned `VisualController.resolve_citation` and
-`LibraryView.open_target(target)`. Root reconciles these intended hooks against
-actual accepted UI/types; they are not methods verified in merged M2 A.
+`LibraryView.open_target(target)`. Only the B resolver can supply playable audio.
+The A segment signal provides reference IDs, and the A worker generations gate
+the resolver response. A stale load or seek for the affected meeting must stay
+invalidated after the worker ACK.
 
 Interpret the existing resolver/navigation tests with exact revision audio links,
 nullable timing/dates, R42 suppression and shared path guards. Fake media verifies
@@ -203,21 +206,34 @@ observation remain separate requirements.
 
 **Files:** `src/cli.py` (new `meetings_app` Typer group), `src/entrypoints.py` (no
 change expected; confirm), `src/ui/playback.py` (minimal standalone window for
-`play`); tests in `tests/test_cli_meetings.py`, `tests/test_cli.py`.
+`play`), `src/memory/search.py` and `src/memory/models.py` (the `--meeting`
+scope after the M3 A freeze and root's lease); tests in
+`tests/test_cli_meetings.py`, `tests/test_cli.py` and
+`tests/test_memory_search.py` for search scope. Application retry adapters in
+`src/application/controller.py`, `src/application/processing.py` and
+`src/application/recovery.py` are consumed as existing interfaces. Any needed
+source change for the structured retry outcome requires root's explicit lease.
 
 **Interfaces:** Typer commands `list`, `show`, `search`, `rename`, `participant`,
 `retry`, `play`, `import-session`, `reindex`, `delete` under `here meetings`; a shared
 `emit(result, json: bool)` formatter; an `ExitCode` enum `0/2/3/4/5` mapped from the
 typed service errors (`InvalidInput`→2, `NotFound`/`Conflict`→3,
-`IntegrityFailure`/I/O→4, `ProviderUnavailable`→5). Actual imports/result/JSON shapes
-come from the accepted A/B handoff, not new classes assumed present in M2 A.
-The only provider route is the accepted explicit application retry adapter.
+`IntegrityFailure`/`Busy`/I/O→4). Exit 5 is reserved for a structured provider
+failure from explicit retry. Resolve that binding before implementation because
+the candidate has no canonical `ProviderUnavailable`. Reuse the merged
+`memory` service mappings and preserve its JSON shape. For `meetings`, carry
+the canonical `InvalidInput.reason` when reporting search errors.
 
 The existing pass-through/error tests consume R39/R41/R45 without another query
 implementation: preserve opaque cursor/filter/backend/generation values, map
 structured corpus_changed to InvalidInput/exit 2, keep ordinary listing insert
-stability and retain unknown dates as null. Real title/participant/delete/reindex
-integration waits for accepted B4/B5 services/guard; fakes do not satisfy it.
+stability and retain unknown dates as null. Cover `--meeting` across all routes,
+including an empty search, a page where other meetings would fill LIMIT and a
+cursor reused with a different scope. Exercise real B4/B5 adapters. Retry tests
+bind a guarded meeting ID to one eligible configured recovery candidate, exercise
+absent, ambiguous or suppressed candidates and confirm lookup cannot replay an
+unrelated session. Distinguish provider failure from catalog, I/O and ownership
+outcomes at the application boundary.
 
 - [ ] Write failing tests for each command's success path with a temporary library:
   JSON shape, full IDs, ISO UTC dates, ordering and filters passed through to the
@@ -242,10 +258,11 @@ integration waits for accepted B4/B5 services/guard; fakes do not satisfy it.
   Root reconciles actual embedding paths at handoff (workflow is under
   `.github/workflows/`) and serializes the bump only after all M3 criteria and
   real dependencies pass; this preparation changes no version or dependency.
-- Open one PR with the two task commits, self-review and independent agent review in
-  the description. Root integrates accepted dependencies, receives/responds to
-  Copilot on the current head, verifies exact-head Windows CI and performs the
-  guarded merge under rulings 16/17/20. Real-audio certification remains required.
+- Open one PR against `main` with the two task commits, evidence, self-review and
+  independent agent review in the description. Ruling 64 omits the Copilot step.
+  Root verifies Windows CI on the final head, creates the merge commit with
+  `--admin --match-head-commit` and records it in `DELIVERY.md` under CLAUDE §7.
+  Real-audio certification remains required.
   Then reconcile the already-prepared `docs/MILESTONE_4_PLAN.md` and first M4
   SPEC/PLAN against actual merged M3 contracts under ruling 14; do not restart
   existing preparation or create another front without root dispatch.
