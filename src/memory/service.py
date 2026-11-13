@@ -1124,7 +1124,9 @@ class MemoryService:
     @staticmethod
     def _delete_failure(identity: str, error: Exception, *, accepted: bool) -> DeletionResult:
         reason = "busy" if isinstance(error, Busy) else "purge_failed" if accepted else "io"
-        warnings = ("Deletion pending local recovery" if accepted else "Deletion could not start",)
+        warnings: tuple[str, ...] = (
+            "Deletion pending local recovery" if accepted else "Deletion could not start",
+        )
         if isinstance(error, _DeleteScopeUnavailable):
             warnings += (str(error),)
         return DeletionResult(
@@ -1325,7 +1327,9 @@ class MemoryService:
             return
 
         origin = normalized_origin(directory)
-        deleted = {digest for record in records for path, digest in record.origins if path == origin}
+        deleted = {
+            digest for record in records for path, digest in record.origins if path == origin
+        }
         fingerprint = _sealed_origin_fingerprint(directory, metadata, intent)
         if fingerprint in deleted:
             raise NotFound("Origin has been deleted")
@@ -1363,9 +1367,7 @@ class MemoryService:
                 raise Conflict("Revision conflict: stale retry")
 
     @staticmethod
-    def _has_audio_reservation(
-        repo: MemoryRepository, origin: str, identity: str | None
-    ) -> bool:
+    def _has_audio_reservation(repo: MemoryRepository, origin: str, identity: str | None) -> bool:
         if not _is_uuid(identity):
             return False
         rows = repo.library.execute(

@@ -25,7 +25,6 @@ from here.output.session_writer import ERRORS_FILE, read_session_metadata
 from here.recording.journal import CaptureJournal
 from here.recording.models import CaptureFailed
 
-
 _INVALID_PENDING_MARKER = "Invalid pending catalog marker; local recovery required"
 _PENDING_PUBLICATION = "Library publication pending local recovery"
 
@@ -267,9 +266,7 @@ class RecoveryService:
                     if should_replay:
                         # Retain the upgraded leases while the writer revalidates authority.
                         claim()
-                        replay = self._replay_pending_publication(
-                            directory, source_id, owner
-                        )
+                        replay = self._replay_pending_publication(directory, source_id, owner)
                         if isinstance(replay, Busy):
                             publication_busy = replay
                         else:
@@ -371,9 +368,10 @@ class RecoveryService:
     def materialize(self, candidate: RecoveryCandidate) -> Path:
         if candidate.session_dir.absolute().parent != self.root:
             raise UnsafeSessionPath("Recovery destination is outside sessions root")
-        with self._ownership(
-            candidate.capture_id, directory=candidate.session_dir
-        ) as (owner, claim):
+        with self._ownership(candidate.capture_id, directory=candidate.session_dir) as (
+            owner,
+            claim,
+        ):
             with self._inspection(candidate.session_dir, candidate.capture_id, owner):
                 missing_metadata = read_session_metadata(candidate.session_dir) is None
                 if missing_metadata:

@@ -21,12 +21,18 @@ from test_memory_delete import (
     _hidden,
     _install_fault,
     _lose_database,
+)
+from test_memory_delete import (
     catalog as catalog,
 )
 from test_memory_delete_publication_stage import (
     _files,
     _rows,
+)
+from test_memory_delete_publication_stage import (
     interrupted_retry as interrupted_retry,
+)
+from test_memory_delete_publication_stage import (
     synthetic_environment as synthetic_environment,
 )
 
@@ -46,7 +52,8 @@ def _private_unknown(root):
 
 
 def test_sql_proven_foreign_stage_survives_other_meeting_delete_recovery(
-    interrupted_retry, monkeypatch,
+    interrupted_retry,
+    monkeypatch,
 ):
     case = interrupted_retry
     memory = case.memory()
@@ -59,7 +66,8 @@ def test_sql_proven_foreign_stage_survives_other_meeting_delete_recovery(
     assert plan["hashes"] == json.loads(case.operation["payload_json"])["hashes"]
     columns = "id,kind,phase,meeting_id,staging_path,destination_path,payload_json"
     foreign_before = _rows(
-        case.root, f"SELECT {columns} FROM pending_operations WHERE id=?",
+        case.root,
+        f"SELECT {columns} FROM pending_operations WHERE id=?",
         (case.operation["id"],),
     )
     assert len(foreign_before) == 1 and foreign_before[0][3] == MEETING_ID
@@ -76,30 +84,42 @@ def test_sql_proven_foreign_stage_survives_other_meeting_delete_recovery(
             pending = memory.delete_meeting(OTHER_MEETING_ID)
         assert hits and set(hits) == {"before-complete"}
         assert (pending.status, pending.meeting_id, pending.error_category) == (
-            "pending", OTHER_MEETING_ID, "io",
+            "pending",
+            OTHER_MEETING_ID,
+            "io",
         )
         assert _phase(case.root, OTHER_MEETING_ID) == "pending"
         assert _rows(case.root, "SELECT id FROM meetings WHERE id=?", (OTHER_MEETING_ID,)) == []
         _hidden(memory, OTHER_MEETING_ID)
         assert _files(case.stage) == case.stage_files
-        assert _rows(
-            case.root, f"SELECT {columns} FROM pending_operations WHERE id=?",
-            (case.operation["id"],),
-        ) == foreign_before
+        assert (
+            _rows(
+                case.root,
+                f"SELECT {columns} FROM pending_operations WHERE id=?",
+                (case.operation["id"],),
+            )
+            == foreign_before
+        )
         report = memory.reconcile()
         assert any(item.identity == OTHER_MEETING_ID for item in report.completed)
         result = memory.delete_meeting(OTHER_MEETING_ID)
         assert (result.status, result.meeting_id, result.error_category) == (
-            "completed", OTHER_MEETING_ID, None,
+            "completed",
+            OTHER_MEETING_ID,
+            None,
         )
         assert _phase(case.root, OTHER_MEETING_ID) == "complete"
         _hidden(memory, OTHER_MEETING_ID)
         assert memory.get_meeting(MEETING_ID).meeting.active_revision_id == case.active_revision
         assert _files(case.stage) == case.stage_files
-        assert _rows(
-            case.root, f"SELECT {columns} FROM pending_operations WHERE id=?",
-            (case.operation["id"],),
-        ) == foreign_before
+        assert (
+            _rows(
+                case.root,
+                f"SELECT {columns} FROM pending_operations WHERE id=?",
+                (case.operation["id"],),
+            )
+            == foreign_before
+        )
     for origin, before in case.origins:
         assert _files(origin) == before
     assert _files(other.directory) == other_before
@@ -107,7 +127,9 @@ def test_sql_proven_foreign_stage_survives_other_meeting_delete_recovery(
 
 
 def test_pending_without_usable_sql_retains_unidentifiable_private_material(
-    interrupted_retry, monkeypatch, tmp_path,
+    interrupted_retry,
+    monkeypatch,
+    tmp_path,
 ):
     case = interrupted_retry
     memory = case.memory()
@@ -166,7 +188,8 @@ def test_verified_complete_tombstone_keeps_phase_with_new_private_unknown(catalo
 
 
 def test_preexisting_foreign_private_unknown_does_not_reject_before_barrier(
-    catalog, monkeypatch,
+    catalog,
+    monkeypatch,
 ):
     memory, source = catalog
     origin_before = _files(source.directory)

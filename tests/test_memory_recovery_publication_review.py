@@ -203,7 +203,8 @@ def test_recovery_replays_exact_live_receipt_at_tombstoned_origin(sandbox, tmp_p
     intent = _sealed_intent(first.directory, identity)
     assert intent.revision_of is None
     ((current_origin, fingerprint),) = _rows(
-        root, "SELECT origin_path,origin_fingerprint FROM ingest_sources WHERE meeting_id=?",
+        root,
+        "SELECT origin_path,origin_fingerprint FROM ingest_sources WHERE meeting_id=?",
         (identity,),
     )
     assert current_origin == origin and fingerprint != first_fingerprint

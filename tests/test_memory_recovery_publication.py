@@ -142,7 +142,9 @@ def _schedule_handoff(monkeypatch, memory, directory, contend):
         @contextmanager
         def scope(directory, declared_identity, *, expected_identity):
             interleave(directory)
-            with real_scope(directory, declared_identity, expected_identity=expected_identity) as value:
+            with real_scope(
+                directory, declared_identity, expected_identity=expected_identity
+            ) as value:
                 yield value
 
         monkeypatch.setattr(memory, "recovery_publication", scope)
