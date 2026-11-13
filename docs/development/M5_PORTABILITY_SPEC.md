@@ -1,9 +1,8 @@
 # M5 portability specification
 
-Status: preparation draft refreshed 2026-11-13; no implementation started or
-approved by this draft. Ruling 20 supersedes the historical ruling 15 pause.
-CLAUDE §11 and ruling 35 allow the core export/import work after **M2 B merges**,
-subject to the normal contract-document PR and root's real B5 handoff and dispatch.
+Status: contract PR preparation, 2026-11-13. M2 B merged in PR #25.
+CLAUDE §11 and ruling 35 allow the core export/import work after the contract PR
+merges and root dispatches the actual B5 handoff.
 M5 A is not a blanket prerequisite for that core; claims/answers wait for M4 B
 and UI/settings integration retains its actual dependencies. Governing design:
 `PRODUCT_DESIGN.md` §7 "Exportación/importación portable", a taken decision
@@ -22,10 +21,11 @@ the data root.
 
 The accepted foundation is M2 A merge
 `53712c5beedafc2d40e2abf10c13362a1c3c9f78` and contract-document merge
-`73d3cb384bd422de6899d8c7b761f3f3159ea3f1`. These identify the foundation,
-not an implemented portability service. M2 B merge and its final B5 API/evidence,
-M4 B claims/answer adapters, M3 library/CLI and citation playback handoffs, and M5 A
-settings integration remain **PENDING**. Proposed interfaces below remain plans.
+`73d3cb384bd422de6899d8c7b761f3f3159ea3f1`. M2 B merge
+`b4b3d1beb9b05e33ae03ab8381e805aa6a23ffc8` contains the reviewed B5 source.
+M4 B claims/answer adapters, M3 library/CLI and citation playback handoffs,
+and M5 A settings integration remain pending. The portable interfaces below
+define the implementation contract.
 
 - Preserve the actual schema-2 catalog's immutable revision identity and number,
   active revision, segment timing and exact `revision_audio_assets` relationships.

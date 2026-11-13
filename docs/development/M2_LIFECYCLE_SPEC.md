@@ -3,7 +3,8 @@
 Status: task 4 implemented and automatically verified locally with synthetic data;
 independent source review and distinct docs/evidence complete.
 Task 5 has an integrated implementation candidate and scoped automated evidence.
-Group B and milestone M2 remain open. The 0.3.0 build candidate is under verification.
+Group B and milestone M2 are verified automatically and merged as 0.3.0 in
+PR #25 at `b4b3d1b`. The milestone runs are recorded in `ACCEPTANCE.md`.
 Execution base: `73d3cb384bd422de6899d8c7b761f3f3159ea3f1` (accepted A merge
 `53712c5beedafc2d40e2abf10c13362a1c3c9f78` is an ancestor). Task-4 source:
 `4e1b2cead486563516b69e09fb45543ee85b53aa`; source tree
@@ -421,9 +422,11 @@ Full2 completed on `350761a` with 1,275 cases: 1,251 passed, 6 failed and 18
 skipped, with zero errors. The run took 824.52 s (JUnit 824.414 s). Five failures
 came from capture recovery fixtures that placed `data/.memory.lock` inside the
 scanned capture tree. The sixth surfaced a raw `sqlite3.OperationalError`.
-The fixture change in `7b9f532` separates the two roots. Final full, hygiene,
-types, the B contract handoff, installed wheel, distribution and Windows CI remain
-gates for acceptance.
+The fixture change in `7b9f532` separates the two roots. The corrected full at
+`ec57204` passed 1,257 cases with 18 local skips. CI `43461764790` ran 1,273
+cases and skipped the two wheel cases covered in the installed-wheel run.
+Ruff, comparative types, contract handoff and the Windows package checks are
+recorded in `ACCEPTANCE.md` and `DELIVERY.md`.
 
 ## Acceptance
 

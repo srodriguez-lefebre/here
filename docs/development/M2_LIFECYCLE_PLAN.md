@@ -5,8 +5,8 @@
 > independent review, PR evidence, green Windows CI on the final head, protected
 > merge and delivery record. Ruling 64 omits Copilot requests for pending PRs.
 > Steps use checkbox syntax. **Status: Task 4 locally verified and reviewed.
-> Task 5 integrated candidate with scoped verification. Group B/M2 OPEN.
-> The 0.3.0 build candidate is under verification.**
+> Task 5 and M2 are verified automatically and merged in PR #25 as 0.3.0.
+> `ACCEPTANCE.md` records the milestone runs.**
 > Execution base `73d3cb384bd422de6899d8c7b761f3f3159ea3f1`; accepted A merge
 > `53712c5beedafc2d40e2abf10c13362a1c3c9f78` is an ancestor. Exact source/tests,
 > historical failures and current gates: `M2_LIFECYCLE_EVIDENCE.json`.
@@ -227,14 +227,14 @@ Distinct docs/evidence is recorded in this checkpoint; hosted/group gates remain
 Linked attribution reconstructs from state2; unlinked global participants are
 SQL-only. No hardware/provider/wheel/hosted-CI certification is claimed.
 
-### Task 5: Transactional deletion and FTS purge (IN PROGRESS)
+### Task 5: Transactional deletion and FTS purge
 
 **Files:** `src/memory/service.py`, `src/memory/repository.py`, `src/memory/artifacts.py`,
 `src/memory/database.py` (backup regeneration helper), `src/memory/models.py`,
 `src/application/controller.py`, `src/cli.py`; tests in
 `tests/test_memory_delete.py`, `tests/test_memory_fts.py`, `tests/test_cli.py`.
 
-**Planned B5 interfaces (not implemented in A):** `MemoryService.delete_meeting(meeting_id) -> DeletionResult` with
+**B5 interfaces:** `MemoryService.delete_meeting(meeting_id) -> DeletionResult` with
 `completed | pending | rejected` and the reason; a `before_delete` hook list the UI
 registers (M3 adds the player stop); `MemoryService.reindex() -> ReindexReport`.
 CLI: `here memory delete ID --yes [--json]`, `here memory reindex`.

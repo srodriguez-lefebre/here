@@ -12,14 +12,14 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M1 | Provider/timestamps and diarization | Synthetic real-provider run and segment output inspected | Single/multiple-source TTS smokes passed; long transcription/diarization omitted by explicit user instruction |
 | M1 | Failure/crash/network/disconnection/disk-pressure recovery | Fault-injection plus bounded hardware run | PR12 faults, writer/publication process kills and helper-owner death passed; native recoverable saved failure passed; no repeated installed fault matrix claim; long run omitted by user |
 | M1 | Installed application opens, records and uninstalls | Fresh Windows installation and bundled-runtime smoke | Incorporated-source `1740b2d` local Windows 11 frozen GUI/CLI, Start launch, active-update refusal, reinstall/uninstall and data preservation passed; recording retains earlier source evidence; distribution peer review/clean hosted package CI/merge pending |
-| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | A mergeado PR21; B tarea4 implementada/verificada automáticamente en local por M2B-T4-R1-FULL-4e1b2ce-20261106 (1043/9/390,03s), review y docs aceptados. B5 R52/R54 sobre624be55: GREEN9 y cinco focos v2 verificados, review R54-R1 acotada APPROVED; no suite completa nueva. Borrado/cierre B/M2 pendientes; sin certificación nueva |
-| M2 · criterio 2 | Grabación, archivo y retry comparten persistencia de aplicación | CLI delega a SessionProcessor, artefactos y fallos compatibles | Consolidación verificada en focos de tarea 2; integración de catálogo implementada en 7bfd0cb con foco final 26; review técnica y CI final A980/2/307,46 s aceptados; B/M2 pendientes |
+| M2 | Identity/relations/revisions and lifecycle durable | SQLite constraints, restart, migration and crash boundary tests | Nivel 2. `M2B-T4-R1-FULL-4e1b2ce-20261106` (1043 pases) y CI `43461764790` (1273 pases). Revisión independiente y PR #25 mergeados. |
+| M2 · criterio 2 | Grabación, archivo y retry comparten persistencia de aplicación | CLI delega a SessionProcessor, artefactos y fallos compatibles | Nivel 2. Focos de tarea 2 y `7bfd0cb` (26 casos), CI A `42155415514` y CI B `43461764790`. |
 | M2 · criterios 6–7 | Segmentos nullable y pausa sin desplazar el WAV | Cinco recorridos con proveedor fake, procedencia y seek de marcas en WAV sintético | Verificados automáticamente en focos de tarea 2 y catálogo implementado en tarea 3; full4 y review técnica final aceptados; sin certificación de captura/proveedor |
 | M2 · criterio 8 | Migración transaccional, backup administrado y rechazo de esquema futuro | FK/integrity, rollback de DDL y snapshot SQLite API con WAL comprometido | Verificado automáticamente en local: M2A-T1-LOCK-GREEN-20261105 y M2A-T1-FINAL-20261105, más CI final A980/2/307,46 s |
-| M2 · criterio 14 | Busy tipado y acotado, sin trabajo de proveedor/archivos en transacción | Segunda conexión real con bloqueo de escritura y EXCLUSIVE sobre lecturas | Base verificada en tarea1 y publicación implementada en tarea 3, con focos de recuperación Busy; review técnica y CI final A980/2/307,46 s aceptados; B/M2 pendientes |
-| M2 · criterio 15 | Suite completa en CI de Windows sin credencial real ni display | Corrida hospedada sobre el head exacto del PR M2 B | `b5-full2-ec572046c277-38b8014c` pasó 1257 pruebas y omitió 18 en Windows local, nivel 2. CI hospedada del head final pendiente. |
-| M2 | Deletion clears managed memory without resurrection | DB/FTS/files/backup inspection after restart | Nivel 2 en `r62-green-3-61a5088c` (110 pases) y `b5-full2-ec572046c277-38b8014c` (1257 pases). Incluye la matriz R42 de kill/reinicio y orígenes externos. Review independiente aprobada. Quedan CI y merge del grupo. |
-| M2 · 0.3.0 | Installed wheel and Windows package | Fresh wheel and stable installer artifact with checksums | `m2-030-wheel-a4e464a319f7-a98d6f06` verificó metadata 0.3.0, instalación no editable, cinco ayudas CLI y 4 smokes de distribución en 10,46 s. Nivel 2. Paquete estable pendiente del workflow Windows. |
+| M2 · criterio 14 | Busy tipado y acotado, sin trabajo de proveedor/archivos en transacción | Segunda conexión real con bloqueo de escritura y EXCLUSIVE sobre lecturas | Nivel 2. `M2A-T1-LOCK-GREEN-20261105`, `r62-green-3-61a5088c` y `b5-full2-six-failures-focus-6e5183bb`, confirmados en CI `43461764790`. |
+| M2 · criterio 15 | Suite completa en CI de Windows sin credencial real ni display | Corrida hospedada sobre el head exacto del PR M2 B | Nivel 2. CI `43461764790` pasó 1273 pruebas y omitió dos smokes de wheel, que pasaron en la corrida no editable. Head `55d68e2`. |
+| M2 | Deletion clears managed memory without resurrection | DB/FTS/files/backup inspection after restart | Nivel 2 en `r62-green-3-61a5088c` (110 pases) y CI `43461764790` (1273 pases). Incluye la matriz R42 de kill/reinicio y orígenes externos. Revisión independiente y PR #25 mergeados. |
+| M2 · 0.3.0 | Installed wheel and Windows package | Fresh wheel and stable installer artifact with checksums | Nivel 2. `m2-030-wheel-a4e464a319f7-a98d6f06` pasó 4 smokes. Package `43461764783` pasó la instalación estable con datos sintéticos y publicó el artefacto `14056018512`; sus seis hashes fueron verificados. |
 | M3 | Listing/filter/search and original moment navigation | End-to-end Qt selection and seek plus real WAV marker playback | Open |
 | M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | Abierto. `r63-query-benchmark-1` en `ca80f49` con fuente `64013ade` falló por p95 de 879,4833999891125 ms frente al límite de 500 ms. Cinco precalentamientos y 40 muestras válidas, mediana 809,5637999940664 ms. Nivel 2 y review independiente aprobada para los focos R63 de oráculo (8), generación (10) y regresión (240). R58 `12774` verificó ocho consultas UI con máximo de 8,9216 ms en su propio alcance. Sin corrida combinada ni certificación nueva. |
 | M4 | Multi-meeting answers/extractions with valid evidence | Source-resolution and semantic synthetic corpus, provider smoke | Open |
@@ -27,7 +27,31 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M5 | Offline first run, settings, tray/startup and safe exit | Qt, process concurrency and Windows settings tests | Open |
 | M5 | Portable data including optional audio and citations | Export/import on a fresh root, hashes and hostile ZIP tests | Open |
 | M5 | Install/update/uninstall preserve user memory | N to N+1 installation and separate uninstall test | Open |
-| All | PR groups reviewed and merged | PR URLs, reviewed heads, CI and merge SHAs, applicable review threads | M2 A mergeado por PR21 en `53712c5` con todos los gates vigentes entonces. Los ocho grupos restantes requieren review independiente, CI Windows verde sobre el head exacto y merge protegido. Ruling 64 quita la review de Copilot de los PR pendientes. |
+| All | PR groups reviewed and merged | PR URLs, reviewed heads, CI and merge SHAs, applicable review threads | M2 A mergeado en `53712c5` (PR21), M2 B en `b4b3d1b` (PR25). Siete grupos pendientes con revisión independiente, CI Windows y merge protegido. Ruling 64 omite Copilot. |
+
+## Cierre de M2 · 0.3.0 · 2026-11-13
+
+Nivel 2. PR #25, head `55d68e2`, merge `b4b3d1b`. El full local corregido
+`b5-full2-ec572046c277-38b8014c` pasó 1257 pruebas con 18 omisiones, incluidas
+16 por privilegio local de symlinks. CI ejecutó esas 16 y omitió los dos smokes
+que pasaron en el wheel instalado. [PR #25](https://github.com/srodriguez-lefebre/here/pull/25) ·
+[CI Windows](https://github.com/srodriguez-lefebre/here/actions/runs/43461764790)
+
+| Criterios de M2 | Corrida y alcance |
+|---|---|
+| 1, 3–5 | CI `43461764790`: identidad, revisiones activas e históricas, import idempotente y dos identidades con audio idéntico. |
+| 2, 6–7 | `M2A-T2-FINAL-20261105` y CI `43461764790`: productores, segmentos con tiempos nulos y offset de pausa sobre WAV sintético. |
+| 8 | `M2A-T1-FINAL-20261105` y CI `43461764790`: integridad, FK, migración, backup y esquema futuro. |
+| 9–10 | `r62-green-3-61a5088c` y CI `43461764790`: kill, replay local, conservación de evidencia y aviso de catálogo pendiente. |
+| 11–12 | CI `43461764790`: matriz R42 de barrera, purga y reconstrucción, FTS, backups, WAL y origen externo. |
+| 13 | CI `43461764790`: rutas inseguras y aislamiento de entradas vecinas, con symlinks y junctions. |
+| 14 | `b5-full2-six-failures-focus-6e5183bb` y CI `43461764790`: Busy, traducción SQLite y liberación de la vista. |
+| 15 | CI `43461764790`: 1273 pasan, 2 omisiones de wheel, 456,71 s. `m2-030-wheel-a4e464a319f7-a98d6f06`: 4 pasan, 10,46 s. |
+| 16 | PR #25 contiene README, arquitectura, plan, notas de versión y corridas nombradas. Package `43461764783` verifica el artefacto 0.3.0. |
+
+La instalación hospedada del paquete es verificación automatizada con datos
+sintéticos. La máquina Windows independiente, captura física y proveedor real
+conservan sus filas de M5. Dos horas sigue **omitida por ruling 5**.
 
 ## Checkpoint B-R59-PRODUCER / M3-R61 — 20261106
 

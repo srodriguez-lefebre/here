@@ -3,9 +3,9 @@
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
 > review, then independent agent review. Root owns dispatch, file leases, integration
 > and merges under rulings 20/35/64. Steps use checkbox syntax. **Status: preparation
-> draft, no implementation started.** Core work may start after M2 B merges,
-> the required normal contract-document PR and the real B5 handoff; this draft
-> does not grant implementation readiness. Claims/answers wait for M4 B.
+> ready for the contract PR, no implementation started.** M2 B is merged.
+> Core work starts after the contract PR merges and root dispatches the B5
+> handoff. Claims and answers wait for M4 B.
 
 **Goal:** Export selected meetings to a validated `.here.zip` and import such packages
 into any library root without losing identity, timing, citations or audio integrity,
@@ -22,9 +22,11 @@ runtime dependency.
 
 Foundation: M2 A merge `53712c5beedafc2d40e2abf10c13362a1c3c9f78`,
 contract-document merge `73d3cb384bd422de6899d8c7b761f3f3159ea3f1`.
-M2 B merge/B5 accepted handoff, M4 B, final M3 library/CLI/citation resolver and
-M5 A settings handoffs are PENDING. CLAUDE §11 and R35 supersede the old blanket
-M5 A-first ordering for the core only; they do not close any milestone criteria.
+M2 B merged in PR #25 at `b4b3d1beb9b05e33ae03ab8381e805aa6a23ffc8` from
+head `55d68e2c333ccea5d1b3cd6672f66ece8908f536`. Windows CI 43461764790 and
+package 43461764783 passed for that head. The dispatch brief supplies the B5
+handoff. M4 B claims, M3 library/CLI/citation resolver and M5 A settings
+retain their dependencies. CLAUDE §11 and ruling 35 allow the independent core.
 
 Before root dispatches a source front, its brief must record the actual M2 B merge
 SHA, accepted SPEC/PLAN and document-PR head, B5 signatures/ownership and evidence,

@@ -2492,3 +2492,42 @@ JUnit SHA-256 is `36CAC6038124FF3911E483729A6CDD067113D8803A7000EAFC062B75BA98B3
 Wheel SHA-256 is `83D7496075BE671F40551ADB2287D963ACD33BF701FCCE0BB9F21E8960E0339C`.
 Sdist SHA-256 is `18D2276C38A22F0CC3F4C85336701F74FD5980D35074D63DD5A0619F25B8AE52`.
 This is local level 2 evidence. The hosted build generates its own artifacts.
+
+
+## 2026-11-13 — M2 B hosted distribution verification
+
+Windows package run [43461764783](https://github.com/srodriguez-lefebre/here/actions/runs/43461764783)
+passed against PR #25 head `55d68e2c333ccea5d1b3cd6672f66ece8908f536`.
+The artifact is [here-0.3.0-windows-x64](https://github.com/srodriguez-lefebre/here/actions/runs/43461764783/artifacts/14056018512).
+Its provenance records synthetic PR merge commit `1bdea0ef7208436987138aa2ead388c0ecea0ccc`,
+whose tree `ccf0f524b2828ad18c86468bb1a9e63367ee3e2c` matches the PR head exactly.
+The build used CPython 3.13.15 x64 and Inno Setup 6.7.0 on Windows Server 2025
+10.0.26100. It retained the stable AppId and reports a clean tracked tree.
+
+| File | SHA-256 |
+|---|---|
+| `here-0.3.0-windows-x64-setup.exe` | `739a8121346dcb0c63e6dd94f7b0dd879903c1699c363be536cc6e5f42a9779d` |
+| `here-0.3.0-windows-x64.zip` | `d110977a67967a1283e0938debc01716e98a5a0aa0221013e027552e9b350a34` |
+| `here-0.3.0-py3-none-any.whl` | `add4ce69de8a0df027f14e0bf8c52e079f781695af6b8c02ae22433a2b4a5981` |
+| `build-provenance.json` | `029fa577940725e7ab428a597cf9e426d2cce8e413d6a60062fb5a5779a6d39a` |
+| `bundle-inventory.json` | `67d0ae8fcf7408bee83260197965fb24ff7bd5a9d662c2575c995d3ac62d8f4e` |
+| `compiler-provenance.json` | `b6332898d505c6d341c8dc07243d4a8a4c8d12709c8a55ab5dca4366e7e5b71e` |
+| `SHA256SUMS.txt` | `0cdb95b465e34ee00a1406663aa9aa5723d023132d1d58dfbe38348fb0c731b4` |
+
+All six manifest entries matched the downloaded files. The inventory lists 732
+files. The portable ZIP contains `_internal/notices/THIRD_PARTY_NOTICES.md`
+and the wheel notice inventory. Hosted `acceptance.json` reports success for
+no-key frozen startup, Start shortcut launch, payload identity, active-update
+refusal, reinstall and uninstall with the synthetic data preserved.
+
+Level 2 automated Windows evidence. Independent Windows 11 installation and
+physical audio checks remain for M5. Two hours remains **omitida por ruling 5**.
+
+PR #25 merged at 2026-11-13T16:29:41Z as `b4b3d1beb9b05e33ae03ab8381e805aa6a23ffc8`.
+Independent group and follow-up reviews are recorded in the PR body. Ruling 64
+applied. Root verified both successful Windows runs bound to `55d68e2`, then ran
+`gh pr merge 25 --merge --admin --match-head-commit 55d68e2c333ccea5d1b3cd6672f66ece8908f536`.
+Windows CI [43461764790](https://github.com/srodriguez-lefebre/here/actions/runs/43461764790)
+reported 1273 passes, two installed-wheel skips and 456.71 s. The CI wheel and
+sdist built successfully. The independent fresh wheel run covered the two skips.
+The merge tree is identical to the reviewed head and the package build tree.
