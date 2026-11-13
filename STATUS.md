@@ -16,10 +16,11 @@ M2 B recuperó `codex/m2-lifecycle` en
 El autor RED trabaja en `C:/Users/savar/.codex/worktrees/m2-b-r62-red-resume/here`
 sobre `ae00b44`. M3 A recuperó el checkout `2710/here` en `49baac0`.
 
-M2 B continúa con el RED de R62. M3 A verifica el cambio R63 guardado en
-`ca80f49` antes de volver a medir el presupuesto de búsqueda. La evidencia
-anterior conserva su fuente y alcance. Root coordina las ventanas de ejecución,
-la integración, los PR y los merges.
+M2 B prepara el RED de R62 y tiene la próxima ventana de ejecución. M3 A
+verificó automáticamente los focos de R63 en `ca80f49`: Ruff, 8 comparaciones
+con el oráculo v2, 10 controles de generación y 240 regresiones de búsqueda.
+La review de ese cambio y el benchmark original de p95 siguen pendientes.
+Root coordina las ventanas de ejecución, la integración, los PR y los merges.
 
 El usuario indicó que no se pida review de Copilot por falta de cuota
 (ruling 64). Para los PR pendientes siguen vigentes la revisión independiente,
