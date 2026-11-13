@@ -18,20 +18,34 @@ El consumidor R52 pasó dos casos focalizados y review independiente en
 independiente en `d8fb75b`, nivel 2. Candidato integrado `3148869` en
 `codex/m3-final-integration`, worktree
 `C:/Users/savar/.codex/worktrees/m3-final-integration/here`, a cargo del chat M3 A.
-Su corrida integrada sigue pendiente. El p95 medido de 879,48 ms frente a 500 ms
-sigue fallido. Ruling 66 autoriza el prototipo diagnóstico aislado en
+La corrida `m3-final-functional-1` terminó con 1538 pases, 21 omisiones y 19
+fallos en 769,32 s, nivel 2. Se investigan fallos de composición, binding del
+oráculo R61 y contaminación de entorno del runner. La review independiente
+marcó además el cursor largo y la recuperación de la instancia inyectada.
+El p95 medido de 879,48 ms frente a 500 ms sigue fallido. Ruling 66 autoriza
+el prototipo diagnóstico aislado en
 `codex/m3-native-digest-probe`, worktree
 `C:/Users/savar/.codex/worktrees/m3-native-digest-probe/here`, base `ca80f49`.
 `search_budget_design` escribe el agregado nativo, el chat M3 A coordina el
-adaptador y root coordina compilación y runtime. M3 B espera el PR abierto de A
-y su handoff.
+adaptador y root coordina compilación y runtime. Compilación y smoke nativo
+focalizado pasaron en el host Windows, nivel 2 de diagnóstico. Se ejecutan sus
+controles de paridad y el benchmark condicionado. La preparación contractual de
+M3 B está en el [PR #27](https://github.com/srodriguez-lefebre/here/pull/27), rama
+`codex/m3-playback-handoff-docs` y worktree
+`C:/Users/savar/.codex/worktrees/m3-playback-handoff-docs/here`, head `dbc9d16`.
+`portability_contracts` escribió y `portability_contract_review` aprobó. Package
+Windows pasó y CI está en curso. M3 B espera el PR abierto de A y su handoff.
 
 El PR de contratos de portabilidad [#26](https://github.com/srodriguez-lefebre/here/pull/26)
 se mergeó en `5286dd4`. La rama de grupo M5 B `codex/m5-portability` queda en
 `C:/Users/savar/.codex/worktrees/m5-portability-core/here`. La sonda Windows
 pasó ocho controles de capacidad en el host de desarrollo, sin symlinks.
-El RED `2c427d5` tuvo seis fallos esperados por falta de módulo. Ambas corridas
-son nivel 2 focalizado. El candidato GREEN y su review siguen pendientes.
+El RED `2c427d5` tuvo seis fallos esperados por falta de módulo y en `a69a490`
+pasaron los seis. La corrida de recuperación `fd57c23` pasó nueve controles y
+reprodujo cuatro fallos de publicación y recuperación. La revisión pidió cambios
+y se congelaron las correcciones en `71a6f16`. Corridas de nivel 2 focalizado,
+con nueva ejecución y review exactas pendientes. El RED de inspección de ZIP
+`a326ccf` reprodujo 38 fallos esperados por ausencia de `inspect`, nivel 2.
 Worktrees bajo `C:/Users/savar/.codex/worktrees/`, cada uno con sufijo `/here`:
 
 | Directorio y rama `codex/<directorio>` | Responsable | Fuente |
@@ -40,8 +54,10 @@ Worktrees bajo `C:/Users/savar/.codex/worktrees/`, cada uno con sufijo `/here`:
 | `m5-portability-export-recovery-red` | `portability_export_red` | nuevo RED de proceso y recuperación sobre `2c427d5` |
 | `m5-portability-export-green` | `portability_export_green` | fachada, repositorio y nombres `cde01fd` |
 | `m5-portability-export-native` | `portability_windows_binding` | handle de Windows `701e992` y `49982b5` |
-| `m5-portability-export-service` | root | contexto de MemoryService y registro local |
+| `m5-portability-export-service` | root | integración y correcciones de export en `71a6f16` |
 | `m5-portability-export-evidence` | `portability_contracts` | evidencia RED y capacidad `ea57f69` |
+| `m5-portability-import-red` | `portability_export_red` | RED de inspección `a326ccf` |
+| `m5-portability-import-inspect-green` | `portability_export_green` | validación del directorio central, base `a326ccf` |
 
 Root coordina el handoff, las ventanas de prueba y los archivos compartidos.
 Claims y respuestas esperan M4 B.
