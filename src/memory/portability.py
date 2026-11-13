@@ -24,6 +24,16 @@ from here.memory.models import (
     RevisionAudioAsset,
     Segment,
 )
+from here.memory.portable_package import (
+    InvalidPackage as InvalidPackage,
+)
+from here.memory.portable_package import (
+    PackageSummary,
+    inspect_package,
+)
+from here.memory.portable_package import (
+    validate_entry_name as validate_entry_name,
+)
 from here.memory.repository import (
     _PortableExportRows,
     _PortableLifecycleEvent,
@@ -385,6 +395,9 @@ def _write_audio(
 class PortabilityService:
     def __init__(self, memory: MemoryService) -> None:
         self._memory = memory
+
+    def inspect(self, source: Path) -> PackageSummary:
+        return inspect_package(source, Manifest)
 
     def export(
         self,
