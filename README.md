@@ -225,6 +225,19 @@ deletion record prevents automatic restoration or reimport of the deleted
 meeting. Named runs and their scope are in
 [ACCEPTANCE.md](docs/development/ACCEPTANCE.md).
 
+### Library tab (M3 development)
+
+The M3 A development build adds **Biblioteca** alongside the capture tab in
+`here-gui`. With the search box empty, it lists saved meetings. Enter words to
+search titles and transcripts, or narrow the results by start date, status or
+participant. Use **Incluir transcripciones parciales** to include active partial
+transcripts and **Cargar más** to continue through the results.
+
+Open a meeting to read its original transcript segments, see participant
+assignments and edit its title. A conflicting title edit reloads the current
+version for review. The library runs locally without a provider key. If FTS5 is
+unavailable, the library shows a notice and uses literal search.
+
 ## Audio Diagnostics
 
 Windows audio devices can be inspected without using an API key:
