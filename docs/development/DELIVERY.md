@@ -2390,6 +2390,13 @@ with p95 879.4833999891125 ms and median 809.5637999940664 ms. XML time was
 51.261 s and SHA-256 was `94F2CEA4A1025D397B3B618D49D57B601246DB3890B7756A527E5DB6E825EBD8`.
 The logs, raw samples, XML and receipts are in the M3 chat worktree's
 `.superpowers/sdd/M3_SEARCH_PLAN/`. Performance acceptance remains open.
+The subsequent `r63-query-phase-probe-1` diagnostic used the same source,
+fixture and query, with one control and one observed call after warmup. The
+observed call took 777.44 ms, including 539.90 ms in generation and 222.99 ms
+at guard entry. SQLite execute and fetch in generation took 350.66 ms and JSON
+encoding took 148.28 ms. The receipt binds the synthetic fixture and matching
+page and cursor. This is phase evidence from a single diagnostic, with no new
+percentile or product change.
 There was no level 3 certification or version change. Two hours remains
 **omitida por ruling 5**.
 

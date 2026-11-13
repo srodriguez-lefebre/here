@@ -23,8 +23,10 @@ M3 A verificó automáticamente los focos de R63
 en `ca80f49`: Ruff, 8 comparaciones con el oráculo v2, 10 controles de
 generación y 240 regresiones de búsqueda. La review independiente aprobó ese
 alcance funcional. `r63-query-benchmark-1` midió p95 de 879,4833999891125 ms
-frente al requisito de menos de 500 ms. M3 A prepara el diagnóstico focalizado
-para la próxima ventana libre.
+frente al requisito de menos de 500 ms. La sonda posterior midió 539,90 ms en
+generación y 222,99 ms en la entrada al guard en una llamada instrumentada.
+M3 A prepara una prueba de concepto aislada para reducir el costo de conversión
+de filas. El benchmark sigue fallido.
 Root coordina las ventanas de ejecución, la integración, los PR y los merges.
 
 Preparación documental M5 B en `C:/Users/savar/.codex/worktrees/m2-segments/here`,
