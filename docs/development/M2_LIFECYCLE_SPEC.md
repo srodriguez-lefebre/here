@@ -422,7 +422,7 @@ skipped, with zero errors. The run took 824.52 s (JUnit 824.414 s). Five failure
 came from capture recovery fixtures that placed `data/.memory.lock` inside the
 scanned capture tree. The sixth surfaced a raw `sqlite3.OperationalError`.
 The fixture change in `7b9f532` separates the two roots. Final full, hygiene,
-types, M3/UI integration, installed wheel, distribution and Windows CI remain
+types, the B contract handoff, installed wheel, distribution and Windows CI remain
 gates for acceptance.
 
 ## Acceptance
