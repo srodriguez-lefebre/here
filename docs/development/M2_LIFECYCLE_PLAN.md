@@ -1,11 +1,12 @@
 # M2 lifecycle and deletion implementation plan
 
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
-> review, then independent agent review. Root merges after received/responded
-> current-head Copilot, green Windows CI and independent review (rulings 16/17/20).
-> Steps use checkbox syntax. **Status: task 4 implemented, locally verified and
-> independently reviewed; distinct docs/evidence complete. Task 5 PLANNED;
-> group B/M2 OPEN, version 0.2.0.**
+> review, then independent agent review. Root follows CLAUDE.md §7 and ruling 64:
+> independent review, PR evidence, green Windows CI on the final head, protected
+> merge and delivery record. Ruling 64 omits Copilot requests for pending PRs.
+> Steps use checkbox syntax. **Status: Task 4 locally verified and reviewed.
+> Task 5 integrated candidate with scoped verification. Group B/M2 OPEN.
+> The 0.3.0 build candidate is under verification.**
 > Execution base `73d3cb384bd422de6899d8c7b761f3f3159ea3f1`; accepted A merge
 > `53712c5beedafc2d40e2abf10c13362a1c3c9f78` is an ancestor. Exact source/tests,
 > historical failures and current gates: `M2_LIFECYCLE_EVIDENCE.json`.
@@ -62,11 +63,9 @@ threads. Complete Windows CI 42155415514 passed 980 cases/two wheel-environment
 skips in 307.46s; package CI 42155415501 passed on that same head. Fresh local
 installed-wheel distribution checks passed all four cases in 7.51s. These are
 automatic synthetic evidence, not hardware/provider/clean-install certification.
-This contract documentation still needs its own independent review, received and
-answered current-head Copilot, exact-head Windows CI and guarded merge before
-dispatch. Root records its actual reviewed head/merge and execution bases in
-DELIVERY/STATUS; neither future chat exists yet. Planned B/M3 APIs below are not
-A implementations and do not become accepted integration through this docs PR.
+This foundation records the contract preparation for the B/M3 dispatch. Root
+records the reviewed heads, merges and execution bases in DELIVERY/STATUS.
+Task 5 source and consumer integration have separate evidence.
 
 Preserve these inherited contracts:
 
@@ -228,7 +227,7 @@ Distinct docs/evidence is recorded in this checkpoint; hosted/group gates remain
 Linked attribution reconstructs from state2; unlinked global participants are
 SQL-only. No hardware/provider/wheel/hosted-CI certification is claimed.
 
-### Task 5: Transactional deletion and FTS purge (PLANNED)
+### Task 5: Transactional deletion and FTS purge (IN PROGRESS)
 
 **Files:** `src/memory/service.py`, `src/memory/repository.py`, `src/memory/artifacts.py`,
 `src/memory/database.py` (backup regeneration helper), `src/memory/models.py`,
@@ -313,6 +312,32 @@ private fields/guard adapter; no transcript/title/audio/participant data is stor
 - [ ] Run focused tests and the full offscreen suite; self-review; independent agent
   review; commit as "memory: transactional deletion and FTS purge".
 
+## Evidencia y pendientes de Task 5 — 2026-11-13
+
+- El SPEC detalla R59, R60 y R62 para discovery, inventario y publicación. R61
+  corresponde al consumidor M3 y conserva el contrato del guard.
+- `d00a1d4` pasó GREEN3 con 110 casos en 166,35 s, sin fallos, errores ni skips.
+  JUnit registra 166,318 s internos. Incluye 15 casos R62 y 95 regresiones.
+  Re-review I5/Busy y revisión independiente de fuente del grupo aprobadas
+  sobre ese árbol.
+- Full2 sobre `350761a` terminó con 1251 pases, 6 fallos, 0 errores y 18 skips
+  de 1275 casos, en 824,52 s (JUnit 824,414 s). Cinco fixtures incluían
+  `data/.memory.lock` dentro del árbol de capturas. El sexto fallo expuso un
+  `sqlite3.OperationalError` sin traducir.
+- `7b9f532` separa las raíces en los fixtures. Sobre esa base, `f626933`
+  restaura solo la traducción de `sqlite3.Error` después del yield y conserva
+  la causa y el cleanup. Review SQL estática aprobada. El foco conjunto
+  `b5-full2-six-failures-focus-6e5183bb` en `f626933` pasó 19 casos en 7,59 s,
+  sin fallos, errores ni skips (JUnit 7,429 s).
+- `ec57204` pasó Ruff y formato en los 27 archivos Python del grupo. La
+  comparación de mypy con el layout canónico conserva 79 diagnósticos de base
+  y cero nuevos en los archivos modificados. La review independiente del delta
+  de formato y tipos quedó aprobada.
+- El handoff entrega `update_meeting`, `catalog_read_view`, `reindex` y el
+  adaptador de ownership al consumidor M3. M3 verifica su propia integración UI.
+  El full, wheel instalado, paquete Windows y CI del head final se registran
+  en ACCEPTANCE y DELIVERY por corrida.
+
 ## Closing the group and the milestone
 
 - Update `README.md` (new commands), `ARCHITECTURE.md` (lifecycle, reconciliation and
@@ -326,9 +351,10 @@ private fields/guard adapter; no transcript/title/audio/participant data is stor
   `scripts/smoke_windows.ps1` takes `-InstallerPath` and has no hardcoded product
   version to edit; invoke it with the new installer path. Check the wheel metadata,
   compiler override and fallback all report 0.3.0, then build/smoke the actual artifacts.
-- Open one PR with the two task commits, self-review and independent agent review in
-  the description. Root merges only after exact-head Windows CI and received/responded
-  Copilot plus independent review; no gate is waived by a local pass or delay.
+- Open one PR covering both tasks with self-review, independent agent review and
+  evidence. Root follows CLAUDE.md §7 and ruling 64 for green Windows CI on the
+  final head, protected merge and delivery record. Ruling 64 omits Copilot
+  requests for pending PRs.
   M3 A's independently dispatched query work may already run under ruling 35; hand
   off accepted B4 title/B5 reindex contracts for its remaining integration.
 - After B merges, root may advance M5 B portability with its claims hook pending
@@ -336,10 +362,10 @@ private fields/guard adapter; no transcript/title/audio/participant data is stor
   chats/worktrees or start that future work; M2 closes only with all original DoD
   and acceptance requirements, not by overlap or fixture preparation.
 
-## R50 acceptance additions for planned task 5
+## R50 acceptance additions for Task 5
 
-Task 5 starts only after R1 resolution, actual corrected-full acceptance and the
-distinct task-4 docs/evidence checkpoint. The SPEC's R50 section fixes the future
+Task 5 started after R1 resolution, corrected-full acceptance and the
+distinct task-4 docs/evidence checkpoint. The SPEC's R50 section defines
 catalog_read_view ownership and exact two-field SuppressionSnapshot contract;
 private canonical entries must not escape as a third public field.
 

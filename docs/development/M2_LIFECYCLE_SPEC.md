@@ -2,8 +2,8 @@
 
 Status: task 4 implemented and automatically verified locally with synthetic data;
 independent source review and distinct docs/evidence complete.
-Task 5 deletion/reindex remains PLANNED;
-group B and milestone M2 remain open, with product version 0.2.0 unchanged.
+Task 5 has an integrated implementation candidate and scoped automated evidence.
+Group B and milestone M2 remain open. The 0.3.0 build candidate is under verification.
 Execution base: `73d3cb384bd422de6899d8c7b761f3f3159ea3f1` (accepted A merge
 `53712c5beedafc2d40e2abf10c13362a1c3c9f78` is an ancestor). Task-4 source:
 `4e1b2cead486563516b69e09fb45543ee85b53aa`; source tree
@@ -230,7 +230,7 @@ receipt container/hash types before mapping or data-derived reads, retaining
 malformed evidence and warnings while valid meeting siblings rebuild. These fixes
 are technically accepted A contracts; B extends them rather than duplicating them.
 
-### Deletion (planned task 5)
+### Deletion (Task 5)
 
 The GUI confirms once what will be removed; the CLI requires `--yes`. The service
 rejects deletion of a meeting with capture, processing, import or export in progress
@@ -324,10 +324,10 @@ Observed A uses `IngestResult(status, meeting_id, warnings, error_category)` wit
 `invalid_input`, `conflict` and `io` categories mapped to CLI exits 2/3/4;
 `OwnershipBusy` subclasses catalog `Busy`. A's `RecoveryReport` carried warnings
 only; task4 extends it compatibly with detailed outcomes and typed edit results
-as specified below. Deletion result types remain planned for task5. Preserve
+as specified below. The Task 5 candidate provides typed deletion results. Preserve
 `ApplicationSnapshot.memory_warning` separately from real capture errors.
 
-### FTS consistency (task 4 edits implemented; deletion/reindex planned)
+### FTS consistency (Task 4 edits and Task 5 candidate)
 
 The `segments_fts` FTS5 index created by group A is updated in the same transactions that
 activate a revision or delete a meeting. `reindex` rebuilds it from unsuppressed
@@ -361,6 +361,69 @@ database and UI integration cannot have two writers. Do not add another persiste
 path, reindexer or module layout to avoid leases. Detailed front scopes are in both
 implementation plans. Existing synthetic fixtures transfer only after acceptance;
 do not regenerate or duplicate them for another front.
+
+## Task 5 recovery and deletion boundaries (R59–R62)
+
+R59 provides `MemoryService.recovery_read_view(directory, declared_identity)`
+and a shared module-level primitive with an explicit data root. Both yield the
+resolved identity under the same publication lock and use the same suppression
+parser. Known identity with no origin pairs needs no SQL alias lookup. With
+origin pairs, recovery resolves aliases coherently or fails closed. Missing or
+opaque identity follows the existing legacy resolver. An invalid registry
+cannot authorize inspection. The consumer revalidates against the owner leases
+it actually holds and keeps the read view through material inspection and
+candidate construction. Discovery can inspect a catalog-free root without
+initializing SQLite. Publishing and reconciliation occur outside the read scope.
+
+R60 keeps the existing three-field private stage plan. Journaled stage cleanup
+validates the journal, paths, inventory roles and native ownership. The journal
+or the delete operation's validated inventory retains cleanup authority until
+completion. After durable acceptance, if SQL cannot prove scope, R54 may clean
+verified private orphans under the same lock before completing. Unresolved
+residue keeps deletion pending and hidden. The cleanup preflights all children,
+removes WAV before the metadata needed to identify it, and removes publication
+proof last. Uncertainty grants no additional ownership.
+
+R61 is an M3 search generation change. Cursor row representation can change
+under its existing snapshot and token contract. B supplies the guard and
+preserves the same suppression scope for the consumer.
+
+R62 transfers recovery from the reader to
+`MemoryService.recovery_publication(directory, declared_identity, *, expected_identity)`
+on the same service and data root. After the read guard exits, the writer holds
+the publication lock and checks fresh minimal metadata and intent, suppression,
+aliases, identity and actual parent or reservation before opening publication
+material or changing the marker. It checks the resolved identity against the
+consumer's retained ownership. A genuinely unmapped replay keeps the lock
+through publication and marker cleanup. The existing publisher runs with its
+short write transactions and the applicable real leases. No read transaction
+spans writer or filesystem work. Proof of a committed replay must match the
+sealed material and be unambiguous. Compensation cannot claim a destination
+the writer did not create. The consumer preserves the SQLite Busy warning and
+applies the final read guard before exposing a local recovery candidate.
+
+### Source and verification status
+
+The integrated Task 5 source `d00a1d4` passed 110 focused cases in 166.35 s,
+including 15 R62 cases and 95 regressions. JUnit records 166.318 s with zero
+failures, errors and skips. Independent source review approved the integrated
+group and the focused I5/Busy changes on that tree.
+
+The follow-up `f626933` restores the established R50 SQLite error translation
+for raw `sqlite3.Error` from the body of `catalog_read_view` while preserving the
+cause. Non-SQL caller exceptions such as `ValueError`, `OSError` and domain
+errors propagate intact. Rollback and lock release still run. This delta
+received static approval. The combined fixture and SQL-boundary focus on
+`f626933` passed 19 cases in 7.59 s (JUnit 7.429 s) with zero failures, errors
+or skips. The run ID is `b5-full2-six-failures-focus-6e5183bb`.
+
+Full2 completed on `350761a` with 1,275 cases: 1,251 passed, 6 failed and 18
+skipped, with zero errors. The run took 824.52 s (JUnit 824.414 s). Five failures
+came from capture recovery fixtures that placed `data/.memory.lock` inside the
+scanned capture tree. The sixth surfaced a raw `sqlite3.OperationalError`.
+The fixture change in `7b9f532` separates the two roots. Final full, hygiene,
+types, M3/UI integration, installed wheel, distribution and Windows CI remain
+gates for acceptance.
 
 ## Acceptance
 
@@ -482,9 +545,9 @@ symlink-privilege cases (one database, one writer, five artifact-safety).
 Historical RED failures, failed 129-case compatibility run and separately justified
 one-case owner assertion correction are retained in the evidence ledger.
 
-### Planned B5 shared read guard (R50; not implemented by task 4)
+### B5 shared read guard (R50)
 
-`memory.service.catalog_read_view(library)` will be a context manager yielding an
+`memory.service.catalog_read_view(library)` is a context manager yielding an
 immutable SuppressionSnapshot with EXACTLY two public fields:
 `suppressed_meeting_ids: tuple[str, ...]` (sorted unique UUIDs) and `fingerprint: str`.
 Canonical registry entries remain PRIVATE to B. Caller opens/closes a fresh

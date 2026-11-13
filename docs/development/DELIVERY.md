@@ -2442,3 +2442,36 @@ SPEC acceptance clauses and fourteen PLAN checkbox blocks retain their text.
 The concrete B5 and Windows file-identity bindings remain for the contract PR
 after the M2 B merge. Claims still require the M4 B handoff. No M5 B runtime
 evidence or certification was produced.
+
+## 2026-11-13 — M2 B integrated source and release candidate
+
+`r62-green-3-61a5088c` passed 110 cases in 166.35 s on source `d00a1d4`.
+It includes the R62 review fixes, destination collision, SQLite Busy warning,
+W3/R59/R60 and publication/deletion recovery. The independent group review by
+`b5_handoff_review` approved the source and verified the exact test bindings.
+JUnit SHA-256 is `6595A12DA6AFCF2FC8B7619DD0908E79428BFEEF50E5F921644D6CDA8052583B`.
+
+The first full candidate suite `b5-full2-350761adfc76-37061fb5` reported
+1251 passes, 6 failures and 18 skips in 824.52 s. Five capture fixtures counted
+the newly created catalog lock under their sessions tree. `7b9f532` put the
+sessions and data roots in separate test directories, preserving all checks
+of captured data. The sixth failure reproduced missing translation of a raw
+SQLite error in `catalog_read_view`. `f626933` restored the R50 translation
+with R59 exception propagation for other caller errors. The independent review
+approved the delta. `b5-full2-six-failures-focus-6e5183bb` passed 19 cases.
+
+`ec57204` formats the five affected files and annotates the deletion warning
+tuple. The independent review verified unchanged assertions and warning values.
+Ruff and formatting checks passed for all 27 touched Python files. Canonical
+layout mypy comparison with `3e76a20` found 79 diagnostics in both trees and
+zero new diagnostics in changed source. The first version of the comparator
+inherited mypy's exit 1 from the known baseline despite an empty diagnostic
+delta. The receipt records each command result and the comparator now exits
+explicitly when that comparison passes.
+
+`350761a` sets version 0.3.0 in the project, local lock entry, packaging and
+build workflow without changing dependency pins or AppId. The development host
+has an existing stable AppId installation and Start group. The hosted Windows
+package job will exercise the stable installer lifecycle in its isolated runner.
+The local wheel verification uses a separate noneditable installation and
+synthetic roots. No level 3 certification is claimed.

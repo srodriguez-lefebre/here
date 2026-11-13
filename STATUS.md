@@ -3,7 +3,39 @@
 Actualizado: 2026-11-13. Leé CLAUDE.md primero; después este archivo y
 `docs/MASTER_PLAN.md`. Historial y rulings: `docs/development/DELIVERY.md`.
 
-## Reanudación — 2026-11-13
+## Checkpoint vigente — 2026-11-13
+
+M2 A está mergeado en PR21. M2 B prepara 0.3.0 en `codex/m2-lifecycle-release`,
+worktree `C:/Users/savar/.codex/worktrees/m2-lifecycle-release/here`, responsable
+root. La fuente `d00a1d4` pasó 110 casos y review independiente. El full de
+`350761a` terminó con 1251 pases, 18 omisiones y seis fallos. Se corrigieron
+la separación de raíces de cinco fixtures y la traducción de errores SQLite
+en la vista R50. El foco de 19 casos pasó en `f626933`. La revisión aprobó
+también `ec57204`, con Ruff y formato limpios en 27 archivos Python y cero
+diagnósticos nuevos de mypy en los archivos modificados.
+
+El full corregido se ejecuta sobre `ec57204` en `m2-b-r62-product-prep`.
+La rama de entrega integra solo documentación después de ese commit. El wheel
+no editable, el paquete Windows, la CI final y el merge siguen pendientes.
+El equipo de desarrollo tiene una instalación con el AppId y el grupo Inicio
+de here. La prueba de ese instalador estable usa el runner Windows del workflow.
+
+M3 A sigue en el chat `01a1af04-e779-7363-be61-c840651b0b18`, rama
+`codex/m3-search`, worktree `C:/Users/savar/.codex/worktrees/2710/here`.
+R63 tiene verificación funcional de nivel 2 y el benchmark sigue fallido en
+879,48 ms p95 frente a 500 ms. Los dos tests RED de R52 quedan preparados para
+el handoff de B. Root coordina las ventanas de runtime y la integración.
+
+M5 B tiene el borrador revisado de contratos en `codex/m5-portability-contracts`,
+worktree `C:/Users/savar/.codex/worktrees/m5-portability-contracts/here`, commit
+`2c25a54`. Root coteja los bindings y publica el PR de contratos después de
+mergear M2 B. Los claims esperan M4 B. Evidencia estática solamente.
+
+Ruling 64 omite la review de Copilot. Siguen la revisión independiente, el PR
+con evidencia, CI Windows verde en el head final, merge protegido y registro.
+Dos horas permanece **omitida por ruling 5**. Sin bloqueo humano en este punto.
+
+## Historial de reanudación — 2026-11-13
 
 El usuario reanudó los hitos 2 a 5. Los chats originales de M2 B y M3 A
 retoman desde los commits de pausa. Al verificar la reanudación, `origin/main`
@@ -38,11 +70,11 @@ rama `codex/m2-b-r62-product-prep`, worktree
 El integrado `d00a1d4` pasó los 110 casos de `r62-green-3-61a5088c` y la
 revisión independiente de fuente. Root recibió el worktree `m2-b-r62-product-prep`,
 integró la documentación y subió la versión del candidato en `350761a`.
-El full `b5-full2-350761adfc76-37061fb5` está en curso y ya detectó seis fallos.
+El full `b5-full2-350761adfc76-37061fb5` terminó con seis fallos.
 Cinco fixtures de captura incluyen el lock del catálogo en su árbol de sesiones.
 El sexto requiere recuperar la traducción SQLite de R50 en la vista de lectura.
-Se preparan el arreglo de fixtures `7b9f532` y la corrección de fuente en
-worktrees separados. 0.3.0 espera full, distribución, CI y merge.
+Se prepararon el arreglo de fixtures `7b9f532` y la corrección de fuente
+`f626933` en worktrees separados.
 M3 A verificó automáticamente los focos de R63
 en `ca80f49`: Ruff, 8 comparaciones con el oráculo v2, 10 controles de
 generación y 240 regresiones de búsqueda. La review independiente aprobó ese

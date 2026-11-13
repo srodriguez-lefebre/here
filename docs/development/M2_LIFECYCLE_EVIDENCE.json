@@ -642,5 +642,138 @@
     "Original Ruff found17 E501s; formatter fixed16 and one comment wrapped; final check/format passed with inherited settings-deprecation warning.",
     "Original flat-layout mypy baseline263/candidate268 included two layout import diagnostics and three genuine reader typing errors; reader errors corrected without ignores. Namespace-correct baseline79/candidate80 revealed one reused-local DTO typing conflict; renamed before final79→79.",
     "Authorized owner-harness preparation retained two patch metadata/context errors before normal successful git apply; intermediate format --check failed on two wraps then passed after permitted formatting. No runtime/source change was hidden by those diagnostics."
-  ]
+  ],
+
+  "task5": {
+    "recorded_on": "2026-11-13",
+    "status": "implemented_candidate_acceptance_open",
+    "scope": "Task 5 only. Existing top-level Task 4 evidence retains its source, tests, run IDs and results.",
+    "contracts": {
+      "R59": "Shared recovery read view with explicit data root and retained suppression scope",
+      "R60": "Validated stage inventory and conservative pending deletion cleanup",
+      "R61": "M3 generation representation under the existing read contract",
+      "R62": "Same-service writer handoff before material or marker effects"
+    },
+    "runs": [
+      {
+        "run_id": "r62-red-1-6adcd848",
+        "commit": "74555617426f4f760dca64735d0b28bec5fd6424",
+        "scope": "Independent R62 RED",
+        "passed": 2,
+        "failed": 7,
+        "errors": 0,
+        "skipped": 0,
+        "seconds": 8.64,
+        "junit_seconds": 8.582,
+        "exit_code": 1,
+        "junit_sha256": "76C307264BBEE5DF330AC587C23CBA11E086FBD930A3A86D62A9D4B9813B15A1"
+      },
+      {
+        "run_id": "r62-green-1-25354948",
+        "commit": "7994ebcd9cefcabc336db39bab5d48f555902a7a",
+        "scope": "Frozen bytes of original R62 focus",
+        "passed": 9,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "seconds": 7.91,
+        "junit_seconds": 7.853,
+        "exit_code": 0,
+        "junit_sha256": "B1886368A502F9790A3AA95FCC44ECA54C21DB85544F3D9F56B3090C6737547F",
+        "review": "Four P2 findings on this candidate"
+      },
+      {
+        "run_id": "R62 GREEN2",
+        "commit": "b365fa9e10ad03fc6f43a2f6869a653de4e33c44",
+        "scope": "Frozen corrected producer and R62 focused cases",
+        "passed": 14,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "seconds": 18.16,
+        "junit_seconds": 18.103,
+        "exit_code": 0,
+        "junit_sha256": "A711922133A63C919F2C81FF5F38FDD7BE46E589299D5D2E32EC6588C8F286E0"
+      },
+      {
+        "run_id": "R62 GREEN3",
+        "commit": "d00a1d46fc305c04b338ba1094954545e2bdd362",
+        "source_tree": "bb1b7fd8b6ca106c90de54ab6c5e2735452bfafe",
+        "tests_tree": "c1673f5f833030c30b9d97a5fde3fbc4875eb2c7",
+        "scope": "15 R62 cases including I5 and 95 regressions including SQLite Busy warning, W3/R59/R60, publication, ownership, reconcile and R42",
+        "passed": 110,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "seconds": 166.35,
+        "junit_seconds": 166.318,
+        "exit_code": 0,
+        "log_sha256": "F5AD26AD8CFAEF4DDDBB0ACBC4F17022D318ED99FB72A11E99063C74BE95DD40",
+        "junit_sha256": "6595A12DA6AFCF2FC8B7619DD0908E79428BFEEF50E5F921644D6CDA8052583B"
+      }
+    ],
+    "reviews": [
+      {
+        "commit": "d00a1d46fc305c04b338ba1094954545e2bdd362",
+        "scope": "I5 and SQLite Busy re-review",
+        "verdict": "approved",
+        "report": "r62-final-re-review.md",
+        "report_sha256": "CDDAE327BFEEFD835550BC381CD4B7C4F01D1048F0F816A65837E66D3EA74795"
+      },
+      {
+        "commit": "d00a1d46fc305c04b338ba1094954545e2bdd362",
+        "scope": "Independent integrated group source review",
+        "verdict": "approved",
+        "report": "m2-b-final-group-review.md",
+        "report_sha256": "D4E11DF4CC19E88C17E1904A54215B4D646DDBA13482AC7DDA2026BC4FD9466F"
+      },
+      {
+        "commit": "f6269332893419eb83f27fa1c8d67a426ba709f4",
+        "scope": "R50/R59 SQL boundary only",
+        "verdict": "approved_static",
+        "runtime_focus": "passed_on_reviewed_candidate"
+      }
+    ],
+    "full2_observation": {
+      "commit": "350761adfc766558feb8b0975978352b3eecc198",
+      "state_at_checkpoint": "completed",
+      "observed_failures": 6,
+      "failures_observed_by_scope": {
+        "capture_recovery_fixture_roots": 5,
+        "catalog_read_view_sql_exception_boundary": 1
+      },
+      "final_result": {
+        "collected": 1275,
+        "passed": 1251,
+        "failed": 6,
+        "errors": 0,
+        "skipped": 18,
+        "seconds": 824.52,
+        "junit_seconds": 824.414,
+        "verdict": "failed"
+      },
+      "log": "b5-full2-350761adfc76-37061fb5.log"
+    },
+    "follow_up": {
+      "fixture_commit": "7b9f532aa0851712e5f0d4b12e804da44b02a0da",
+      "sql_commit": "f6269332893419eb83f27fa1c8d67a426ba709f4",
+      "scope": "Capture fixtures use distinct data and sessions roots. Raw SQLite errors escaping the catalog read body translate with cause. Other caller errors and rollback/release retain their behavior.",
+      "combined_focus": {
+        "run_id": "b5-full2-six-failures-focus-6e5183bb",
+        "commit": "f6269332893419eb83f27fa1c8d67a426ba709f4",
+        "passed": 19,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "seconds": 7.59,
+        "junit_seconds": 7.429
+      }
+    },
+    "remaining_gates": [
+      "Final full suite, hygiene and comparative types",
+      "Handoff of the accepted B contracts for M3 UI integration",
+      "Installed-wheel and Windows distribution verification",
+      "Windows CI on final PR head and protected merge under CLAUDE.md §7 and ruling 64"
+    ]
+  }
 }

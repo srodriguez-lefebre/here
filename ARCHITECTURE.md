@@ -49,7 +49,7 @@ The main flow is:
 
 ## Windows Presentation Layer
 
-Windows distribution starts with a locked noneditable 0.2.0 wheel installed into
+Windows distribution starts with a locked noneditable 0.3.0 wheel installed into
 a dedicated CPython 3.13.15 AMD64 build environment. PyInstaller creates windowed
 `here.exe` and console `here-cli.exe` sharing one inspectable `_internal` directory.
 The fixed audio child dispatch runs before Qt/provider bootstrap and uses the
@@ -353,6 +353,41 @@ only the test wrappers changed. Hosted gates were pending at that checkpoint;
 final exact-head Windows CI/Copilot/merge now close A as recorded above. Earlier
 failed fulls and the unexplained child timeout
 retain their original results; no new certification or group acceptance is claimed.
+
+## Lifecycle and deletion
+
+The memory service owns title and notes edits, participant links and reversible
+request-scoped speaker attribution. Optimistic writes compare the expected row
+version and preserve immutable transcript revisions and their audio links.
+Reconcile uses the existing operation journal to repair committed catalog state
+and lifecycle event snapshots without repeating a transcription request.
+
+Deletion separates durable acceptance from cleanup. The service records a minimal
+suppression entry before destructive work. One bounded read view resolves the
+meeting UUID and exact origin aliases before rows are returned. Accepted deletion
+stays hidden while cleanup is pending. Cleanup uses the verified inventory for
+managed data and derivatives, including FTS, WAL and backups. Unknown material
+is retained and reported. The final tombstone has identity and origin suppression
+metadata for reconstruction. External import sources stay under the user's control.
+
+Destructive operations require explicit native session context and revalidate
+ownership before proceeding. Native and catalog leases protect the relevant
+cleanup boundary. A caller's release acknowledgement runs outside the
+publication lock and SQLite transaction. Recovery can use the existing private
+staging rules for a verified orphan with no journal reference. Journaled staging
+requires its own validation and ownership. Pending recovery publication leaves
+the read view before acquiring the writer lock and revalidates identity and
+authority before opening material or replacing its marker. The independent
+group review checked the integrated source and the 110-case run, including
+destination collisions and SQLite Busy warnings. The follow-up restored typed
+SQLite errors in the read view while preserving caller error identity for other
+exceptions.
+
+Reindex uses the existing `segments_fts` index and rebuilds it from active complete
+revisions visible through suppression. It runs locally and preserves historical
+revisions and partial transcripts. Lifecycle logic stays in the memory core,
+which has no dependency on Qt or Typer. Search and desktop playback integration
+are tracked in M3.
 
 ## Existing Audio Transcription
 
