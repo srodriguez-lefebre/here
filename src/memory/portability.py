@@ -24,6 +24,17 @@ from here.memory.models import (
     RevisionAudioAsset,
     Segment,
 )
+from here.memory.portable_package import (
+    MAX_PORTABLE_MANIFEST_BYTES,
+    PackageSummary,
+    inspect_package,
+)
+from here.memory.portable_package import (
+    InvalidPackage as InvalidPackage,
+)
+from here.memory.portable_package import (
+    validate_entry_name as validate_entry_name,
+)
 from here.memory.repository import (
     _PortableExportRows,
     _PortableLifecycleEvent,
@@ -386,6 +397,9 @@ class PortabilityService:
     def __init__(self, memory: MemoryService) -> None:
         self._memory = memory
 
+    def inspect(self, source: Path) -> PackageSummary:
+        return inspect_package(source, Manifest)
+
     def export(
         self,
         ids: tuple[str, ...],
@@ -436,6 +450,8 @@ class PortabilityService:
                 files=tuple(entries),
             )
             manifest_bytes = manifest.model_dump_json().encode("utf-8")
+            if len(manifest_bytes) > MAX_PORTABLE_MANIFEST_BYTES:
+                raise LibraryError("Selection exceeds the portable package manifest size limit")
             total_bytes = payload_bytes + len(manifest_bytes)
             _check_limits(len(entries) + 1, total_bytes)
             paths = (*(entry.path for entry in entries), _MANIFEST_PATH)

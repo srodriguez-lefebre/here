@@ -994,6 +994,32 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Costo si falla:** ajustar el contrato privado y sus fixtures antes de
     publicar formato 1, conservando identidad, hashes y aceptación.
 
+66. **2026-11-13 — Prototipo SQLite nativo acotado para el p95 de M3 A.** El
+    usuario autorizó un prototipo de diagnóstico en worktree separado, con
+    corpus sintético y el mismo recorrido público, guard, proyecciones completas,
+    oráculos y presupuesto estricto de menos de 500 ms. Los insumos de compilación
+    quedan en el scratch del worktree con versiones y hashes registrados. La
+    autorización cubre la medición. Incorporar una dependencia compilada al
+    producto requiere una decisión posterior. El resultado queda como evidencia
+    de diagnóstico y no modifica la definición de terminado ni el criterio.
+    **Costo si falla:** descartar el prototipo, conservar el candidato funcional y
+    mantener abierto el criterio de rendimiento.
+
+67. **2026-11-13 — Lectura acotada de metadatos ZIP de portabilidad v1.**
+    La inspección comprueba los encabezados del directorio central en el mismo
+    archivo abierto y admite hasta 32 MiB de directorio y 8 MiB de manifiesto.
+    El formato exportado usa nombres de rol canónicos con UUIDs y números, una
+    entrada compacta por archivo y sin comentarios de payload. Incluso con
+    10.000 roles, sus metadatos quedan por debajo de esos topes. El manifiesto
+    comprimido admite 1,125 MiB extra para la expansión normal de DEFLATE.
+    Se revisan como máximo 64 campos extra por entrada antes de llamar a
+    `zipfile`, incluyendo la identidad de cualquier alias Unicode. Se rechaza
+    relleno excesivo antes de cargarlo. Se preservan ZIP64 y los límites de
+    10.000 entradas, 20 GiB declarados y ratio 100:1, sin extraer archivos al
+    inspeccionar. Los checks de tamaños y SHA-256 de payload esperan staging.
+    **Costo si falla:** ajustar el presupuesto de metadatos sobre archivos
+    válidos y repetir pruebas hostiles, sin aflojar límites de payload.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
