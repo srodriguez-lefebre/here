@@ -1175,6 +1175,36 @@
       "post_bindings": "r63-validation-1-post-bindings.json",
       "exits": "r63-regression-1-exit.json",
       "report": "r63-validation-1-receipt.json"
+    },
+    {
+      "name": "M3A-R63-ORIGINAL-QUERY-BENCHMARK-VALID-BUDGET-FAILURE",
+      "classification": "ACTUAL_R63_VALID_COMPLETE40_SAMPLE_BUDGET_FAILURE",
+      "head": "ca80f49a4427c1a047cac4c06d7d16c606560c88",
+      "source_tree": "64013ade05571517cdac5cc0fee43e49c58e1e30",
+      "tests_tree": "1ebd4f67002a13300f454e18dcb49580d9d416e0",
+      "config_blob": "7143d4deff5acb55e524baa5ee15c101bce9b3b5",
+      "workdir": "C:/Users/savar/.codex/worktrees/m3-search-green/here",
+      "command": "& 'C:/Users/savar/.codex/worktrees/m2-catalog/here/.venv/Scripts/python.exe' -m pytest -vv tests/test_memory_search_benchmark.py::test_warm_search_p95_with_actual_corpus_generation_and_visibility_guard --junitxml=C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN/r63-query-benchmark-1.xml",
+      "exit_code": 1,
+      "collected": 1,
+      "selected": 1,
+      "passed": 0,
+      "failed": 1,
+      "setup_errors": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "duration_seconds": 51.27,
+      "xml_cases": 1,
+      "xml_internal_seconds": 51.261,
+      "log": "r63-query-benchmark-1.log",
+      "xml": "r63-query-benchmark-1.xml",
+      "bindings": "r63-query-benchmark-1-pre-bindings.json",
+      "post_bindings": "r63-query-benchmark-1-post-bindings.json",
+      "exits": "r63-query-benchmark-1-exit.json",
+      "log_sha256": "0C2A1112FD906711FF2B4D2210A983E4A6EFA0F785BC8631217EB0CDC27EE128",
+      "xml_sha256": "94F2CEA4A1025D397B3B618D49D57B601246DB3890B7756A527E5DB6E825EBD8",
+      "report": "r63-query-benchmark-1-measurements.json",
+      "scope": "Original strict 500 ms budget assertion after 5 warmups and 40 correct queries. Input and interpreter invariance verified for 162 bindings. Runtime released before analysis."
     }
   ],
   "lint_checkpoint": {
@@ -2889,7 +2919,7 @@
     "validation_receipt_sha256": "4278EDC0D0A54A6FFBA08CA4FA144E3FDA2025FD3AA740F54D01AC7540F73506",
     "review": {
       "file": "r63-validation-1-review.md",
-      "sha256": "C8A65D147A37A12A9383615819BF228977AE118A6B4DD844505F45E6F9E28063",
+      "sha256": "2B890D99D855BB2AD1189377FD7697B6AE8BC353530F5E6AA17ACE2E7144E76E",
       "result": "APPROVED_BOUNDED_FUNCTIONAL"
     },
     "ruff": "check and format --check passed",
@@ -2897,9 +2927,18 @@
     "invariance": "PASS",
     "runtime": "73153 exit 0; GLOBAL RELEASE before analysis",
     "benchmark": {
-      "status": "NOT_RUN",
+      "status": "VALID_COMPLETE40_BUDGET_FAILURE",
       "manifest": "r63-benchmark-manifest.json",
-      "sha256": "C3BB7BB6CA204544110C40B36158FAF18DA46BF6C75EA34BB6B7558A73999A0F"
+      "sha256": "C3BB7BB6CA204544110C40B36158FAF18DA46BF6C75EA34BB6B7558A73999A0F",
+      "measurements": "r63-query-benchmark-1-measurements.json",
+      "measurements_sha256": "3F302AD72168C4CE8353DFA022519AFCB2551EB02ADD9C08AF69BD235206EBE5",
+      "warmups": 5,
+      "queries": 40,
+      "budget_ms": 500,
+      "p95_ms": 879.4833999891125,
+      "median_ms": 809.5637999940664,
+      "runtime": "17907 exit 1, GLOBAL RELEASE before analysis",
+      "next": "Diagnosis preparation on unchanged candidate. No repeat of the original benchmark."
     },
     "r52": {
       "status": "PREPARED_NOT_RUN_PENDING_B_HANDOFF",
