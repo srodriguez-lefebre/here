@@ -498,6 +498,7 @@ class _PortableExportView:
     _ids: tuple[str, ...]
     _suppression: SuppressionSnapshot
     rows: _PortableExportRows
+    warnings: tuple[str, ...] = ()
     _active: bool = True
     _temporary: WindowsExportSibling | None = None
     _publish_attempted: bool = False
@@ -543,7 +544,9 @@ class _PortableExportView:
         try:
             with ExitStack() as native_scope:
                 try:
-                    temporary = native_scope.enter_context(open_export_sibling(destination))
+                    temporary = native_scope.enter_context(
+                        open_export_sibling(destination, excluded_root=self._memory.data_dir)
+                    )
                     self._temporary = temporary
                     registration = self._memory._register_export(self._ids, temporary)
                     yield temporary
@@ -556,10 +559,21 @@ class _PortableExportView:
                         cleanup_verified = True
                     self._temporary = None
         except ExportBindingError as exc:
-            raise LibraryError("Could not open or publish the owned export temporary") from exc
+            if not self._published:
+                raise LibraryError("Could not open or publish the owned export temporary") from exc
+            self.warnings += (str(_ExportCleanupPending()),)
         finally:
-            if registration is not None and (self._published or cleanup_verified):
-                self._memory._retire_export(registration)
+            if (
+                registration is not None
+                and (self._published or cleanup_verified)
+                and not self.warnings
+            ):
+                try:
+                    self._memory._retire_export(registration)
+                except _ExportCleanupPending as exc:
+                    if not self._published:
+                        raise
+                    self.warnings += (str(exc),)
 
     def publish(self, temporary: WindowsExportSibling, *, cancelled: Callable[[], bool]) -> None:
         if not self._active or temporary is not self._temporary or self._publish_attempted:
@@ -971,9 +985,14 @@ class MemoryService:
                                 self._retain_native_owners(identity, owners)
                                 self._retain_catalog_owner(identity, owners)
                         recover_export_sibling(
-                            entry.sibling, entry.parent_identity, entry.file_identity
+                            entry.sibling,
+                            entry.parent_identity,
+                            entry.file_identity,
+                            excluded_root=self.data_dir,
                         )
                         session_artifact_path(path.parent, path.name).unlink()
+                except Busy:
+                    pending |= deleting is not None
                 except (OSError, ValueError, LibraryError):
                     pending = True
         except (OSError, ValueError, LibraryError):
@@ -983,11 +1002,15 @@ class MemoryService:
         return pending
 
     @contextmanager
-    def _operation(self) -> Iterator[MemoryRepository]:
+    def _operation(
+        self, *, recovery_warnings: list[object] | None = None
+    ) -> Iterator[MemoryRepository]:
         validate_session_directory(self.data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
         lock = _FileLock(self.data_dir / ".memory.lock")
         try:
+            if recovery_warnings is not None and self._recover_exports_locked():
+                recovery_warnings.append(str(_ExportCleanupPending()))
             with self._operation_locked() as repo:
                 yield repo
         finally:
@@ -2874,12 +2897,10 @@ class MemoryService:
         reverted: list[RecoveryOutcome] = []
         marked: list[RecoveryOutcome] = []
         skipped: list[RecoveryOutcome] = []
-        with self._operation() as repo, ExitStack() as leases:
+        with self._operation(recovery_warnings=warnings) as repo, ExitStack() as leases:
             records, stages = _deletion_registry(self.data_dir)
             if stages:
                 warnings.append("Uncommitted deletion metadata stages retained")
-            if self._recover_exports_locked():
-                warnings.append(str(_ExportCleanupPending()))
             # Restore suppression/origins BEFORE the one existing receipt rebuild.
             # A record never grants arbitrary-file authority; A proof still does.
             for record in records:

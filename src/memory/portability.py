@@ -84,6 +84,7 @@ class ExportResult(BaseModel):
     omitted_answer_ids: tuple[str, ...]
     payload_bytes: int
     archive_bytes: int
+    warnings: tuple[str, ...] = ()
 
 
 class _EventPayload(BaseModel):
@@ -490,4 +491,5 @@ class PortabilityService:
                 omitted_answer_ids=manifest.omitted,
                 payload_bytes=payload_bytes,
                 archive_bytes=archive_bytes,
+                warnings=view.warnings,
             )
