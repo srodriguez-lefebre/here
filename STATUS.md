@@ -16,18 +16,22 @@ M2 B recuperó `codex/m2-lifecycle` en
 El autor RED trabaja en `C:/Users/savar/.codex/worktrees/m2-b-r62-red-resume/here`
 sobre `ae00b44`. M3 A recuperó el checkout `2710/here` en `49baac0`.
 
-M2 B prepara el RED de R62. M3 A verificó automáticamente los focos de R63
+M2 B reprodujo R62 en `7455561`. Los nueve casos del RED dieron siete fallos
+esperados y dos controles verdes. El productor y el consumidor avanzan en
+archivos separados a partir de ese RED.
+M3 A verificó automáticamente los focos de R63
 en `ca80f49`: Ruff, 8 comparaciones con el oráculo v2, 10 controles de
 generación y 240 regresiones de búsqueda. La review independiente aprobó ese
 alcance funcional. `r63-query-benchmark-1` midió p95 de 879,4833999891125 ms
 frente al requisito de menos de 500 ms. M3 A prepara el diagnóstico focalizado
-y M2 B tiene la próxima ventana para el RED.
+para la próxima ventana libre.
 Root coordina las ventanas de ejecución, la integración, los PR y los merges.
 
 Preparación documental M5 B en `C:/Users/savar/.codex/worktrees/m2-segments/here`,
-rama `codex/m2-segments`, base `1085a6e`. `portability_contracts` entregó el
-ajuste de SPEC y PLAN. `portability_contract_review` revisa el borrador.
-La implementación espera el merge real de M2 B y el PR de contratos.
+rama `codex/m2-segments`, base `1085a6e`, borrador `e20c095`.
+`portability_contracts` ajustó el SPEC y el PLAN. `portability_contract_review`
+aprobó la preparación estática. Quedan las comprobaciones contra el merge real
+de M2 B y el PR de contratos antes de implementar.
 
 El usuario indicó que no se pida review de Copilot por falta de cuota
 (ruling 64). Para los PR pendientes siguen vigentes la revisión independiente,

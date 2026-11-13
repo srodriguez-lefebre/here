@@ -2392,3 +2392,22 @@ The logs, raw samples, XML and receipts are in the M3 chat worktree's
 `.superpowers/sdd/M3_SEARCH_PLAN/`. Performance acceptance remains open.
 There was no level 3 certification or version change. Two hours remains
 **omitida por ruling 5**.
+
+## 2026-11-13 — Recovery writer RED and portability preparation
+
+`r62-red-1-6adcd848` on `74555617426f4f760dca64735d0b28bec5fd6424`
+ran nine synthetic recovery cases. Seven failed and two stable-unmapped controls
+passed. The four mapping/owner/deletion handoffs and the two missing-authority
+cases observed source material or marker effects before rejection. The direct
+scope case failed because `MemoryService.recovery_publication` was absent.
+XML time was 8.582 s and SHA-256 was
+`76C307264BBEE5DF330AC587C23CBA11E086FBD930A3A86D62A9D4B9813B15A1`.
+This reproduces the defect and leaves GREEN, integration and acceptance open.
+
+The M5 B preparation draft `e20c095cc39dc4f59fa55d04208cbffeae6b8ae8`
+received an independent static re-review after correcting temp-file recovery,
+group-bound import receipts, compression limits and the review gate. The eight
+SPEC acceptance clauses and fourteen PLAN checkbox blocks retain their text.
+The concrete B5 and Windows file-identity bindings remain for the contract PR
+after the M2 B merge. Claims still require the M4 B handoff. No M5 B runtime
+evidence or certification was produced.
