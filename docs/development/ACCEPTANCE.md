@@ -34,19 +34,46 @@ must be synthetic; credentials and private conversations never enter evidence fi
 El candidato `31488693152067ae58eeacec08f0b01f47085fe4` reúne búsqueda y
 Biblioteca. La revisión independiente pidió corregir el cursor de consultas
 largas y la composición de recuperación con una raíz inyectada. También queda
-revisar un resultado duplicado observado. La suite integrada, la resolución de
-hallazgos y la aceptación de M3 siguen abiertas.
+revisar un resultado duplicado observado. La corrida funcional del candidato
+falló. La resolución de hallazgos y la aceptación de M3 siguen abiertas.
 
 | Corrida y fuente | Resultado de nivel 2 | Alcance |
 |---|---|---|
 | `r63-query-benchmark-1` en `ca80f49`, fuente `64013ade` | Falló. p95 879,4833999891125 ms frente a 500 ms. Mediana 809,5637999940664 ms, cinco precalentamientos y 40 consultas medidas. | Fixture sintético original de 1.000 reuniones y 100.000 segmentos. XML SHA-256 `94F2CEA4A1025D397B3B618D49D57B601246DB3890B7756A527E5DB6E825EBD8`. |
 | `r52-b-r58-integrated-1` en `2ece845` | 107 pasan, 52,308 s en XML. Heartbeat máximo 7,6934 ms, 1.894 ticks y ocho consultas entregadas, con todos los workers drenados. | Windows 11 10.0.26300, AMD64 Family 25 Model 80, 16 CPUs lógicas, Python 3.13.15 y Qt 6.11.2 offscreen. Ejercitó la búsqueda bajo R50, el render y el drenaje sobre el fixture 1.000/100.000. XML SHA-256 `97013543102B24FA907A9B8E41A34B3B6436C3EA77FBAF4A8520018B0662275B`. |
 | `task-2-delete-ack-green-1` en `d8fb75b` | 2 pasan, 5,438 s en XML. | Una página tardía y un detalle tardío quedan invalidados tras el borrado. XML SHA-256 `9B1C89FFFA3307496EFFAA92450E32774254D0C49214CE57F3E10197031E10FD`. |
+| `m3-final-functional-1` en `3148869` | Falló. 1.538 pasan, 19 fallan, 21 omitidos, 769,32 s. | Dos incompatibilidades con el argumento `settings` del entrypoint. Ocho pruebas no tenían el oráculo de comparación. El override global de `TRANSCRIPTIONS_DIR` afectó ocho pruebas de rutas y un control que encontró cuatro journals en vez de uno. XML SHA-256 `BD72E33597A46AA414FFF4AA1E7671CA1E18DCAD896D39AD63CADB010CD26E1C`. |
 
 Cada corrida conserva el alcance de su fuente. El p95 y el heartbeat se
 midieron en fuentes distintas. Faltan la verificación del candidato corregido,
 el seek real y la aceptación de M3. Sin nueva certificación de nivel 3.
 Dos horas sigue **omitida por ruling 5**.
+
+### Diagnóstico aislado R66
+
+El worktree de diagnóstico partió de `ca80f49a4427c1a047cac4c06d7d16c606560c88`.
+La primera corrida de controles por argumentos dio 264 pases y cuatro fallos.
+Los cuatro esperaban un error al invocar una función desde una vista TEMP.
+La corrección ajustó esa expectativa del arnés. Los resultados conservan
+alcance diagnóstico, con los desempates de tipos y la integración en el
+producto pendientes.
+
+| Corrida | Resultado | XML SHA-256 |
+|---|---|---|
+| `m3-native-argument-controls-2` | 268 pasan en 60,46 s. | `D03FC477E9BC3D71510A735BCDCA80C5A98D5A6462AE1C62F43BE0232C4C228D` |
+| `m3-native-subquery-controls-2` | 268 pasan en 68,20 s. | `101CF4910CB6296FB9047F70AC26759FBCA4B979F472055B143BD9667F2939D7` |
+| `m3-native-subquery-p95-2` | Falló. p95 621,3700499982224 ms frente al límite de 500 ms. | `16FC1A7061EE45BDB835564434DE5E8FBC6EAF12AFF79421223252B3CCA77A18` |
+
+El p95 usa cinco precalentamientos y 40 consultas medidas sobre el corpus
+original de 1.000 reuniones, 100.000 segmentos y 98.901 documentos FTS, con
+220 registros R50 y 221 IDs suprimidos. Los logs y XML están en
+`.superpowers/sdd/M3_SEARCH_PLAN/` del worktree del chat M3 A. Los controles
+son evidencia de nivel 2 para el diagnóstico. El criterio de rendimiento
+del producto sigue abierto con el mismo umbral.
+
+El PR documental [#27](https://github.com/srodriguez-lefebre/here/pull/27)
+mergeó en `94e175f` desde `dbc9d16`, con evidencia de nivel 2 para ese head.
+M3 B conserva pendiente el despacho de implementación sobre el PR revisado de A.
 
 ## Cierre de M2 · 0.3.0 · 2026-11-13
 

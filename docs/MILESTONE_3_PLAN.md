@@ -3,9 +3,11 @@
 Estado: M3 A en integración y verificación. El candidato `3148869` reúne
 búsqueda y Biblioteca sobre M2 B mergeado en `b4b3d1b`. La revisión
 independiente pidió corregir la continuación de consultas largas y la composición
-de recuperación con una raíz inyectada. El p95 medido en `ca80f49` sigue por
-encima del límite. M3 B espera el PR revisado de A abierto, el contrato aceptado
-y el despacho de root según CLAUDE §11. El diseño está en
+de recuperación con una raíz inyectada. La suite funcional integrada
+`m3-final-functional-1` falló. El benchmark de producto medido en `ca80f49`
+sigue por encima del límite y el diagnóstico aislado R66 también falló el
+presupuesto. El contrato de M3 B se mergeó en PR #27 (`94e175f`). B espera el
+PR revisado de A abierto y el despacho de root según CLAUDE §11. El diseño está en
 [`development/PRODUCT_DESIGN.md`](development/PRODUCT_DESIGN.md), secciones 2, 3 y 5,
 que es decisión tomada (ruling 3). Este plan no lo repite: fija alcance, orden,
 criterios verificables y lo que queda fuera.
@@ -98,7 +100,7 @@ Las cuatro tareas de `PRODUCT_DESIGN.md` §5 se reparten así:
 | Grupo | Tareas del diseño | Documentos | Estado |
 |---|---|---|---|
 | A. Búsqueda y acciones | 1 `SearchService`, consultas y FTS sincronizado · 2 listado y detalle Qt con workers, filtros, edición y estados vacíos | `M3_SEARCH_SPEC.md`, `M3_SEARCH_PLAN.md` | Candidato en verificación, con correcciones de revisión pendientes |
-| B. Biblioteca, reproductor y CLI | 3 reproductor y salto a evidencia con target común · 4 comandos CLI y JSON estables | `M3_LIBRARY_SPEC.md`, `M3_LIBRARY_PLAN.md` | Preparación de contratos, despacho pendiente |
+| B. Biblioteca, reproductor y CLI | 3 reproductor y salto a evidencia con target común · 4 comandos CLI y JSON estables | `M3_LIBRARY_SPEC.md`, `M3_LIBRARY_PLAN.md` | PR de contratos #27 mergeado, despacho de fuente pendiente |
 
 B depende del target de cita y los DTOs de búsqueda de A. CLAUDE §11 permite
 arrancar B sobre la rama revisada de A con su PR abierto, una vez aceptados los
