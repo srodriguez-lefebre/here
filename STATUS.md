@@ -3,7 +3,26 @@
 Actualizado: 2026-11-13. Leé CLAUDE.md primero; después este archivo y
 `docs/MASTER_PLAN.md`. Historial y rulings: `docs/development/DELIVERY.md`.
 
-## Reanudación — 2026-11-13
+## PR de M2 B en curso — 2026-11-13
+
+El PR [#25](https://github.com/srodriguez-lefebre/here/pull/25) está abierto
+contra `main`, head `55d68e2`, rama `codex/m2-lifecycle-release`, worktree
+`C:/Users/savar/.codex/worktrees/m2-lifecycle-release/here`. Root coordina el
+merge protegido. La review independiente está aprobada y consta en el PR.
+CI Windows `43461764790` y package `43461764783` están en ejecución.
+Ruling 64 aplica. No se solicitó review a Copilot.
+
+Nivel 2 local: el full corregido sobre `ec57204` pasó 1257 pruebas con 18
+omisiones. El wheel 0.3.0 no editable pasó los cuatro smokes de distribución.
+El equipo local ya tiene una instalación de here y el runner hospedado ejecuta
+el smoke del AppId estable. La instalación independiente de M5 sigue pendiente.
+
+M3 A recibió el contrato de B y prepara los dos RED de R52 en `m3-ui-red/here`.
+El p95 de búsqueda sigue en 879,48 ms frente a 500 ms. M5 B conserva el borrador
+estático en `codex/m5-portability-contracts`, `2c25a54`, con revisión independiente.
+El PR de contratos espera el merge de B. Claims siguen sujetos a M4 B.
+
+## Historial de reanudación — 2026-11-13
 
 El usuario reanudó los hitos 2 a 5. Los chats originales de M2 B y M3 A
 retoman desde los commits de pausa. Al verificar la reanudación, `origin/main`
