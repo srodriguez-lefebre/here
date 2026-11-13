@@ -1,9 +1,26 @@
 # Estado de here
 
-Actualizado: 2026-11-06. Leé CLAUDE.md primero; después este archivo y
+Actualizado: 2026-11-13. Leé CLAUDE.md primero; después este archivo y
 `docs/MASTER_PLAN.md`. Historial y rulings: `docs/development/DELIVERY.md`.
 
-## PAUSADO por instrucción del usuario — 2026-11-06
+## Reanudación — 2026-11-13
+
+El usuario reanudó los hitos 2 a 5. Los chats originales de M2 B y M3 A
+retoman desde los commits de pausa. Al verificar la reanudación, `origin/main`
+seguía en `3e76a20` y Git conservaba ambas ramas de trabajo. Faltaban los
+checkouts `faab`, `2710`, `b5-w2-red` y `m2-native-owner-red`. Cada frente
+recupera sus archivos desde los commits registrados y confirma su nueva ruta.
+
+M2 B continúa con el RED de R62. M3 A verifica el cambio R63 guardado en
+`ca80f49` antes de volver a medir el presupuesto de búsqueda. La evidencia
+anterior conserva su fuente y alcance. Root coordina las ventanas de ejecución,
+la integración, los PR y los merges.
+
+El usuario indicó que no se pida review de Copilot por falta de cuota
+(ruling 64). Para los PR pendientes siguen vigentes la revisión independiente,
+CI de Windows sobre el head final, el merge protegido y el registro de evidencia.
+
+## Pausa histórica — 2026-11-06
 
 El usuario pidió guardar todo y cortar; luego precisó el mensaje en inglés:
 `paused: checkpoint work in progress`. Todos

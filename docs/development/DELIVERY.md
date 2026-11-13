@@ -970,6 +970,15 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Costo si falla:** conservar chequeo de ciclos/corregir reutilización y repetir
     equivalencia/regresiones, sin relajar inputs, errores ni presupuesto.
 
+64. **2026-11-13 — El usuario indicó que no se solicite review a Copilot.**
+    La indicación reemplaza el requisito de solicitar y recibir review de Copilot
+    de los rulings 17 y 20 para los PR pendientes. Se conserva la revisión
+    independiente, la evidencia en el PR, CI de Windows verde sobre el head
+    final, el merge protegido de §7 y el registro en DELIVERY. Las reviews de
+    Copilot ya recibidas conservan su historial y sus respuestas.
+    **Costo si falla:** si el usuario restablece ese requisito, pedir review sobre
+    el head vigente de cada PR que siga abierto antes de mergear.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
