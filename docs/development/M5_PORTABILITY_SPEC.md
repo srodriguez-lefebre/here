@@ -50,9 +50,8 @@ settings integration remain **PENDING**. Proposed interfaces below remain plans.
   closes a fresh LibraryConnection without an active transaction; B owns the
   existing lock and the single read transaction. Its immutable
   `SuppressionSnapshot.suppressed_meeting_ids` and `fingerprint` include resolved
-  aliases in that same view. Export consumes that guard, rather than parsing the
-  deletion registry or opening a nested transaction. This is an approved contract,
-  **not evidence that B5 is implemented or accepted**.
+  aliases in that same view. Export reuses the guard's read internals under the
+  same lock, without a second parser, nested transaction or writer migration.
 - R51's private `_derived_row_purgers: list[Callable[[MemoryRepository, str], None]]`
   runs trusted SQL on the same connection at the start of the final delete
   transaction, before removing core relations and FTS rows. A purger owns no
@@ -63,14 +62,25 @@ settings integration remain **PENDING**. Proposed interfaces below remain plans.
 - Search effects use the existing M3 R45 corpus generation/invalidation contract;
   ordinary listing remains insertion-stable. No new cursor, index or p95 allowance.
 
-The seams below were checked statically against M2 B branch checkpoint
-`89305c144f2282c338d5cb8a3e4094b3832d389b`. At that checkpoint, `get_meeting` and
-`show` each open their own read scope, `ingest_session` allocates IDs and publishes
-one revision, and publication reconciliation understands
-`.staging/<operation-id>` for a revision. The multi-meeting read and the import
-operation below are proposed M5 B extensions. The contract PR must verify their
-composition against the merged B5 head, including its lock order, native ownership,
-suppression, path and inventory checks, receipts, state and recovery.
+The seams below were checked against reviewed M2 B source `ec57204`.
+`get_meeting` and `show` each open their own read scope. `_operation_locked`
+is the existing migration-capable writer body. The export read uses the R50
+internals and closes its SQLite transaction before streaming or publishing.
+Where native ownership applies, preserve B's explicit registered roots and
+bounded native-before-catalog owner acquisition under the publication lock.
+`recovery_publication` and `_publisher_operation` implement R62 for native
+session markers, parent/reservation and receipt proof. Portable import extends
+the existing journal and repository without borrowing that native retry scope.
+
+Compare the normalized local import origin and manifest fingerprint directly
+with durable R42 pairs before inserting `ingest_sources`, even if the current
+catalog has no row resolving that pair to an alias. Keep the UUID check as well.
+Recognize the registered `import-*` role in startup staging cleanup and R54
+deletion staging recovery after catalog loss. Extend the existing managed
+inventory and receipt rebuild for the local group role while preserving ordinary
+receipt 2/3, legacy audio-only lineage and trusted retry semantics. The exact
+app-created export temporary is verified separately before R42 completes and
+does not add filesystem work to the R51 SQL hook.
 
 After M2 B's merge, the independent core comprises archive inspection/name and
 size validation, manifest/hash handling, streamed export/extraction, and meeting,

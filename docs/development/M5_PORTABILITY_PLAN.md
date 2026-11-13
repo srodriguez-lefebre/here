@@ -35,8 +35,7 @@ rename lock order, per-meeting and native leases, exact suppression and source
 matching, operation/rebuild/delete inventory, and audio roles against the accepted
 head. Record the verified B5 SHA and contracts in the document PR. The concrete
 Windows proof binding for the transient destination sibling remains an M5 B
-implementation check. The comparison with branch checkpoint `89305c1` is
-preparation only.
+implementation check. The static comparison uses reviewed M2 B source `ec57204`.
 
 | Portion | Allowed dependency boundary | Evidence still required |
 |---|---|---|
@@ -66,6 +65,17 @@ or changes the full-suite, privacy, p95/heartbeat or milestone acceptance gates.
 - Touched files leave ruff clean and formatted; no new mypy errors in them.
 
 ## Inherited implementation boundaries
+
+- Use R50 read internals under the catalog lock for the detached export view.
+  `_operation_locked` belongs to writer setup and may migrate. Preserve B's
+  explicit native roots and native-before-catalog owner order where applicable.
+  R62's native session marker, reservation and receipt path remains a separate
+  operation from portable group publication.
+- Match R42 UUID and exact origin/fingerprint before adding a new source row.
+  Bind the local group and `import-*` roles in both startup and deletion recovery,
+  including catalog loss, and extend the managed purge inventory. Clean up only
+  proven export temporaries before deletion completion. Keep the R51 derived-row
+  hook limited to SQL and bind claims after the M4 B handoff.
 
 - Serialize the real schema-2 revision IDs/numbers, active revision, segment timing
   and exact revision/audio links. Preserve null dates/timing, participant IDs,
