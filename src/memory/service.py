@@ -387,7 +387,10 @@ def catalog_read_view(library: LibraryConnection) -> Iterator[SuppressionSnapsho
             raise storage_error(exc) from exc
         except (OSError, ValueError) as exc:
             raise LibraryError("Catalog read view unavailable") from exc
-        yield snapshot
+        try:
+            yield snapshot
+        except sqlite3.Error as exc:
+            raise storage_error(exc) from exc
     finally:
         try:
             if owned_transaction:
