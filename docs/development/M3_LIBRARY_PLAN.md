@@ -104,11 +104,13 @@ Use merged B5 and the reviewed ACK carried by the M3 A candidate.
   canonical UUID, fixed reason and io/exit 4, never rejected/NotFound for absent SQL.
   Complete/exit 0 requires verified purge plus durable complete. Pre-acceptance typed
   errors retain their mappings; consume structured fields, not exception prose.
-- Extend the existing `_DeleteAcknowledgement` and
-  `LibraryView._pause_for_delete(request)` to stop/unload and invalidate player
-  loads/seeks on Qt before the tracked worker receives ACK. Keep the existing 1 s
-  wait, settled-worker refresh and close cancellation. B5 invokes the callback
-  without SQL transaction/catalog locks the GUI may require.
+- Extend `_DeleteAcknowledgement` to carry the canonical `meeting_id` from
+  `before_delete` alongside the tracked request through its queued Qt ticket.
+  `LibraryView._pause_for_delete(request, meeting_id)` stops/unloads matching
+  current media and invalidates matching pending loads/seeks before ACK. Leave
+  other meetings' playback intact. Broad list/detail invalidation may remain.
+  Keep the 1 s wait, settled-worker refresh and close cancellation. B5 invokes
+  the callback without SQL transaction/catalog locks the GUI may require.
   After ACK/failure reread phase, reacquire/revalidate identity, ownership and
   inventory; per R52/f09c0fc retain applicable native and canonical leases from
   before durable barrier through cleanup. Pre-ACK preflight is not acceptance,
@@ -143,10 +145,11 @@ propagation with the real delegate.
 - A citation whose revision is historical or whose audio is missing.
 - Playback enabled while a recording is active.
 - Any path that triggers play without a click.
-- Tracked-worker deletion ACK returns only after Qt stop/unload/invalidation.
-  A late load or seek cannot revive deleted media. Timeout or teardown remains
-  phase-aware and replacement reads wait for worker settlement. Reindex leaves
-  current playback intact.
+- Tracked-worker deletion ACK carries the affected UUID and returns only after
+  matching media is released on Qt. A late load or seek cannot revive it. Use a
+  negative control with a different UUID playing and verify its source and play
+  state are preserved. Timeout or teardown remains phase-aware and replacement
+  reads wait for worker settlement. Reindex leaves current playback intact.
 - Exit codes and JSON shape drifting between commands.
 - Frozen bundle missing QtMultimedia plugins (coordinate with `packaging/windows.spec`).
 
@@ -171,7 +174,7 @@ signals `position_changed(int)`, `duration_changed(int)`, `state_changed(str)`,
 `error(str)`; planned `VisualController.resolve_citation` and
 `LibraryView.open_target(target)`. Only the B resolver can supply playable audio.
 The A segment signal provides reference IDs, and the A worker generations gate
-the resolver response. A stale load or seek from before deletion must stay
+the resolver response. A stale load or seek for the affected meeting must stay
 invalidated after the worker ACK.
 
 Interpret the existing resolver/navigation tests with exact revision audio links,

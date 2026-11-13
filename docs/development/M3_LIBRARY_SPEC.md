@@ -156,10 +156,14 @@ Desktop composition registers `_DeleteAcknowledgement` once on the real
 `BackgroundJobs` worker, calls `LibraryView._pause_for_delete(request)` on the Qt
 thread and waits up to 1 s in the worker. The view invalidates page, participant
 and detail requests, suppresses replacement reads and refreshes only after the
-worker settles. B extends this same Qt invalidation step to stop/unload playback
-and invalidate pending loads/seeks before successful ACK. Keep teardown and
-ticket cancellation on view close. Never wait on the Qt thread or touch player
-state from the worker.
+worker settles. A currently drops the affected meeting ID. B forwards the canonical
+`meeting_id` supplied by `before_delete` through the same ticket, alongside the
+tracked worker request, to `LibraryView._pause_for_delete(request, meeting_id)`
+on Qt. Stop and unload current media only if it belongs to that meeting.
+Invalidate pending loads and seeks belonging to that same ID before successful ACK.
+Playback of another meeting continues. The existing broad list and detail
+invalidation can remain. Keep teardown and ticket cancellation on view close.
+Never wait on the Qt thread or touch player state from the worker.
 The callback runs without a transaction or catalog lock needed by the GUI.
 After ACK or failure, check the current durable phase; then reacquire/revalidate
 identity, ownership, phase and inventory before a new barrier. Under R52 as clarified
