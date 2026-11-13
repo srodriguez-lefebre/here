@@ -2370,3 +2370,25 @@ conservan sus scopes; el p95 848,67978 ms sigue fallido y el writer R62 pendient
 Los logs/manifests ignorados y datos sintéticos de ejecución siguen locales;
 ninguna credencial ni biblioteca privada forma parte de los commits. La pausa no
 acepta WIP ni cierra otro grupo/hito. Reanudar solo por instrucción del usuario.
+
+## 2026-11-13 — Resumed search validation and measured performance
+
+The user resumed M2–M5 and removed Copilot review from pending PRs under ruling 64.
+The two existing work chats resumed from their preserved commits. `STATUS.md`
+records the restored paths and active responsibilities.
+
+R63 validation on head `ca80f49a4427c1a047cac4c06d7d16c606560c88`, source
+`64013ade05571517cdac5cc0fee43e49c58e1e30`, passed both Ruff checks,
+`r63-row-controls-1` (8 passed, capture deselected), `r63-generation-controls-1`
+(10 passed) and `r63-regression-1` (240 passed). Independent review approved
+the functional scope and checked the 162 file bindings and retained v2 oracle.
+Those runs are level 2 synthetic evidence.
+
+`r63-query-benchmark-1` used the same head and the original synthetic fixture,
+with five warmups and 40 measured calls. It failed the strict 500 ms limit
+with p95 879.4833999891125 ms and median 809.5637999940664 ms. XML time was
+51.261 s and SHA-256 was `94F2CEA4A1025D397B3B618D49D57B601246DB3890B7756A527E5DB6E825EBD8`.
+The logs, raw samples, XML and receipts are in the M3 chat worktree's
+`.superpowers/sdd/M3_SEARCH_PLAN/`. Performance acceptance remains open.
+There was no level 3 certification or version change. Two hours remains
+**omitida por ruling 5**.
