@@ -172,6 +172,7 @@ eventos sintéticos, sin audio ni proveedor).
   2. Review de Copilot pedida sobre el head actual (ruling 17). Esperar a que llegue.
      Responder cada observación en su hilo: corregida con el commit que la arregla, o
      rechazada con la razón. Después de una corrección sustantiva, pedirla de nuevo.
+     El ruling 64 omite este paso para los PR pendientes por indicación del usuario.
   3. CI de Windows verde en el head exacto que se va a mergear.
   4. `gh pr merge <n> --merge --admin --match-head-commit <sha>`. Merge commit, nunca
      squash, para conservar los commits del grupo. El bypass de administrador del
