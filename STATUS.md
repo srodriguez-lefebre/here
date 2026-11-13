@@ -33,8 +33,16 @@ Siguen la segunda review, la verificación de esos fallos y la integración.
 La preparación de integración de cuatro archivos de tests quedó en `f85e366`,
 rama `codex/m2-b-r62-product-prep`, worktree
 `C:/Users/savar/.codex/worktrees/m2-b-r62-product-prep/here`.
-`b5_docs` prepara la documentación de 0.3.0 sobre `89305c1` en
+`b5_docs` entregó el borrador de 0.3.0 sobre `89305c1` desde
 `C:/Users/savar/.codex/worktrees/m2-b-release-docs-prep/here`.
+El integrado `d00a1d4` pasó los 110 casos de `r62-green-3-61a5088c` y la
+revisión independiente de fuente. Root recibió el worktree `m2-b-r62-product-prep`,
+integró la documentación y subió la versión del candidato en `350761a`.
+El full `b5-full2-350761adfc76-37061fb5` está en curso y ya detectó seis fallos.
+Cinco fixtures de captura incluyen el lock del catálogo en su árbol de sesiones.
+El sexto requiere recuperar la traducción SQLite de R50 en la vista de lectura.
+Se preparan el arreglo de fixtures `7b9f532` y la corrección de fuente en
+worktrees separados. 0.3.0 espera full, distribución, CI y merge.
 M3 A verificó automáticamente los focos de R63
 en `ca80f49`: Ruff, 8 comparaciones con el oráculo v2, 10 controles de
 generación y 240 regresiones de búsqueda. La review independiente aprobó ese
