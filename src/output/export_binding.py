@@ -5,7 +5,7 @@ from __future__ import annotations
 import ctypes
 import os
 import re
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import ExitStack, contextmanager
 from ctypes import wintypes
 from pathlib import Path
@@ -533,7 +533,9 @@ class _Windows:
             os.close(fd)
             raise
 
-    def rename(self, handle: int, destination: str) -> None:
+    def rename(
+        self, handle: int, destination: str, before_rename: Callable[[], None] | None
+    ) -> None:
         name = _name_bytes(destination)
         buffer = ctypes.create_string_buffer(ctypes.sizeof(_FileRenameInformation) + len(name) + 2)
         info = _FileRenameInformation.from_buffer(buffer)
@@ -546,6 +548,8 @@ class _Windows:
             ctypes.addressof(buffer) + _FileRenameInformation.FileName.offset, name, len(name)
         )
         status_block = _IoStatusBlock()
+        if before_rename is not None:
+            before_rename()
         status = self.nt_set(handle, ctypes.byref(status_block), buffer, ctypes.sizeof(buffer), 10)
         if status < 0:
             raise _NativeError("NtSetInformationFile(FileRenameInformation)", status)
@@ -626,13 +630,13 @@ class WindowsExportSibling:
         finally:
             self._stream_open = False
 
-    def replace_destination(self) -> None:
+    def replace_destination(self, *, before_rename: Callable[[], None] | None = None) -> None:
         if not self._stream_finished:
             raise ExportBindingError("The export stream must finish before publication")
         if self._windows.volume_for(self._destination) != self._parent_identity[0]:
             raise ExportBindingError("The export destination drive changed")
         self._windows.check_destination(self._parent, self._destination, self._parent_identity[0])
-        self._windows.rename(self._held_file(), self._destination.name)
+        self._windows.rename(self._held_file(), self._destination.name, before_rename)
         self._published = True
 
     def remove(self) -> None:
