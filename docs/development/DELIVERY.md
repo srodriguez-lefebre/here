@@ -1010,7 +1010,10 @@ Los rulings nuevos se escriben en español por el ruling 6.
     archivo abierto y admite hasta 32 MiB de directorio y 8 MiB de manifiesto.
     El formato exportado usa nombres de rol canónicos con UUIDs y números, una
     entrada compacta por archivo y sin comentarios de payload. Incluso con
-    10.000 roles, sus metadatos quedan por debajo de esos topes. Se rechaza
+    10.000 roles, sus metadatos quedan por debajo de esos topes. El manifiesto
+    comprimido admite 1,125 MiB extra para la expansión normal de DEFLATE.
+    Se revisan como máximo 64 campos extra por entrada antes de llamar a
+    `zipfile`, incluyendo la identidad de cualquier alias Unicode. Se rechaza
     relleno excesivo antes de cargarlo. Se preservan ZIP64 y los límites de
     10.000 entradas, 20 GiB declarados y ratio 100:1, sin extraer archivos al
     inspeccionar. Los checks de tamaños y SHA-256 de payload esperan staging.
