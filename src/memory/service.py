@@ -1445,10 +1445,6 @@ class MemoryService:
         if destination.exists() or repo.get_ingest_source(origin, batch.manifest_sha256):
             return _PortableMeetingOutcome(identity, "conflict", "destination_exists")
         detail = bundle.detail
-        if detail.meeting.legacy_session_id and repo.get_meeting_by_legacy_id(
-            detail.meeting.legacy_session_id
-        ):
-            return _PortableMeetingOutcome(identity, "conflict", "legacy_identity_exists")
         for participant in detail.participants:
             present = repo.get_participant(participant.id)
             if present is not None and present != participant:
