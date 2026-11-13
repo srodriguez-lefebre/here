@@ -2531,3 +2531,18 @@ Windows CI [43461764790](https://github.com/srodriguez-lefebre/here/actions/runs
 reported 1273 passes, two installed-wheel skips and 456.71 s. The CI wheel and
 sdist built successfully. The independent fresh wheel run covered the two skips.
 The merge tree is identical to the reviewed head and the package build tree.
+
+## 2026-11-13 — Portability contracts merged and core dispatched
+
+Documentation PR [#26](https://github.com/srodriguez-lefebre/here/pull/26)
+merged at 2026-11-13T16:42:22Z as `5286dd435b1228cc9f69e8ad0dda6f1bec265018`.
+Independent review approved head `4a86b590edf72c3239562c4e74b273fbfa6ec1bc`.
+Windows CI `43464061386` passed 1273 cases with two installed-wheel skips in
+414.50 s. Windows package `43464060858` succeeded on the same head. Root used
+`gh pr merge 26 --merge --admin --match-head-commit 4a86b590edf72c3239562c4e74b273fbfa6ec1bc`.
+Ruling 64 applied. This is automated evidence for unchanged product source and
+static review of the portability contract.
+
+M5 B Task 1 begins at `5286dd4`. The independent RED author owns only the export
+tests in its dedicated worktree. `STATUS.md` records the two worktrees. Claims,
+UI/CLI, playback and settings retain their actual M4/M3/M5 A dependencies.
