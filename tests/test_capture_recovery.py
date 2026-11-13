@@ -124,12 +124,13 @@ def write_recovery_manifest(directory, capture_id, status):
 def test_foreign_manifest_with_same_uuid_does_not_hide_interrupted_capture(tmp_path, status):
     from here.application.recovery import RecoveryService
 
-    capture = make_capture(tmp_path)
-    foreign = tmp_path / "foreign-copy"
+    capture_root = tmp_path / "sessions"
+    capture = make_capture(capture_root)
+    foreign = capture_root / "foreign-copy"
     write_recovery_manifest(foreign, capture.document.capture_id, status)
-    before = {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()}
+    before = {path: path.read_bytes() for path in capture_root.rglob("*") if path.is_file()}
 
-    candidates = RecoveryService(tmp_path).discover()
+    candidates = RecoveryService(capture_root).discover()
 
     expected = {capture.destination: "interrupted"}
     if status == "failed":
@@ -138,18 +139,19 @@ def test_foreign_manifest_with_same_uuid_does_not_hide_interrupted_capture(tmp_p
     assert all(item.capture_id == capture.document.capture_id for item in candidates)
     assert all(item.can_retry and item.recorded_duration_seconds == 0.01 for item in candidates)
     assert not capture.destination.exists()
-    assert {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()} == before
+    assert {path: path.read_bytes() for path in capture_root.rglob("*") if path.is_file()} == before
 
 
 def test_failed_manifest_copies_with_same_uuid_are_both_discoverable(tmp_path):
     from here.application.recovery import RecoveryService
 
-    capture = make_capture(tmp_path)
+    capture_root = tmp_path / "sessions"
+    capture = make_capture(capture_root)
     write_recovery_manifest(capture.destination, capture.document.capture_id, "failed")
-    copied = tmp_path / "copied-session"
+    copied = capture_root / "copied-session"
     shutil.copytree(capture.destination, copied)
-    before = {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()}
-    service = RecoveryService(tmp_path)
+    before = {path: path.read_bytes() for path in capture_root.rglob("*") if path.is_file()}
+    service = RecoveryService(capture_root)
 
     candidates = service.discover()
 
@@ -160,7 +162,7 @@ def test_failed_manifest_copies_with_same_uuid_are_both_discoverable(tmp_path):
     assert all(item.display_id == "copied-human-id" for item in candidates)
     for candidate in candidates:
         assert service.materialize(candidate) == candidate.session_dir
-    assert {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()} == before
+    assert {path: path.read_bytes() for path in capture_root.rglob("*") if path.is_file()} == before
 
 
 @pytest.mark.parametrize("original_status", ["interrupted", "failed"])
@@ -414,11 +416,12 @@ def test_retry_copy_rejects_invalid_journal_before_association(tmp_path, fault):
 def test_manifest_supersedes_journal_only_at_same_identity_and_reserved_directory(tmp_path, status):
     from here.application.recovery import RecoveryService
 
-    capture = make_capture(tmp_path)
+    capture_root = tmp_path / "sessions"
+    capture = make_capture(capture_root)
     write_recovery_manifest(capture.destination, capture.document.capture_id, status)
-    before = {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()}
+    before = {path: path.read_bytes() for path in capture_root.rglob("*") if path.is_file()}
 
-    candidates = RecoveryService(tmp_path).discover()
+    candidates = RecoveryService(capture_root).discover()
 
     if status == "completed":
         assert candidates == []
@@ -427,7 +430,7 @@ def test_manifest_supersedes_journal_only_at_same_identity_and_reserved_director
         assert candidates[0].session_dir == capture.destination
         assert candidates[0].status == "failed"
         assert candidates[0].display_id == "copied-human-id"
-    assert {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()} == before
+    assert {path: path.read_bytes() for path in capture_root.rglob("*") if path.is_file()} == before
 
 
 def test_pending_exists_before_provider_and_journal_retained_on_commit_error(tmp_path, monkeypatch):

@@ -154,7 +154,7 @@ Bundle e instalador Windows, y la aceptación del instalador:
 
 ```powershell
 ./scripts/build_windows.ps1 -Python (uv python find --managed-python 3.13.15)
-./scripts/smoke_windows.ps1 -BundlePath ./dist/windows/here -InstallerPath ./dist/windows/here-0.2.0-windows-x64-setup.exe
+./scripts/smoke_windows.ps1 -BundlePath ./dist/windows/here -InstallerPath ./dist/windows/here-0.3.0-windows-x64-setup.exe
 ```
 
 Entradas: `here`, `record`, `here-gui` (producción) y `here-gui-preview` (UI con

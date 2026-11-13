@@ -33,11 +33,11 @@ try {
     Invoke-Checked uv @('pip','sync','--python',$taskPython,'--require-hashes','--only-binary',':all:',"$taskBuild/requirements.txt")
     Invoke-Checked $taskPython @('-I','-B','-c',"import sys,platform,importlib.util; assert sys.version_info[:3]==(3,13,15); assert platform.machine()=='AMD64'; assert importlib.util.find_spec('here') is None")
     Invoke-Checked uv @('build','--wheel','--no-build-isolation','--python',$taskPython,'--out-dir',"$taskBuild/wheel",'--quiet')
-    $taskWheels = @(Get-ChildItem -LiteralPath "$taskBuild/wheel" -Filter 'here-0.2.0-*.whl')
+    $taskWheels = @(Get-ChildItem -LiteralPath "$taskBuild/wheel" -Filter 'here-0.3.0-*.whl')
     if ($taskWheels.Count -ne 1) { throw 'Expected exactly one versioned build wheel' }
     $taskWheel = $taskWheels[0]
     Invoke-Checked uv @('pip','install','--python',$taskPython,'--no-deps',$taskWheel.FullName)
-    Invoke-Checked $taskPython @('-I','-B','-c',"import here,sys,importlib.metadata; assert 'site-packages' in here.__file__; assert importlib.metadata.version('here')=='0.2.0'; assert not any(n.startswith('__editable__') for n in sys.modules)")
+    Invoke-Checked $taskPython @('-I','-B','-c',"import here,sys,importlib.metadata; assert 'site-packages' in here.__file__; assert importlib.metadata.version('here')=='0.3.0'; assert not any(n.startswith('__editable__') for n in sys.modules)")
     Invoke-Checked $taskPython @('-B',"$taskRoot/scripts/windows_notices.py",'prepare',"$taskBuild/notices",'--wheel',$taskWheel.FullName)
     $env:HERE_BUILD_NOTICES = "$taskBuild/notices"
     # Native dependency resolution must not borrow DLLs from arbitrary developer
@@ -66,7 +66,7 @@ try {
     $CompilerPath = (Resolve-Path -LiteralPath $CompilerPath).Path
     # The Inno 6 ISCC PE resource reports 0.0.0.0. installer.iss checks the
     # authoritative preprocessor/compiler engine VER against exact 6.7.0.
-    $taskCompilerArgs = @('/Qp',('/DBundleDir=' + "$taskOutput/here"),('/DOutputDir=' + $taskOutput),'/DAppVersion=0.2.0')
+    $taskCompilerArgs = @('/Qp',('/DBundleDir=' + "$taskOutput/here"),('/DOutputDir=' + $taskOutput),'/DAppVersion=0.3.0')
     if ($TestAppId) { $taskCompilerArgs += '/DHereAppId={{' + ([Guid]::Parse($TestAppId)).ToString().ToUpperInvariant() + '}' }
     if ($TestGroup) {
         if ($TestGroup -notmatch '^[A-Za-z0-9][A-Za-z0-9 -]{0,63}$') { throw 'Test Start group must be a simple owned name' }

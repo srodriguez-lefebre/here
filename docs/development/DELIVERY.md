@@ -2442,3 +2442,92 @@ SPEC acceptance clauses and fourteen PLAN checkbox blocks retain their text.
 The concrete B5 and Windows file-identity bindings remain for the contract PR
 after the M2 B merge. Claims still require the M4 B handoff. No M5 B runtime
 evidence or certification was produced.
+
+## 2026-11-13 — M2 B integrated source and release candidate
+
+`r62-green-3-61a5088c` passed 110 cases in 166.35 s on source `d00a1d4`.
+It includes the R62 review fixes, destination collision, SQLite Busy warning,
+W3/R59/R60 and publication/deletion recovery. The independent group review by
+`b5_handoff_review` approved the source and verified the exact test bindings.
+JUnit SHA-256 is `6595A12DA6AFCF2FC8B7619DD0908E79428BFEEF50E5F921644D6CDA8052583B`.
+
+The first full candidate suite `b5-full2-350761adfc76-37061fb5` reported
+1251 passes, 6 failures and 18 skips in 824.52 s. Five capture fixtures counted
+the newly created catalog lock under their sessions tree. `7b9f532` put the
+sessions and data roots in separate test directories, preserving all checks
+of captured data. The sixth failure reproduced missing translation of a raw
+SQLite error in `catalog_read_view`. `f626933` restored the R50 translation
+with R59 exception propagation for other caller errors. The independent review
+approved the delta. `b5-full2-six-failures-focus-6e5183bb` passed 19 cases.
+
+`ec57204` formats the five affected files and annotates the deletion warning
+tuple. The independent review verified unchanged assertions and warning values.
+Ruff and formatting checks passed for all 27 touched Python files. Canonical
+layout mypy comparison with `3e76a20` found 79 diagnostics in both trees and
+zero new diagnostics in changed source. The first version of the comparator
+inherited mypy's exit 1 from the known baseline despite an empty diagnostic
+delta. The receipt records each command result and the comparator now exits
+explicitly when that comparison passes.
+
+`350761a` sets version 0.3.0 in the project, local lock entry, packaging and
+build workflow without changing dependency pins or AppId. The development host
+has an existing stable AppId installation and Start group. The hosted Windows
+package job will exercise the stable installer lifecycle in its isolated runner.
+The local wheel verification uses a separate noneditable installation and
+synthetic roots. No level 3 certification is claimed.
+
+The corrected full `b5-full2-ec572046c277-38b8014c` on `ec57204` passed 1257
+of 1275 tests in 730.49 s, with 16 local symlink-privilege skips and two
+installed-wheel skips. Exit 0, JUnit time 730.426 s, SHA-256
+`66B21E06E22D965DB49010BC1760E73BED0EDCC61F94D75A74521809F009A041`.
+The subsequent release commits retain source, tests, packaging and config.
+This is level 2 evidence. The accepted B source contracts were handed to M3 A
+for the independent R52 consumer tests.
+
+`m2-030-wheel-a4e464a319f7-a98d6f06` built wheel and sdist on the same source
+and config at `a4e464a`, then installed the wheel in a fresh noneditable
+environment. Version metadata and the five memory subcommand help outputs
+matched the release documentation. Four distribution checks passed in 10.46 s.
+JUnit SHA-256 is `36CAC6038124FF3911E483729A6CDD067113D8803A7000EAFC062B75BA98B38A`.
+Wheel SHA-256 is `83D7496075BE671F40551ADB2287D963ACD33BF701FCCE0BB9F21E8960E0339C`.
+Sdist SHA-256 is `18D2276C38A22F0CC3F4C85336701F74FD5980D35074D63DD5A0619F25B8AE52`.
+This is local level 2 evidence. The hosted build generates its own artifacts.
+
+
+## 2026-11-13 — M2 B hosted distribution verification
+
+Windows package run [43461764783](https://github.com/srodriguez-lefebre/here/actions/runs/43461764783)
+passed against PR #25 head `55d68e2c333ccea5d1b3cd6672f66ece8908f536`.
+The artifact is [here-0.3.0-windows-x64](https://github.com/srodriguez-lefebre/here/actions/runs/43461764783/artifacts/14056018512).
+Its provenance records synthetic PR merge commit `1bdea0ef7208436987138aa2ead388c0ecea0ccc`,
+whose tree `ccf0f524b2828ad18c86468bb1a9e63367ee3e2c` matches the PR head exactly.
+The build used CPython 3.13.15 x64 and Inno Setup 6.7.0 on Windows Server 2025
+10.0.26100. It retained the stable AppId and reports a clean tracked tree.
+
+| File | SHA-256 |
+|---|---|
+| `here-0.3.0-windows-x64-setup.exe` | `739a8121346dcb0c63e6dd94f7b0dd879903c1699c363be536cc6e5f42a9779d` |
+| `here-0.3.0-windows-x64.zip` | `d110977a67967a1283e0938debc01716e98a5a0aa0221013e027552e9b350a34` |
+| `here-0.3.0-py3-none-any.whl` | `add4ce69de8a0df027f14e0bf8c52e079f781695af6b8c02ae22433a2b4a5981` |
+| `build-provenance.json` | `029fa577940725e7ab428a597cf9e426d2cce8e413d6a60062fb5a5779a6d39a` |
+| `bundle-inventory.json` | `67d0ae8fcf7408bee83260197965fb24ff7bd5a9d662c2575c995d3ac62d8f4e` |
+| `compiler-provenance.json` | `b6332898d505c6d341c8dc07243d4a8a4c8d12709c8a55ab5dca4366e7e5b71e` |
+| `SHA256SUMS.txt` | `0cdb95b465e34ee00a1406663aa9aa5723d023132d1d58dfbe38348fb0c731b4` |
+
+All six manifest entries matched the downloaded files. The inventory lists 732
+files. The portable ZIP contains `_internal/notices/THIRD_PARTY_NOTICES.md`
+and the wheel notice inventory. Hosted `acceptance.json` reports success for
+no-key frozen startup, Start shortcut launch, payload identity, active-update
+refusal, reinstall and uninstall with the synthetic data preserved.
+
+Level 2 automated Windows evidence. Independent Windows 11 installation and
+physical audio checks remain for M5. Two hours remains **omitida por ruling 5**.
+
+PR #25 merged at 2026-11-13T16:29:41Z as `b4b3d1beb9b05e33ae03ab8381e805aa6a23ffc8`.
+Independent group and follow-up reviews are recorded in the PR body. Ruling 64
+applied. Root verified both successful Windows runs bound to `55d68e2`, then ran
+`gh pr merge 25 --merge --admin --match-head-commit 55d68e2c333ccea5d1b3cd6672f66ece8908f536`.
+Windows CI [43461764790](https://github.com/srodriguez-lefebre/here/actions/runs/43461764790)
+reported 1273 passes, two installed-wheel skips and 456.71 s. The CI wheel and
+sdist built successfully. The independent fresh wheel run covered the two skips.
+The merge tree is identical to the reviewed head and the package build tree.

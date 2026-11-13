@@ -1,14 +1,17 @@
 # Hito 2 — Memoria estructurada
 
-Estado: **en ejecución desde el2026-11-05**, ruling20 reemplaza ruling15.
-Grupo A **cerrado y mergeado** por PR21, merge53712c5beedafc2d40e2abf10c13362a1c3c9f78
-el2026-11-06T03:22:06Z; M2 sigue abierto hasta B/cierre del hito. Nivel: implementado
-y verificado automáticamente, sin certificación nueva de hardware/proveedor/instalación.
+Estado: **cerrado en 0.3.0**, nivel 2 verificado automáticamente. Grupo B
+mergeado el 2026-11-13 en `b4b3d1b` por [PR #25](https://github.com/srodriguez-lefebre/here/pull/25).
+CI `43461764790` pasó 1273 pruebas y package `43461764783` verificó el
+instalador estable. ACCEPTANCE registra las corridas de todos los criterios.
+Grupo A se mergeó por PR21 en `53712c5beedafc2d40e2abf10c13362a1c3c9f78`
+el 2026-11-06T03:22:06Z. Sin certificación nueva de hardware, proveedor o
+máquina Windows independiente.
 Head8a498e207812592ff84a0acc5ba4e9f392e02373: review independiente APPROVED;
 Copilot5795325438 recibido sin issues abiertos/cinco hilos respondidos y resueltos;
 suite Windows980/2 skips wheel/307,46 s (run42155415514) y package42155415501 success.
 Merge guardado y ledger en DELIVERY. Wheel fresco exacto cubre aparte distribución4/
-7,51 s, incluidos los dos smokes omitidos en CI. Versión0.2.0;0.3.0 al cerrar B/M2.
+7,51 s, incluidos los dos smokes omitidos en CI del grupo A.
 El diseño detallado está en
 [`development/PRODUCT_DESIGN.md`](development/PRODUCT_DESIGN.md), secciones 2, 3 y 4,
 que es decisión tomada (ruling 3). Este plan no lo repite: fija alcance, orden, criterios
@@ -275,6 +278,27 @@ root conserva leases, contratos, integración y merges. M2 B puede avanzar junto
 con búsqueda independiente de M3 A; las acciones que dependan de B esperan su
 contrato aceptado. Tras B se permite adelantar M5 B, con claims pendientes hasta
 M4 B. No se reinicia trabajo, cambian criterios ni se anuncia versión 0.3.0 ahora.
+
+### Candidato 0.3.0 — 2026-11-13
+
+M2 B sigue abierto. Esta sección registra evidencia por corrida y prepara
+la documentación para el cierre según los criterios 11–16 ya definidos.
+
+| Alcance | Evidencia o comprobación pendiente |
+|---|---|
+| B4, verificación automática local | `M2B-T4-R1-FULL-4e1b2ce-20261106`: 1043 pasan, 9 skips, 390,03 s, exit 0. Dos skips de wheel y siete por privilegios de symlink. JUnit de 1052 casos, sin fallos ni errores, 389,952 s internos. |
+| B5, R62 RED | `r62-red-1-6adcd848` sobre `74555617426f4f760dca64735d0b28bec5fd6424`: 7 fallos y 2 controles que pasan. |
+| B5, R62 GREEN focal | `r62-green-1-25354948`: los 9 casos pasan en 7,91 s, exit 0. Productor `F027EA6D`, consumidor `07FEABE6` y test `99510E10`. La revisión independiente del candidato `7994ebc` registró cuatro hallazgos P2. |
+| B5, R62 GREEN2 | El candidato `b365fa9` conserva los bytes ejecutados. Pasan 14 casos en 18,16 s, sin fallos, errores ni skips. JUnit registra 18,103 s internos. |
+| B5, R62 GREEN3 integrado | `d00a1d4`: 110 pasan en 166,35 s, sin fallos, errores ni skips. JUnit registra 166,318 s internos. Incluye 15 casos R62 con el control I5 y 95 regresiones, entre ellas el aviso por SQLite Busy. |
+| Criterios 11–14 | Revisión independiente aprobada en `d00a1d4` y para los deltas `f626933` y `ec57204`. El foco `b5-full2-six-failures-focus-6e5183bb` pasó 19 casos. Ruff y formato limpios en 27 archivos. Comparación de mypy sin diagnósticos nuevos. |
+| Criterio 15 | Suite Windows y verificación del wheel según las corridas de `ACCEPTANCE.md`. |
+| Criterio 16 y distribución | 0.3.0 fijado en `350761a`. `ACCEPTANCE.md` registra la evidencia y `WINDOWS_DISTRIBUTION.md` enlaza el workflow y su artefacto. |
+
+Ruling 64 omite solicitar Copilot para los PR pendientes. Se mantienen review
+independiente, evidencia en el PR, CI verde en el head final, merge protegido y
+registro en DELIVERY. Los resultados anteriores conservan su alcance. La
+versión del candidato es 0.3.0. Las corridas de esta tabla usan datos sintéticos.
 
 ## Lo que queda pendiente de decidir
 
