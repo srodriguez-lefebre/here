@@ -17,6 +17,7 @@ from typing import Any, Callable, Iterable, Iterator
 from uuid import UUID, uuid4
 
 from here.memory.artifacts import (
+    PendingIntent,
     SessionArtifacts,
     file_hash,
     managed_path,
@@ -56,8 +57,10 @@ from here.memory.models import (
     TranscriptRevision,
 )
 from here.memory.repository import MemoryRepository
+from here.output.metadata import SessionMetadata
 from here.output.ownership import FileLease, LeaseBusy
 from here.output.paths import UnsafeSessionPath, session_artifact_path, validate_session_directory
+from here.output.session_writer import read_session_metadata
 
 
 @dataclass(frozen=True)
@@ -242,6 +245,38 @@ def _catalog_records(repo: MemoryRepository) -> tuple[_DeletionRecord, ...]:
     if not isinstance(repo, _CatalogRepository):
         raise LibraryError("Catalog suppression evidence was not loaded for this operation")
     return repo._deletion_records
+
+
+@dataclass
+class _RecoveryPublication:
+    repo: MemoryRepository
+    directory: Path
+    declared_identity: str | None
+    intent: PendingIntent | None
+    active: bool = True
+
+
+def _sealed_origin_fingerprint(
+    directory: Path, metadata: SessionMetadata, pending: PendingIntent
+) -> str | None:
+    """Recognize a matching tombstone from the seal without reading source bytes."""
+    if pending.hashes is None:
+        return None
+    names = {"session.json", *metadata.output_files}
+    names.update(item.audio_file for item in metadata.capture_sources if item.audio_file)
+    if metadata.recoverable_audio:
+        names.add(metadata.recoverable_audio)
+    # Match the existing ingest fingerprint's file set, including its v1 fallbacks.
+    names.update(("raw_transcript.txt", "transcript.txt", "segments.json"))
+    if not metadata.recoverable_audio or (
+        pending.revision_of is not None
+        and not session_artifact_path(directory, metadata.recoverable_audio).exists()
+    ):
+        names.add("audio.wav")
+    present = {name for name in names if session_artifact_path(directory, name).is_file()}
+    if present != {name for name, _ in pending.hashes}:
+        return None
+    return hashlib.sha256(json.dumps(pending.hashes).encode()).hexdigest()
 
 
 def _origin_pair(value: object) -> tuple[str, str]:
@@ -610,6 +645,9 @@ class MemoryService:
         self._publication_context: ContextVar[tuple[str, str] | None] = ContextVar(
             "here_memory_publication", default=None
         )
+        self._recovery_publication_context: ContextVar[_RecoveryPublication | None] = ContextVar(
+            "here_memory_recovery_publication", default=None
+        )
         if not (self.data_dir / "library.sqlite3").exists():
             try:
                 with self._operation():
@@ -650,16 +688,21 @@ class MemoryService:
         validate_session_directory(self.data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
         lock = _FileLock(self.data_dir / ".memory.lock")
-        library: LibraryConnection | None = None
         try:
-            records, _ = _deletion_registry(self.data_dir)
-            library = open_library(self.data_dir)
+            with self._operation_locked() as repo:
+                yield repo
+        finally:
+            lock.close()
+
+    @contextmanager
+    def _operation_locked(self) -> Iterator[MemoryRepository]:
+        records, _ = _deletion_registry(self.data_dir)
+        library = open_library(self.data_dir)
+        try:
             migrate(library)
             yield _CatalogRepository(library, records)
         finally:
-            if library is not None:
-                library.close()
-            lock.close()
+            library.close()
 
     def _fts(self, repo: MemoryRepository) -> bool:
         if not fts_available(repo.connection):
@@ -1200,6 +1243,191 @@ class MemoryService:
         with recovery_read_view(self.data_dir, directory, declared_identity) as identity:
             yield identity
 
+    @contextmanager
+    def recovery_publication(
+        self, directory: Path, declared_identity: str | None, *, expected_identity: str | None
+    ) -> Iterator[None]:
+        """Revalidate the handoff and keep the publication lock through marker cleanup."""
+        if self._recovery_publication_context.get() is not None:
+            raise Conflict("Recovery publication is already scoped")
+        with ExitStack() as operation:
+            try:
+                directory = Path(directory).absolute()
+                validate_session_directory(self.data_dir)
+                self.data_dir.mkdir(parents=True, exist_ok=True)
+                lock = _FileLock(managed_path(self.data_dir, ".memory.lock"))
+                operation.callback(lock.close)
+                repo = operation.enter_context(self._operation_locked())
+            except sqlite3.Error as exc:
+                raise storage_error(exc) from exc
+            except UnsafeSessionPath:
+                raise
+            except (OSError, ValueError) as exc:
+                raise LibraryError("Recovery publication catalog unavailable") from exc
+
+            try:
+                metadata = read_session_metadata(directory)
+            except UnsafeSessionPath:
+                raise
+            except (OSError, ValueError) as exc:
+                raise UnsafeSessionPath("Recovery metadata unavailable") from exc
+            if metadata is None or metadata.meeting_id != declared_identity:
+                raise UnsafeSessionPath("Recovery identity changed")
+
+            try:
+                pending = read_pending_intent(directory, declared_identity)
+            except FileNotFoundError:
+                pending = None
+            except OSError as exc:
+                raise LibraryError("Recovery publication marker unavailable") from exc
+
+            intent = pending if metadata.status != "pending" else None
+            try:
+                self._validate_recovery_publication(
+                    repo, directory, metadata, intent, expected_identity
+                )
+            except UnsafeSessionPath:
+                raise
+            except (OSError, ValueError, TypeError) as exc:
+                raise LibraryError("Recovery publication authority unavailable") from exc
+            scope = _RecoveryPublication(repo, directory, declared_identity, intent)
+            token = self._recovery_publication_context.set(scope)
+            try:
+                yield
+            finally:
+                scope.active = False
+                self._recovery_publication_context.reset(token)
+
+    def _validate_recovery_publication(
+        self,
+        repo: MemoryRepository,
+        directory: Path,
+        metadata: SessionMetadata,
+        intent: PendingIntent | None,
+        expected_identity: str | None,
+    ) -> None:
+        records = _catalog_records(repo)
+        suppressed = _suppressed_meeting_ids(repo.library, records)
+        identity = metadata.meeting_id
+        canonical = _is_uuid(identity)
+        if identity in suppressed:
+            raise NotFound("Meeting has been deleted")
+        if not canonical:
+            lineage = _legacy_retry_parent(repo.library, directory, suppressed)
+            if lineage is not None:
+                identity = lineage[0]
+        if identity != expected_identity:
+            raise OwnershipBusy("Recovery ownership changed; rediscover the session")
+        if intent is None:
+            return
+
+        origin = normalized_origin(directory)
+        deleted = {digest for record in records for path, digest in record.origins if path == origin}
+        fingerprint = _sealed_origin_fingerprint(directory, metadata, intent)
+        if fingerprint in deleted:
+            raise NotFound("Origin has been deleted")
+
+        committed_replay = self._is_committed_recovery_replay(
+            repo, origin, intent, suppressed, expected_identity, fingerprint
+        )
+        if deleted and (fingerprint is None or not committed_replay):
+            # A seal alone cannot prove that the current material differs.
+            raise Conflict("Recovery origin cannot be verified; pending intent retained")
+
+        audio_only = intent.source_kind == "legacy_audio_only"
+        if audio_only and intent.revision_of is None and not committed_replay:
+            if not self._has_audio_reservation(repo, origin, identity):
+                raise Conflict("Audio-only publication requires its reserved identity")
+        if intent.revision_of is not None:
+            parent = repo.get_revision(intent.revision_of)
+            if parent is None:
+                raise Conflict("Revision conflict: missing parent")
+            if parent.meeting_id in suppressed:
+                raise NotFound("Meeting has been deleted")
+            if parent.meeting_id != expected_identity:
+                raise OwnershipBusy("Recovery retry target changed; rediscover the session")
+            meeting = repo.get_meeting(parent.meeting_id)
+            if meeting is None or meeting.status == MeetingStatus.DELETING:
+                raise Conflict("Revision conflict: unavailable parent meeting")
+            if audio_only and not (
+                self._is_audio_only_parent(repo, parent)
+                or self._has_audio_reservation(repo, origin, parent.meeting_id)
+            ):
+                raise Conflict("Revision conflict: missing audio-only parent provenance")
+            if intent.intent == "status" and metadata.status not in {"failed", "cancelled"}:
+                raise Conflict("Only unsuccessful retry outcomes use state-only publication")
+            if meeting.active_revision_id != parent.id and not committed_replay:
+                raise Conflict("Revision conflict: stale retry")
+
+    @staticmethod
+    def _has_audio_reservation(
+        repo: MemoryRepository, origin: str, identity: str | None
+    ) -> bool:
+        if not _is_uuid(identity):
+            return False
+        rows = repo.library.execute(
+            "SELECT p.payload_json,i.origin_fingerprint FROM pending_operations p "
+            "JOIN ingest_sources i ON i.meeting_id=p.meeting_id "
+            "WHERE p.kind='reserve_audio_only' AND p.phase='complete' "
+            "AND p.meeting_id=? AND i.origin_path=? AND i.revision_id IS NULL",
+            (identity, origin),
+        )
+        for row in rows:
+            try:
+                payload = json.loads(row[0])
+            except (ValueError, TypeError):
+                continue
+            if payload == {
+                "source_kind": "legacy_audio_only",
+                "origin_path": origin,
+                "origin_fingerprint": row[1],
+            }:
+                return True
+        return False
+
+    @contextmanager
+    def _publisher_operation(
+        self,
+        *,
+        revision_of: str | None,
+        directory: Path | None = None,
+        declared_identity: str | None = None,
+    ) -> Iterator[MemoryRepository]:
+        scope = self._recovery_publication_context.get()
+        if scope is None:
+            with self._operation() as repo:
+                yield repo
+            return
+        intent = scope.intent
+        if (
+            not scope.active
+            or scope.repo.library.data_dir != self.data_dir
+            or intent is None
+            or intent.revision_of != revision_of
+        ):
+            raise Conflict("Recovery publisher intent changed; rediscover the session")
+        if directory is None:
+            if intent.intent != "status" or declared_identity != scope.declared_identity:
+                raise Conflict("Recovery publisher target changed; rediscover the session")
+        else:
+            publication = self._publication_context.get()
+            if (
+                intent.intent != "ingest"
+                or directory.absolute() != scope.directory
+                or publication is None
+                or publication[1] != intent.source_kind
+                or (intent.publication_id is not None and publication[0] != intent.publication_id)
+            ):
+                raise Conflict("Recovery publisher target changed; rediscover the session")
+        yield scope.repo
+
+    def _publication_records(self, repo: MemoryRepository) -> tuple[_DeletionRecord, ...]:
+        scope = self._recovery_publication_context.get()
+        if scope is not None and scope.active and scope.repo is repo:
+            return _catalog_records(repo)
+        records, _ = _deletion_registry(self.data_dir)
+        return records
+
     def retry_parent(
         self, session_dir: Path, meeting_id: str | None
     ) -> tuple[str, str | None] | None:
@@ -1233,17 +1461,16 @@ class MemoryService:
         finally:
             self._publication_context.reset(token)
 
-    def _replay_publication(
-        self,
-        repo: MemoryRepository,
-        source: SessionArtifacts,
-        publication_id: str,
-        revision_of: str | None,
-        source_kind: str,
-    ) -> IngestResult | None:
-        for row in repo.library.execute(
-            "SELECT * FROM pending_operations WHERE kind='publish_revision' AND phase!='reverted'"
-        ):
+    @staticmethod
+    def _publication_candidates(
+        repo: MemoryRepository, *, meeting_id: str | None = None
+    ) -> Iterator[tuple[PendingOperation, dict[str, Any], dict[str, Any]]]:
+        sql = "SELECT * FROM pending_operations WHERE kind='publish_revision' AND phase!='reverted'"
+        parameters: tuple[object, ...] = ()
+        if meeting_id is not None:
+            sql += " AND meeting_id=?"
+            parameters = (meeting_id,)
+        for row in repo.library.execute(sql, parameters):
             operation = PendingOperation(**dict(row))
             try:
                 payload = json.loads(operation.payload_json)
@@ -1252,16 +1479,95 @@ class MemoryService:
             if not isinstance(payload, dict):
                 continue
             value = payload.get("publication")
-            if not isinstance(value, dict) or value.get("publication_id") != publication_id:
+            if isinstance(value, dict):
+                yield operation, payload, value
+
+    @staticmethod
+    def _publication_proof(
+        repo: MemoryRepository, operation: PendingOperation, payload: dict[str, Any], value: object
+    ) -> tuple[PendingOperation, _Publication, TranscriptRevision | None]:
+        proof = _Publication.read(value)
+        revision = repo.get_revision(proof.revision_id)
+        if (
+            revision is None
+            or revision.meeting_id != operation.meeting_id
+            or payload.get("revision_id") != revision.id
+            or proof.origin_path != revision.origin
+        ):
+            revision = None
+        return operation, proof, revision
+
+    def _is_audio_only_parent(self, repo: MemoryRepository, parent: TranscriptRevision) -> bool:
+        candidates = self._publication_candidates(repo, meeting_id=parent.meeting_id)
+        for operation, payload, value in candidates:
+            if (
+                value.get("revision_id") != parent.id
+                or value.get("source_kind") != "legacy_audio_only"
+            ):
                 continue
-            proof = _Publication.read(value)
-            revision = repo.get_revision(proof.revision_id)
+            try:
+                _, _, revision = self._publication_proof(repo, operation, payload, value)
+            except (ValueError, TypeError):
+                continue
+            if revision is not None:
+                return True
+        return False
+
+    def _is_committed_recovery_replay(
+        self,
+        repo: MemoryRepository,
+        origin: str,
+        intent: PendingIntent,
+        suppressed: tuple[str, ...],
+        expected_identity: str | None,
+        fingerprint: str | None,
+    ) -> bool:
+        if intent.intent != "ingest" or intent.publication_id is None:
+            return False
+        matches = [
+            candidate
+            for candidate in self._publication_candidates(repo)
+            if candidate[2].get("publication_id") == intent.publication_id
+        ]
+        if not matches:
+            return False
+        if len(matches) != 1:
+            raise Conflict("Publication conflict: ambiguous publication token")
+        _, proof, revision = self._publication_proof(repo, *matches[0])
+        if revision is None or (
+            proof.origin_path != origin
+            or proof.revision_of != intent.revision_of
+            or proof.source_kind != intent.source_kind
+        ):
+            raise Conflict("Publication conflict: committed provenance not proven")
+        if revision.meeting_id in suppressed:
+            raise NotFound("Meeting has been deleted")
+        if revision.meeting_id != expected_identity:
+            raise OwnershipBusy("Recovery publication target changed; rediscover the session")
+        meeting = repo.get_meeting(revision.meeting_id)
+        if meeting is None or meeting.status == MeetingStatus.DELETING:
+            raise Conflict("Publication conflict: committed meeting unavailable")
+        if intent.hashes is not None and proof.origin_fingerprint != fingerprint:
+            raise Conflict("Publication conflict: pending seal disagrees with committed provenance")
+        # The publisher still validates the current evidence and full receipt.
+        return True
+
+    def _replay_publication(
+        self,
+        repo: MemoryRepository,
+        source: SessionArtifacts,
+        publication_id: str,
+        revision_of: str | None,
+        source_kind: str,
+    ) -> IngestResult | None:
+        for operation, payload, value in self._publication_candidates(repo):
+            if value.get("publication_id") != publication_id:
+                continue
+            _, proof, revision = self._publication_proof(repo, operation, payload, value)
             if (
                 revision is not None
-                and revision.meeting_id == operation.meeting_id
-                and payload.get("revision_id") == revision.id
                 and proof.revision_of == revision_of
-                and proof.origin_path == source.origin_path == revision.origin
+                and proof.origin_path == source.origin_path
                 and proof.origin_fingerprint == source.fingerprint
                 and proof.source_kind == source_kind
                 and revision.content_hash == source.content_hash
@@ -1408,14 +1714,16 @@ class MemoryService:
         identity: str | None = None
         operation: PendingOperation | None = None
         staging_rel: str | None = None
+        fresh_path: Path | None = None
         committed = False
         source_read = False
         warnings: tuple[object, ...] = ()
         active: TranscriptRevision | None = None
         # Opening the catalog is a typed storage boundary; CLI must distinguish a
         # broken database from a rejected source or publication conflict.
-        with self._operation() as repo:
-            records, _ = _deletion_registry(self.data_dir)
+        with self._publisher_operation(directory=session_dir, revision_of=revision_of) as repo:
+            scoped = self._recovery_publication_context.get() is not None
+            records = self._publication_records(repo)
             suppression = _suppression_snapshot(repo.library, records)
             try:
                 source = (
@@ -1517,8 +1825,11 @@ class MemoryService:
                 destination_rel = f"meetings/{identity}/revisions/{revision_id}"
                 # Validate destination components before copying or publishing.
                 destination = managed_path(self.data_dir, destination_rel, directory=True)
+                if scoped and destination.exists():
+                    raise Conflict("Recovery publication destination already exists")
                 staging = managed_path(self.data_dir, staging_rel, directory=True)
                 staging.mkdir(parents=True)
+                fresh_path = staging
                 existing_audio = repo.library.execute(
                     "SELECT * FROM audio_assets WHERE meeting_id=? ORDER BY id", (identity,)
                 ).fetchall()
@@ -1618,10 +1929,15 @@ class MemoryService:
                     destination_rel,
                     json.dumps(payload),
                 )
+                if scoped and destination.exists():
+                    raise Conflict("Recovery publication destination already exists")
                 with repo.transaction():
                     repo.insert_pending_operation(operation)
                 destination.parent.mkdir(parents=True, exist_ok=True)
+                if scoped and destination.exists():
+                    raise Conflict("Recovery publication destination already exists")
                 staging.rename(destination)
+                fresh_path = destination
                 warnings = (repo.library.storage_warning,) if repo.library.storage_warning else ()
                 if audio_only:
                     warnings += ("Capture dates are unknown for this legacy audio-only source",)
@@ -1708,10 +2024,13 @@ class MemoryService:
                 # death. Never let reconciliation activate a failed explicit retry.
                 if operation is not None:
                     try:
-                        self._reconcile_operation(repo, operation)
+                        if scoped and fresh_path is not None:
+                            self._revert_fresh_publication(repo, operation, fresh_path)
+                        elif not scoped:
+                            self._reconcile_operation(repo, operation)
                     except Exception:
                         pass
-                elif staging_rel is not None:
+                elif staging_rel is not None and (not scoped or fresh_path is not None):
                     try:
                         _remove_tree(self.data_dir, staging_rel)
                     except (OSError, ValueError):
@@ -1726,10 +2045,68 @@ class MemoryService:
                 )
                 return IngestResult("rejected", identity, (str(exc),), category)
 
+    def _revert_fresh_publication(
+        self, repo: MemoryRepository, operation: PendingOperation, fresh_path: Path
+    ) -> None:
+        """Compensate only the directory created by this still-locked writer."""
+        if (
+            operation.kind != "publish_revision"
+            or operation.phase != "prepared"
+            or not _is_uuid(operation.id)
+            or not _is_uuid(operation.meeting_id)
+        ):
+            raise Conflict("Fresh publication journal changed; operation retained")
+        payload = json.loads(operation.payload_json)
+        revision = payload["revision_id"]
+        staging_rel = f".staging/{operation.id}"
+        destination_rel = f"meetings/{operation.meeting_id}/revisions/{revision}"
+        if (
+            not _is_uuid(revision)
+            or repo.get_revision(revision) is not None
+            or operation.staging_path != staging_rel
+            or operation.destination_path != destination_rel
+        ):
+            raise Conflict("Fresh publication authority changed; operation retained")
+
+        recorded = repo.get_pending_operation(operation.id)
+        if recorded is not None and recorded != operation:
+            raise Conflict("Fresh publication journal changed; operation retained")
+        before_rename = fresh_path == self.data_dir / staging_rel
+        if before_rename:
+            # Disable destination authority before validating or removing the
+            # staging we own. A failed rename may have hit a foreign destination.
+            if recorded is not None:
+                with repo.transaction():
+                    repo.transition_pending_operation(operation.id, "reverted")
+            relative = staging_rel
+        elif (
+            recorded is not None
+            and fresh_path == self.data_dir / destination_rel
+            and not managed_path(self.data_dir, staging_rel, directory=True).exists()
+        ):
+            relative = destination_rel
+        else:
+            raise Conflict("Fresh publication paths changed; operation retained")
+        fresh_path = managed_path(self.data_dir, relative, directory=True)
+        plan = _delete_publication_plan(fresh_path)
+        hashes = payload["hashes"]
+        if plan["operation_id"] != operation.id or plan["hashes"] != hashes:
+            raise Conflict("Fresh publication inventory changed; operation retained")
+        validate_artifact_roles(fresh_path, hashes)
+        if any(
+            file_hash(session_artifact_path(fresh_path, name)) != digest
+            for name, digest in hashes.items()
+        ):
+            raise Conflict("Fresh publication files changed; operation retained")
+        _remove_tree(self.data_dir, relative, set(hashes), order=_delete_file_order)
+        if not before_rename:
+            with repo.transaction():
+                repo.transition_pending_operation(operation.id, "reverted")
+
     def _reconcile_operation(
         self, repo: MemoryRepository, operation: PendingOperation, *, owners_held: bool = False
     ) -> None:
-        records, _ = _deletion_registry(self.data_dir)
+        records = self._publication_records(repo)
         if operation.kind == "delete":
             record = next(
                 (item for item in records if item.meeting_id == operation.meeting_id), None
@@ -2504,7 +2881,9 @@ class MemoryService:
         """A failed/cancelled retry changes state, never the completed evidence."""
         if status not in {"failed", "cancelled"}:
             raise ValueError("Only unsuccessful retry outcomes use state-only publication")
-        with self._operation() as repo:
+        with self._publisher_operation(
+            declared_identity=meeting_id, revision_of=revision_of
+        ) as repo:
             with repo.transaction():
                 try:
                     canonical = meeting_id is not None and str(UUID(meeting_id)) == meeting_id
