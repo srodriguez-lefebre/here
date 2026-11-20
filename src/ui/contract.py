@@ -28,6 +28,8 @@ from here.application.recovery import RecoveryService
 from here.config.settings import require_provider_key, settings_operation
 from here.memory.database import LibraryError, open_library
 from here.memory.models import (
+    Citation,
+    CitationTarget,
     MeetingDetail,
     MeetingPage,
     MeetingPatch,
@@ -42,6 +44,8 @@ from here.memory.service import MemoryService
 
 
 class _MemoryBackend(Protocol):
+    def resolve_citation(self, citation: Citation) -> CitationTarget: ...
+
     def get_meeting(self, meeting_id: str) -> MeetingDetail: ...
 
     def list_participants(self, meeting_id: str | None = None) -> tuple[Participant, ...]: ...
@@ -108,6 +112,8 @@ class VisualController(Protocol):
 
     def diagnose(self, source): ...
 
+    def resolve_citation(self, citation: Citation) -> CitationTarget: ...
+
     def list_meetings(self, query: MeetingQuery) -> MeetingPage: ...
 
     def search(self, query: SearchQuery) -> SearchPage | MeetingPage: ...
@@ -169,6 +175,9 @@ class ApplicationUiAdapter:
 
     def search(self, query: SearchQuery) -> SearchPage | MeetingPage:
         return self._query_backend().search(query)
+
+    def resolve_citation(self, citation: Citation) -> CitationTarget:
+        return self._memory_backend().resolve_citation(citation)
 
     def get_meeting(self, meeting_id: str) -> MeetingDetail:
         return self._memory_backend().get_meeting(meeting_id)
