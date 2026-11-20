@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import sqlite3
 import wave
 from pathlib import Path
@@ -66,7 +67,9 @@ def install_transcriber(monkeypatch):
     return install
 
 
-@pytest.mark.parametrize("change", ["replacement", "completed", "empty-audio"])
+@pytest.mark.parametrize(
+    "change", ["replacement", "completed", "empty-audio", "empty-normalized-with-raw"]
+)
 def test_retry_revalidates_materialized_session_before_replay_or_provider(
     configured_library, failed_session, install_transcriber, monkeypatch, tmp_path, change
 ):
@@ -79,6 +82,14 @@ def test_retry_revalidates_materialized_session_before_replay_or_provider(
         replacement = make_session(tmp_path / "replacement", meeting_id=OTHER_MEETING_ID)
         write_json(replacement.metadata, {**failed, "meeting_id": OTHER_MEETING_ID})
         assert memory.ingest_session(replacement.directory).meeting_id == OTHER_MEETING_ID
+
+    if change == "empty-normalized-with-raw":
+        raw = selected.directory / "raw.wav"
+        shutil.copyfile(selected.audio, raw)
+        raw_bytes = raw.read_bytes()
+        failed["capture_sources"] = [{**failed["capture_sources"][0], "audio_file": raw.name}]
+        failed["output_files"].append(raw.name)
+        write_json(selected.metadata, failed)
 
     materialized = []
     materialize = RecoveryService.materialize
@@ -94,7 +105,7 @@ def test_retry_revalidates_materialized_session_before_replay_or_provider(
         elif change == "completed":
             write_json(selected.metadata, {**failed, "status": "completed", "failure_stage": None})
         else:
-            # Keep the manifest and WAV geometry consistent.
+            # The normalized WAV matches its manifest, even when a raw source still has frames.
             source = {**failed["sources"][0], "frames": 0, "duration_seconds": 0.0}
             with wave.open(str(selected.audio), "wb") as audio:
                 audio.setnchannels(source["channels"])
@@ -104,9 +115,15 @@ def test_retry_revalidates_materialized_session_before_replay_or_provider(
                 selected.metadata,
                 {
                     **failed,
-                    "duration_seconds": 0.0,
+                    "duration_seconds": 0.0
+                    if change == "empty-audio"
+                    else failed["duration_seconds"],
                     "sources": [source],
-                    "capture_sources": [{**source, "audio_file": selected.audio.name}],
+                    "capture_sources": (
+                        failed["capture_sources"]
+                        if change == "empty-normalized-with-raw"
+                        else [{**source, "audio_file": selected.audio.name}]
+                    ),
                 },
             )
         return path
@@ -119,7 +136,7 @@ def test_retry_revalidates_materialized_session_before_replay_or_provider(
         return replay(processor, directory)
 
     def forbidden_provider(session, **options):
-        calls.append(("provider", session.meeting_id))
+        calls.append(("provider", session.meeting_id, tuple(s.frames for s in session.sources)))
         raise AssertionError("Changed retry material reached the provider boundary")
 
     monkeypatch.setattr(RecoveryService, "materialize", change_after_materialize)
@@ -129,6 +146,8 @@ def test_retry_revalidates_materialized_session_before_replay_or_provider(
     result = CliRunner().invoke(cli.app, ["meetings", "retry", MEETING_ID[:8], "--json"])
 
     assert materialized == [selected.directory], result.output + repr(result.exception)
+    if change == "empty-normalized-with-raw":
+        assert raw.read_bytes() == raw_bytes
     assert calls == []
     assert result.exit_code in (3, 4), result.output + repr(result.exception)
     assert json.loads(result.stdout)["error_category"] in ("conflict", "io")
