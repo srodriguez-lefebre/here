@@ -1029,6 +1029,13 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Costo si falla:** medir el uso de memoria y ajustar la lectura por lotes
     bajo una nueva decisión de alcance, conservando la simetría del formato.
 
+69. **2026-11-20 — Reanudación y modelo de ejecución.** El usuario reanuda
+    M3–M5 desde la pausa y elige GPT‑6.2 Sol para los chats y subagentes activos.
+    La orden se aplica a los modelos que ejecutan el trabajo de ingeniería. El
+    modelo de producto de M4 se decide en su propio hito según ruling 7.
+    **Costo si falla:** reactivar el rol correspondiente con el modelo indicado
+    desde su rama y sus recibos, sin duplicar el trabajo ya entregado.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings

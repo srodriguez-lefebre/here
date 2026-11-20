@@ -1,7 +1,48 @@
 # Estado de here
 
-Actualizado: 2026-11-13. Leé CLAUDE.md primero; después este archivo y
+Actualizado: 2026-11-20. Leé CLAUDE.md primero; después este archivo y
 `docs/MASTER_PLAN.md`. Historial y rulings: `docs/development/DELIVERY.md`.
+
+## Reanudación — 2026-11-20
+
+M2 cerrado en 0.3.0. El usuario reanudó M3–M5 y eligió GPT‑6.2 Sol para
+los frentes activos. El orquestador conserva las ventanas de ejecución en serie.
+Copilot sigue omitido por ruling 64 y dos horas queda **omitida por ruling 5**.
+
+| Frente | Rama y worktree bajo `C:/Users/savar/.codex/worktrees/` | Head o candidato y responsable |
+| --- | --- | --- |
+| M3 A, chat `01a1af04-e779-7363-be61-c840651b0b18` | `codex/m3-search`, `2710/here` | `1f71d08`, chat M3 A reactivado con GPT‑6.2 Sol. Tiene el mismo árbol que `0c16065`. |
+| M3 A, PR #28 | `codex/m3-a-product`, `m3-a-product/here` | `0c16065`, orquestador. Mantener abierto por p95. |
+| M3 B, integración | `codex/m3-library`, `m3-library-group/here` | `0c16065`, orquestador. |
+| M3 B, citas | `codex/m3-library-resolver-red`, `m3-library-resolver-red/here` y `codex/m3-library-resolver-green`, `m3-library-resolver-green/here` | RED `f987ec6`, fixture corregido `ac493c9` por `m3_b_citation_red_fixture_sol`. Implementación en verificación por el orquestador. |
+| M3 B, reproducción y navegación | `codex/m3-library-playback-green`, `m3-library-playback-green/here` y `codex/m3-library-navigation-red`, `m3-library-navigation-red/here` | `1027d22`, `m3_b_playback_green_sol` y review `m3_b_playback_review_sol`; navegación RED a cargo de `m3_b_navigation_red_sol`. |
+| M3 B, regresiones del reproductor | `codex/m3-library-playback-edge-red`, `m3-library-playback-edge-red/here` | Base `1027d22`; `m3_b_playback_edge_red_sol`. |
+| M3 B, CLI | `codex/m3-library-cli-red`, `m3-library-cli-red/here` | `7e225ec`, `m3_b_cli_red_sol`; queda el contrato de scope compartido con A. |
+| M5 B, recuperación de importación | `codex/m5-portability-import-service`, `m5-portability-import-service/here`; arnés `codex/m5-portability-recovery-harness`, `m5-portability-recovery-harness/here` | Base de integración `f20e859`, orquestador. Arnés `deccde1`, `m5_recovery_harness_sol`. |
+| M5 B, presupuesto JSON | `codex/m5-portability-json-cap-red`, `m5-portability-json-cap-red/here` y `codex/m5-portability-json-cap-green`, `m5-portability-json-cap-green/here` | RED `05ba0ee`, `m5_json_cap_red_sol`. GREEN en verificación por el orquestador. |
+
+[PR #28](https://github.com/srodriguez-lefebre/here/pull/28). Nivel 2 para CI
+Windows `43477815724` y paquete `43477815761`, ambos verdes en `0c16065`. Se
+restauró el checkout del chat. Parte de los recibos locales de la pausa que
+solo estaban en ese checkout sigue sin localizarse. El chat rehízo el manifiesto
+de ejecución a partir del árbol auditado y del fixture sintético conservado. Le
+corresponde la ventana para el heartbeat y la corrida pública de p95.
+
+Nivel 2 focalizado en M3 B. El RED de citas obtuvo 25 fallos por la ausencia del
+resolver en `f987ec6`. El candidato dio 24 pases y un fallo del fixture de fecha,
+corregido en `ac493c9` con rerun pendiente. El RED Qt obtuvo 13 errores de setup
+por módulo ausente y el controlador `1027d22` obtuvo 13 pases. La revisión
+independiente pidió corregir el caso de backend multimedia no disponible y el
+estado que sigue a un seek fuera de rango. El RED CLI obtuvo 21 fallos por grupo
+ausente o por falta del campo de scope. Los JUnit de estas corridas están en TEMP.
+
+Nivel 2 diagnóstico en M5 B. La recuperación de importación obtuvo 11 fallos en
+`fada4fc` y 1 pase con 10 fallos en `8083b91`. La corrida mostró el fallo de
+staging con rutas largas de Windows y un problema de supervisión del subproceso.
+Se conserva el repro original. Separar el rerun de recuperación con ruta corta
+del control de rutas largas con el arnés corregido. El RED JSON `05ba0ee` dio
+3 pases y 3 fallos esperados en los bordes de inspección, importación y exportación.
+Claims sigue pendiente de M4 B. Falta certificación de nivel 3 para M3–M5.
 
 ## Pausa solicitada — 2026-11-13
 
