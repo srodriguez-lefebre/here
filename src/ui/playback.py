@@ -84,6 +84,11 @@ class PlaybackController(QObject):
         # A fresh backend scopes delayed multimedia events even when the same
         # path is selected twice. Retire the previous player before setting the URL.
         player = QMediaPlayer(self)
+        if not player.isAvailable():
+            player.deleteLater()
+            self._fail("La reproducción de audio local no está disponible.")
+            return
+
         output = QAudioOutput(player)
         output.setVolume(self._volume)
         player.setAudioOutput(output)
@@ -175,8 +180,10 @@ class PlaybackController(QObject):
             self._refresh_player(player)
 
     def _refresh_player(self, player: QMediaPlayer) -> None:
+        if self._player is not player:
+            return
+        self._apply_pending_seek()
         if self._player is player:
-            self._apply_pending_seek()
             self._update_state()
 
     def _apply_pending_seek(self) -> None:
