@@ -33,6 +33,7 @@ _MAX_COMPRESSION_RATIO = 100
 # caps even at 10,000 entries. Bound unused ZIP metadata and JSON padding.
 _MAX_CENTRAL_BYTES = 32 * 1024**2
 MAX_PORTABLE_MANIFEST_BYTES = 8 * 1024**2
+MAX_PORTABLE_JSON_BYTES = 32 * 1024**2
 # Allow normal DEFLATE expansion even with nondefault compressor settings.
 # A decoded-byte cap alone cannot bound work spent on empty DEFLATE blocks.
 _MAX_COMPRESSED_MANIFEST_BYTES = MAX_PORTABLE_MANIFEST_BYTES + 9 * 128 * 1024
@@ -302,6 +303,7 @@ def _central_members(
     members: dict[str, ZipInfo] = {}
     seen: set[tuple[str, ...]] = set()
     uncompressed_bytes = 0
+    json_bytes = 0
     for info in infos:
         path = validate_entry_name(info.orig_filename)
         key = _name_key(path)
@@ -322,6 +324,10 @@ def _central_members(
         uncompressed_bytes += info.file_size
         if uncompressed_bytes > _MAX_UNCOMPRESSED_BYTES:
             raise InvalidPackage("Package exceeds the total uncompressed size limit")
+        if path.suffix == ".json":
+            json_bytes += info.file_size
+            if json_bytes > MAX_PORTABLE_JSON_BYTES:
+                raise InvalidPackage("Package exceeds the total uncompressed JSON size limit")
         members[info.orig_filename] = info
     following_offset = central.start
     for info in sorted(infos, key=lambda member: member.header_offset, reverse=True):

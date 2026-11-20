@@ -36,6 +36,7 @@ from here.memory.portable_import import (
     validate_staged_import,
 )
 from here.memory.portable_package import (
+    MAX_PORTABLE_JSON_BYTES,
     MAX_PORTABLE_MANIFEST_BYTES,
     PackageSummary,
     inspect_package,
@@ -435,12 +436,15 @@ class PortabilityService:
         with self._memory._portable_export_view(ids) as view:
             rows = view.rows
             entries = []
-            payload_bytes = 0
+            json_bytes = 0
             for path, payload in _json_payloads(rows, include_audio):
                 _check_cancelled(cancellation)
+                json_bytes += len(payload)
+                if json_bytes > MAX_PORTABLE_JSON_BYTES:
+                    raise LibraryError("Selection exceeds the portable package JSON size limit")
                 entries.append(_entry(path, payload))
-                payload_bytes += len(payload)
-                _check_limits(len(entries) + 1, payload_bytes)
+                _check_limits(len(entries) + 1, json_bytes)
+            payload_bytes = json_bytes
             audio = tuple(asset for meeting in rows.meetings for asset in meeting.audio_assets)
             if include_audio:
                 for asset in audio:
@@ -475,6 +479,8 @@ class PortabilityService:
             manifest_bytes = manifest.model_dump_json().encode("utf-8")
             if len(manifest_bytes) > MAX_PORTABLE_MANIFEST_BYTES:
                 raise LibraryError("Selection exceeds the portable package manifest size limit")
+            if json_bytes + len(manifest_bytes) > MAX_PORTABLE_JSON_BYTES:
+                raise LibraryError("Selection exceeds the portable package JSON size limit")
             total_bytes = payload_bytes + len(manifest_bytes)
             _check_limits(len(entries) + 1, total_bytes)
             paths = (*(entry.path for entry in entries), _MANIFEST_PATH)
