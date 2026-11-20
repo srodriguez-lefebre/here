@@ -104,6 +104,7 @@ class LibraryView(QWidget):
         self._started = False
         self._generation = 0
         self._detail_generation = 0
+        self._citation_generation = 0
         self._participant_generation = 0
         self._requests: dict[str, tuple[int, int]] = {}
         self._deletion_jobs: set[int] = set()
@@ -176,6 +177,8 @@ class LibraryView(QWidget):
         self._detail_panel = QWidget()
         detail_layout = QVBoxLayout(self._detail_panel)
         self._detail_message = _label()
+        self._citation_message = _label()
+        self._citation_message.hide()
         self._participants = _label()
         self._transcript = QListWidget()
         self._transcript.setAccessibleName("Transcripción original por segmentos")
@@ -200,6 +203,7 @@ class LibraryView(QWidget):
         detail_layout.addWidget(self._transcript)
         detail_layout.addWidget(self._title)
         detail_layout.addWidget(self._save)
+        detail_layout.addWidget(self._citation_message)
         detail_layout.addWidget(self._revision_badge)
         detail_layout.addWidget(self._current_revision)
         detail_layout.addWidget(self._playback)
@@ -299,7 +303,9 @@ class LibraryView(QWidget):
     def _read_generation(self, kind):
         if kind == "library-participants":
             return self._participant_generation
-        if kind in _DETAIL_READS:
+        if kind == "library-citation":
+            return self._citation_generation
+        if kind in {"library-detail", "library-title"}:
             return self._detail_generation
         return self._generation
 
@@ -434,13 +440,7 @@ class LibraryView(QWidget):
         if self._closed or kind not in self._requests:
             return
         expected_request, generation = self._requests[kind]
-        if kind == "library-participants":
-            current = self._participant_generation
-        elif kind in _DETAIL_READS or kind == "library-title":
-            current = self._detail_generation
-        else:
-            current = self._generation
-        if request != expected_request or generation != current:
+        if request != expected_request or generation != self._read_generation(kind):
             return
         del self._requests[kind]
         if kind == "library-participants":
@@ -488,7 +488,8 @@ class LibraryView(QWidget):
                 self._render_detail(value)
         elif kind == "library-citation":
             if error is not None:
-                self._detail_message.setText(str(error))
+                self._citation_message.setText(str(error))
+                self._citation_message.show()
             else:
                 self._render_target(value)
         elif kind == "library-title":
@@ -575,15 +576,13 @@ class LibraryView(QWidget):
             else Citation(target.meeting_id, target.revision_id, target.segment_id)
         )
         if self._detail is not None and self._detail.meeting.id == citation.meeting_id:
-            self._detail_generation += 1
             self._reset_target()
-            self._save.setEnabled(True)
         else:
             self._open_detail(citation.meeting_id)
         self._submit(
             "library-citation",
             lambda: self._controller.resolve_citation(citation),
-            self._detail_generation,
+            self._citation_generation,
         )
 
     def _open_detail(self, identity):
@@ -619,12 +618,10 @@ class LibraryView(QWidget):
         }
         self._render_transcript(detail)
 
-    def _render_transcript(self, detail: MeetingDetail, revision_id: str | None = None) -> None:
+    def _render_transcript(self, detail: MeetingDetail) -> None:
         self._transcript.clear()
         revisions = {revision.id: revision for revision in detail.revisions}
         for segment in detail.segments:
-            if revision_id is not None and segment.revision_id != revision_id:
-                continue
             revision = revisions.get(segment.revision_id)
             context = (
                 "Actual"
@@ -644,32 +641,35 @@ class LibraryView(QWidget):
 
     def _render_target(self, target: CitationTarget) -> None:
         detail = self._detail
-        revision_available = None
-        if detail is not None and detail.meeting.id == target.meeting_id:
-            revision_available = any(
-                revision.id == target.revision_id for revision in detail.revisions
-            )
-            segment_available = any(
-                segment.id == target.segment_id and segment.revision_id == target.revision_id
-                for segment in detail.segments
-            )
-            if segment_available:
-                self._render_transcript(detail, target.revision_id)
-                for index in range(self._transcript.count()):
-                    item = self._transcript.item(index)
-                    segment = item.data(Qt.ItemDataRole.UserRole)
-                    if segment.id == target.segment_id:
-                        self._transcript.setCurrentItem(item)
-                        self._transcript.scrollToItem(
-                            item, QAbstractItemView.ScrollHint.PositionAtCenter
-                        )
-                        break
-            if target.status == "historical":
-                self._revision_badge.setText("Revisión histórica")
-                self._revision_badge.show()
-                self._current_revision.setVisible(detail.meeting.active_revision_id is not None)
+        if detail is None or detail.meeting.id != target.meeting_id:
+            return
+        revision_available = any(revision.id == target.revision_id for revision in detail.revisions)
+        selected = None
+        for index in range(self._transcript.count()):
+            item = self._transcript.item(index)
+            segment = item.data(Qt.ItemDataRole.UserRole)
+            if segment.id == target.segment_id and segment.revision_id == target.revision_id:
+                selected = item
+                break
+        if selected is None and target.status != "missing":
+            self._citation_message.setText("Volvé a abrir la reunión para ver este segmento.")
+            self._citation_message.show()
+            return
+
+        active_revision = detail.meeting.active_revision_id
+        if target.status == "historical" or (
+            target.status == "missing"
+            and selected is not None
+            and target.revision_id != active_revision
+        ):
+            self._revision_badge.setText("Revisión histórica")
+            self._revision_badge.show()
+            self._current_revision.setVisible(active_revision is not None)
         self._playback.show()
         self._playback.load(target, revision_available=revision_available)
+        if selected is not None:
+            self._transcript.setCurrentItem(selected)
+            self._transcript.scrollToItem(selected, QAbstractItemView.ScrollHint.PositionAtCenter)
 
     def _open_current_revision(self) -> None:
         detail = self._detail
@@ -678,7 +678,7 @@ class LibraryView(QWidget):
         revision_id = detail.meeting.active_revision_id
         segment = next((item for item in detail.segments if item.revision_id == revision_id), None)
         if segment is None:
-            self._render_transcript(detail, revision_id)
+            self._transcript.setCurrentRow(-1)
             self._reset_target()
         else:
             self.open_target(Citation(detail.meeting.id, revision_id, segment.id))
@@ -734,6 +734,9 @@ class LibraryView(QWidget):
         self._detail_panel.hide()
 
     def _reset_target(self, *, release_playback: bool = True) -> None:
+        self._citation_generation += 1
+        self._citation_message.clear()
+        self._citation_message.hide()
         if release_playback:
             self._playback.clear()
         self._playback.hide()
