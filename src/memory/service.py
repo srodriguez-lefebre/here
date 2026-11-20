@@ -12,7 +12,7 @@ from contextlib import ExitStack, contextmanager
 from contextvars import ContextVar
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
-from pathlib import Path, PureWindowsPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Callable, Iterable, Iterator
 from uuid import UUID, uuid4
 
@@ -40,6 +40,8 @@ from here.memory.database import (
 )
 from here.memory.models import (
     AudioAsset,
+    Citation,
+    CitationTarget,
     DeletionResult,
     IngestSource,
     Meeting,
@@ -3050,6 +3052,110 @@ class MemoryService:
                 raise NotFound("Meeting does not exist")
             warnings = (repo.library.storage_warning,) if repo.library.storage_warning else ()
             return self._detail(repo, meeting_id, warnings)
+
+    def resolve_citation(self, citation: Citation) -> CitationTarget:
+        """Resolve text and playback authority within one guarded catalog view."""
+        if not isinstance(citation, Citation):
+            raise InvalidInput("Use a citation reference")
+        for identity in (citation.meeting_id, citation.revision_id, citation.segment_id):
+            self._identity(identity)
+        start, end, quote = citation.start_char, citation.end_char, citation.quote
+        if quote is not None and (not isinstance(quote, str) or not quote):
+            raise InvalidInput("Citation quote must be nonempty text")
+        if start is not None or end is not None:
+            if type(start) is not int or type(end) is not int or not 0 <= start < end:
+                raise InvalidInput("Use valid citation character bounds")
+
+        library = open_library(self.data_dir)
+        try:
+            with catalog_read_view(library) as suppression:
+                if citation.meeting_id in suppression.suppressed_meeting_ids:
+                    raise NotFound("Meeting does not exist")
+                repo = MemoryRepository(library)
+                meeting = repo.get_meeting(citation.meeting_id)
+                if meeting is None or meeting.status == MeetingStatus.DELETING:
+                    raise NotFound("Meeting does not exist")
+                target = CitationTarget(
+                    meeting.id,
+                    citation.revision_id,
+                    citation.segment_id,
+                    title=meeting.title,
+                    started_at=meeting.started_at,
+                    status="missing",
+                )
+                revision = repo.get_revision(citation.revision_id)
+                segment_row = library.execute(
+                    "SELECT * FROM segments WHERE id=?", (citation.segment_id,)
+                ).fetchone()
+                if revision is None:
+                    if segment_row is not None or quote is not None or start is not None:
+                        raise InvalidInput("Citation evidence does not match its revision")
+                    return target
+                if (
+                    revision.meeting_id != meeting.id
+                    or segment_row is None
+                    or segment_row["revision_id"] != revision.id
+                ):
+                    raise InvalidInput(
+                        "Citation segment does not belong to its meeting and revision"
+                    )
+                segment = Segment(**dict(segment_row))
+                if start is not None and end is not None:
+                    if end > len(segment.text) or (
+                        quote is not None and quote != segment.text[start:end]
+                    ):
+                        raise InvalidInput("Citation evidence does not match its character bounds")
+                elif quote is not None and quote not in segment.text:
+                    raise InvalidInput("Citation quote does not match its segment")
+
+                speaker = library.execute(
+                    "SELECT p.display_name FROM speaker_assignments s "
+                    "JOIN meeting_participants l USING (meeting_id, participant_id) "
+                    "JOIN participants p ON p.id=s.participant_id "
+                    "WHERE s.meeting_id=? AND s.revision_id=? AND s.speaker_key=?",
+                    (meeting.id, revision.id, segment.speaker_key),
+                ).fetchone()
+                audio_path = self._citation_audio(repo, meeting.id, revision.id)
+                status = "current" if revision.id == meeting.active_revision_id else "historical"
+                return replace(
+                    target,
+                    text=segment.text,
+                    speaker=speaker[0] if speaker is not None else None,
+                    start_ms=segment.start_ms,
+                    end_ms=segment.end_ms,
+                    timing_source=segment.timing_source,
+                    audio_path=audio_path,
+                    status=status if audio_path is not None else "missing",
+                )
+        finally:
+            library.close()
+
+    def _citation_audio(
+        self, repo: MemoryRepository, meeting_id: str, revision_id: str
+    ) -> Path | None:
+        links = repo.get_revision_audio_assets(revision_id)
+        if len(links) != 1 or links[0].meeting_id != meeting_id:
+            return None
+        asset = repo.get_audio_asset(links[0].asset_id)
+        if asset is None or asset.meeting_id != meeting_id or asset.status != "available":
+            return None
+        relative = PurePosixPath(asset.relative_path)
+        parts = relative.parts
+        if (
+            relative.as_posix() != asset.relative_path
+            or len(parts) != 5
+            or parts[:3] != ("meetings", meeting_id, "revisions")
+            or not _is_uuid(parts[3])
+            or relative.suffix.lower() != ".wav"
+        ):
+            return None
+        try:
+            path = managed_path(self.data_dir, asset.relative_path)
+            if path.stat().st_size == asset.size_bytes and file_hash(path) == asset.sha256:
+                return path
+        except (OSError, UnsafeSessionPath):
+            pass
+        return None
 
     def list_participants(self, meeting_id: str | None = None) -> tuple[Participant, ...]:
         if meeting_id is not None:
