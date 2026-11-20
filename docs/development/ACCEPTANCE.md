@@ -53,9 +53,23 @@ El benchmark se ejecutó en el host de desarrollo Windows 11 (build 26300,
 AMD64 Family 25 Model 80, 16 CPU lógicas). Los `.log` y `.xml` de M3 A están en
 `C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN/`.
 Los demás JUnit de la tabla están en `%TEMP%`, con los nombres indicados y
-extensión `.xml`. Los resultados de alcance completo de M5 B siguen pendientes,
-incluida la corrida de integración sobre `dcb3660`. Los adaptadores de claims y
-respuestas esperan M4 B.
+extensión `.xml`. Los adaptadores de claims y respuestas esperan M4 B.
+
+### Seguimiento de integración · 2026-11-20
+
+| Frente y recibo | Resultado de nivel 2 y alcance |
+|---|---|
+| M3 A · `m3-a-startup-phases-20261120-1` | Fallo y error de teardown antes de iniciar el heartbeat. La traza observó conciliación de borrados que modificó el corpus sintético y ocho tramos de `VACUUM` terminados que sumaron 25,56 s. |
+| M3 A · `m3-a-search-phases-20261120-1` | Un pase de diagnóstico instrumentado de fases. Los criterios de p95 y heartbeat siguen abiertos. |
+| M3 B · `m3-b-focused-f894923.xml` | 465 pases en `f894923`. La revisión independiente pidió corregir el alcance autorizado de retry y la traducción de errores de conexión SQLite. |
+| M3 B · `m3-retry-storage-red-589a832.xml` y `m3-retry-storage-green.xml` | Tres fallos en RED. 41 pases y una omisión de symlink con la fuente `d3ff366` y el blob `3f7f8c6` de base de datos. Pendiente repetir el lote amplio en el head consolidado `8fd64f1`. |
+| M3 B · `m3-qt-multimedia-bundle-red-c4045a5.xml` | Un fallo en el ZIP Windows 0.3 del PR #28 (SHA-256 `ac5f4c5b45796f7cb31e56e7a532412650fcc6f45a06fc04f3282fa332db8e9d`), por falta de `Qt6Multimedia.dll` y `QtMultimedia.pyd`. El paquete manual del candidato `f894923` sigue en curso. [Paquete 0.3](https://github.com/srodriguez-lefebre/here/actions/runs/43477815761) · [Corrida 44781729845](https://github.com/srodriguez-lefebre/here/actions/runs/44781729845) |
+| M5 B · `m5-import-integration-dcb3660.xml` | 89 pases en el lote focalizado de portabilidad en `dcb3660`. |
+| M5 B · `m5-ir-red-0986b7d-068933d7.xml` y `m5-ir-green-41150f5-65afc7c2.xml` | Cuatro fallos en RED y cuatro pases en `41150f5`. Casos de interrupción en retiro y publicación, borrado tras pérdida del catálogo y limpieza de staging al cancelar con una ruta larga. Pendiente la revisión independiente y el lote amplio de este candidato. |
+
+Los recibos de fases de M3 A están en la misma carpeta que el benchmark. Los
+JUnit de M3 B y el de integración `dcb3660` están en `%TEMP%`. Los dos JUnit
+`m5-ir-*` están en `.superpowers/` del worktree `m5-portability-import-service/here`.
 
 Las filas de M3–M5 siguen abiertas y queda pendiente la certificación de nivel 3.
 La prueba de dos horas sigue **omitida por ruling 5**.
