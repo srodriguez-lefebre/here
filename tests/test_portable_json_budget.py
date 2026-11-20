@@ -52,8 +52,17 @@ def origin(tmp_path_factory: pytest.TempPathFactory) -> portability.PortabilityS
 
 
 @pytest.fixture
-def service(tmp_path: Path) -> portability.PortabilityService:
-    return portability.PortabilityService(MemoryService(tmp_path / "target"))
+def target_root(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    # Keep the staged meeting and revision paths short on Windows.
+    return tmp_path_factory.mktemp("pj")
+
+
+@pytest.fixture
+def service(target_root: Path) -> portability.PortabilityService:
+    sessions = target_root / "sessions"
+    sessions.mkdir()
+    memory = MemoryService(target_root / "data", sessions_root=sessions)
+    return portability.PortabilityService(memory)
 
 
 @pytest.fixture(scope="module")
@@ -129,15 +138,15 @@ def test_import_accepts_exact_json_budget_with_audio(
 
 
 def test_import_rejects_over_budget_before_extracting_or_publishing(
-    service: portability.PortabilityService, packages: tuple[Path, Path], tmp_path: Path
+    service: portability.PortabilityService, packages: tuple[Path, Path], target_root: Path
 ) -> None:
     _, over_cap = packages
-    before = set(tmp_path.rglob("*"))
+    before = set(target_root.rglob("*"))
     progress: list[int] = []
     with pytest.raises(portability.InvalidPackage):
         service.import_archive(over_cap, progress.append, lambda: False)
     assert progress == []
-    assert set(tmp_path.rglob("*")) == before
+    assert set(target_root.rglob("*")) == before
 
 
 @pytest.fixture
