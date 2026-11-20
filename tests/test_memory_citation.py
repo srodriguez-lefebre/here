@@ -221,6 +221,43 @@ def _reject_audio_access(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(Path, "open", forbid_wav_path)
 
 
+@pytest.mark.parametrize("fault", ["undeclared-asset", "nonzero-ordinal", "undeclared-source"])
+def test_resolver_requires_registered_audio_roles_before_opening_audio(
+    memory: MemoryService, monkeypatch: pytest.MonkeyPatch, fault: str
+) -> None:
+    detail = memory.get_meeting(MEETING_ID)
+    segment = detail.segments[0]
+    (asset,) = detail.audio_assets
+    (link,) = detail.revision_audio_assets
+    assert link.ordinal == 0 and link.source_file == "audio.wav"
+    unregistered_name = "unregistered.wav"
+
+    with closing(sqlite3.connect(memory.data_dir / "library.sqlite3")) as connection:
+        with connection:
+            if fault == "undeclared-asset":
+                path = memory.data_dir / asset.relative_path
+                unregistered = path.with_name(unregistered_name)
+                unregistered.write_bytes(path.read_bytes())
+                connection.execute(
+                    "UPDATE audio_assets SET relative_path=? WHERE id=?",
+                    (unregistered.relative_to(memory.data_dir).as_posix(), asset.id),
+                )
+            elif fault == "nonzero-ordinal":
+                connection.execute(
+                    "UPDATE revision_audio_assets SET ordinal=1 WHERE revision_id=?",
+                    (link.revision_id,),
+                )
+            else:
+                connection.execute(
+                    "UPDATE revision_audio_assets SET source_file=? WHERE revision_id=?",
+                    (unregistered_name, link.revision_id),
+                )
+
+    _reject_audio_access(monkeypatch)
+    result = memory.resolve_citation(_reference(segment))
+    assert (result.status, result.audio_path, result.text) == ("missing", None, segment.text)
+
+
 @pytest.mark.parametrize("redirect", ["outside-managed-root", "hardlink"])
 def test_resolver_rejects_redirects_before_opening_audio(
     memory: MemoryService, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, redirect: str
