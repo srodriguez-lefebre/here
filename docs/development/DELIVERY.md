@@ -1036,6 +1036,20 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Costo si falla:** reactivar el rol correspondiente con el modelo indicado
     desde su rama y sus recibos, sin duplicar el trabajo ya entregado.
 
+70. **2026-11-20 — Candidato Windows para reproducción WAV de M3 B.** Se prueba
+    el plugin Media Foundation de Qt Multimedia 6.11.2 que trae el wheel fijado
+    de PySide6. El paquete registra el módulo, la DLL y el plugin en su inventario
+    y adjunta los avisos de Qt Multimedia, `dr_libs` y TLSF. La revisión estática
+    verificó la procedencia de los binarios y de los avisos. El workflow debe
+    verificar los archivos producidos y el smoke posterior del instalador. La
+    carga del backend y el seek se verifican con audio sintético reproducido en
+    el ejecutable congelado. La selección es provisional hasta esas corridas.
+    Windows 11 N requiere Media Feature Pack para este backend.
+    [Microsoft Support](https://support.microsoft.com/en-us/windows/experience/platform-variants/media-feature-pack-for-windows-n)
+    **Costo si falla:**
+    revisar el backend de Qt y sus avisos antes del gate de distribución y
+    repetir el build y el seek con el candidato que corresponda.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
