@@ -8,6 +8,7 @@ import math
 import os
 import re
 from collections.abc import Iterable
+from contextlib import nullcontext
 from dataclasses import asdict, dataclass, fields
 from datetime import datetime
 from pathlib import Path, PurePosixPath, PureWindowsPath
@@ -726,13 +727,24 @@ def validate_portable_group_members(
             raise ValueError("Portable lifecycle assignment has no matching scoped speaker")
 
 
-def write_durable_json(path: Path, value: object) -> None:
+def write_durable_json(path: Path, value: object, *, staged: Path | None = None) -> None:
     """Flush a small owned journal/receipt before its same-volume atomic replace."""
-    with staged_artifact_path(path) as staged:
-        with staged.open("w", encoding="utf-8") as stream:
+    if staged is not None:
+        # The caller's durable inventory owns this role even after process death.
+        session_artifact_path(path.parent, path.name)
+        staged = session_artifact_path(staged.parent, staged.name)
+        if staged.exists():
+            if staged.resolve().name != staged.name:
+                raise UnsafeSessionPath("Registered stage filename disagrees with its local role")
+            staged.unlink()
+    pending = staged_artifact_path(path) if staged is None else nullcontext(staged)
+    with pending as temporary:
+        with temporary.open("w" if staged is None else "x", encoding="utf-8") as stream:
             json.dump(value, stream, ensure_ascii=False)
             stream.flush()
             os.fsync(stream.fileno())
+        if staged is not None:
+            temporary.replace(path)
 
 
 def managed_path(root: Path, relative: str, *, directory: bool = False) -> Path:
