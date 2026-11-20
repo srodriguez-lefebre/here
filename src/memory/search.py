@@ -18,6 +18,7 @@ from contextlib import closing, contextmanager
 from dataclasses import replace
 from datetime import datetime, timezone
 from typing import Any, TypeVar
+from uuid import UUID
 
 from here.memory import _native_search
 from here.memory.database import LibraryConnection, LibraryError
@@ -156,13 +157,21 @@ def _validated(query: _Query) -> _Query:
     start, end = _utc(query.from_utc), _utc(query.to_utc)
     if start is not None and end is not None and start >= end:
         raise InvalidInput("The start date must precede the end date")
+    meeting_id = query.meeting_id
+    if meeting_id is not None:
+        try:
+            canonical = isinstance(meeting_id, str) and str(UUID(meeting_id)) == meeting_id
+        except ValueError:
+            canonical = False
+        if not canonical:
+            raise InvalidInput("Meeting identity must be a canonical UUID")
     return replace(
         query, text=normalize_query_text(query.text), from_utc=start, to_utc=end, statuses=statuses
     )
 
 
 def _scope(query: MeetingQuery | SearchQuery) -> list[object]:
-    return [
+    scope: list[object] = [
         query.text,
         query.from_utc,
         query.to_utc,
@@ -170,6 +179,10 @@ def _scope(query: MeetingQuery | SearchQuery) -> list[object]:
         query.participant_id,
         query.include_partial,
     ]
+    # Retain the exact scope encoding for existing global cursors.
+    if query.meeting_id is not None:
+        scope.append(query.meeting_id)
+    return scope
 
 
 def _scope_digest(scope: list[object]) -> str:
@@ -282,6 +295,9 @@ def _filters(
             "WHERE p.meeting_id=m.id AND p.participant_id=?)"
         )
         parameters.append(query.participant_id)
+    if query.meeting_id is not None:
+        clauses.append("m.id = ?")
+        parameters.append(query.meeting_id)
     return " AND ".join(clauses)
 
 
@@ -598,6 +614,7 @@ class SearchService:
                     limit=normalized.limit,
                     cursor=normalized.cursor,
                     include_partial=normalized.include_partial,
+                    meeting_id=normalized.meeting_id,
                 )
             )
         scope = _scope(normalized)
