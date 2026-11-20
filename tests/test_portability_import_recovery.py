@@ -6,6 +6,7 @@ import os
 import sqlite3
 import subprocess
 import sys
+import sysconfig
 import time
 from collections.abc import Iterator
 from contextlib import closing, contextmanager
@@ -157,9 +158,15 @@ def _paused_import(
         "OPENAI_API_KEY": "synthetic-test-key",
     }
     env.pop("HERE_PROVIDER_SMOKE_KEY", None)
-    process = subprocess.Popen(
+    executable = sys.executable
+    if sys.prefix != sys.base_prefix:
+        # The Windows venv redirector has a different PID from the importer.
+        executable = sys._base_executable
+        dependency_paths = dict.fromkeys(sysconfig.get_path(key) for key in ("purelib", "platlib"))
+        env["PYTHONPATH"] = os.pathsep.join(dependency_paths)
+    with subprocess.Popen(
         [
-            sys.executable,
+            executable,
             "-c",
             _CHILD_IMPORT,
             str(Path(__file__).resolve().parents[1]),
@@ -170,24 +177,27 @@ def _paused_import(
             cutover,
         ],
         stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
+        stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE,
         env=env,
         creationflags=subprocess.CREATE_NO_WINDOW,
-    )
-    try:
-        deadline = time.monotonic() + 15
-        while not ready.exists() and process.poll() is None and time.monotonic() < deadline:
-            time.sleep(0.01)
-        if process.poll() is not None:
-            _, stderr = process.communicate(timeout=5)
-            pytest.fail(f"Importer exited before {cutover}: {stderr.decode(errors='replace')}")
-        assert ready.is_file(), f"Importer did not reach {cutover}"
-        yield process
-    finally:
-        if process.poll() is None:
-            process.kill()
-        process.communicate(timeout=5)
+    ) as process:
+        try:
+            deadline = time.monotonic() + 15
+            while not ready.exists() and process.poll() is None and time.monotonic() < deadline:
+                time.sleep(0.01)
+            if process.poll() is not None:
+                _, stderr = process.communicate(timeout=5)
+                pytest.fail(
+                    f"Importer exited with {process.returncode} before {cutover}: "
+                    f"{stderr.decode(errors='replace')}"
+                )
+            assert ready.is_file(), f"Importer did not reach {cutover}"
+            yield process
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.wait(timeout=5)
 
 
 def _kill(process: subprocess.Popen[bytes]) -> None:
@@ -222,7 +232,16 @@ def _meeting_root(memory: MemoryService, identity: str = MEETING_ID) -> Path:
     return memory.data_dir / "meetings" / identity
 
 
+def _probe_path(path: Path) -> Path:
+    # Test observations must work on long synthetic paths independently of product I/O.
+    name = str(path)
+    if name.startswith("\\\\?\\"):
+        return path
+    return Path("\\\\?\\UNC\\" + name[2:] if name.startswith("\\\\") else "\\\\?\\" + name)
+
+
 def _archive_files(directory: Path) -> dict[Path, bytes]:
+    directory = _probe_path(directory)
     return {
         path.relative_to(directory): path.read_bytes()
         for path in directory.rglob("*")
@@ -242,7 +261,9 @@ def _assert_restored(memory: MemoryService, expected: MeetingDetail) -> None:
     assert [(item.id, item.sha256) for item in actual.audio_assets] == [
         (item.id, item.sha256) for item in expected.audio_assets
     ]
-    assert all((memory.data_dir / item.relative_path).is_file() for item in actual.audio_assets)
+    assert all(
+        _probe_path(memory.data_dir / item.relative_path).is_file() for item in actual.audio_assets
+    )
 
 
 def _journal(memory: MemoryService) -> list[tuple[str, str]]:
@@ -268,7 +289,7 @@ def test_killed_import_before_catalog_commit_leaves_no_meetings(
     destination = _meeting_root(target)
     with _paused_import(target, package, cutover) as process:
         stage = _import_stage(target)
-        assert (stage / "payload" / "meetings" / MEETING_ID / "meeting.json").is_file()
+        assert _probe_path(stage / "payload" / "meetings" / MEETING_ID / "meeting.json").is_file()
         assert destination.is_dir() is (cutover == "before-sql-commit")
         _kill(process)
 
@@ -351,7 +372,7 @@ def test_catalog_loss_rebuilds_only_a_complete_portable_receipt_group(
         stage = _import_stage(target)
         imported = _meeting_root(target)
         assert (imported / PORTABLE_GROUP_NAME).is_file()
-        assert len(list(imported.rglob(PORTABLE_RECEIPT_NAME))) == receipt_count
+        assert len(list(_probe_path(imported).rglob(PORTABLE_RECEIPT_NAME))) == receipt_count
         assert bool(list((imported / "states").glob("portable-group-*.json"))) is complete
         _kill(process)
 
