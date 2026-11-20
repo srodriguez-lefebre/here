@@ -20,14 +20,45 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M2 · criterio 15 | Suite completa en CI de Windows sin credencial real ni display | Corrida hospedada sobre el head exacto del PR M2 B | Nivel 2. CI `43461764790` pasó 1273 pruebas y omitió dos smokes de wheel, que pasaron en la corrida no editable. Head `55d68e2`. |
 | M2 | Deletion clears managed memory without resurrection | DB/FTS/files/backup inspection after restart | Nivel 2 en `r62-green-3-61a5088c` (110 pases) y CI `43461764790` (1273 pases). Incluye la matriz R42 de kill/reinicio y orígenes externos. Revisión independiente y PR #25 mergeados. |
 | M2 · 0.3.0 | Installed wheel and Windows package | Fresh wheel and stable installer artifact with checksums | Nivel 2. `m2-030-wheel-a4e464a319f7-a98d6f06` pasó 4 smokes. Package `43461764783` pasó la instalación estable con datos sintéticos y publicó el artefacto `14056018512`; sus seis hashes fueron verificados. |
-| M3 | Listing/filter/search and original moment navigation | End-to-end Qt selection and seek plus real WAV marker playback | Open |
-| M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | Abierto. `r63-query-benchmark-1` en `ca80f49` con fuente `64013ade` falló por p95 de 879,4833999891125 ms frente al límite de 500 ms. Cinco precalentamientos y 40 muestras válidas, mediana 809,5637999940664 ms. Nivel 2 y review independiente aprobada para los focos R63 de oráculo (8), generación (10) y regresión (240). R58 `12774` verificó ocho consultas UI con máximo de 8,9216 ms en su propio alcance. Sin corrida combinada ni certificación nueva. |
+| M3 | Listing/filter/search and original moment navigation | End-to-end Qt selection and seek plus real WAV marker playback | Abierto. Focos de citas y controlador Qt en el checkpoint de reanudación. Pendientes la navegación integrada y la prueba audible de seek dentro de 250 ms. |
+| M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | Abierto. El checkpoint de reanudación registra p95 de 1431,6706 ms y un heartbeat sin medición. `r63-query-benchmark-1` en `ca80f49` con fuente `64013ade` falló por p95 de 879,4833999891125 ms frente al límite de 500 ms. Cinco precalentamientos y 40 muestras válidas, mediana 809,5637999940664 ms. Nivel 2 y review independiente aprobada para los focos R63 de oráculo (8), generación (10) y regresión (240). R58 `12774` verificó ocho consultas UI con máximo de 8,9216 ms en su propio alcance. Sin corrida combinada ni certificación nueva. |
 | M4 | Multi-meeting answers/extractions with valid evidence | Source-resolution and semantic synthetic corpus, provider smoke | Open |
 | M4 | Uncertainty/injection/cancellation/deletion remain honest | No-evidence, invalid-citation, concurrent delete/redaction tests | Open |
 | M5 | Offline first run, settings, tray/startup and safe exit | Qt, process concurrency and Windows settings tests | Open |
-| M5 | Portable data including optional audio and citations | Export/import on a fresh root, hashes and hostile ZIP tests | Open |
+| M5 | Portable data including optional audio and citations | Export/import on a fresh root, hashes and hostile ZIP tests | Abierto. Focos de recuperación de importación y límite JSON en el checkpoint de reanudación. Claims y respuestas esperan M4 B. |
 | M5 | Install/update/uninstall preserve user memory | N to N+1 installation and separate uninstall test | Open |
 | All | PR groups reviewed and merged | PR URLs, reviewed heads, CI and merge SHAs, applicable review threads | M2 A mergeado en `53712c5` (PR21), M2 B en `b4b3d1b` (PR25). Siete grupos pendientes con revisión independiente, CI Windows y merge protegido. Ruling 64 omite Copilot. |
+
+## Checkpoint M3–M5-RESUME-20261120
+
+Evidencia automática de nivel 2, acotada a cada corrida y a su candidato.
+M3 A sigue abierto en el head `0c16065` del PR #28. El checkout restaurado
+`1f71d08` tiene el mismo árbol (`97e29296792cc7b61f25eece23a5525fab53c707`).
+CI de Windows y paquete pasaron en el head del PR.
+[PR #28](https://github.com/srodriguez-lefebre/here/pull/28) ·
+[CI 43477815724](https://github.com/srodriguez-lefebre/here/actions/runs/43477815724) ·
+[Paquete 43477815761](https://github.com/srodriguez-lefebre/here/actions/runs/43477815761)
+
+| Frente y corrida | Resultado y alcance |
+|---|---|
+| M3 A · `m3-a-resume-20261120-benchmark-1` | Falló. La búsqueda pública en el corpus sintético de 1000 reuniones y 100 000 segmentos registró p95 de 1431,6706 ms frente a <500 ms, con cinco precalentamientos y 40 muestras válidas. |
+| M3 A · `m3-a-resume-20261120-heartbeat-1` | Un fallo y un error de teardown en el mismo caso. La espera de 30 s venció antes de iniciar el temporizador; la espera de cierre de 5 s también venció. La comprobación de intervalos de 50 ms quedó sin medición. |
+| M3 B · `m3-playback-edge-green-f9bd814` | 17 pases con backend Qt simulado en `2745ec7`. Pendiente la nueva revisión independiente y la prueba audible con WAV y marcas. |
+| M3 B · `m3-citation-green-ac493c9` y `m3-citation-roles-red-4cabf16` | 25 pases en el candidato `19c06b3`. La revisión encontró validaciones obligatorias de roles de audio pendientes. El RED suplementario obtuvo 25 pases y tres fallos. |
+| M3 B · `m3-cli-red-7e225ec` y `m3-navigation-red-aacaf38` | 21 fallos en CLI y 13 en navegación. Ambos son RED de sus contratos. |
+| M5 B · `m5-import-recovery-longpath-candidate` | 11 pases en `d0449fc` para recuperación de staging tras interrupción de proceso, con rutas largas de Windows. |
+| M5 B · `m5-json-cap-green-a7c424d` | Seis pases y revisión independiente aprobada en `fc36f91` para el límite acumulado de 32 MiB de JSON del ruling 68. |
+
+El benchmark se ejecutó en el host de desarrollo Windows 11 (build 26300,
+AMD64 Family 25 Model 80, 16 CPU lógicas). Los `.log` y `.xml` de M3 A están en
+`C:/Users/savar/.codex/worktrees/2710/here/.superpowers/sdd/M3_SEARCH_PLAN/`.
+Los demás JUnit de la tabla están en `%TEMP%`, con los nombres indicados y
+extensión `.xml`. Los resultados de alcance completo de M5 B siguen pendientes,
+incluida la corrida de integración sobre `dcb3660`. Los adaptadores de claims y
+respuestas esperan M4 B.
+
+Las filas de M3–M5 siguen abiertas y queda pendiente la certificación de nivel 3.
+La prueba de dos horas sigue **omitida por ruling 5**.
 
 ## Cierre de M2 · 0.3.0 · 2026-11-13
 
