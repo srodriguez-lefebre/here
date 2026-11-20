@@ -13,14 +13,16 @@ Copilot sigue omitido por ruling 64 y dos horas queda **omitida por ruling 5**.
 | --- | --- | --- |
 | M3 A, chat `01a1af04-e779-7363-be61-c840651b0b18` | `codex/m3-search`, `2710/here` | `1f71d08`, chat M3 A reactivado con GPT‑6.2 Sol. Tiene el mismo árbol que `0c16065`. |
 | M3 A, PR #28 | `codex/m3-a-product`, `m3-a-product/here` | `0c16065`, orquestador. Mantener abierto por p95. |
-| M3 B, integración | `codex/m3-library`, `m3-library-group/here` | `0c16065`, orquestador. |
-| M3 B, citas | `codex/m3-library-resolver-red`, `m3-library-resolver-red/here` y `codex/m3-library-resolver-green`, `m3-library-resolver-green/here` | RED `f987ec6`, fixture corregido `ac493c9` por `m3_b_citation_red_fixture_sol`. Implementación en verificación por el orquestador. |
+| M3 B, integración | `codex/m3-library`, `m3-library-group/here` | `f894923`, orquestador. Review por `m3_b_integration_review_sol` y `m3_multimedia_packaging_review_sol`. |
+| M3 B, citas | `codex/m3-library-resolver-green`, `m3-library-resolver-green/here` | GREEN `7323613`, orquestador, 28 pases. RED de roles `4cabf16`, `m3_citation_roles_red_sol`. |
 | M3 B, reproducción | `codex/m3-library-playback-green`, `m3-library-playback-green/here`; RED de revisión en `codex/m3-library-playback-edge-red`, `m3-library-playback-edge-red/here` | GREEN `2745ec7`, `m3_b_playback_green_sol`. RED `6cb1d72`, `m3_b_playback_edge_red_sol`. Re-review pendiente. |
-| M3 B, navegación | `codex/m3-library-navigation-red`, `m3-library-navigation-red/here`; GREEN `codex/m3-library-navigation-green`, `m3-library-navigation-green/here` | RED `aacaf38`, `m3_b_navigation_red_sol`; candidato sobre `b7a51c7`, `m3_b_navigation_green_sol`. |
-| M3 B, CLI | `codex/m3-library-cli-red`, `m3-library-cli-red/here`; GREEN `codex/m3-library-cli-green`, `m3-library-cli-green/here` | RED `7e225ec`, `m3_b_cli_red_sol`; `a5c71d3`, `m3_b_cli_green_sol`. Pendientes handoffs y ejecución integrada. |
+| M3 B, navegación | `codex/m3-library-navigation-green`, `m3-library-navigation-green/here`; correcciones `codex/m3-library-nav-review-green`, `m3-library-nav-review-green/here` | `820c38b` pasó 30. Review reproductor y navegación en worktree aislado. `e9a3e90`, `m3_b_navigation_green_sol`, incorpora correcciones con runtime integrado pendiente. |
+| M3 B, CLI | `codex/m3-library-cli-green`, `m3-library-cli-green/here`; scope `codex/m3-library-scope-green`, `m3-library-scope-green/here` | `a5c71d3` de `m3_b_cli_green_sol`; `30a8ea3` de `m3_b_scope_green_sol`; diagnóstico de playback `beebd8a` pasó cuatro casos. |
+| M3 B, paquete y fixture WAV | `codex/m3-library-multimedia-green`, `m3-library-multimedia-green/here`; `codex/m3-library-marker-fixture`, `m3-library-marker-fixture/here` | `1fb797c`, `m3_multimedia_packaging_green_sol`; fixture sintético `3d96608`, `m3_marker_fixture_preparation_sol`. |
 | M5 B, chat `01a1af04-b158-75a2-8933-98783880f3e8` (antes M2 B) | `codex/m5-portability-import-service`, `m5-portability-import-service/here` | `dcb3660`, chat reactivado con GPT‑6.2 Sol. El orquestador controla leases, contratos y merges. |
 | M5 B, arnés Windows | `codex/m5-portability-recovery-harness`, `m5-portability-recovery-harness/here` | `deccde1`, `m5_recovery_harness_sol`. Corrección de staging `d0449fc` incluida en `dcb3660`. |
 | M5 B, presupuesto JSON | `codex/m5-portability-json-cap-red`, `m5-portability-json-cap-red/here` y `codex/m5-portability-json-cap-green`, `m5-portability-json-cap-green/here` | RED `05ba0ee`, `m5_json_cap_red_sol`. GREEN `fc36f91` revisado por `citation_json_independent_review_sol` e incluido en `dcb3660`. |
+| M4 A, preparación del PLAN | `codex/m4-grounded-preparation`, `m4-grounded-preparation/here` | `99f1ec8`, `m4_next_plan_preparation_sol`. Pendientes cierre de M3 y contrato de recuperación para múltiples reuniones. |
 
 [PR #28](https://github.com/srodriguez-lefebre/here/pull/28). Nivel 2 para CI
 Windows `43477815724` y paquete `43477815761`, ambos verdes en `0c16065`. Se
@@ -37,9 +39,18 @@ corregido en `ac493c9` con rerun pendiente. El RED Qt obtuvo 13 errores de setup
 por módulo ausente y el controlador `1027d22` obtuvo 13 pases. Las correcciones
 pedidas por la revisión reprodujeron dos fallos y luego pasaron 17 casos en
 `2745ec7`. Citas `19c06b3` dio 25 pases. Su review pidió verificar roles de audio,
-reproducido en tres RED de `4cabf16`. El RED CLI obtuvo 21 fallos por grupo
-ausente o por falta del campo de scope. El RED de navegación obtuvo 13 fallos.
-Los JUnit de estas corridas están en TEMP.
+reproducido en tres RED de `4cabf16`. `7323613` pasó los 28 casos. El RED CLI
+obtuvo 21 fallos por grupo o scope ausente y el RED de navegación, 13 fallos.
+La primera corrida integrada de `4635bd1` abortó con el backend Qt real cuando el
+fake del test CLI no interceptó un módulo ya cargado. Se corrigió el arnés en
+`9413b6c`. La corrida selectiva `m3-b-review-red-4635bd1` dio 16 pases, 12 fallos y
+1 caso deselectado. `f894923` ensambla las correcciones. Falta su corrida integrada.
+
+El RED de distribución dio un fallo en `m3-qt-multimedia-bundle-red-c4045a5`
+sobre el ZIP real del PR #28, SHA-256 `ac5f4c5b45796f7cb31e56e7a532412650fcc6f45a06fc04f3282fa332db8e9d`.
+Faltaban el módulo y la DLL de QtMultimedia. `1fb797c` prepara un paquete con el
+backend nativo de Qt 6.11.2 y sus avisos, pendiente de revisión y build. El WAV
+`3d96608` prepara el control de seek sin leer audio personal. Falta nivel 3.
 
 Nivel 2 diagnóstico en M5 B. La recuperación de importación obtuvo 11 fallos en
 `fada4fc` y 1 pase con 10 fallos en `8083b91`. La corrida mostró el fallo de
@@ -51,6 +62,12 @@ El RED JSON `05ba0ee` dio 3 pases y 3 fallos esperados. `fc36f91` pasó los seis
 casos y la review independiente. El lote `m5-import-integration-dcb3660` dio
 89 pases, nivel 2 focalizado. Claims sigue pendiente de M4 B. Falta certificación
 de nivel 3 para M3–M5.
+
+Ventana exclusiva actual: diagnóstico M3 A en el mismo árbol congelado del
+PR #28. Al drenar, M5 B tiene RED de recuperación preparado, incluido `0986b7d`
+para pérdida de SQLite durante borrado. El chat M5 B tiene escritura en
+`service.py` y `artifacts.py` para ese alcance. M3 B y el build no corren en
+paralelo con esas corridas sensibles. El orquestador integra y controla merges.
 
 ## Pausa solicitada — 2026-11-13
 
