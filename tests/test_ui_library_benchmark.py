@@ -13,6 +13,7 @@ import os
 import platform
 import re
 import sys
+from collections import Counter
 from pathlib import Path
 from time import perf_counter_ns
 
@@ -79,11 +80,58 @@ def _rendered(table, page):
     ].snippet in str(model.index(len(page.items) - 1, 0).data() or "")
 
 
+def _corpus_seal(catalog):
+    from here.memory.database import open_library
+    from here.memory.service import catalog_read_view
+
+    library = open_library(catalog.data_dir)
+    try:
+        with catalog_read_view(library) as snapshot:
+            counts = {
+                table: library.execute(f"SELECT count(*) FROM {table}").fetchone()[0]
+                for table in ("meetings", "segments", "segments_fts")
+            }
+            placeholders = ",".join("?" for _ in catalog.suppressed_meeting_ids)
+            physical_hidden_ids = tuple(
+                row[0]
+                for row in library.execute(
+                    f"SELECT id FROM meetings WHERE id IN ({placeholders}) ORDER BY id",
+                    catalog.suppressed_meeting_ids,
+                ).fetchall()
+            )
+            physical_hidden_fts = tuple(
+                tuple(row)
+                for row in library.execute(
+                    "SELECT meeting_id, count(*) FROM segments_fts "
+                    f"WHERE meeting_id IN ({placeholders}) GROUP BY meeting_id ORDER BY meeting_id",
+                    catalog.suppressed_meeting_ids,
+                ).fetchall()
+            )
+            phases = Counter()
+            records = {}
+            for path in sorted((catalog.data_dir / ".deletions").glob("*.json")):
+                raw = path.read_bytes()
+                phases[json.loads(raw)["phase"]] += 1
+                records[path.name] = hashlib.sha256(raw).hexdigest()
+            return {
+                "counts": counts,
+                "physical_hidden_ids": physical_hidden_ids,
+                "physical_hidden_fts": physical_hidden_fts,
+                "tombstone_raw_sha256": records,
+                "tombstone_phases": dict(phases),
+                "suppressed_meeting_ids": snapshot.suppressed_meeting_ids,
+                "suppression_fingerprint": snapshot.fingerprint,
+            }
+    finally:
+        library.close()
+
+
 def test_real_guarded_library_query_render_and_worker_drain_keep_all_gaps_below_fifty_ms(
     guarded_ui_catalog, tmp_path, qapp, qtbot, record_property
 ):
     import PySide6
     from here.application import HereApplicationController
+    from here.application.recovery import RecoveryCandidate, RecoveryService
     from here.memory.models import SearchPage, SearchQuery
     from here.ui.app import HereDesktop
     from here.ui.contract import ApplicationUiAdapter
@@ -98,6 +146,24 @@ def test_real_guarded_library_query_render_and_worker_drain_keep_all_gaps_below_
     assert len(catalog.expected_segment_ids) == 44
     assert catalog.alias_meeting_id in catalog.suppressed_meeting_ids
     assert qapp.platformName() == "offscreen"
+    assert SearchQuery().limit == 50
+    before_desktop = _corpus_seal(catalog)
+    record_property("corpus_before_desktop", json.dumps(before_desktop, sort_keys=True))
+    assert before_desktop["counts"] == {
+        "meetings": 1000,
+        "segments": 100000,
+        "segments_fts": 98901,
+    }
+    assert before_desktop["physical_hidden_ids"] == catalog.suppressed_meeting_ids
+    assert before_desktop["physical_hidden_fts"] == tuple(
+        (identity, 99) for identity in catalog.suppressed_meeting_ids
+    )
+    assert tuple(before_desktop["tombstone_raw_sha256"]) == tuple(
+        sorted(f"{identity}.json" for identity in catalog.registry_record_ids)
+    )
+    assert before_desktop["tombstone_phases"] == {"complete": 110, "pending": 110}
+    assert before_desktop["suppressed_meeting_ids"] == catalog.suppressed_meeting_ids
+    assert before_desktop["suppression_fingerprint"]
     metadata = {
         "machine": platform.platform(),
         "uname": platform.uname()._asdict(),
@@ -111,6 +177,7 @@ def test_real_guarded_library_query_render_and_worker_drain_keep_all_gaps_below_
         "source_raw_sha256": _source_hashes(),
         "catalog_root": str(catalog.data_dir),
         "setup_seconds": catalog.setup_seconds,
+        "startup_recovery": "isolated discovery via the existing recovery service seam",
         "physical_meetings": catalog.physical_meetings,
         "physical_segments": catalog.physical_segments,
         "registry_record_ids": catalog.registry_record_ids,
@@ -129,16 +196,36 @@ def test_real_guarded_library_query_render_and_worker_drain_keep_all_gaps_below_
     controller = HereApplicationController(
         memory_service=catalog.memory, capture_factory=forbidden, live_factory=forbidden
     )
-    # No memory/query override: the real adapter obtains the actual controller's
-    # same injected MemoryService and constructs its production query facade.
-    adapter = ApplicationUiAdapter(controller, tmp_path / "empty-sessions")
+    class QueryWindowRecoveryService(RecoveryService):
+        def discover(self) -> list[RecoveryCandidate]:
+            # Startup reconciliation mutates this fixture before any query.
+            # The heartbeat measures the query window using the frozen corpus.
+            return []
+
+    sessions_root = tmp_path / "empty-sessions"
+    recovery = QueryWindowRecoveryService(sessions_root, memory_service=controller.memory_service)
+    # The adapter obtains the actual controller's MemoryService and constructs
+    # its production query facade.
+    adapter = ApplicationUiAdapter(controller, sessions_root, recovery_service=recovery)
     desktop = HereDesktop(
         qapp,
         adapter,
         settings=QSettings(str(tmp_path / "performance.ini"), QSettings.Format.IniFormat),
     )
+    recovery_callbacks = []
+    recovery_settled = []
+
+    def recovery_delivered(request, kind, value, error):
+        if kind == "recovery":
+            recovery_callbacks.append((request, value, error))
+
+    def startup_worker_settled(request):
+        recovery_settled.append(request)
+
+    desktop.jobs.finished.connect(recovery_delivered)
+    desktop.jobs.settled.connect(startup_worker_settled)
     desktop.show()
-    qtbot.waitUntil(lambda: not desktop.jobs.busy, timeout=30000)
+    qtbot.waitUntil(lambda: bool(recovery_callbacks) and not desktop.jobs.busy, timeout=30000)
     tabs = desktop.main_window.findChild(QTabWidget)
     assert tabs is not None
     view = desktop.main_window.findChild(LibraryView)
@@ -166,6 +253,16 @@ def test_real_guarded_library_query_render_and_worker_drain_keep_all_gaps_below_
     completed = []
     rendered_drains = []
     drained = False
+    assert len(recovery_callbacks) == 1
+    recovery_request, recovery_value, recovery_error = recovery_callbacks[0]
+    assert recovery_error is None
+    assert recovery_value == []
+    assert recovery_settled == [recovery_request]
+    record_property("startup_recovery_request_id", recovery_request)
+    desktop.jobs.settled.disconnect(startup_worker_settled)
+    before_timer = _corpus_seal(catalog)
+    record_property("corpus_before_timer", json.dumps(before_timer, sort_keys=True))
+    assert before_timer == before_desktop
     started = perf_counter_ns()
     timer.start()
     try:
@@ -234,7 +331,12 @@ def test_real_guarded_library_query_render_and_worker_drain_keep_all_gaps_below_
             record_property("background_errors", json.dumps(errors))
             record_property("owned_workers_drained", drained)
     assert drained
+    after_timer = _corpus_seal(catalog)
+    record_property("corpus_after_timer", json.dumps(after_timer, sort_keys=True))
+    assert after_timer == before_desktop
     assert not errors
+    assert len(recovery_callbacks) == 1
+    assert [request for request, _ in responses] == completed
     assert len(completed) == 8
     assert len(ticks) >= 50, "Insufficient actual heartbeat observations; no acceptance claim"
     assert all(gap < 50_000_000 for gap in gaps_ns), (
