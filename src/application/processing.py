@@ -1428,8 +1428,18 @@ class SessionProcessor:
             self._memory.data_dir if self._memory else get_data_dir(),
             self._retry_meeting_id or (metadata.meeting_id if metadata else None),
         )
-        if selection is not None and self._transcribe is transcribe_recording_session:
-            require_provider_key()
+        if selection is not None:
+            from here.application.recovery import validate_recovery_audio
+
+            assert metadata is not None  # The scoped metadata verifier requires a manifest.
+            try:
+                audio_available = validate_recovery_audio(session_dir, metadata)
+            except (OSError, ValueError, sf.LibsndfileError) as exc:
+                raise LibraryError("The selected recovery audio cannot be verified") from exc
+            if not audio_available:
+                raise Conflict("The selected recovery session no longer has usable audio")
+            if self._transcribe is transcribe_recording_session:
+                require_provider_key()
         audio_file = (
             metadata.recoverable_audio if metadata and metadata.recoverable_audio else AUDIO_FILE
         )
