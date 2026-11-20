@@ -2,7 +2,8 @@
 
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
 > review, then independent agent review. Root owns leases, integration and merges
-> under rulings 20/35, with received/responded current-head Copilot and Windows CI.
+> under rulings 20/35, with current-head Windows CI and Copilot omitted under
+> ruling 64. Ruling 69 selects GPT-6.2 Sol for active agent work.
 > Steps use checkbox syntax. **Status: preparation only, no M4 GO.** Ruling 20
 > replaces ruling 15's pause; implementation still waits for M3 closure, accepted
 > actual handoffs and the required contract-document PR before root dispatch.
@@ -38,17 +39,17 @@ schemas, the existing OpenAI SDK, pytest with mock transport; no new dependency.
 
 Foundation is merged M2 A `53712c5beedafc2d40e2abf10c13362a1c3c9f78` and contracts
 `73d3cb384bd422de6899d8c7b761f3f3159ea3f1`; root DELIVERY `03f31ba` supplies
-R20/35/39–52. Frozen M3 B drafts SPEC03207dd/PLAN9c177e5 are preparation contracts,
-not source acceptance. M3 checkpoint00cf0ea has real query DTOs/SearchService;
-B5 interoperability, M3 B resolver and complete M3 gates remain pending. Root binds
-final actual signatures/base/owners before source work, without changing this scope.
+R20/35/39–52. M3 checkpoint `00cf0ea` established the query DTOs and
+`SearchService`. The 2026-11-20 follow-up inspects the M3 A query handoff at
+`0c16065` and the M3 B resolver candidate at `7323613`. Root binds integrated
+signatures, base and owners after M3 closure and before source work.
 
 | Boundary | Current contract and unresolved handoff |
 |---|---|
 | Query owner | `memory.search.SearchService(connection_factory)`, `search(SearchQuery) -> SearchPage \| MeetingPage`; fresh LibraryConnection per operation, closed by the service. No presumed MemoryService.search. |
-| Scoped evidence | Current SearchQuery lacks meeting IDs; its quoted-token builder is not M4 OR retrieval. Memory-owned scope-before-LIMIT, literal OR terms, diversification, adjacent context and one coherent bounded snapshot need an accepted adapter; no new signature chosen. |
-| Read suppression | R50 catalog_read_view: B owns lock-before-BEGIN and single transaction; caller owns fresh connection/close. Snapshot includes UUIDs plus exact aliases/fingerprint. Actual B5/M3 handoff still pending. |
-| Citation source | R46 passive IDs/optional quote/start_char/end_char; M3 B validates Unicode source spans and membership, null timing and exact revision/audio links. Actual resolver/read handoff pending. |
+| Scoped evidence | M3 B Task 4 specifies single exact `meeting_id` scope before keyset and LIMIT. The M4 selected-set and literal OR handoff remains open, with global BM25, fair allocation, deterministic order, adjacent context and one coherent bounded snapshot. Root binds the adapter signature and selection order. |
+| Read suppression | R50 `catalog_read_view` owns lock-before-BEGIN and one transaction. The caller owns the fresh connection and closes it. The snapshot includes UUIDs plus exact aliases/fingerprint. The resolver candidate uses it; scoped evidence and source revalidation still need their own accepted binding. |
+| Citation source | Candidate `MemoryService.resolve_citation(Citation) -> CitationTarget` validates membership, literal quotes, paired Unicode bounds, and exact revision/audio links with artifact role guards. Unvalidated audio yields `status="missing"` without a path, possibly with verified text. Confirm this contract on the integrated M3 head. |
 | Participants/root | R48 real IDs/roles/nullable assignments, request-scoped speakers; R40/R52 same injected service/configured root. No new .env reader or origin-derived root probing. |
 | Future persistence | R51 private SQL purger on B's same final cleanup transaction; future M4 B only, never a citation resolver or an M4 A migration/task. |
 
@@ -56,16 +57,21 @@ Within the existing retrieval/verifier tests, preserve R39 NULL/date/keysets,
 R41 complete/partial/fallback semantics and R45 whole-corpus generation. Reuse the
 canonical InvalidInput.reason including corpus_changed; never concatenate stale
 ranked pages. R47 empty search is MeetingPage, not evidence or implicit scope
-expansion. No raw MATCH injection, post-LIMIT scope filtering or direct intelligence
-SQL is a substitute for the unresolved memory-owned adapter. Do not hold a database
+expansion. The unresolved memory-owned adapter must apply selected-set eligibility
+and suppression before keyset and LIMIT, with global BM25 and fair, repeatable
+allocation and ordering. Exclude raw MATCH input, per-ID search fan-out, post-LIMIT
+scope filtering and direct intelligence SQL. Do not hold a database
 transaction/ownership lock while calling the provider. Actual guarded source
 revalidation must precede publication; concurrent loss/change does not certify a
 stale result. R42/R50 pending/complete suppression also applies to adjacent context,
 with aliases resolved before exposure; invalid registry state fails closed.
 
 Keep quote offsets in original Unicode source coordinates even when the existing
-minimal verifier normalization is used. Do not normalize away uncertain owners/dates,
-invent timestamps from targets, or promote a request speaker label into a participant.
+minimal verifier normalization is used. Put the exact source substring in the
+passive Citation. Revalidate the segment and revision even when playable audio is
+unavailable. Keep audio and paths out of provider payloads. Do not normalize away
+uncertain owners/dates, invent timestamps from targets, or promote a request speaker
+label into a participant.
 Future M4 B's derived-row purger is SQL-only on the supplied final transaction;
 no commit/BEGIN/rollback/other connection/I/O/provider and no use from retrieval.
 R51 accepted-barrier failures remain pending with canonical ID/reason/io, not fake
@@ -124,7 +130,9 @@ These intelligence interfaces remain planned; no existing memory API is invented
 - [ ] Write failing budget tests on a 50-meeting, 2,000-hit corpus: at most 6 per
   meeting and 24 total, character budget respected with adjacent context counted,
   `Coverage` equals the sent set and flags truncation; only active complete revisions
-  unless requested.
+  unless requested. Include mixed selected/unselected hits, literal OR terms and
+  skewed meeting volumes. Verify selected-set eligibility before limits, global
+  ranking, fair allocation, stable ordering and context counted once.
 - [ ] Implement models, retrieval, diversification and coverage; register the package.
 - [ ] Run focused tests and the full offscreen suite; self-review; commit as
   "intelligence: models and budgeted retrieval".
@@ -192,8 +200,8 @@ Verified | Rejected(reasons)`; one bounded repair attempt then `VerificationFail
   `docs/MILESTONE_4_PLAN.md` (criteria 1–9, 12 status), `ACCEPTANCE.md` (M4 rows
   with the runs that close them, smoke model and date) and `WHATS_NEW.md` only if a
   user-facing capability ships (it does not until group B).
-- Root coordinates the group PR with self-review and independent review, receives
-  and responds to Copilot on the actual head, verifies current-head Windows CI and
-  performs the guarded merge under rulings 20/35. Reconcile the existing
+- Root coordinates the group PR with self-review and independent review, verifies
+  current-head Windows CI and performs the guarded merge under rulings 20/35.
+  For the pending PRs, omit Copilot under ruling 64. Reconcile the existing
   `M4_PRODUCT_PLAN.md` with accepted contracts before its dispatch, preserving the
   same-milestone open-PR overlap and later rebase allowed by CLAUDE §11.
