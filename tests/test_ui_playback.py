@@ -44,6 +44,9 @@ class _FakeMediaPlayer(QObject):
     def audioOutput(self):
         return self._audio_output
 
+    def isAvailable(self) -> bool:
+        return True
+
     def setSource(self, source: QUrl):
         self._actions.append(("source", source.toLocalFile() if not source.isEmpty() else None))
         self._source = source
@@ -52,7 +55,9 @@ class _FakeMediaPlayer(QObject):
         self._seekable = False
         self._playback_state = self.PlaybackState.StoppedState
         self.sourceChanged.emit(source)
-        self.report_status(self.MediaStatus.NoMedia if source.isEmpty() else self.MediaStatus.LoadingMedia)
+        self.report_status(
+            self.MediaStatus.NoMedia if source.isEmpty() else self.MediaStatus.LoadingMedia
+        )
 
     def source(self) -> QUrl:
         return self._source
@@ -184,7 +189,10 @@ def test_pending_seek_waits_for_both_media_signals_and_applies_once(playback, ta
     controller.load(target)
     controller.seek_ms(1250)
     player = _player_for(players, target)
-    loaded = lambda: player.report_status(player.MediaStatus.LoadedMedia)
+
+    def loaded():
+        player.report_status(player.MediaStatus.LoadedMedia)
+
     first, second = (loaded, player.report_seekable)
     if first_event == "seekable":
         first, second = second, first
@@ -213,11 +221,15 @@ def test_selecting_and_loading_evidence_never_plays_without_an_explicit_action(p
     assert [action[0] for action in actions if action[0] in {"play", "pause"}] == ["play", "pause"]
 
 
-def test_meeting_switch_releases_old_source_and_invalidates_pending_seek(playback, target, tmp_path):
+def test_meeting_switch_releases_old_source_and_invalidates_pending_seek(
+    playback, target, tmp_path
+):
     controller, players, actions = playback
     replacement_path = tmp_path / "other-marked.wav"
     write_marked_wav(replacement_path)
-    replacement = replace(target, meeting_id=OTHER_MEETING_ID, start_ms=1500, audio_path=replacement_path)
+    replacement = replace(
+        target, meeting_id=OTHER_MEETING_ID, start_ms=1500, audio_path=replacement_path
+    )
     controller.load(target)
     old = _player_for(players, target)
     old_path = old.source().toLocalFile()
@@ -312,6 +324,88 @@ def test_codec_failure_reports_text_and_does_not_start_playback(playback, target
 
     assert messages and messages[-1].strip()
     assert not any(action[0] == "play" for action in actions)
+
+
+def test_unavailable_backend_reports_safe_error_without_opening_source(
+    playback, target, monkeypatch
+):
+    from here.ui import playback as module
+
+    controller, _, actions = playback
+    diagnostic = f"Synthetic backend startup failure for {target.audio_path}"
+
+    class UnavailableMediaPlayer(module.QMediaPlayer):
+        def __init__(self, parent=None):
+            super().__init__(parent)
+            self.errorOccurred.emit(self.error(), self.errorString())
+
+        def isAvailable(self) -> bool:
+            return False
+
+        def error(self):
+            return self.Error.ResourceError
+
+        def errorString(self) -> str:
+            return diagnostic
+
+    monkeypatch.setattr(module, "QMediaPlayer", UnavailableMediaPlayer)
+    states: list[str] = []
+    messages: list[str] = []
+    controller.state_changed.connect(states.append)
+    controller.error.connect(messages.append)
+    controller.load(target)
+
+    assert len(messages) == 1 and messages[0].strip()
+    assert "Synthetic backend startup failure" not in messages[0]
+    assert str(target.audio_path) not in messages[0]
+    assert controller.state == states[-1] == "error"
+    assert controller.meeting_id is None
+    assert not controller.can_play
+    assert not any(action[0] == "source" and action[1] is not None for action in actions)
+
+
+@pytest.mark.parametrize("seek_before_ready", [True, False], ids=["queued", "ready"])
+def test_seek_past_duration_leaves_player_in_error(playback, target, seek_before_ready):
+    controller, players, actions = playback
+    states: list[str] = []
+    messages: list[str] = []
+    controller.state_changed.connect(states.append)
+    controller.error.connect(messages.append)
+    controller.load(target)
+    player = _player_for(players, target)
+    if not seek_before_ready:
+        _ready(player)
+
+    controller.seek_ms(2500)
+    if seek_before_ready:
+        assert not messages
+        _ready(player)
+
+    assert len(messages) == 1 and messages[0].strip()
+    assert player.source().isEmpty()
+    assert not any(action[0] == "seek" for action in actions)
+    assert controller.state == states[-1] == "error"
+    assert controller.meeting_id is None
+    assert not controller.can_play
+
+
+def test_capture_entry_pauses_active_playback(playback, target):
+    controller, players, actions = playback
+    controller.load(target)
+    player = _player_for(players, target)
+    _ready(player)
+    controller.play()
+    assert player.playbackState() == player.PlaybackState.PlayingState
+
+    controller.set_application_state(ApplicationState.PREPARING)
+
+    assert player.playbackState() == player.PlaybackState.PausedState
+    assert controller.state == "blocked"
+    assert controller.disabled_reason.strip()
+    assert not controller.can_play
+    controller.set_application_state(ApplicationState.COMPLETED)
+    assert player.playbackState() == player.PlaybackState.PausedState
+    assert [action[0] for action in actions if action[0] in {"play", "pause"}] == ["play", "pause"]
 
 
 @pytest.mark.parametrize(
