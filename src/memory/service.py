@@ -29,6 +29,7 @@ from here.memory.artifacts import (
     managed_path,
     normalized_origin,
     portable_completion_name,
+    portable_stage_io_path,
     read_artifacts,
     read_meeting_snapshot,
     read_meeting_state,
@@ -517,27 +518,21 @@ def _read_import_work(
 
 def _write_import_intent(directory: Path, name: str, document: object) -> None:
     """Stage a locally assigned protocol name recoverable after process death."""
+    directory = portable_stage_io_path(directory)
     path = session_artifact_path(directory, name)
     temporary = session_artifact_path(directory, f"{name}.stage")
-    with _portable_stage_io_path(temporary).open("x", encoding="utf-8") as stream:
+    with temporary.open("x", encoding="utf-8") as stream:
         json.dump(document, stream, ensure_ascii=False)
         stream.flush()
         os.fsync(stream.fileno())
-    _portable_stage_io_path(temporary).replace(_portable_stage_io_path(path))
-
-
-def _portable_stage_io_path(path: Path) -> Path:
-    """Use Windows long-path syntax only after a managed path is validated."""
-    if os.name != "nt" or str(path).startswith("\\\\?\\"):
-        return path
-    name = str(path)
-    return Path("\\\\?\\UNC\\" + name[2:] if name.startswith("\\\\") else "\\\\?\\" + name)
+    temporary.replace(path)
 
 
 def _import_tree_entries(
     root: Path, plan: _ImportMeetingPlan, *, published: bool
 ) -> tuple[list[Path], list[Path]]:
     """Validate all existing entries before removing any incomplete owned tree."""
+    root = portable_stage_io_path(root)
     validate_session_directory(root)
     files: list[Path] = []
     directories: list[Path] = []
@@ -571,7 +566,7 @@ def _import_tree_entries(
                 if entry.name not in hashes:
                     raise ValueError("Unknown portable revision material retained")
                 file = session_artifact_path(revision, entry.name)
-                if published and file_hash(_portable_stage_io_path(file)) != hashes[entry.name]:
+                if published and file_hash(file) != hashes[entry.name]:
                     raise ValueError("Portable revision material changed during cleanup")
                 files.append(file)
             directories.append(revision)
@@ -584,6 +579,7 @@ def _stage_payload_tree(
     root: Path, files: Iterable[tuple[str, int, str]]
 ) -> tuple[tuple[Path, ...], tuple[Path, ...]]:
     """Validate every child before returning any removal authority."""
+    root = portable_stage_io_path(root)
     inventory = {Path(name): size for name, size, _ in files}
     directories = {parent for file in inventory for parent in file.parents}
     present_files: list[Path] = []
@@ -597,7 +593,7 @@ def _stage_payload_tree(
                 inspect(entry)
             elif relative in inventory:
                 path = session_artifact_path(directory, entry.name)
-                if _portable_stage_io_path(path).stat().st_size > inventory[relative]:
+                if path.stat().st_size > inventory[relative]:
                     raise ValueError("Portable import stage payload exceeded its registered size")
                 present_files.append(path)
             else:
@@ -653,7 +649,7 @@ def _purge_import_stage_payload(stage_root: Path, registration: _ImportRegistrat
             work_directories.extend(member_directories)
         work_directories.append(work)
     for file in (*files, *work_files):
-        _portable_stage_io_path(session_artifact_path(file.parent, file.name)).unlink()
+        session_artifact_path(file.parent, file.name).unlink()
     for directory in (*directories, *work_directories):
         validate_session_directory(directory)
         directory.rmdir()
@@ -1525,7 +1521,8 @@ class MemoryService:
         from here.memory.portability import ImportCancelled
 
         stage = batch.stage
-        stage_root = stage.directory.parent
+        payload = portable_stage_io_path(stage.directory)
+        stage_root = payload.parent
         plans: dict[str, _ImportMeetingPlan] = {}
         for bundle in batch.meetings:
             meeting = bundle.detail.meeting
@@ -1563,12 +1560,8 @@ class MemoryService:
             for asset, relative in bundle.audio_payloads:
                 path = Path(asset.relative_path)
                 target = session_artifact_path(root / "revisions" / path.parent.name, path.name)
-                source = managed_path(stage.directory, relative)
-                io_target = _portable_stage_io_path(target)
-                with (
-                    _portable_stage_io_path(source).open("rb") as incoming,
-                    io_target.open("xb") as output,
-                ):
+                source = managed_path(payload, relative)
+                with source.open("rb") as incoming, target.open("xb") as output:
                     remaining = asset.size_bytes
                     digest = hashlib.sha256()
                     while True:

@@ -17,7 +17,7 @@ from uuid import UUID
 from zipfile import BadZipFile, ZipFile
 
 import soundfile as sf  # type: ignore[import-untyped]
-from here.memory.artifacts import managed_path
+from here.memory.artifacts import managed_path, portable_stage_io_path
 from here.memory.database import LibraryError
 from here.memory.models import (
     AudioAsset,
@@ -231,6 +231,7 @@ def stage_package_files(
     progress: Callable[[int], None],
     cancelled: Callable[[], bool],
 ) -> None:
+    directory = portable_stage_io_path(directory)
     written = 0
     for entry in inventory.files:
         _check_cancelled(cancelled)
@@ -399,7 +400,8 @@ def _audio_links(revision: _RevisionDocument) -> tuple[RevisionAudioAsset, ...]:
 
 def _verify_wav(directory: Path, relative: str, asset: AudioAsset) -> None:
     try:
-        info = sf.info(managed_path(directory, relative))
+        with managed_path(directory, relative).open("rb") as stream:
+            info = sf.info(stream)
     except (OSError, RuntimeError, ValueError):
         raise InvalidPackage("Portable audio could not be validated as WAV") from None
     if (
@@ -595,7 +597,7 @@ def validate_staged_import(
     cancelled: Callable[[], bool],
 ) -> _ValidatedPortableImport:
     _check_cancelled(cancelled)
-    directory = stage.directory
+    directory = portable_stage_io_path(stage.directory)
     participants, links = _participants_by_meeting(directory, manifest, cancelled)
     assignments = _assignments_by_meeting(directory, set(manifest.meeting_ids), cancelled)
     entries = {entry.path: entry for entry in inventory.files}

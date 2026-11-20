@@ -756,6 +756,17 @@ def managed_path(root: Path, relative: str, *, directory: bool = False) -> Path:
     return current
 
 
+def portable_stage_io_path(path: Path) -> Path:
+    """Use extended Windows I/O paths for the private portable staging tree."""
+    if os.name != "nt" or str(path).startswith("\\\\?\\"):
+        return path
+    absolute = path.absolute()
+    if ".." in absolute.parts:
+        raise UnsafeSessionPath("Invalid portable staging path")
+    name = str(absolute)
+    return Path("\\\\?\\UNC\\" + name[2:] if name.startswith("\\\\") else "\\\\?\\" + name)
+
+
 def file_hash(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
