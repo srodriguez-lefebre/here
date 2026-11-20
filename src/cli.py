@@ -447,9 +447,9 @@ def meetings_play(
 
             status = run_playback_window(target, seek_from_segment=segment is not None)
         except (ImportError, OSError, RuntimeError):
-            typer.echo("Qt multimedia is unavailable. The player could not open.", err=True)
-            raise typer.Exit(ExitCode.IO) from None
+            status = ExitCode.IO
         if status:
+            typer.echo("The multimedia player could not open or play the local audio.", err=True)
             raise typer.Exit(ExitCode.IO)
 
 
