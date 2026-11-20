@@ -13,13 +13,13 @@ Copilot sigue omitido por ruling 64 y dos horas queda **omitida por ruling 5**.
 | --- | --- | --- |
 | M3 A, chat `01a1af04-e779-7363-be61-c840651b0b18` | `codex/m3-search`, `2710/here` | `1f71d08`, chat M3 A reactivado con GPT‑6.2 Sol. Tiene el mismo árbol que `0c16065`. |
 | M3 A, PR #28 | `codex/m3-a-product`, `m3-a-product/here` | `0c16065`, orquestador. Mantener abierto por p95. |
-| M3 B, integración | `codex/m3-library`, `m3-library-group/here` | `f894923`, orquestador. Review por `m3_b_integration_review_sol` y `m3_multimedia_packaging_review_sol`. |
+| M3 B, integración | `codex/m3-library`, `m3-library-group/here` | `8fd64f1`, orquestador. Review por `m3_b_integration_review_sol` y `m3_multimedia_packaging_review_sol`. Base verificada `f894923`. |
 | M3 B, citas | `codex/m3-library-resolver-green`, `m3-library-resolver-green/here` | GREEN `7323613`, orquestador, 28 pases. RED de roles `4cabf16`, `m3_citation_roles_red_sol`. |
 | M3 B, reproducción | `codex/m3-library-playback-green`, `m3-library-playback-green/here`; RED de revisión en `codex/m3-library-playback-edge-red`, `m3-library-playback-edge-red/here` | GREEN `2745ec7`, `m3_b_playback_green_sol`. RED `6cb1d72`, `m3_b_playback_edge_red_sol`. Re-review pendiente. |
 | M3 B, navegación | `codex/m3-library-navigation-green`, `m3-library-navigation-green/here`; correcciones `codex/m3-library-nav-review-green`, `m3-library-nav-review-green/here` | `820c38b` pasó 30. Review reproductor y navegación en worktree aislado. `e9a3e90`, `m3_b_navigation_green_sol`, incorpora correcciones con runtime integrado pendiente. |
 | M3 B, CLI | `codex/m3-library-cli-green`, `m3-library-cli-green/here`; scope `codex/m3-library-scope-green`, `m3-library-scope-green/here` | `a5c71d3` de `m3_b_cli_green_sol`; `30a8ea3` de `m3_b_scope_green_sol`; diagnóstico de playback `beebd8a` pasó cuatro casos. |
 | M3 B, paquete y fixture WAV | `codex/m3-library-multimedia-green`, `m3-library-multimedia-green/here`; `codex/m3-library-marker-fixture`, `m3-library-marker-fixture/here` | `1fb797c`, `m3_multimedia_packaging_green_sol`; fixture sintético `3d96608`, `m3_marker_fixture_preparation_sol`. |
-| M5 B, chat `01a1af04-b158-75a2-8933-98783880f3e8` (antes M2 B) | `codex/m5-portability-import-service`, `m5-portability-import-service/here` | `dcb3660`, chat reactivado con GPT‑6.2 Sol. El orquestador controla leases, contratos y merges. |
+| M5 B, chat `01a1af04-b158-75a2-8933-98783880f3e8` (antes M2 B) | `codex/m5-portability-import-service`, `m5-portability-import-service/here` | `41150f5`, chat reactivado con GPT‑6.2 Sol. El orquestador controla leases, contratos y merges. |
 | M5 B, arnés Windows | `codex/m5-portability-recovery-harness`, `m5-portability-recovery-harness/here` | `deccde1`, `m5_recovery_harness_sol`. Corrección de staging `d0449fc` incluida en `dcb3660`. |
 | M5 B, presupuesto JSON | `codex/m5-portability-json-cap-red`, `m5-portability-json-cap-red/here` y `codex/m5-portability-json-cap-green`, `m5-portability-json-cap-green/here` | RED `05ba0ee`, `m5_json_cap_red_sol`. GREEN `fc36f91` revisado por `citation_json_independent_review_sol` e incluido en `dcb3660`. |
 | M4 A, preparación del PLAN | `codex/m4-grounded-preparation`, `m4-grounded-preparation/here` | `99f1ec8`, `m4_next_plan_preparation_sol`. Pendientes cierre de M3 y contrato de recuperación para múltiples reuniones. |
@@ -32,6 +32,11 @@ solo estaban en ese checkout sigue sin localizarse. En el árbol exacto `97e2929
 `m3-a-resume-20261120-heartbeat-1` agotó la espera de arranque antes de medir gaps.
 Ambos fallaron con evidencia de nivel 2. La descripción del PR registra esos
 resultados. El chat M3 A prepara el diagnóstico y el handoff del scope para M3 B.
+El diagnóstico del arranque `m3-a-startup-phases-20261120-1` registró ocho
+`VACUUM` de reconciliación en 25,56 s antes del timer. La serie instrumentada
+`m3-a-search-phases-20261120-1` conservó página y cursor y ubicó trabajo en el
+preflight R50 y en las lecturas y la codificación del digest. Son diagnósticos
+de nivel 2. El chat prepara el arnés de heartbeat y el candidato de optimización.
 
 Nivel 2 focalizado en M3 B. El RED de citas obtuvo 25 fallos por la ausencia del
 resolver en `f987ec6`. El candidato dio 24 pases y un fallo del fixture de fecha,
@@ -44,13 +49,19 @@ obtuvo 21 fallos por grupo o scope ausente y el RED de navegación, 13 fallos.
 La primera corrida integrada de `4635bd1` abortó con el backend Qt real cuando el
 fake del test CLI no interceptó un módulo ya cargado. Se corrigió el arnés en
 `9413b6c`. La corrida selectiva `m3-b-review-red-4635bd1` dio 16 pases, 12 fallos y
-1 caso deselectado. `f894923` ensambla las correcciones. Falta su corrida integrada.
+1 caso deselectado. `m3-b-focused-f894923` pasó 465 casos. Su review encontró
+una pérdida de autoridad del reintento al entrar al worker y la excepción de
+SQLite al conectar sin tipar. En `589a832` fallaron los tres RED que lo reproducen.
+`m3-retry-storage-green` pasó 41 y omitió un symlink por privilegios. `8fd64f1`
+los integra. La segunda review pidió cubrir pérdida de audio elegible antes del
+proveedor. El RED adicional está a cargo de `m3_b_integration_red_sol`.
 
 El RED de distribución dio un fallo en `m3-qt-multimedia-bundle-red-c4045a5`
 sobre el ZIP real del PR #28, SHA-256 `ac5f4c5b45796f7cb31e56e7a532412650fcc6f45a06fc04f3282fa332db8e9d`.
 Faltaban el módulo y la DLL de QtMultimedia. `1fb797c` prepara un paquete con el
-backend nativo de Qt 6.11.2 y sus avisos, pendiente de revisión y build. El WAV
-`3d96608` prepara el control de seek sin leer audio personal. Falta nivel 3.
+backend nativo de Qt 6.11.2 y sus avisos. Pasó review estática y se lanzó el
+build diagnóstico `44781729845` sobre `f894923`. El WAV `3d96608` prepara el
+control de seek sin leer audio personal. Falta nivel 3.
 
 Nivel 2 diagnóstico en M5 B. La recuperación de importación obtuvo 11 fallos en
 `fada4fc` y 1 pase con 10 fallos en `8083b91`. La corrida mostró el fallo de
@@ -63,11 +74,13 @@ casos y la review independiente. El lote `m5-import-integration-dcb3660` dio
 89 pases, nivel 2 focalizado. Claims sigue pendiente de M4 B. Falta certificación
 de nivel 3 para M3–M5.
 
-Ventana exclusiva actual: diagnóstico M3 A en el mismo árbol congelado del
-PR #28. Al drenar, M5 B tiene RED de recuperación preparado, incluido `0986b7d`
-para pérdida de SQLite durante borrado. El chat M5 B tiene escritura en
-`service.py` y `artifacts.py` para ese alcance. M3 B y el build no corren en
-paralelo con esas corridas sensibles. El orquestador integra y controla merges.
+El RED de recuperación `0986b7d` dio 4 fallos esperados, entre ellos pérdida de
+SQLite durante borrado, rollback interrumpido, temporal de recibo y raíz Windows
+profunda. `m5-ir-green-41150f5` pasó los cuatro. El chat M5 B tiene la ventana
+exclusiva Windows para el lote de continuidad de `41150f5`. El chat M3 A tiene
+el escritor de `service.py` y `output/paths.py` para R50 y prepara cambios
+estáticos mientras corre M5 B. El build diagnóstico corre en GitHub Actions.
+El orquestador integra y controla merges.
 
 ## Pausa solicitada — 2026-11-13
 
