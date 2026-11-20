@@ -73,6 +73,7 @@ class ApplicationError:
     message: str
     retryable: bool
     occurred_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    error_category: str = "io"
 
 
 @dataclass(frozen=True, slots=True)
@@ -87,6 +88,7 @@ class ApplicationSnapshot:
     opened_sources: tuple[OpenedSource, ...] = ()
     worker_complete: bool = True
     memory_warning: str | None = None
+    memory_error_category: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "opened_sources", tuple(self.opened_sources))

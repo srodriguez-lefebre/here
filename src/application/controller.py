@@ -28,9 +28,13 @@ from here.application.processing import (
     error_metadata,
 )
 from here.config.paths import get_data_dir
-from here.config.settings import require_provider_key, settings_operation
+from here.config.settings import (
+    ProviderConfigurationError,
+    require_provider_key,
+    settings_operation,
+)
 from here.live_processing import LiveTranscriptionController
-from here.memory.service import MemoryService
+from here.memory.service import Conflict, InvalidInput, MemoryService, NotFound
 from here.output.metadata import SessionEventMetadata
 from here.output.ownership import owned_job, retain_for_job
 from here.output.session_writer import SessionArtifactPaths, read_session_metadata
@@ -38,6 +42,8 @@ from here.recording.control import ControllableRecording
 from here.recording.models import CaptureFailed
 from here.recording.reservation import audio_reservation
 from here.recording.service import start_recording
+from here.transcription.service import TranscriptionPipelineError
+from openai import APIError
 
 BlockSink = Callable[[str, np.ndarray, int, int], None]
 CaptureFactory = Callable[[StartRequest, BlockSink], ControllableRecording]
@@ -46,6 +52,20 @@ LiveFactory = Callable[[int, bool], LiveTranscriptionController]
 
 class InvalidApplicationCommand(RuntimeError):
     pass
+
+
+def _application_error_category(error: BaseException) -> str:
+    while isinstance(error, (SessionProcessingFailed, TranscriptionPipelineError)):
+        if error.__cause__ is None:
+            break
+        error = error.__cause__
+    if isinstance(error, (ProviderConfigurationError, APIError)):
+        return "provider"
+    if isinstance(error, InvalidInput):
+        return "invalid_input"
+    if isinstance(error, (Conflict, NotFound, InvalidApplicationCommand)):
+        return "conflict"
+    return "io"
 
 
 def _default_capture_factory(request: StartRequest, block_sink: BlockSink) -> ControllableRecording:
@@ -469,6 +489,7 @@ class HereApplicationController:
             message=metadata.message,
             retryable=metadata.retryable,
             occurred_at=metadata.occurred_at,
+            error_category=_application_error_category(exc),
         )
         with self._lock:
             cancelled = self._processing_cancel.is_set()
@@ -542,6 +563,7 @@ class HereApplicationController:
 
     def _ingest_persisted(self, session_dir: Path, state: ApplicationState) -> None:
         details: dict[str, str | int | float | bool | None]
+        error_category = None
         try:
             metadata = read_session_metadata(session_dir)
             result = (
@@ -565,11 +587,13 @@ class HereApplicationController:
                     str(getattr(item, "message", item)) for item in result.warnings
                 )
             if result.status == "rejected":
+                error_category = result.error_category or "io"
                 details.update(
                     pending_recovery=True,
                     message="Audio guardado; biblioteca pendiente de recuperación local",
                 )
-        except Exception:
+        except Exception as exc:
+            error_category = _application_error_category(exc)
             details = {
                 "status": "rejected",
                 "meeting_id": self._meeting_id,
@@ -580,6 +604,7 @@ class HereApplicationController:
             self._snapshot = replace(
                 self._snapshot,
                 memory_warning=(str(details["message"]) if details.get("message") else None),
+                memory_error_category=error_category,
             )
         self._emit(
             ApplicationEvent(
@@ -598,6 +623,7 @@ class HereApplicationController:
             message=metadata.message,
             retryable=metadata.retryable,
             occurred_at=metadata.occurred_at,
+            error_category=_application_error_category(exc),
         )
         with self._lock:
             previous = self._snapshot.state
@@ -713,6 +739,7 @@ class HereApplicationController:
                 state=ApplicationState.PROCESSING,
                 last_error=None,
                 memory_warning=None,
+                memory_error_category=None,
                 worker_complete=False,
             )
             worker = threading.Thread(
