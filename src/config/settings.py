@@ -54,9 +54,15 @@ def settings_operation(function: Callable[P, R]) -> Callable[P, R]:
     return wrapped
 
 
+class ProviderConfigurationError(ValueError):
+    """The explicit provider operation has no configured credential."""
+
+
 def require_provider_key() -> str:
     secret = get_settings().OPENAI_API_KEY
     value = secret.get_secret_value().strip() if secret is not None else ""
     if not value:
-        raise ValueError(f"Configure OPENAI_API_KEY in the environment or {get_env_file()}")
+        raise ProviderConfigurationError(
+            f"Configure OPENAI_API_KEY in the environment or {get_env_file()}"
+        )
     return value
