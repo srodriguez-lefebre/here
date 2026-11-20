@@ -17,7 +17,7 @@ from here.application import (
     StartRequest,
     create_default_controller,
 )
-from here.application.processing import SessionProcessor
+from here.application.processing import SessionProcessor, selected_retry
 from here.application.recovery import RecoveryService
 from here.audio.mix import materialize_normalized_session
 from here.config.paths import get_data_dir
@@ -400,7 +400,8 @@ def meetings_retry(meeting_id: str, json_output: JsonOption = False) -> None:
         except ValueError as exc:
             raise LibraryError("Recovery material changed before retry") from exc
         controller = create_default_controller(memory_service=memory)
-        controller.retry(session_dir)
+        with selected_retry(session_dir, identity, candidate.capture_id):
+            controller.retry(session_dir)
         snapshot = controller.wait_until_terminal()
         if snapshot.state is not ApplicationState.COMPLETED or snapshot.memory_error_category:
             category = snapshot.memory_error_category or (
