@@ -25,6 +25,9 @@ DELIVERY through `03f31ba` (R20/35/39–52) and the frozen M3 B preparation cont
 M3 A checkpoint `00cf0ea` has real SearchService/query DTOs and local evidence;
 its B5 integration, full group gates and M3 closure remain pending. None is
 substituted by this document or a prepared fixture. Root owns handoffs and leases.
+The 2026-11-20 follow-up records the M3 A query handoff at `0c16065` and the
+M3 B resolver candidate at `7323613`. Both still require final source binding
+at M3 close.
 
 ## Decisions
 
@@ -77,14 +80,19 @@ intact, not invented SearchHits or segments. That page is not evidence and canno
 widen the explicit M4 scope. Removing stopwords must not turn an empty retrieval
 expression into an implicit whole-library request.
 
-The inspected M3 SearchQuery does not expose selected meeting IDs, and its FTS
-builder quotes individual tokens rather than offering the M4 OR-term retrieval
-contract. Therefore selected-scope filtering before limits, literal OR-term semantics,
-diversification, adjacent context and bounded retrieval from one coherent evidence
-snapshot remain an explicit **pending memory-owned handoff**. Root resolves it after
-the producer is accepted. No new signature is selected here; no raw MATCH string,
-post-LIMIT scope filtering, renamed facade or direct intelligence SQL substitutes
-for it. Preserve the budgets and scope requirements above in that handoff.
+M3 A's canonical SearchQuery lacks selected meeting IDs and literal OR semantics.
+M3 B Task 4 separately specifies an optional `meeting_id`: one exact UUID bound
+before keyset and LIMIT with cursor scope and corpus-wide ranking preserved. It leaves
+selected sets and OR unresolved. The **pending memory-owned handoff** must apply
+the selected set, filters and suppression to candidate eligibility before keyset
+and LIMIT, preserve global BM25 for ranked matches, and fetch bounded matches
+and adjacent context from one coherent view. It must support fair per-meeting
+allocation with deterministic ordering and tie-breaking, so an early high-volume
+meeting cannot fill a global top-N before diversification has a chance to act.
+Count deduplicated context in the same budgets and maintain stable evidence order
+for an unchanged snapshot. Root binds the signature and precise selection order
+after the producer is accepted. No raw MATCH input, per-ID search fan-out,
+post-LIMIT scope filtering or direct intelligence SQL substitutes for the handoff.
 
 R42/R50 suppression must guard all source/context reads and revalidation, before
 exposure and keyset/LIMIT. The approved `catalog_read_view(library)` contract has
@@ -140,11 +148,14 @@ R46 supplies the passive `Citation(meeting_id, revision_id, segment_id, quote=No
 start_char=None, end_char=None)`. Validate source membership and any supplied quote
 or Unicode character span; offsets must address original source text, not bytes or
 positions invented in normalized snippets. Preserve the verifier's existing minimal
-normalization rule without broadening it. M3 B's resolver validates those references
-and resolves title/date/status/timing and exact revision/audio links from guarded
-memory; a provider/UI-supplied CitationTarget grants no authority. Null dates/times
-stay absent, measured zero stays zero, and request-scoped speakers are not inferred
-global participant identities (R46/R48). Its actual resolver/read adapter is pending.
+normalization rule without broadening it. When it accepts a normalized match,
+populate the passive citation with the exact original substring and original
+character coordinates. The M3 B candidate resolves membership and validates
+literal quotes or paired, bounded Unicode offsets inside one `catalog_read_view`.
+It derives navigation metadata and validates exact revision audio through managed
+artifact role and path guards. Only a target resolved by memory can grant
+navigation authority. Null dates/times stay absent, measured zero stays zero, and
+request-scoped speakers retain their scope (R46/R48).
 
 ### Results
 
@@ -152,8 +163,13 @@ global participant identities (R46/R48). Its actual resolver/read adapter is pen
 `Citation` objects resolvable through `MemoryService.resolve_citation`. Visible
 messages are redacted: no key, no meeting text by default. Typed errors as in
 `PRODUCT_DESIGN.md` §3 plus `ProviderUnavailable` and `VerificationFailed`.
-The resolver name denotes the planned M3 B handoff, not a verified method on merged
-M2 A. Resolve against authoritative source rather than trust target fields.
+The M3 B candidate exposes `MemoryService.resolve_citation(Citation) -> CitationTarget`.
+It returns `status="missing"` without a playable path when audio is unvalidated.
+Verified segment text may still be present. A missing revision can also yield a
+missing target without source text, so status alone cannot establish or reject
+text evidence. Use guarded text and revision revalidation for publication. The
+playback resolver grants audio authority only for navigation and must never supply
+audio or paths to the provider. Final binding to the integrated M3 head is pending.
 
 Future M4 B persistence consumes R51's private trusted `_derived_row_purgers` only
 as ordered SQL on B's same final cleanup transaction before core relationships are
