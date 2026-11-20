@@ -25,6 +25,7 @@ from here.application.processing import (
     ProcessingCancelled,
     SessionProcessingFailed,
     SessionProcessor,
+    current_retry_selection,
     error_metadata,
 )
 from here.config.paths import get_data_dir
@@ -34,6 +35,7 @@ from here.config.settings import (
     settings_operation,
 )
 from here.live_processing import LiveTranscriptionController
+from here.memory.database import LibraryError
 from here.memory.service import Conflict, InvalidInput, MemoryService, NotFound
 from here.output.metadata import SessionEventMetadata
 from here.output.ownership import owned_job, retain_for_job
@@ -565,13 +567,15 @@ class HereApplicationController:
         details: dict[str, str | int | float | bool | None]
         error_category = None
         try:
-            metadata = read_session_metadata(session_dir)
             result = (
                 self._processor._take_catalog_result(session_dir)
                 if isinstance(self._processor, SessionProcessor)
                 else None
             )
             if result is None:
+                if current_retry_selection() is not None:
+                    raise LibraryError("Selected retry publication could not be verified")
+                metadata = read_session_metadata(session_dir)
                 result = SessionProcessor(memory_service=self._memory).publish_memory(
                     session_dir,
                     revision_of=self._retry_revision,
@@ -761,13 +765,14 @@ class HereApplicationController:
 
     def _run_retry(self, session_dir: Path) -> None:
         try:
-            metadata = read_session_metadata(session_dir)
-            try:
-                self._retry_revision = self._memory.active_revision(
-                    metadata.meeting_id if metadata else None
-                )
-            except Exception:
-                self._retry_revision = None
+            if current_retry_selection() is None:
+                metadata = read_session_metadata(session_dir)
+                try:
+                    self._retry_revision = self._memory.active_revision(
+                        metadata.meeting_id if metadata else None
+                    )
+                except Exception:
+                    self._retry_revision = None
             artifacts = self._processor.retry(session_dir, cancel_event=self._processing_cancel)
             self._persisted(artifacts.session_dir, recoverable=True)
             self._transition(ApplicationState.COMPLETED, details={"retry": True})
