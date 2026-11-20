@@ -3,6 +3,42 @@
 Actualizado: 2026-11-20. Leé CLAUDE.md primero; después este archivo y
 `docs/MASTER_PLAN.md`. Historial y rulings: `docs/development/DELIVERY.md`.
 
+## Pausa solicitada — 2026-11-20
+
+Pausa general solicitada por el usuario. Ambos chats y los subagentes dejaron
+de trabajar. Se verificó que no quedaron procesos locales de runtime. Los
+chats y agentes activos en esta reanudación usaron GPT‑6.2 Sol. M2 sigue cerrado
+en 0.3.0. Copilot sigue omitido por ruling 64 y dos horas queda **omitida por
+ruling 5**.
+
+| Frente | Rama y worktree bajo `C:/Users/savar/.codex/worktrees/` | Commit y próximo paso al reanudar |
+| --- | --- | --- |
+| M3 A, chat `01a1af04-e779-7363-be61-c840651b0b18` | `codex/m3-search`, `2710/here` | `e7f84b0`. Perfilar ordenamiento FTS con el guard R50 y luego medir 5+40 en el candidato exacto. |
+| M3 A, heartbeat | `codex/m3-heartbeat-harness`, `m3-heartbeat-harness/here` | `45f35ae`. Diagnosticar el gap de 55,349 ms en la octava búsqueda. |
+| M3 A, controles R50 | `codex/m3-r50-preflight-controls`, `m3-r50-preflight-controls/here` | `54c5458`. Reaplicar los negativos y el control de fingerprint al próximo candidato. |
+| M3 B, integración | `codex/m3-library`, `m3-library-group/here` | `ea61d6a`. Correr primero el RED de selección de fuente y seguir con la corrección y suite del candidato exacto. |
+| M3 B, RED de WAV normalizado vacío con fuente cruda válida | `codex/m3-library-retry-source-red`, `m3-library-retry-source-red/here` | `a31daca`. Corrida pendiente. |
+| M3 B, fixture de seek y sonda de audio | `codex/m3-library-marker-fixture`, `m3-library-marker-fixture/here` | `42d01db`. Compilar y calibrar la sonda del proceso aislado antes de medir reproducción real. El fixture integrable es `3d96608`. |
+| M4 A, preparación documental | `codex/m4-grounded-preparation`, `m4-grounded-preparation/here` | `99f1ec8`. Esperar cierre de M3 y contrato de recuperación. |
+| M5 B, chat `01a1af04-b158-75a2-8933-98783880f3e8` | `codex/m5-portability-import-service`, `m5-portability-import-service/here` | `41150f5`. Base del servicio para integrar adaptadores. |
+| M5 B, RED CLI | `codex/m5-portability-adapter-cli-red`, `m5-portability-adapter-cli-red/here` | `fcfc973`. Completar RED de importación y verificar ambos contra el SPEC. |
+| M5 B, RED Qt | `codex/m5-portability-adapter-qt-red`, `m5-portability-adapter-qt-red/here` | `ea61d6a`. Preparar las pruebas nuevas de exportación e importación. |
+
+**Nivel 2.** M3 A verificó 67 casos del guard y un omitido. Los dos negativos
+R50 fallaron en la base y pasaron con el guard. El heartbeat completó ocho
+búsquedas con tres sellos de corpus idénticos y falló el presupuesto de 50 ms.
+La mejor muestra diagnóstica de búsqueda fue 605,65 ms. El p95 público de
+1.431,6706 ms sigue como último gate medido y [PR #28](https://github.com/srodriguez-lefebre/here/pull/28)
+permanece abierto. Los recibos del chat están en `.superpowers/sdd/M3_SEARCH_PLAN`.
+
+**Nivel 2.** M3 B conserva los 465 pases y el paquete Windows diagnóstico
+`44781729845`, con multimedia y smoke de instalación, en `f894923`. El head
+local posterior `ea61d6a` queda pendiente de verificación integrada. M5 B pasó
+los cuatro casos focales de recuperación y los 89 de continuidad en `41150f5`.
+Sus recibos están en `.superpowers` del worktree del servicio. Claims sigue
+pendiente de M4 B. Quedan pendientes la reproducción real de M3 y la
+certificación de instalación y upgrade de M5, nivel 3.
+
 ## Reanudación — 2026-11-20
 
 M2 cerrado en 0.3.0. El usuario reanudó M3–M5 y eligió GPT‑6.2 Sol para
