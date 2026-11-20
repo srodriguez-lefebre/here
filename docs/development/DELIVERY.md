@@ -1050,6 +1050,17 @@ Los rulings nuevos se escriben en español por el ruling 6.
     revisar el backend de Qt y sus avisos antes del gate de distribución y
     repetir el build y el seek con el candidato que corresponda.
 
+71. **2026-11-20 — Alcance del heartbeat de M3 A.** La instrumentación del
+    arranque registró ocho `VACUUM` de reconciliación y cambios de fase de
+    tombstones antes del primer tick. El SPEC mide los gaps durante una
+    consulta. El arnés usa la inyección `recovery_service` que ya existe para
+    aislar ese trabajo de arranque. Mantiene el adaptador de consultas, el
+    catálogo, la vista de supresión, workers y render reales. Exige las mismas
+    ocho consultas y el límite de 50 ms, con verificación de cuentas y huellas
+    antes del arranque, al medir y después del drenaje. El fallo anterior se
+    conserva como diagnóstico de arranque. **Costo si falla:** corregir el
+    arnés y repetir la corrida con el mismo catálogo y los mismos límites.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
