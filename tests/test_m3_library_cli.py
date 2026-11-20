@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import sys
 from datetime import datetime, timedelta
 
 import here.cli as cli
@@ -15,7 +14,9 @@ from here.memory.database import Busy, open_library
 from here.memory.models import MeetingQuery, SearchQuery
 from here.memory.search import SearchService
 from here.memory.service import Conflict, InvalidInput, MemoryService
+from here.ui import playback
 from memory_fixtures import MEETING_ID, OTHER_MEETING_ID, make_session, write_json
+from PySide6.QtCore import QObject
 from typer.testing import CliRunner
 
 MISSING_ID = "99999999-9999-4999-8999-999999999999"
@@ -182,31 +183,43 @@ def test_search_preserves_structured_corpus_changed_reason(library, monkeypatch)
     assert result["reason"] == "corpus_changed"
 
 
-def test_play_resolves_authoritative_target_before_multimedia_failure(library, monkeypatch):
+def test_play_resolves_authoritative_target_before_multimedia_failure(library, monkeypatch, qapp):
     original = library.show(MEETING_ID)
     segment = original["segments"][0]
     resolved = []
-    resolve = getattr(MemoryService, "resolve_citation", None)
-    if resolve is not None:
+    unavailable_checks = []
+    resolve = MemoryService.resolve_citation
 
-        def track(service, citation):
-            resolved.append(citation)
-            return resolve(service, citation)
+    def track(service, citation):
+        target = resolve(service, citation)
+        resolved.append(citation)
+        return target
 
-        monkeypatch.setattr(MemoryService, "resolve_citation", track)
-    monkeypatch.setitem(sys.modules, "PySide6.QtMultimedia", None)
+    class UnavailablePlayer(QObject):
+        def isAvailable(self):
+            assert len(resolved) == 1
+            assert resolved[0].segment_id == segment["id"]
+            unavailable_checks.append(True)
+            return False
+
+    def forbidden_audio_output(*args, **kwargs):
+        pytest.fail("Unavailable multimedia must not allocate an audio output")
+
+    monkeypatch.setattr(MemoryService, "resolve_citation", track)
+    monkeypatch.setattr(playback, "QMediaPlayer", UnavailablePlayer)
+    monkeypatch.setattr(playback, "QAudioOutput", forbidden_audio_output)
+
     result = runner.invoke(
         cli.app, ["meetings", "play", MEETING_ID[:8], "--segment", segment["id"], "--json"]
     )
     assert result.exit_code == 4, result.output + repr(result.exception)
-    assert "multimedia" in result.output.lower()
+    assert unavailable_checks == [True]
+    assert "multimedia" in result.stderr.lower()
     target = json.loads(result.stdout)
     assert target["meeting_id"] == MEETING_ID
     assert target["revision_id"] == segment["revision_id"]
     assert target["segment_id"] == segment["id"]
     assert target["start_ms"] == 0
-    assert len(resolved) == 1
-    assert resolved[0].segment_id == segment["id"]
 
 
 @pytest.mark.parametrize("identity", [MEETING_ID, MISSING_ID])
