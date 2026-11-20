@@ -3069,6 +3069,45 @@ class MemoryService:
             warnings = (repo.library.storage_warning,) if repo.library.storage_warning else ()
             return self._detail(repo, meeting_id, warnings)
 
+    def meeting_ids_with_prefix(self, prefix: str) -> tuple[str, ...]:
+        """Return only visible canonical identities matching a CLI abbreviation."""
+        if not isinstance(prefix, str) or re.fullmatch(r"[a-f0-9][a-f0-9-]{0,35}", prefix) is None:
+            raise InvalidInput("Use a canonical UUID or its leading characters")
+        library = open_library(self.data_dir)
+        try:
+            with catalog_read_view(library) as suppression:
+                hidden = frozenset(suppression.suppressed_meeting_ids)
+                return tuple(
+                    identity
+                    for (identity,) in library.execute(
+                        "SELECT id FROM meetings WHERE id GLOB ? AND status != 'deleting' "
+                        "ORDER BY id",
+                        (prefix + "*",),
+                    )
+                    if identity not in hidden and _is_uuid(identity)
+                )
+        finally:
+            library.close()
+
+    def retry_origins(self, meeting_id: str) -> frozenset[str]:
+        """Return catalog origins for comparison with configured native candidates."""
+        self._identity(meeting_id)
+        library = open_library(self.data_dir)
+        try:
+            with catalog_read_view(library) as suppression:
+                if meeting_id in suppression.suppressed_meeting_ids:
+                    raise NotFound("Meeting does not exist")
+                return frozenset(
+                    origin
+                    for (origin,) in library.execute(
+                        "SELECT i.origin_path FROM ingest_sources i JOIN meetings m "
+                        "ON m.id=i.meeting_id WHERE m.id=? AND m.status!='deleting'",
+                        (meeting_id,),
+                    )
+                )
+        finally:
+            library.close()
+
     def resolve_citation(self, citation: Citation) -> CitationTarget:
         """Resolve text and playback authority within one guarded catalog view."""
         if not isinstance(citation, Citation):
