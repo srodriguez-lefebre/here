@@ -15,34 +15,42 @@ Copilot sigue omitido por ruling 64 y dos horas queda **omitida por ruling 5**.
 | M3 A, PR #28 | `codex/m3-a-product`, `m3-a-product/here` | `0c16065`, orquestador. Mantener abierto por p95. |
 | M3 B, integración | `codex/m3-library`, `m3-library-group/here` | `0c16065`, orquestador. |
 | M3 B, citas | `codex/m3-library-resolver-red`, `m3-library-resolver-red/here` y `codex/m3-library-resolver-green`, `m3-library-resolver-green/here` | RED `f987ec6`, fixture corregido `ac493c9` por `m3_b_citation_red_fixture_sol`. Implementación en verificación por el orquestador. |
-| M3 B, reproducción y navegación | `codex/m3-library-playback-green`, `m3-library-playback-green/here` y `codex/m3-library-navigation-red`, `m3-library-navigation-red/here` | `1027d22`, `m3_b_playback_green_sol` y review `m3_b_playback_review_sol`; navegación RED a cargo de `m3_b_navigation_red_sol`. |
-| M3 B, regresiones del reproductor | `codex/m3-library-playback-edge-red`, `m3-library-playback-edge-red/here` | Base `1027d22`; `m3_b_playback_edge_red_sol`. |
-| M3 B, CLI | `codex/m3-library-cli-red`, `m3-library-cli-red/here` | `7e225ec`, `m3_b_cli_red_sol`; queda el contrato de scope compartido con A. |
-| M5 B, recuperación de importación | `codex/m5-portability-import-service`, `m5-portability-import-service/here`; arnés `codex/m5-portability-recovery-harness`, `m5-portability-recovery-harness/here` | Base de integración `f20e859`, orquestador. Arnés `deccde1`, `m5_recovery_harness_sol`. |
-| M5 B, presupuesto JSON | `codex/m5-portability-json-cap-red`, `m5-portability-json-cap-red/here` y `codex/m5-portability-json-cap-green`, `m5-portability-json-cap-green/here` | RED `05ba0ee`, `m5_json_cap_red_sol`. GREEN en verificación por el orquestador. |
+| M3 B, reproducción | `codex/m3-library-playback-green`, `m3-library-playback-green/here`; RED de revisión en `codex/m3-library-playback-edge-red`, `m3-library-playback-edge-red/here` | GREEN `2745ec7`, `m3_b_playback_green_sol`. RED `6cb1d72`, `m3_b_playback_edge_red_sol`. Re-review pendiente. |
+| M3 B, navegación | `codex/m3-library-navigation-red`, `m3-library-navigation-red/here`; GREEN `codex/m3-library-navigation-green`, `m3-library-navigation-green/here` | RED `aacaf38`, `m3_b_navigation_red_sol`; candidato sobre `b7a51c7`, `m3_b_navigation_green_sol`. |
+| M3 B, CLI | `codex/m3-library-cli-red`, `m3-library-cli-red/here`; GREEN `codex/m3-library-cli-green`, `m3-library-cli-green/here` | RED `7e225ec`, `m3_b_cli_red_sol`; `a5c71d3`, `m3_b_cli_green_sol`. Pendientes handoffs y ejecución integrada. |
+| M5 B, chat `01a1af04-b158-75a2-8933-98783880f3e8` (antes M2 B) | `codex/m5-portability-import-service`, `m5-portability-import-service/here` | `dcb3660`, chat reactivado con GPT‑6.2 Sol. El orquestador controla leases, contratos y merges. |
+| M5 B, arnés Windows | `codex/m5-portability-recovery-harness`, `m5-portability-recovery-harness/here` | `deccde1`, `m5_recovery_harness_sol`. Corrección de staging `d0449fc` incluida en `dcb3660`. |
+| M5 B, presupuesto JSON | `codex/m5-portability-json-cap-red`, `m5-portability-json-cap-red/here` y `codex/m5-portability-json-cap-green`, `m5-portability-json-cap-green/here` | RED `05ba0ee`, `m5_json_cap_red_sol`. GREEN `fc36f91` revisado por `citation_json_independent_review_sol` e incluido en `dcb3660`. |
 
 [PR #28](https://github.com/srodriguez-lefebre/here/pull/28). Nivel 2 para CI
 Windows `43477815724` y paquete `43477815761`, ambos verdes en `0c16065`. Se
 restauró el checkout del chat. Parte de los recibos locales de la pausa que
-solo estaban en ese checkout sigue sin localizarse. El chat rehízo el manifiesto
-de ejecución a partir del árbol auditado y del fixture sintético conservado. Le
-corresponde la ventana para el heartbeat y la corrida pública de p95.
+solo estaban en ese checkout sigue sin localizarse. En el árbol exacto `97e2929`,
+`m3-a-resume-20261120-benchmark-1` dio 1.431,6706 ms p95 con 40 muestras válidas.
+`m3-a-resume-20261120-heartbeat-1` agotó la espera de arranque antes de medir gaps.
+Ambos fallaron con evidencia de nivel 2. La descripción del PR registra esos
+resultados. El chat M3 A prepara el diagnóstico y el handoff del scope para M3 B.
 
 Nivel 2 focalizado en M3 B. El RED de citas obtuvo 25 fallos por la ausencia del
 resolver en `f987ec6`. El candidato dio 24 pases y un fallo del fixture de fecha,
 corregido en `ac493c9` con rerun pendiente. El RED Qt obtuvo 13 errores de setup
-por módulo ausente y el controlador `1027d22` obtuvo 13 pases. La revisión
-independiente pidió corregir el caso de backend multimedia no disponible y el
-estado que sigue a un seek fuera de rango. El RED CLI obtuvo 21 fallos por grupo
-ausente o por falta del campo de scope. Los JUnit de estas corridas están en TEMP.
+por módulo ausente y el controlador `1027d22` obtuvo 13 pases. Las correcciones
+pedidas por la revisión reprodujeron dos fallos y luego pasaron 17 casos en
+`2745ec7`. Citas `19c06b3` dio 25 pases. Su review pidió verificar roles de audio,
+reproducido en tres RED de `4cabf16`. El RED CLI obtuvo 21 fallos por grupo
+ausente o por falta del campo de scope. El RED de navegación obtuvo 13 fallos.
+Los JUnit de estas corridas están en TEMP.
 
 Nivel 2 diagnóstico en M5 B. La recuperación de importación obtuvo 11 fallos en
 `fada4fc` y 1 pase con 10 fallos en `8083b91`. La corrida mostró el fallo de
 staging con rutas largas de Windows y un problema de supervisión del subproceso.
 Se conserva el repro original. Separar el rerun de recuperación con ruta corta
-del control de rutas largas con el arnés corregido. El RED JSON `05ba0ee` dio
-3 pases y 3 fallos esperados en los bordes de inspección, importación y exportación.
-Claims sigue pendiente de M4 B. Falta certificación de nivel 3 para M3–M5.
+del control de rutas largas con el arnés corregido. El RED de ruta corta dio
+9 pases y 2 fallos. El candidato `d0449fc` pasó los 11 casos con ruta normal.
+El RED JSON `05ba0ee` dio 3 pases y 3 fallos esperados. `fc36f91` pasó los seis
+casos y la review independiente. El lote `m5-import-integration-dcb3660` dio
+89 pases, nivel 2 focalizado. Claims sigue pendiente de M4 B. Falta certificación
+de nivel 3 para M3–M5.
 
 ## Pausa solicitada — 2026-11-13
 
