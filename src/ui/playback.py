@@ -65,11 +65,13 @@ class PlaybackController(QObject):
             self.pause()
         self._update_state()
 
-    def load(self, target: CitationTarget) -> None:
+    def load(self, target: CitationTarget, *, require_segment_timing: bool = True) -> None:
         self.stop_and_unload()
         if target.status not in {"current", "historical"}:
             return
-        if target.start_ms is None or target.start_ms < 0 or target.timing_source == "absent":
+        if require_segment_timing and (
+            target.start_ms is None or target.start_ms < 0 or target.timing_source == "absent"
+        ):
             return
 
         path = target.audio_path

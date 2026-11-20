@@ -19,6 +19,8 @@ from here.application import (
     Unsubscribe,
 )
 from here.memory.models import (
+    Citation,
+    CitationTarget,
     Meeting,
     MeetingDetail,
     MeetingPage,
@@ -31,7 +33,7 @@ from here.memory.models import (
     Segment,
     TranscriptRevision,
 )
-from here.memory.service import Conflict
+from here.memory.service import Conflict, InvalidInput
 
 
 class FakeApplicationController(ApplicationController):
@@ -218,6 +220,22 @@ class FakeLibraryBackend:
                     started_at=self.meeting.started_at,
                 ),
             )
+        )
+
+    def resolve_citation(self, citation: Citation) -> CitationTarget:
+        if (citation.meeting_id, citation.revision_id, citation.segment_id) != (
+            self.meeting.id,
+            self.revision.id,
+            self.segment.id,
+        ):
+            raise InvalidInput("La cita no corresponde al ejemplo.")
+        return CitationTarget(
+            meeting_id=self.meeting.id,
+            revision_id=self.revision.id,
+            segment_id=self.segment.id,
+            title=self.meeting.title,
+            started_at=self.meeting.started_at,
+            text=self.segment.text,
         )
 
     def get_meeting(self, meeting_id):

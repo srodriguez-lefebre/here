@@ -139,14 +139,14 @@ class BackgroundJobs(QObject):
 class _DeleteAcknowledgement(QObject):
     """Acknowledge Qt invalidation before a tracked worker can accept deletion."""
 
-    _requested = Signal(object, object)
+    _requested = Signal(object, object, str)
     _TIMEOUT_SECONDS = 1.0
 
     def __init__(
         self,
         jobs: BackgroundJobs,
         callbacks: list[Callable[[str], None]],
-        invalidate: Callable[[int], None],
+        invalidate: Callable[[int, str], None],
         parent: QObject,
     ) -> None:
         super().__init__(parent)
@@ -163,7 +163,7 @@ class _DeleteAcknowledgement(QObject):
         parent.destroyed.connect(lambda *_: self.close())
         callbacks.append(self._callback)
 
-    def _acknowledge(self, _meeting_id: str) -> None:
+    def _acknowledge(self, meeting_id: str) -> None:
         if threading.get_ident() == self._qt_thread:
             raise RuntimeError("Deletion acknowledgement requires a desktop worker")
         ticket: Future[None] = Future()
@@ -172,15 +172,15 @@ class _DeleteAcknowledgement(QObject):
                 raise RuntimeError("Deletion acknowledgement is closed")
             self._tickets.add(ticket)
         try:
-            self._requested.emit(threading.current_thread(), ticket)
+            self._requested.emit(threading.current_thread(), ticket, meeting_id)
             ticket.result(timeout=self._TIMEOUT_SECONDS)
         finally:
             ticket.cancel()
             with self._lock:
                 self._tickets.discard(ticket)
 
-    @Slot(object, object)
-    def _deliver(self, worker: threading.Thread, ticket: Future[None]) -> None:
+    @Slot(object, object, str)
+    def _deliver(self, worker: threading.Thread, ticket: Future[None], meeting_id: str) -> None:
         if not ticket.set_running_or_notify_cancel():
             return
         try:
@@ -189,7 +189,7 @@ class _DeleteAcknowledgement(QObject):
             request = self._jobs._request_for_worker(worker)
             if request is None:
                 raise RuntimeError("Deletion acknowledgement requires a tracked desktop worker")
-            self._invalidate(request)
+            self._invalidate(request, meeting_id)
         except Exception as exc:
             ticket.set_exception(exc)
         else:
