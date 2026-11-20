@@ -3134,9 +3134,16 @@ class MemoryService:
         self, repo: MemoryRepository, meeting_id: str, revision_id: str
     ) -> Path | None:
         links = repo.get_revision_audio_assets(revision_id)
-        if len(links) != 1 or links[0].meeting_id != meeting_id:
+        if len(links) != 1:
             return None
-        asset = repo.get_audio_asset(links[0].asset_id)
+        (link,) = links
+        if (
+            link.meeting_id != meeting_id
+            or link.ordinal != 0
+            or PurePosixPath(link.source_file).suffix.lower() != ".wav"
+        ):
+            return None
+        asset = repo.get_audio_asset(link.asset_id)
         if asset is None or asset.meeting_id != meeting_id or asset.status != "available":
             return None
         relative = PurePosixPath(asset.relative_path)
@@ -3151,9 +3158,14 @@ class MemoryService:
             return None
         try:
             path = managed_path(self.data_dir, asset.relative_path)
+            revision = managed_path(
+                self.data_dir, f"meetings/{meeting_id}/revisions/{revision_id}", directory=True
+            )
+            validate_artifact_roles(revision, (link.source_file,))
+            validate_artifact_roles(path.parent, (path.name,))
             if path.stat().st_size == asset.size_bytes and file_hash(path) == asset.sha256:
                 return path
-        except (OSError, UnsafeSessionPath):
+        except (OSError, ValueError):
             pass
         return None
 
