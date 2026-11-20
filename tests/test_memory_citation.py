@@ -101,7 +101,7 @@ def test_resolver_uses_exact_historical_and_current_audio_links(
             revision_id=revision_id,
             segment_id=segment.id,
             title=detail.meeting.title,
-            started_at=None,
+            started_at=detail.meeting.started_at,
             text=_TEXT,
             speaker=speaker,
             start_ms=0,
