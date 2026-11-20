@@ -12,14 +12,22 @@ The full LGPL/GPL alternatives, exception texts, module library attributions and
 upstream source links accompany them. See `upstream/*/LICENSES` and
 `upstream/*/attributions.json`; `sources.json` links the matching source commits.
 
+Qt Multimedia adds the dynamically linked module and native Windows Media
+Foundation plugin for local WAV playback. The
+[Qt Multimedia 6.11.2 source](https://github.com/qt/qtmultimedia/tree/6f162ccac1425edbd7b4d1582fabab5973b43d6c)
+contains the module and plugin. Its license texts and the dr_libs and TLSF
+attributions and full terms are under `upstream/qtmultimedia-6.11.2`. The native
+backend uses system Media Foundation. Windows 11 N requires Microsoft's
+[Media Feature Pack](https://support.microsoft.com/en-us/windows/experience/platform-variants/media-feature-pack-for-windows-n)
+for this service.
+
 SoundFile's actual native copyright/source notes accompany full libsndfile and
 named-codec license texts. Internal codec versions are unknown; candidate source
 versions identify the text provenance and are not asserted binary versions. The
 same boundary applies to unexposed libffi/liblzma/mpdecimal versions. This
 collection does not claim an independent legal or exact native source-build audit.
 
-No QtMultimedia, FFmpeg, PDF/SVG/image plugin, QML/virtual keyboard or optional
-software OpenGL capability is promised by M1. Current raster-painted Widgets
-are verified through actual frozen `qwindows` startup. Notices conservatively
-retain applicable module source attributions without asserting each optional
-source component was compiled.
+Frozen `qwindows` startup verifies the raster-painted Widgets. The distribution
+uses the native playback plugin and excludes the FFmpeg backend and its codec
+DLLs. Notices conservatively retain applicable module source attributions
+without asserting each optional source component was compiled.

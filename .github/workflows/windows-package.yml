@@ -30,6 +30,13 @@ jobs:
       - name: Build locked noneditable wheel, GUI, CLI and installer
         shell: pwsh
         run: ./scripts/build_windows.ps1 -Python (uv python find --managed-python 3.13.15)
+      - name: Verify Qt Multimedia in the audited Windows bundle
+        shell: pwsh
+        env:
+          HERE_WINDOWS_BUNDLE: dist/windows/here
+          QT_QPA_PLATFORM: offscreen
+          OPENAI_API_KEY: synthetic-test-key
+        run: uv run --frozen --dev --python 3.13.15 pytest -v tests/test_distribution_smoke.py::test_windows_bundle_contains_qt_multimedia_runtime
       - name: Verify actual delivered stable-AppId installation and data preservation
         shell: pwsh
         run: ./scripts/smoke_windows.ps1 -BundlePath ./dist/windows/here -InstallerPath ./dist/windows/here-0.3.0-windows-x64-setup.exe
