@@ -54,6 +54,7 @@ from here.memory.repository import (
     _PortableLifecycleEvent,
     _PortableMeetingRows,
 )
+from here.output.markdown import render_meeting_markdown
 from here.output.paths import UnsafeSessionPath, validate_artifact_filename
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
@@ -403,6 +404,54 @@ class PortabilityService:
 
     def inspect(self, source: Path) -> PackageSummary:
         return inspect_package(source, Manifest)
+
+    def export_markdown(
+        self,
+        meeting_id: str,
+        destination: Path,
+        cancellation: Callable[[], bool],
+    ) -> Path:
+        from here.memory.service import NotFound
+
+        _check_cancelled(cancellation)
+        with self._memory._portable_export_view((meeting_id,)) as view:
+            selected = view.rows.meetings
+            if len(selected) != 1 or selected[0].meeting.id != meeting_id:
+                raise IntegrityFailure("Markdown export received inconsistent meeting evidence")
+            detail = selected[0].detail
+            meeting = detail.meeting
+            if meeting.active_revision_id is None:
+                raise NotFound("Selected meeting has no active transcript")
+            active = tuple(
+                revision
+                for revision in detail.revisions
+                if revision.id == meeting.active_revision_id
+            )
+            if len(active) != 1 or active[0].meeting_id != meeting_id:
+                raise IntegrityFailure(
+                    "Selected meeting has inconsistent active transcript evidence"
+                )
+            revision = active[0]
+            document = render_meeting_markdown(
+                meeting_id=meeting.id,
+                title=meeting.title,
+                notes=meeting.notes,
+                status="partial" if revision.status == "partial" else meeting.status.value,
+                started_at=meeting.started_at,
+                completed_at=meeting.completed_at,
+                transcript_text=revision.raw_text,
+            )
+            _check_cancelled(cancellation)
+            try:
+                with view._open_export_destination(destination, suffix=".md") as temporary:
+                    with temporary.open_stream() as stream:
+                        stream.write(document.encode("utf-8"))
+                    view.publish(temporary, cancelled=cancellation)
+            except OSError as error:
+                if error.errno == errno.ENOSPC:
+                    raise InsufficientSpace("Not enough space for Markdown export") from error
+                raise LibraryError("Could not write the Markdown export") from error
+        return destination
 
     def import_archive(
         self,
