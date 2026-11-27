@@ -172,6 +172,7 @@ class ReindexReport:
     indexed_segments: int = 0
     warnings: tuple[object, ...] = ()
 
+
 @dataclass(frozen=True, slots=True)
 class MeetingQuery:
     text: str = ""
@@ -182,6 +183,7 @@ class MeetingQuery:
     limit: int = 50
     cursor: str | None = None
     include_partial: bool = False
+    meeting_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -194,6 +196,7 @@ class SearchQuery:
     limit: int = 50
     cursor: str | None = None
     include_partial: bool = False
+    meeting_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

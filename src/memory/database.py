@@ -200,7 +200,10 @@ def open_library(data_dir: Path) -> LibraryConnection:
     # SQLite may access its sidecars before our first PRAGMA; validate them too.
     for suffix in ("-wal", "-shm", "-journal"):
         session_artifact_path(directory, path.name + suffix)
-    connection = sqlite3.connect(path, timeout=BUSY_TIMEOUT_MS / 1000, isolation_level=None)
+    try:
+        connection = sqlite3.connect(path, timeout=BUSY_TIMEOUT_MS / 1000, isolation_level=None)
+    except sqlite3.Error as error:
+        raise storage_error(error) from error
     try:
         _supported(connection)  # Refuse future schemas before changing persistent pragmas.
         connection.execute("PRAGMA foreign_keys=ON")

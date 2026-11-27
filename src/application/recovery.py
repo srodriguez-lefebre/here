@@ -1,5 +1,6 @@
 """Local, explicit and idempotent recovery. Discovery never invokes a provider."""
 
+import os
 import sqlite3
 from collections.abc import Callable, Iterator
 from contextlib import ExitStack, contextmanager
@@ -7,9 +8,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from uuid import UUID
 
-from here.application.processing import SessionProcessor, _validated_recovery_source
+from here.application.processing import (
+    SessionProcessor,
+    _declared_recovery_source,
+    _validated_recovery_source,
+)
 from here.config.paths import get_data_dir
-from here.memory.artifacts import managed_path, read_pending_intent
+from here.memory.artifacts import managed_path, normalized_origin, read_pending_intent
 from here.memory.database import Busy, LibraryError
 from here.memory.service import (
     Conflict,
@@ -21,7 +26,7 @@ from here.memory.service import (
 from here.output.metadata import ErrorMetadataDocument, SessionMetadata
 from here.output.ownership import FileLease, LeaseBusy
 from here.output.paths import UnsafeSessionPath, session_artifact_path, validate_session_directory
-from here.output.session_writer import ERRORS_FILE, read_session_metadata
+from here.output.session_writer import AUDIO_FILE, ERRORS_FILE, read_session_metadata
 from here.recording.journal import CaptureJournal
 from here.recording.models import CaptureFailed
 
@@ -43,27 +48,28 @@ def _pending_replay(directory: Path, metadata: SessionMetadata) -> tuple[bool, s
     return False, None
 
 
+def _retry_audio_available(directory: Path, metadata: SessionMetadata) -> bool:
+    _, warning = _pending_replay(directory, metadata)
+    return warning is None and validate_recovery_audio(directory, metadata)
+
+
 def validate_recovery_audio(directory: Path, metadata: SessionMetadata) -> bool:
-    available = False
-    for source in metadata.capture_sources:
-        if source.audio_file:
-            actual = _validated_recovery_source(
-                session_artifact_path(directory, source.audio_file), source
-            )
-            available |= actual.frames > 0
-    if metadata.recoverable_audio:
-        # Validate redirects/nonregular entries before distinguishing an absent derived WAV.
-        # Only absence may use the validated raw sources above; corrupt existing audio fails.
-        normalized = session_artifact_path(directory, metadata.recoverable_audio)
-        try:
-            normalized.stat()
-        except FileNotFoundError:
-            pass
-        else:
-            expected = metadata.sources[0] if len(metadata.sources) == 1 else None
-            actual = _validated_recovery_source(normalized, expected)
-            available |= actual.frames > 0
-    return available
+    raw_sources = [
+        _validated_recovery_source(session_artifact_path(directory, source.audio_file), source)
+        for source in metadata.capture_sources
+        if source.audio_file
+    ]
+    # The worker rebuilds normalized audio from raw sources only if its output is absent.
+    normalized = session_artifact_path(directory, metadata.recoverable_audio or AUDIO_FILE)
+    try:
+        normalized.stat()
+    except FileNotFoundError:
+        return any(source.frames > 0 for source in raw_sources)
+    if not metadata.recoverable_audio:
+        declared = _declared_recovery_source(normalized, raw_sources)
+        return declared is not None and declared.frames > 0
+    expected = metadata.sources[0] if len(metadata.sources) == 1 else None
+    return _validated_recovery_source(normalized, expected).frames > 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,6 +81,7 @@ class RecoveryCandidate:
     error_summary: str | None
     can_retry: bool
     capture_id: str | None = None
+    expected_meeting_id: str | None = None
 
 
 class _CatalogOwnershipUnavailable(LibraryError):
@@ -227,6 +234,90 @@ class RecoveryService:
         )
         return False, f"{_PENDING_PUBLICATION}: {details}" if details else _PENDING_PUBLICATION
 
+    def find_retry_candidate(self, meeting_id: str) -> RecoveryCandidate | None:
+        """Inspect only the requested catalog lineage, without reconciliation or replay."""
+        if str(UUID(meeting_id)) != meeting_id:
+            raise ValueError("Retry requires a canonical meeting UUID")
+        validate_session_directory(self.root)
+        if not self.root.exists():
+            return None
+
+        # A capture reservation is authority for the destination, independently
+        # of whether that destination already appears in the ingest lineage.
+        journal_directory = self.root / ".captures" / meeting_id
+        validate_session_directory(journal_directory)
+        journal_destination = None
+        candidates: list[RecoveryCandidate] = []
+        if journal_directory.exists():
+            with self._ownership(meeting_id, directory=journal_directory) as (owner, _):
+                with self._inspection(journal_directory, meeting_id, owner):
+                    journal = CaptureJournal.load(self.root, meeting_id)
+                    journal_destination = journal.destination
+                    if not journal_destination.exists():
+                        recording = journal.recording_session()
+                        if recording.duration_seconds > 0:
+                            candidates.append(
+                                RecoveryCandidate(
+                                    journal_destination,
+                                    journal.document.started_at.strftime("%Y%m%d_%H%M%S"),
+                                    recording.duration_seconds,
+                                    "interrupted",
+                                    "Capture interrupted before final persistence",
+                                    True,
+                                    meeting_id,
+                                    expected_meeting_id=meeting_id,
+                                )
+                            )
+
+        origins = self._memory_service().retry_origins(meeting_id)
+        normalized_root = normalized_origin(self.root)
+        for directory in sorted(self.root.iterdir()):
+            if directory.name.startswith("."):
+                continue
+            origin = os.path.join(normalized_root, os.path.normcase(directory.name))
+            if directory != journal_destination and origin not in origins:
+                continue
+            candidate = self._inspect_retry_candidate(directory, meeting_id)
+            if candidate is not None and candidate.can_retry:
+                candidates.append(candidate)
+        if len(candidates) > 1:
+            raise Conflict("More than one eligible recovery session exists for this meeting")
+        return candidates[0] if candidates else None
+
+    def _inspect_retry_candidate(
+        self, directory: Path, meeting_id: str
+    ) -> RecoveryCandidate | None:
+        try:
+            metadata = read_session_metadata(directory)
+        except ValueError as exc:
+            raise LibraryError("Recovery metadata cannot be verified") from exc
+        if metadata is None:
+            return None
+        source_id = metadata.meeting_id
+        with self._ownership(source_id, directory=directory) as (owner, _):
+            if owner != meeting_id:
+                raise Conflict("Recovery session does not match the selected meeting")
+            with self._inspection(directory, source_id, owner):
+                try:
+                    metadata = read_session_metadata(directory)
+                    if metadata is None or metadata.meeting_id != source_id:
+                        raise UnsafeSessionPath("Recovery identity changed")
+                    if metadata.status == "completed":
+                        return None
+                    available = _retry_audio_available(directory, metadata)
+                except ValueError as exc:
+                    raise LibraryError("Recovery material cannot be verified") from exc
+                return RecoveryCandidate(
+                    directory,
+                    metadata.session_id,
+                    metadata.duration_seconds,
+                    metadata.status,
+                    metadata.failure_stage,
+                    available,
+                    source_id,
+                    expected_meeting_id=meeting_id,
+                )
+
     def discover(self) -> list[RecoveryCandidate]:
         validate_session_directory(self.root)
         try:
@@ -372,6 +463,8 @@ class RecoveryService:
             owner,
             claim,
         ):
+            if candidate.expected_meeting_id is not None and owner != candidate.expected_meeting_id:
+                raise Conflict("Recovery session does not match the selected meeting")
             with self._inspection(candidate.session_dir, candidate.capture_id, owner):
                 missing_metadata = read_session_metadata(candidate.session_dir) is None
                 if missing_metadata:
@@ -403,7 +496,16 @@ class RecoveryService:
             if metadata is not None:
                 if metadata.meeting_id != candidate.capture_id:
                     raise UnsafeSessionPath("Recovery identity changed")
-                validate_recovery_audio(directory, metadata)
+                if candidate.expected_meeting_id is not None:
+                    if metadata.status == "completed":
+                        raise Conflict("Recovery session has already completed")
+                    try:
+                        if not _retry_audio_available(directory, metadata):
+                            raise LibraryError("Recovery material is no longer available for retry")
+                    except ValueError as exc:
+                        raise LibraryError("Recovery material cannot be verified") from exc
+                else:
+                    validate_recovery_audio(directory, metadata)
                 return directory
             if candidate.capture_id is None or not reconstruct:
                 raise ValueError("Recovery metadata no longer exists")

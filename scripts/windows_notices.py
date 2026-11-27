@@ -112,7 +112,7 @@ def prepare(destination, wheel, native_build):
     lines = [
         "# Third-party notices",
         "",
-        "here 0.3.0 Windows distribution.",
+        "here 0.4.0 Windows distribution.",
         "",
         "Full license/copyright texts are retained under component-specific paths.",
         "Wheel versions below describe the exact installed locked build environment.",
@@ -134,8 +134,11 @@ def prepare(destination, wheel, native_build):
         "  alternatives and selected library attribution records with their full referenced",
         "  texts are under upstream/qtbase-6.11.2 and upstream/pyside-shiboken-6.11.2.",
         "  Conservatively retained module source notices do not assert every optional",
-        "  component was compiled. No QtMultimedia, FFmpeg, image/icon plugin or software",
-        "  OpenGL fallback capability is included by this M1 configuration.",
+        "  component was compiled.",
+        "- Qt Multimedia 6.11.2: local WAV playback uses the native Windows Media",
+        "  Foundation backend. The module and plugin are dynamically linked. Their",
+        "  upstream license texts, dr_libs and TLSF notices, and exact source links",
+        "  are in upstream/qtmultimedia-6.11.2, README.md and sources.json.",
         "- PyAudioWPatch/PortAudio: upstream/pyaudiowpatch-0.2.12.8 includes the full Apache",
         "  text and vendored PortAudio copyright/license; native wheel hashes are audited.",
         "- SoundFile/libsndfile: soundfile-native retains the actual wheel's LGPL text and",
@@ -267,8 +270,24 @@ def audit(bundle, wheel, native_build):
         if not path.is_file():
             continue
         relative = path.relative_to(bundle).as_posix()
-        if path.name.lower() == ".env" or path.suffix.lower() in {".wav", ".mp3", ".flac"}:
+        filename = path.name.lower()
+        if filename == ".env" or path.suffix.lower() in {".wav", ".mp3", ".flac"}:
             raise RuntimeError(f"Personal-data file category in bundle: {relative}")
+        if "/plugins/multimedia/" in relative.lower() and filename != "windowsmediaplugin.dll":
+            raise RuntimeError(f"Unexpected Qt Multimedia plugin in bundle: {relative}")
+        if path.suffix.lower() == ".dll" and filename.startswith(
+            (
+                "avcodec-",
+                "avdevice-",
+                "avfilter-",
+                "avformat-",
+                "avutil-",
+                "postproc-",
+                "swresample-",
+                "swscale-",
+            )
+        ):
+            raise RuntimeError(f"Unexpected FFmpeg library in bundle: {relative}")
         row = {"path": relative, "bytes": path.stat().st_size, "sha256": digest(path)}
         if path.suffix.lower() in {".dll", ".pyd", ".exe"}:
             row["file_version"] = pe_version(path)
@@ -368,7 +387,7 @@ def checksums(destination, compiler):
         destination / "compiler-provenance.json", {"version": "6.7.0", "sha256": digest(compiler)}
     )
     bundle = destination / "here"
-    archive = destination / "here-0.3.0-windows-x64.zip"
+    archive = destination / "here-0.4.0-windows-x64.zip"
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as output:
         for path in sorted(bundle.rglob("*")):
             if path.is_file():

@@ -893,5 +893,59 @@
     "sha256": "6e87ac5d79ab92110e6e517b2c74e4f4fd15878540e93eea0300e529d3318572",
     "source": "https://raw.githubusercontent.com/qt/qtbase/ef55f427f2c8b410d34f8a7681020a3000cf6866/util/gradientgen/qt_attribution.json",
     "kind": "upstream notice"
+  },
+  {
+    "path": "upstream/qtmultimedia-6.11.2/LICENSES/GPL-2.0-only.txt",
+    "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643",
+    "source": "https://raw.githubusercontent.com/qt/qtmultimedia/6f162ccac1425edbd7b4d1582fabab5973b43d6c/LICENSES/GPL-2.0-only.txt",
+    "kind": "upstream notice"
+  },
+  {
+    "path": "upstream/qtmultimedia-6.11.2/LICENSES/GPL-3.0-only.txt",
+    "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+    "source": "https://raw.githubusercontent.com/qt/qtmultimedia/6f162ccac1425edbd7b4d1582fabab5973b43d6c/LICENSES/GPL-3.0-only.txt",
+    "kind": "upstream notice"
+  },
+  {
+    "path": "upstream/qtmultimedia-6.11.2/LICENSES/LGPL-3.0-only.txt",
+    "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768",
+    "source": "https://raw.githubusercontent.com/qt/qtmultimedia/6f162ccac1425edbd7b4d1582fabab5973b43d6c/LICENSES/LGPL-3.0-only.txt",
+    "kind": "upstream notice"
+  },
+  {
+    "path": "upstream/qtmultimedia-6.11.2/LICENSES/LicenseRef-Qt-Commercial.txt",
+    "sha256": "9b1f50aae6267f9d5e0ceb6775ee86450262c25ec7c0573e151fe5d3f18a4700",
+    "source": "https://raw.githubusercontent.com/qt/qtmultimedia/6f162ccac1425edbd7b4d1582fabab5973b43d6c/LICENSES/LicenseRef-Qt-Commercial.txt",
+    "kind": "upstream notice"
+  },
+  {
+    "path": "upstream/qtmultimedia-6.11.2/LICENSES/Qt-GPL-exception-1.0.txt",
+    "sha256": "40678d338ce53cd93f8b22b281a2ecbcaa3ee65ce60b25ffb0c462b0530846b2",
+    "source": "https://raw.githubusercontent.com/qt/qtmultimedia/6f162ccac1425edbd7b4d1582fabab5973b43d6c/LICENSES/Qt-GPL-exception-1.0.txt",
+    "kind": "upstream notice"
+  },
+  {
+    "path": "upstream/qtmultimedia-6.11.2/src/3rdparty/dr_libs/LICENSE",
+    "sha256": "dd1c647e6f767f8ff4b2dfae0fed314726600a01e0cf1ef556afddd5fa96ff15",
+    "source": "https://raw.githubusercontent.com/qt/qtmultimedia/6f162ccac1425edbd7b4d1582fabab5973b43d6c/src/3rdparty/dr_libs/LICENSE",
+    "kind": "upstream notice"
+  },
+  {
+    "path": "upstream/qtmultimedia-6.11.2/src/3rdparty/dr_libs/qt_attribution.json",
+    "sha256": "b21e02fdc3952250520105f6684f26939167ff7ed78e3b5c4d9bbcf83f863432",
+    "source": "https://raw.githubusercontent.com/qt/qtmultimedia/6f162ccac1425edbd7b4d1582fabab5973b43d6c/src/3rdparty/dr_libs/qt_attribution.json",
+    "kind": "upstream notice"
+  },
+  {
+    "path": "upstream/qtmultimedia-6.11.2/src/3rdparty/tlsf/qt_attribution.json",
+    "sha256": "2a2ed42fa9aa531ee9086f96e27ff12f83ec48111b83111a036c664dc93ef5a5",
+    "source": "https://raw.githubusercontent.com/qt/qtmultimedia/6f162ccac1425edbd7b4d1582fabab5973b43d6c/src/3rdparty/tlsf/qt_attribution.json",
+    "kind": "upstream notice"
+  },
+  {
+    "path": "upstream/qtmultimedia-6.11.2/src/3rdparty/tlsf/tlsf.h",
+    "sha256": "cfb8744f3be370b8b8c57c3ceb9cdce43e76a64dc24ee67e6912f483f61365b1",
+    "source": "https://raw.githubusercontent.com/qt/qtmultimedia/6f162ccac1425edbd7b4d1582fabab5973b43d6c/src/3rdparty/tlsf/tlsf.h",
+    "kind": "upstream notice"
   }
 ]

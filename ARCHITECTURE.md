@@ -49,7 +49,7 @@ The main flow is:
 
 ## Windows Presentation Layer
 
-Windows distribution starts with a locked noneditable 0.3.0 wheel installed into
+Windows distribution starts with a locked noneditable 0.4.0 wheel installed into
 a dedicated CPython 3.13.15 AMD64 build environment. PyInstaller creates windowed
 `here.exe` and console `here-cli.exe` sharing one inspectable `_internal` directory.
 The fixed audio child dispatch runs before Qt/provider bootstrap and uses the
@@ -390,7 +390,7 @@ which has no dependency on Qt or Typer.
 
 ## Library search and desktop workers
 
-The M3 A candidate's `SearchService` reads the same catalog used by the
+`SearchService` reads the same catalog used by the
 application controller. Its connection factory opens one fresh connection per
 read and closes it after the R50 guarded view. That view resolves R42 suppression
 by meeting UUID and exact origin/fingerprint aliases. SQL applies suppression
@@ -427,9 +427,28 @@ to the memory service, which updates the catalog and indexed title together.
 The desktop registers a deletion acknowledgement on the composed memory service.
 A tracked worker sends a queued Qt ticket and waits for the view to invalidate
 its reads. Replacement reads wait for the worker to settle, so a late result
-cannot restore a row hidden by accepted deletion. Selecting a transcript segment
-emits a reference with its meeting, revision and segment IDs. Playback and
-authoritative audio target resolution are M3 B work.
+cannot restore a row hidden by accepted deletion.
+
+## Evidence navigation and playback
+
+A list item, search hit or citation takes the same guarded resolution path.
+`MemoryService.resolve_citation` checks the meeting, exact revision and
+segment relationship and returns a typed `CitationTarget`. Its media path
+comes from the validated audio links of that revision. Missing audio and
+unknown timing stay explicit in the target. The desktop uses the target to
+center the segment, show neighbors and label historical evidence.
+
+The Qt playback adapter uses QMediaPlayer and QAudioOutput. It holds a seek
+until the matching media is loaded and seekable, applying the stored
+`start_ms`. Selection prepares the target and explicit Play starts output.
+Switching meetings releases the previous source. The tracked deletion ACK
+releases matching media before acknowledging and invalidates its pending
+load and seek callbacks. Capture state gates the controls.
+
+`here meetings` uses the same catalog, search and target contracts. JSON and
+exit codes are formatted in the CLI. Playback uses the Qt adapter and
+explicit retry delegates to the application controller after guarded
+candidate resolution.
 
 ## Windows search acceleration (M3 A, ruling 75)
 

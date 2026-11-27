@@ -190,6 +190,7 @@ class MainWindow(QMainWindow):
     def set_snapshot(self, snapshot: ApplicationSnapshot) -> None:
         self._snapshot = snapshot
         state = snapshot.state
+        self.library.set_application_state(state)
         source_text = (
             " · ".join(f"{item.label}: {item.device_name}" for item in snapshot.opened_sources)
             or self._controller.source_label

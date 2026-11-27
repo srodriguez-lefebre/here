@@ -1,4 +1,4 @@
-"""Exercise packaging behavior through a real noneditable wheel, outside the repo."""
+"""Exercise wheel, Windows bundle and installer distribution contracts."""
 
 import json
 import os
@@ -70,6 +70,31 @@ def test_wheel_smoke_opens_isolated_desktop_and_reaps_helper(tmp_path, entry):
     assert data["checks"]["editable_finder"] is False
     assert canary.read_text(encoding="utf-8") == "preserve-existing-data"
     assert sorted(path.name for path in real_root.iterdir()) == ["canary.txt"]
+
+
+def test_windows_bundle_contains_qt_multimedia_runtime():
+    bundle_path = os.environ.get("HERE_WINDOWS_BUNDLE")
+    if not bundle_path:
+        pytest.skip("Set HERE_WINDOWS_BUNDLE to the freshly built Windows onedir bundle")
+    bundle = Path(bundle_path)
+    inventory_path = bundle / "_internal/notices/bundle-inventory.json"
+    assert inventory_path.is_file(), f"Missing audited Windows bundle inventory: {inventory_path}"
+    inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+    shipped = {entry["path"] for entry in inventory["files"]}
+
+    qt = "_internal/PySide6"
+    required = {f"{qt}/QtMultimedia.pyd", f"{qt}/Qt6Multimedia.dll"}
+    missing = sorted(
+        path for path in required if path not in shipped or not (bundle / path).is_file()
+    )
+    assert not missing, f"Missing QtMultimedia runtime files: {missing}"
+    backends = {
+        f"{qt}/plugins/multimedia/windowsmediaplugin.dll",
+        f"{qt}/plugins/multimedia/ffmpegmediaplugin.dll",
+    }
+    assert any((bundle / path).is_file() for path in backends & shipped), (
+        "Missing a QtMultimedia playback backend in the audited Windows bundle"
+    )
 
 
 def test_installer_mutex_blocks_only_while_owned_process_is_alive():

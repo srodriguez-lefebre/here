@@ -1,31 +1,37 @@
 import json
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass, is_dataclass
 from datetime import datetime
+from enum import IntEnum
 from pathlib import Path
-from typing import Annotated, cast
+from typing import Annotated, NoReturn, cast
 from uuid import UUID
 
 import typer
 from here.application import (
     ApplicationState,
+    InvalidApplicationCommand,
     SourceMode,
     StartRequest,
     create_default_controller,
 )
-from here.application.processing import SessionProcessor
+from here.application.processing import SessionProcessor, selected_retry
+from here.application.recovery import RecoveryService
 from here.audio.mix import materialize_normalized_session
 from here.config.paths import get_data_dir
 from here.config.settings import get_settings, settings_operation
 from here.live_processing import LiveTranscriptionController
-from here.memory.database import LibraryError
-from here.memory.models import MeetingPatch
+from here.memory.database import LibraryError, open_library
+from here.memory.models import Citation, MeetingPatch, MeetingQuery, MeetingStatus, SearchQuery
+from here.memory.search import SearchService
 from here.memory.service import Conflict, InvalidInput, MemoryService, NotFound
 from here.output.metadata import (
     ChunkMetadata,
     ErrorMetadata,
 )
+from here.output.paths import UnsafeSessionPath
 from here.output.session_writer import (
     TRANSCRIPT_ENCODING as TRANSCRIPT_ENCODING,
 )
@@ -54,6 +60,8 @@ app.add_typer(record_app, name="record")
 app.add_typer(test_app, name="test")
 memory_app = typer.Typer(help="Maintain the local meeting catalog without a provider.")
 app.add_typer(memory_app, name="memory")
+meetings_app = typer.Typer(help="Browse and manage the local meeting library.")
+app.add_typer(meetings_app, name="meetings")
 record_app.add_typer(mic_app, name="mic")
 record_app.add_typer(os_app, name="os")
 OutputDirOption = Annotated[
@@ -211,6 +219,292 @@ def memory_participant(
         _memory_lifecycle_error(exc, json_output)
         return
     _memory_output(result, json_output)
+
+
+class ExitCode(IntEnum):
+    SUCCESS = 0
+    INVALID_INPUT = 2
+    CONFLICT = 3
+    IO = 4
+    PROVIDER = 5
+
+
+_RESULT_EXIT = {
+    "invalid_input": ExitCode.INVALID_INPUT,
+    "conflict": ExitCode.CONFLICT,
+    "io": ExitCode.IO,
+}
+
+
+def emit(result: object, json: bool) -> None:
+    _memory_output(result, json)
+
+
+def _meetings_failure(
+    message: str, category: str, json_output: bool, **details: object
+) -> NoReturn:
+    emit({"error": message, "error_category": category, **details}, json_output)
+    code = ExitCode.PROVIDER if category == "provider" else _RESULT_EXIT.get(category, ExitCode.IO)
+    raise typer.Exit(code)
+
+
+@contextmanager
+def _meetings_errors(json_output: bool) -> Iterator[None]:
+    try:
+        yield
+    except InvalidInput as exc:
+        _meetings_failure(str(exc), "invalid_input", json_output, reason=exc.reason)
+    except (Conflict, NotFound, InvalidApplicationCommand) as exc:
+        _meetings_failure(str(exc), "conflict", json_output)
+    except (LibraryError, OSError, UnsafeSessionPath) as exc:
+        _meetings_failure(str(exc), "io", json_output)
+
+
+def _resolve_meeting(memory: MemoryService, identity: str, json_output: bool) -> str:
+    prefix = identity.lower()
+    if (
+        not prefix
+        or len(prefix) > 36
+        or any(
+            (char != "-" if index in (8, 13, 18, 23) else char not in "0123456789abcdef")
+            for index, char in enumerate(prefix)
+        )
+    ):
+        raise InvalidInput("Use a meeting UUID or an unambiguous UUID prefix")
+    matches = memory.meeting_ids_with_prefix(prefix)
+    if not matches:
+        raise NotFound("Meeting does not exist")
+    if len(matches) > 1:
+        _meetings_failure(
+            "Meeting prefix is ambiguous",
+            "invalid_input",
+            json_output,
+            reason="ambiguous_meeting_id",
+            candidates=matches,
+        )
+    return matches[0]
+
+
+def _shown_meeting(memory: MemoryService, identity: str) -> dict[str, object]:
+    detail = memory.show(identity)
+    if detail is None:
+        raise NotFound("Meeting does not exist")
+    return detail
+
+
+def _meeting_search(memory: MemoryService) -> SearchService:
+    return SearchService(lambda: open_library(memory.data_dir), reindexer=memory.reindex)
+
+
+JsonOption = Annotated[bool, typer.Option("--json", help="Write stable JSON to stdout.")]
+
+
+@meetings_app.command("list")
+def meetings_list(
+    from_utc: Annotated[str | None, typer.Option("--from")] = None,
+    to_utc: Annotated[str | None, typer.Option("--to")] = None,
+    status: Annotated[list[str] | None, typer.Option("--status")] = None,
+    participant: Annotated[str | None, typer.Option("--participant")] = None,
+    json_output: JsonOption = False,
+) -> None:
+    """List meetings with optional date, status and participant filters."""
+    with _meetings_errors(json_output):
+        try:
+            statuses = tuple(MeetingStatus(value) for value in status or ())
+        except ValueError as exc:
+            raise InvalidInput("Unknown meeting status") from exc
+        memory = MemoryService(get_data_dir())
+        emit(
+            _meeting_search(memory).list_meetings(
+                MeetingQuery(
+                    from_utc=from_utc,
+                    to_utc=to_utc,
+                    statuses=statuses,
+                    participant_id=participant,
+                )
+            ),
+            json_output,
+        )
+
+
+@meetings_app.command("show")
+def meetings_show(meeting_id: str, json_output: JsonOption = False) -> None:
+    """Show a meeting and its retained revisions."""
+    with _meetings_errors(json_output):
+        memory = MemoryService(get_data_dir())
+        emit(_shown_meeting(memory, _resolve_meeting(memory, meeting_id, json_output)), json_output)
+
+
+@meetings_app.command("search")
+def meetings_search(
+    text: str,
+    meeting: Annotated[str | None, typer.Option("--meeting")] = None,
+    json_output: JsonOption = False,
+) -> None:
+    """Search transcript segments, optionally within one meeting."""
+    with _meetings_errors(json_output):
+        memory = MemoryService(get_data_dir())
+        identity = _resolve_meeting(memory, meeting, json_output) if meeting is not None else None
+        emit(
+            _meeting_search(memory).search(SearchQuery(text=text, meeting_id=identity)), json_output
+        )
+
+
+@meetings_app.command("rename")
+def meetings_rename(meeting_id: str, title: str, json_output: JsonOption = False) -> None:
+    """Rename a meeting."""
+    with _meetings_errors(json_output):
+        memory = MemoryService(get_data_dir())
+        identity = _resolve_meeting(memory, meeting_id, json_output)
+        meeting = cast(dict[str, object], _shown_meeting(memory, identity)["meeting"])
+        emit(
+            memory.update_meeting(
+                identity,
+                MeetingPatch(title=title),
+                expected_version=cast(int, meeting["row_version"]),
+            ),
+            json_output,
+        )
+
+
+@meetings_app.command("participant")
+def meetings_participant(
+    meeting_id: str,
+    display_name: str,
+    speaker: Annotated[str | None, typer.Option("--speaker")] = None,
+    json_output: JsonOption = False,
+) -> None:
+    """Add a participant and optionally assign an active-revision speaker."""
+    with _meetings_errors(json_output):
+        memory = MemoryService(get_data_dir())
+        identity = _resolve_meeting(memory, meeting_id, json_output)
+        emit(
+            memory.add_meeting_participant(identity, display_name, speaker_key=speaker), json_output
+        )
+
+
+@meetings_app.command("retry")
+@settings_operation
+def meetings_retry(meeting_id: str, json_output: JsonOption = False) -> None:
+    """Retry transcription for one recoverable meeting."""
+    with _meetings_errors(json_output):
+        root = get_settings().TRANSCRIPTIONS_DIR
+        memory = MemoryService(get_data_dir(), sessions_root=root)
+        identity = _resolve_meeting(memory, meeting_id, json_output)
+        recovery = RecoveryService(root, memory_service=memory)
+        candidate = recovery.find_retry_candidate(identity)
+        if candidate is None or not candidate.can_retry:
+            raise NotFound("No eligible recovery session exists for this meeting")
+        try:
+            session_dir = recovery.materialize(candidate)
+        except ValueError as exc:
+            raise LibraryError("Recovery material changed before retry") from exc
+        controller = create_default_controller(memory_service=memory)
+        with selected_retry(session_dir, identity, candidate.capture_id):
+            controller.retry(session_dir)
+        snapshot = controller.wait_until_terminal()
+        if snapshot.state is not ApplicationState.COMPLETED or snapshot.memory_error_category:
+            category = snapshot.memory_error_category or (
+                snapshot.last_error.error_category if snapshot.last_error else "io"
+            )
+            _meetings_failure(
+                "Retry could not complete",
+                category,
+                json_output,
+                meeting_id=identity,
+                status=snapshot.state.value,
+            )
+        emit({"meeting_id": identity, "status": snapshot.state.value}, json_output)
+
+
+@meetings_app.command("play")
+def meetings_play(
+    meeting_id: str,
+    segment: Annotated[str | None, typer.Option("--segment")] = None,
+    json_output: JsonOption = False,
+) -> None:
+    """Open a player for the meeting or an exact transcript segment."""
+    with _meetings_errors(json_output):
+        memory = MemoryService(get_data_dir())
+        identity = _resolve_meeting(memory, meeting_id, json_output)
+        detail = _shown_meeting(memory, identity)
+        meeting = cast(dict[str, object], detail["meeting"])
+        segments = cast(list[dict[str, str]], detail["segments"])
+        if segment is None:
+            selected = next(
+                (item for item in segments if item["revision_id"] == meeting["active_revision_id"]),
+                None,
+            )
+        else:
+            selected = next((item for item in segments if item["id"] == segment), None)
+        if selected is None:
+            raise NotFound("No matching transcript segment exists for playback")
+        target = memory.resolve_citation(
+            Citation(identity, selected["revision_id"], selected["id"])
+        )
+        emit(target, json_output)
+        try:
+            from here.ui.playback_widget import run_playback_window
+
+            status = run_playback_window(target, seek_from_segment=segment is not None)
+        except (ImportError, OSError, RuntimeError):
+            status = ExitCode.IO
+        if status:
+            typer.echo("The multimedia player could not open or play the local audio.", err=True)
+            raise typer.Exit(ExitCode.IO)
+
+
+@meetings_app.command("import-session")
+def meetings_import_session(path: Path, json_output: JsonOption = False) -> None:
+    """Import an existing session into the local catalog."""
+    with _meetings_errors(json_output):
+        if not path.is_dir():
+            raise InvalidInput("Session directory does not exist")
+        result = MemoryService(get_data_dir()).ingest_session(path)
+        emit(result, json_output)
+        if result.status == "rejected":
+            raise typer.Exit(_RESULT_EXIT.get(result.error_category or "", ExitCode.CONFLICT))
+
+
+@meetings_app.command("reindex")
+def meetings_reindex(json_output: JsonOption = False) -> None:
+    """Rebuild the local search index."""
+    with _meetings_errors(json_output):
+        memory = MemoryService(get_data_dir())
+        emit(_meeting_search(memory).reindex(), json_output)
+
+
+@meetings_app.command("delete")
+@settings_operation
+def meetings_delete(
+    meeting_id: str,
+    yes: Annotated[bool, typer.Option("--yes")] = False,
+    json_output: JsonOption = False,
+) -> None:
+    """Remove a managed meeting and its derivatives after confirmation."""
+    with _meetings_errors(json_output):
+        memory = MemoryService(get_data_dir(), sessions_root=get_settings().TRANSCRIPTIONS_DIR)
+        # Only the delete operation can resume a previously accepted deletion.
+        try:
+            canonical = str(UUID(meeting_id)) == meeting_id
+        except ValueError:
+            canonical = False
+        identity = (
+            meeting_id if yes and canonical else _resolve_meeting(memory, meeting_id, json_output)
+        )
+        if not yes:
+            meeting = cast(dict[str, object], _shown_meeting(memory, identity)["meeting"])
+            _meetings_failure(
+                "Deletion requires --yes to remove the managed meeting and its derivatives",
+                "invalid_input",
+                json_output,
+                meeting_id=identity,
+                title=meeting["title"],
+            )
+        result = memory.delete_meeting(identity)
+        emit(result, json_output)
+        if result.status != "completed":
+            raise typer.Exit(_RESULT_EXIT.get(result.error_category or "", ExitCode.IO))
 
 
 @dataclass(slots=True)

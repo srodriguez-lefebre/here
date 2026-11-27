@@ -5,7 +5,8 @@ import shutil
 import threading
 import time
 from collections.abc import Callable, Iterator, Sequence
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
 from datetime import datetime
 from functools import wraps
@@ -26,7 +27,7 @@ from here.memory.artifacts import (
     write_durable_json,
 )
 from here.memory.database import LibraryError
-from here.memory.service import IngestResult, MemoryService, OwnershipBusy
+from here.memory.service import Conflict, IngestResult, MemoryService, OwnershipBusy
 from here.output.metadata import (
     CaptureSourceMetadata,
     ChunkMetadata,
@@ -185,6 +186,21 @@ def _validated_recovery_source(
     )
 
 
+def _declared_recovery_source(
+    audio_path: Path, sources: list[RecordedAudioSource]
+) -> RecordedAudioSource | None:
+    """Match a guarded recovery path to the same file as a validated capture source."""
+    # Windows Path equality folds case even in case-sensitive directories.
+    return next(
+        (
+            source
+            for source in sources
+            if source.path == audio_path and audio_path.samefile(source.path)
+        ),
+        None,
+    )
+
+
 def _cleanup_capture_after_commit(cleanup: Callable[[], None], session_dir: Path) -> None:
     """Remove capture files after completed metadata commits, retaining cleanup failures.
 
@@ -262,6 +278,32 @@ def _cleanup_replaced_audio(
         )
 
 
+@dataclass(frozen=True, slots=True)
+class _RetrySelection:
+    session_dir: Path
+    meeting_id: str
+    capture_id: str | None
+
+
+_retry_selection: ContextVar[_RetrySelection | None] = ContextVar(
+    "here_retry_selection", default=None
+)
+
+
+@contextmanager
+def selected_retry(session_dir: Path, meeting_id: str, capture_id: str | None) -> Iterator[None]:
+    """Bind explicit CLI recovery authority to the controller's copied worker context."""
+    token = _retry_selection.set(_RetrySelection(session_dir.absolute(), meeting_id, capture_id))
+    try:
+        yield
+    finally:
+        _retry_selection.reset(token)
+
+
+def current_retry_selection() -> _RetrySelection | None:
+    return _retry_selection.get()
+
+
 P = ParamSpec("P")
 
 
@@ -276,7 +318,8 @@ def _catalog_producer(
         self._publication_id = str(uuid4())
         expected = None
         meeting_id = None
-        if method.__name__ in {"retry", "transcribe_audio_path"}:
+        selection = current_retry_selection() if method.__name__ == "retry" else None
+        if selection is None and method.__name__ in {"retry", "transcribe_audio_path"}:
             path = cast(
                 Path,
                 args[0]
@@ -299,7 +342,11 @@ def _catalog_producer(
                     pass
             self._retry_meeting_id = meeting_id
             self._retry_revision = expected
+        leases = ExitStack()
         try:
+            if selection is not None:
+                directory = cast(Path, args[0] if args else kwargs["session_dir"])
+                self._retain_selected_retry(directory, selection, leases)
             artifacts = method(self, *args, **kwargs)
         except (SessionProcessingFailed, ProcessingCancelled) as exc:
             result = self.publish_memory(
@@ -316,7 +363,10 @@ def _catalog_producer(
             self._remember_catalog_result(artifacts.session_dir, result)
             return artifacts
         finally:
-            self._release_processing()
+            try:
+                self._release_processing()
+            finally:
+                leases.close()
             self._retry_meeting_id = None
             self._retry_revision = None
             self._publication_id = None
@@ -409,7 +459,54 @@ class SessionProcessor:
             self._memory = MemoryService(get_data_dir())
         return self._memory
 
+    def _verify_retry_selection(
+        self, directory: Path, selection: _RetrySelection
+    ) -> SessionMetadata:
+        if directory.absolute() != selection.session_dir:
+            raise Conflict("The selected recovery session changed directory")
+        with self._memory_service().recovery_read_view(directory, selection.capture_id) as owner:
+            if owner != selection.meeting_id:
+                raise Conflict("The selected recovery session changed catalog identity")
+            try:
+                metadata = read_session_metadata(directory)
+                if metadata is None or metadata.meeting_id != selection.capture_id:
+                    raise Conflict("The selected recovery session changed capture identity")
+                if metadata.status == "completed":
+                    raise Conflict("The selected recovery session has already completed")
+                marker = session_artifact_path(directory, "memory_pending.json")
+                if marker.exists():
+                    intent = read_pending_intent(directory, selection.capture_id)
+                    if metadata.status == "pending" and intent.hashes is not None:
+                        raise Conflict("The selected recovery session requires local recovery")
+            except ValueError as exc:
+                raise LibraryError("The selected recovery session cannot be verified") from exc
+            return metadata
+
+    def _retain_selected_retry(
+        self, directory: Path, selection: _RetrySelection, leases: ExitStack
+    ) -> None:
+        from here.recording.journal import CaptureJournal
+
+        self._verify_retry_selection(directory, selection)
+        path = CaptureJournal.owner_path(directory.parent, selection.meeting_id)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            lease = FileLease(path, timeout=0)
+        except LeaseBusy as exc:
+            raise OwnershipBusy(str(exc)) from exc
+        leases.callback(lease.close)
+        self._verify_retry_selection(directory, selection)
+
+        memory = self._memory_service()
+        parent = memory.retry_parent(directory, selection.capture_id)
+        if parent is None or parent[0] != selection.meeting_id:
+            raise Conflict("The selected recovery session no longer has a catalog meeting")
+        self._retry_meeting_id, self._retry_revision = parent
+
     def _claim_processing(self, meeting_id: str | None) -> None:
+        selection = current_retry_selection()
+        if selection is not None and self._retry_meeting_id != selection.meeting_id:
+            raise Conflict("The selected recovery session changed its retry parent")
         if meeting_id is None or not _is_canonical_capture_id(meeting_id):
             meeting_id = self._retry_meeting_id
         if not meeting_id or not _is_canonical_capture_id(meeting_id):
@@ -419,6 +516,9 @@ class SessionProcessor:
         except OwnershipBusy:
             raise
         except (LibraryError, OSError):
+            if selection is not None:
+                self._memory_service().finish_capture(selection.meeting_id)
+                raise
             # Compatibility artifacts remain the recovery authority when the
             # independent catalog cannot write its processing state.
             pass
@@ -426,6 +526,8 @@ class SessionProcessor:
 
     def _resolve_retry(self, directory: Path, source_id: str | None) -> None:
         if self._retry_revision is None:
+            if (selection := current_retry_selection()) is not None:
+                self._verify_retry_selection(directory, selection)
             self._retry_meeting_id, self._retry_revision = self._memory_service().prepare_retry(
                 directory, source_id
             )
@@ -1327,15 +1429,32 @@ class SessionProcessor:
         *,
         cancel_event: threading.Event | None = None,
     ) -> SessionArtifactPaths:
-        if self._transcribe is transcribe_recording_session:
-            require_provider_key()
-        validate_session_artifacts(session_dir)
-        metadata = read_session_metadata(session_dir)
-        _check_capture_owner(session_dir.parent, metadata.meeting_id if metadata else None)
+        selection = current_retry_selection()
+        if selection is not None:
+            # The producer retains the native lease until its final publication.
+            metadata = self._verify_retry_selection(session_dir, selection)
+        else:
+            if self._transcribe is transcribe_recording_session:
+                require_provider_key()
+            validate_session_artifacts(session_dir)
+            metadata = read_session_metadata(session_dir)
+            _check_capture_owner(session_dir.parent, metadata.meeting_id if metadata else None)
         MemoryService.check_owner(
             self._memory.data_dir if self._memory else get_data_dir(),
             self._retry_meeting_id or (metadata.meeting_id if metadata else None),
         )
+        if selection is not None:
+            from here.application.recovery import validate_recovery_audio
+
+            assert metadata is not None  # The scoped metadata verifier requires a manifest.
+            try:
+                audio_available = validate_recovery_audio(session_dir, metadata)
+            except (OSError, ValueError, sf.LibsndfileError) as exc:
+                raise LibraryError("The selected recovery audio cannot be verified") from exc
+            if not audio_available:
+                raise Conflict("The selected recovery session no longer has usable audio")
+            if self._transcribe is transcribe_recording_session:
+                require_provider_key()
         audio_file = (
             metadata.recoverable_audio if metadata and metadata.recoverable_audio else AUDIO_FILE
         )
@@ -1399,22 +1518,31 @@ class SessionProcessor:
             else []
         )
         if audio_path.exists():
-            # Only this shape identifies a single persisted source as audio.wav;
-            # legacy multi-source manifests may instead describe the original inputs.
-            expected = (
-                metadata.sources[0]
-                if metadata is not None
-                and metadata.recoverable_audio == audio_file
-                and len(metadata.sources) == 1
-                else None
-            )
-            recovered_source = _validated_recovery_source(audio_path, expected)
+            if selection is not None and metadata is not None and not metadata.recoverable_audio:
+                declared = _declared_recovery_source(audio_path, raw_sources)
+                if declared is None:
+                    raise Conflict("The selected recovery session no longer has usable audio")
+                recovered_source = declared
+            else:
+                # Legacy multi-source manifests may describe the original inputs.
+                expected = (
+                    metadata.sources[0]
+                    if metadata is not None
+                    and metadata.recoverable_audio == audio_file
+                    and len(metadata.sources) == 1
+                    else None
+                )
+                recovered_source = _validated_recovery_source(audio_path, expected)
+            if selection is not None and recovered_source.frames == 0:
+                raise Conflict("The selected recovery session no longer has usable audio")
         else:
             raw_sources = [source for source in raw_sources if source.frames > 0]
             if not raw_sources:
                 raise RuntimeError(f"Recoverable audio does not exist: {audio_path}")
             self._resolve_retry(session_dir, metadata.meeting_id if metadata else None)
             self._claim_processing(metadata.meeting_id if metadata else None)
+            if selection is not None:
+                self._verify_retry_selection(session_dir, selection)
             self._replay_pending(session_dir)
             self._materialize(RecordingSession(raw_sources), session_dir, output_name=audio_file)
             recovered_source = _validated_recovery_source(audio_path)
@@ -1435,6 +1563,8 @@ class SessionProcessor:
             else:
                 self._resolve_retry(session_dir, source.meeting_id)
                 self._claim_processing(source.meeting_id)
+            if selection is not None:
+                self._verify_retry_selection(session_dir, selection)
             self._replay_pending(session_dir)
         self.publish_pending(
             source,

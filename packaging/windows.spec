@@ -13,11 +13,12 @@ hidden = collect_submodules(
         part in name for part in ("recording.linux", "ui.preview", "ui.fake_controller")
     )
 )
+hidden.append("PySide6.QtMultimedia")
 data = copy_metadata("here", recursive=True) + [(str(notices), "notices")]
 options = dict(
     pathex=[], binaries=[(str(search_native), "here/memory")], datas=data, hiddenimports=hidden,
-    hookspath=[], hooksconfig={}, runtime_hooks=[],
-    excludes=["tkinter", "sounddevice", "here.recording.linux", "PySide6.QtMultimedia"],
+    hookspath=[str(root / "packaging/hooks")], hooksconfig={}, runtime_hooks=[],
+    excludes=["tkinter", "sounddevice", "here.recording.linux"],
     noarchive=False,
 )
 gui = Analysis([str(root / "packaging/gui_entry.py")], **options)
@@ -26,14 +27,13 @@ cli = Analysis([str(root / "packaging/cli_entry.py")], **options)
 
 def product_binaries(binaries):
     # M1 uses raster-painted Widgets without external images or OpenGL widgets.
-    # Retain actual platform/raster resources; do not ship future playback/image
-    # codecs, optional software OpenGL or PDF plugins only because Qt supplies them.
+    # Retain the product's platform, raster and native WAV playback resources.
     unused_qt = {"qt6opengl.dll", "qt6pdf.dll", "qt6qml.dll", "qt6qmlmeta.dll",
                  "qt6qmlmodels.dll", "qt6qmlworkerscript.dll", "qt6quick.dll",
                  "qt6svg.dll", "qt6virtualkeyboard.dll"}
     return [item for item in binaries if Path(item[0]).name.lower() not in unused_qt and not any(
         marker in item[0].replace("\\", "/").lower()
-        for marker in ("/imageformats/", "/iconengines/", "/multimedia/", "opengl32sw.dll",
+        for marker in ("/imageformats/", "/iconengines/", "opengl32sw.dll",
                        "/generic/", "/platforminputcontexts/", "/networkinformation/")
     ) and ("/platforms/" not in item[0].replace("\\", "/").lower()
            or Path(item[0]).name.lower() in {"qwindows.dll", "qoffscreen.dll"})]
