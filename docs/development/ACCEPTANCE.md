@@ -1356,3 +1356,34 @@ corridas siguen pendientes.
 `02ca1bb7` documenta los candidatos exactos de M3 A `7e3bd56` y M3 B
 `912f63f`. El fixture sigue en `a2ce1e1`. La ejecución de M4 espera el
 cierre y rebase de M3 y el PR de documentación de handoff.
+
+
+## 2026-11-27 — M3 A · Orden FTS nativo en el prototipo R66
+
+Nivel 2 diagnóstico en `7087d134f6d4d24f789c2fbf5ddc559d1d5f04d8`
+(`codex/m3-native-fts-order-probe`). Los controles stock dieron 126 pases
+y una omisión. La DLL histórica obtuvo 25 fallos por ausencia del agregado.
+La DLL ordenada pasó esos 25 casos. Ambos caminos nativos pasaron sus
+126 controles compartidos. Se verificaron los hashes de Zig y los
+headers. SHA-256 de la DLL ordenada
+`8333FA49CE7D38669294D0668C834DC732AE38139A0C3ACD3EF4A13368FB204B`.
+
+Con CPython 3.13.15 y SQLite 3.53.1, cada camino completó cinco
+precalentamientos y 40 muestras. El p95 fue 437,932785 ms con el orden
+canónico y 333,775665 ms con el orden nativo. El camino ordenado registró
+50 intentos y cero replays. Las raíces sintéticas independientes
+produjeron fingerprints internos distintos por el origen, con las
+mismas cuentas y validaciones. Ambas mediciones diagnósticas quedaron
+debajo de 500 ms. El p95 del producto sigue sin aprobar y las discrepancias
+de v2 y de empates siguen pendientes.
+
+La descripción del PR #28 se actualizó sobre el mismo head. Está pendiente
+la respuesta a la solicitud de autorización para una extensión compilada
+y su toolchain de build, con preservación exacta de v2. Cualquier cambio
+de producto sigue pendiente de esa decisión.
+
+Recibos `stock-exit.json`, `red-original-dll-exit.json`, `compile.json`,
+`ordered-direct-exit.json`, `baseline-shared-exit.json`,
+`ordered-shared-exit.json`, `performance-summary.json` y JUnit en
+`C:/Users/savar/.codex/evidence/here/m3-native-fts-order-20261127-01/`.
+[PR #28](https://github.com/srodriguez-lefebre/here/pull/28)

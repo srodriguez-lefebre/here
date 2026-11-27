@@ -2878,3 +2878,33 @@ implementations are in progress and their test runs remain pending.
 Documentation at `02ca1bb7` records the exact M3 A and M3 B candidates
 `7e3bd56` and `912f63f`. The synthetic fixture remains at `a2ce1e1`.
 M4 execution follows M3 closure and rebase and the handoff docs PR.
+
+
+## 2026-11-27 — R66 native FTS ordering diagnostic
+
+Level 2 diagnostic on `7087d134f6d4d24f789c2fbf5ddc559d1d5f04d8` in
+`codex/m3-native-fts-order-probe`. Stock controls returned 126 passes
+and one skip. The historical DLL produced 25 failures because it lacked
+the aggregate. The ordered DLL passed all 25 direct cases. Both native
+paths passed their 126 shared controls. Zig and header hashes were
+verified. The ordered DLL SHA-256 was
+`8333FA49CE7D38669294D0668C834DC732AE38139A0C3ACD3EF4A13368FB204B`.
+
+On CPython 3.13.15 and SQLite 3.53.1, each path completed five warmups
+and 40 measured samples. The canonical path measured 437.932785 ms p95,
+and the ordered path measured 333.775665 ms p95 with 50 attempts and
+zero replays. The independent synthetic roots yielded different internal
+fingerprints due to origin, with equal counts and the same validations.
+Both diagnostic readings were under 500 ms. The product p95 gate remains
+open and the v2 and tie-order discrepancies remain pending.
+
+Root updated the PR #28 description on the existing head and requested
+authorization for a compiled extension and its build toolchain, with
+exact v2 preservation. The user decision and any product change remain
+pending.
+
+Receipts `stock-exit.json`, `red-original-dll-exit.json`, `compile.json`,
+`ordered-direct-exit.json`, `baseline-shared-exit.json`,
+`ordered-shared-exit.json`, `performance-summary.json` and JUnit are in
+`C:/Users/savar/.codex/evidence/here/m3-native-fts-order-20261127-01/`.
+[PR #28](https://github.com/srodriguez-lefebre/here/pull/28)
