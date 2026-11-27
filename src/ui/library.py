@@ -815,7 +815,7 @@ class LibraryView(QWidget):
             return "Falló una comprobación de integridad."
         if kind == "portable-markdown":
             if isinstance(error, NotFound):
-                return "La reunión ya no está disponible."
+                return "No hay una transcripción disponible para exportar."
             if isinstance(error, Conflict):
                 return "La reunión cambió. Volvé a intentar la exportación."
             return "No se pudo exportar el documento Markdown."
