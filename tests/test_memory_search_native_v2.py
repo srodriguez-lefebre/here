@@ -116,7 +116,8 @@ def test_envelope_uses_exact_utf8_and_keeps_duplicate_rows(aggregate_connection,
     last = 2**63 - 1 if count == 256 else -1
     rowids = [-(2**63) + index * 2 for index in range(count - 1)] + [last]
     aggregate_connection.executemany(
-        "INSERT INTO batch(rowid,a,b,c,d,e) VALUES (?,?,?,?,?,?)", zip(rowids, rows)
+        "INSERT INTO batch(rowid,a,b,c,d,e) VALUES (?,?,?,?,?,?)",
+        ((rowid, *row) for rowid, row in zip(rowids, rows, strict=True)),
     )
     assert _aggregate(aggregate_connection) == _expected_result(rows, last)
 
