@@ -86,17 +86,26 @@ FTS ranking still uses global BM25. Empty search carries the same scope into lis
 R75/R76 use private Windows SQLite encoders for FTS and ACTIVE generation, preserving
 generation bytes, public v2 cursors and canonical fallback within R50. Retrieval
 consumes the public search contracts and has no native-loader dependency.
-The inspected interfaces expose paged hits. The **pending memory-owned handoff**
-for literal OR and selected-set evidence with neighbors must apply
-the selected set, filters and suppression to candidate eligibility before keyset
-and LIMIT, preserve global BM25 for ranked matches, and fetch bounded matches
-and adjacent context from one coherent view. It must support fair per-meeting
-allocation with deterministic ordering and tie-breaking, so an early high-volume
-meeting cannot fill a global top-N before diversification has a chance to act.
-Count deduplicated context in the same budgets and maintain stable evidence order
-for an unchanged snapshot. Root binds the signature and precise selection order
-after the producer is accepted. No raw MATCH input, per-ID search fan-out,
-post-LIMIT scope filtering or direct intelligence SQL substitutes for the handoff.
+M4 A adds the memory-owned `SearchService.evidence_snapshot(query: EvidenceQuery)`
+returning `EvidenceSnapshot`. `EvidenceQuery` carries normalized literal OR terms,
+mutually exclusive `meeting_ids` or explicit `whole_library`, inherited date/status/
+participant filters and `include_partial`, and the `per_meeting`, `total` and
+`evidence_chars` limits from `Budget`. The memory boundary constructs MATCH from
+literal terms. Scoped eligibility and suppression apply before keyset or LIMIT.
+BM25 uses the global index. A normal query with no terms yields no evidence and
+preserves scope. An explicit single-meeting summary retains bounded ordinal traversal.
+
+Use one R50 view for matching and context. Deduplicate segments. Within a meeting,
+take ranked matches in order. Consume the first match of each meeting before the
+second and sort each round by M3 order (rank, date descending with NULL last,
+meeting ID, segment ID). Probe one additional row or use a count to detect truncation
+after eligibility. Give matches priority, then consider each match's immediate
+predecessor and successor by ordinal in the same revision, in reproducible order.
+Deduplicate neighbors and apply the same limits. Omit an entire segment that cannot
+fit, mark truncation, and continue if another candidate fits. Compute coverage from
+the actual set included in the snapshot. The snapshot carries exact segment text,
+meeting/revision/segment identity, revision content hash and citation timing metadata.
+It carries no paths. Preserve public M3 search and cursor contracts and the schema.
 
 R42/R50 suppression must guard all source/context reads and revalidation, before
 exposure and keyset/LIMIT. The approved `catalog_read_view(library)` contract has
@@ -105,10 +114,14 @@ through generation/fetch. Its immutable snapshot IDs/fingerprint include registr
 UUIDs and exact normalized-origin/fingerprint aliases resolved in that DB view.
 Pending and complete suppress; invalid/inaccessible state fails closed. The memory
 boundary owns this integration, not an intelligence-side parser or nested transaction.
-Search and citation resolution both use this guard in `063d974`. The M4 scoped
-retrieval and revalidation bindings still need acceptance. Do not hold a DB
-transaction/ownership lock across a provider call. Use the accepted revalidation
-contract before publication and reject disappeared or changed evidence.
+Search and citation resolution both use this guard in `063d974`. Task 1 adds
+`SearchService.revalidate_evidence(snapshot: EvidenceSnapshot) -> bool`. It opens a
+separate coherent R50 view and checks each block against the current eligible meeting,
+active revision and revision hash, segment identity, exact content and citation timing
+metadata. Absence or staleness returns `False`; a guard failure prevents publication.
+Revalidation accesses no media. Release the retrieval view before any provider call
+and revalidate before publication. The resolver's existing historical navigation is
+independent of this check. Both new methods still await implementation and acceptance.
 
 ### Local mode
 

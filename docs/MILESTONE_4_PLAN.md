@@ -1,7 +1,8 @@
 # Hito 4 — Inteligencia sobre la memoria
 
-Estado: plan preparado el 2026-11-05. **No está en ejecución (ruling 15).** Arranca
-solo con una instrucción explícita del usuario, después de que M3 esté cerrado. El
+Estado: **preparación autorizada por ruling 20**. La implementación queda pendiente
+del cierre de M3 (0.4.0), la confirmación del traspaso sobre el merge final y el PR
+de contratos de M4. El
 diseño detallado está en [`development/PRODUCT_DESIGN.md`](development/PRODUCT_DESIGN.md),
 secciones 3, 6, 8 y 9, que es decisión tomada (ruling 3). Este plan no lo repite: fija
 alcance, orden, criterios verificables y lo que queda fuera.
@@ -17,14 +18,14 @@ sistema lo dice en vez de inventar.
 
 ## Qué dejan M2 y M3 y qué falta
 
-Lo que M2 y M3 entregan y M4 consume tal cual (si `MILESTONE_3_PLAN.md` todavía no
-existe, se asume exactamente lo que describe `PRODUCT_DESIGN.md` §5):
+Lo que M4 consume del catálogo de M2 y la navegación de M3, sujeto al traspaso final:
 
 - Catálogo SQLite con `meetings`, `transcript_revisions` inmutables con `content_hash`,
   `segments` con tiempos nulos permitidos y `speaker_key` por solicitud, e índice FTS5
   sobre revisiones activas completas.
-- `MemoryService.search(SearchQuery) -> SearchPage` con ranking BM25, filtros antes del
-  límite y snippets como texto seguro.
+- `SearchService.search(SearchQuery) -> SearchPage | MeetingPage` con ranking BM25
+  en búsquedas no vacías, filtros antes del límite y snippets como texto seguro.
+  Una búsqueda vacía delega al listado con el mismo alcance.
 - `Citation` (`meeting_id`, `revision_id`, `segment_id`, extracto opcional con offsets) y
   `MemoryService.resolve_citation(Citation) -> CitationTarget` con estado
   `current/historical/missing`, usado por lista, búsqueda y detalle.

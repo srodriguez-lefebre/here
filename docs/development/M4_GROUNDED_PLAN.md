@@ -49,8 +49,8 @@ base and merges the M4 contract-document PR before source work.
 | Boundary | Current contract and unresolved handoff |
 |---|---|
 | Query owner | `memory.search.SearchService(connection_factory)`, `search(SearchQuery) -> SearchPage \| MeetingPage`; fresh LibraryConnection per operation, closed by the service. No presumed MemoryService.search. |
-| Scoped evidence | Provisional B `SearchQuery.meeting_id` scopes one canonical UUID before keyset and LIMIT and binds it to the cursor. Empty search passes scope through to listing. The M4 selected-set and literal OR handoff remains open, with global BM25, fair allocation, deterministic order, adjacent context and one coherent bounded snapshot. Root binds the adapter signature and selection order. |
-| Read suppression | Search and citation resolution at `063d974` share R50 `catalog_read_view`, which owns lock-before-BEGIN and one transaction. The caller opens and closes the fresh connection. The snapshot carries resolved suppressed IDs and a fingerprint covering registry records and alias resolution. Registry roles and paths are preflighted under the lock and the boundary fails closed. Scoped evidence and source revalidation still need their own accepted binding. |
+| Scoped evidence | Provisional B `SearchQuery.meeting_id` scopes one canonical UUID before keyset and LIMIT and binds it to the cursor. Empty search passes scope through to listing. Task 1 adds memory-owned `SearchService.evidence_snapshot(EvidenceQuery) -> EvidenceSnapshot` for selected-set literal OR, global BM25, ranked rounds, adjacent context and the budgets defined in the SPEC. Public M3 search, cursors and schema stay unchanged. |
+| Read suppression | Search and citation resolution at `063d974` share R50 `catalog_read_view`, which owns lock-before-BEGIN and one transaction. The caller opens and closes the fresh connection. The snapshot carries resolved suppressed IDs and a fingerprint covering registry records and alias resolution. Registry roles and paths are preflighted under the lock and the boundary fails closed. The planned retrieval and `SearchService.revalidate_evidence(EvidenceSnapshot) -> bool` each use a separate coherent R50 view. |
 | Native search generation | R75/R76 are private Windows SQLite encoders for FTS and ACTIVE generation. Consume public v2 cursors and preserve canonical fallback inside R50. Retrieval requires no native-loader binding. |
 | Citation source | Candidate `MemoryService.resolve_citation(Citation) -> CitationTarget` validates membership, literal quotes, paired Unicode bounds, and exact revision/audio links with artifact role guards. Unvalidated audio yields `status="missing"` without a path, possibly with verified text. The resolver can return historical evidence; M4 still has to revalidate the selected active revision before publication. Confirm both bindings on the integrated M3 head. |
 | Participants/root | R48 real IDs/roles/nullable assignments, request-scoped speakers; R40/R52 same injected service/configured root. No new .env reader or origin-derived root probing. |
@@ -60,9 +60,9 @@ Within the existing retrieval/verifier tests, preserve R39 NULL/date/keysets,
 R41 complete/partial/fallback semantics and R45 whole-corpus generation. Reuse the
 canonical InvalidInput.reason including corpus_changed; never concatenate stale
 ranked pages. R47 empty search is MeetingPage, not evidence or implicit scope
-expansion. The unresolved memory-owned adapter must apply selected-set eligibility
-and suppression before keyset and LIMIT, with global BM25 and fair, repeatable
-allocation and ordering. Exclude raw MATCH input, per-ID search fan-out, post-LIMIT
+expansion. The memory-owned evidence method applies selected-set eligibility and
+suppression before keyset and LIMIT, with global BM25 and fair, repeatable ranked
+rounds as defined in the SPEC. Exclude raw MATCH input, per-ID search fan-out, post-LIMIT
 scope filtering and direct intelligence SQL. Do not hold a database
 transaction/ownership lock while calling the provider. Actual guarded source
 revalidation must precede publication; concurrent loss/change does not certify a
@@ -135,7 +135,9 @@ uses HERE_PROVIDER_SMOKE_KEY without recording it. No key/Qt/SQLite access is ad
 ### Task 1: Models, citations and budgeted retrieval
 
 **Files:** `src/intelligence/__init__.py`, `src/intelligence/models.py`,
-`src/intelligence/retrieval.py`, `pyproject.toml`; tests in
+`src/intelligence/retrieval.py`, `pyproject.toml`, `src/memory/models.py`
+(`EvidenceQuery` and `EvidenceSnapshot`) and `src/memory/search.py`
+(bounded retrieval and revalidation under R50); tests in
 `tests/test_intelligence_models.py`, `tests/test_intelligence_retrieval.py`;
 the existing `tests/grounded_fixtures.py` via root's one-time handoff, plus the
 required budget corpus whose final test-helper location is bound before execution.
@@ -144,8 +146,8 @@ required budget corpus whose final test-helper location is bound before executio
 `EvidenceBlock` (`id`, `meeting_id`, `revision_id`, `segment_id`, `text`,
 `start_ms|None`, `end_ms|None`), `Coverage`, `Claim`, `Extraction`, `Answer`,
 reusing M2 `Citation`; `Retriever.retrieve(request) -> RetrievalResult` with
-evidence blocks and coverage, consuming the actual SearchService and the pending
-memory-owned scoped/context snapshot adapter described above; canonical
+evidence blocks and coverage, consuming `SearchService.evidence_snapshot` and
+the revalidation boundary described above; canonical
 `InvalidInput`, plus planned `ProviderUnavailable` and `VerificationFailed`.
 These intelligence interfaces remain planned; no existing memory API is invented.
 
@@ -157,7 +159,10 @@ These intelligence interfaces remain planned; no existing memory API is invented
   `Coverage` equals the sent set and flags truncation; only active complete revisions
   unless requested. Include mixed selected/unselected hits, literal OR terms and
   skewed meeting volumes. Verify selected-set eligibility before limits, global
-  ranking, fair allocation, stable ordering and context counted once.
+  ranking, ranked rounds, stable ordering and context counted once. Cover truncation
+  when a whole segment cannot fit and a later candidate can. Check bounded ordinal
+  summary traversal and no-evidence behavior for an empty normal match. Exercise
+  `revalidate_evidence` against changed and absent sources and suppression failures.
 - [ ] Implement models, retrieval, diversification and coverage; register the package.
 - [ ] Run focused tests and the full offscreen suite; self-review; commit as
   "intelligence: models and budgeted retrieval".
