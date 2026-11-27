@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import hashlib
+import os
 from collections import Counter, defaultdict
 from contextlib import closing
 from dataclasses import replace
+from importlib import import_module
 from uuid import UUID
 
 import pytest
@@ -59,7 +61,11 @@ def _load(root, meetings):
         for source in meetings:
             revision_id = str(UUID(int=UUID(source.meeting_id).int + (1 << 112)))
             repo.insert_meeting(
-                models.Meeting(id=source.meeting_id, title=source.title, status=models.MeetingStatus.COMPLETED)
+                models.Meeting(
+                    id=source.meeting_id,
+                    title=source.title,
+                    status=models.MeetingStatus.COMPLETED,
+                )
             )
             repo.insert_revision(
                 models.TranscriptRevision(
@@ -127,7 +133,10 @@ def loaded_corpus(tmp_path_factory):
     return root, meetings
 
 
-@pytest.mark.parametrize(("offset", "match_count"), [(0, MATCH_COUNT), (1, SELECTED_MATCH_COUNT), (2, SPARSE_MATCH_COUNT)])
+@pytest.mark.parametrize(
+    ("offset", "match_count"),
+    [(0, MATCH_COUNT), (1, SELECTED_MATCH_COUNT), (2, SPARSE_MATCH_COUNT)],
+)
 def test_corpus_scope_and_ranked_rounds(loaded_corpus, offset, match_count):
     root, meetings = loaded_corpus
     assert len(meetings) == MEETING_COUNT
@@ -206,6 +215,7 @@ def test_metadata_window_and_nul_preflight(tmp_path, monkeypatch, fitting_ordina
     seen_ids = {cell for row in observed for cell in row if isinstance(cell, str)}
     assert _segment_id(window.meeting_id, 0) in seen_ids
     assert len(segment_ids & seen_ids) <= 4 * query.total + 1
+    assert sum(cell == fitting for row in observed for cell in row) == int(fitting_ordinal == 3)
 
 
 @pytest.mark.parametrize("limit", ["characters", "per_meeting", "total"])
@@ -259,14 +269,15 @@ def test_partial_opt_in_literal_or_and_neutral_ties(tmp_path, monkeypatch, missi
     assert result.degraded is missing_fts
     ranks = {block.meeting_id: block.rank for block in result.blocks}
     assert ranks[partial[0]] == ranks[same_date[0]] == 0
-    assert ranks[complete[0]] == 0 if missing_fts else ranks[complete[0]] < 0
+    if missing_fts:
+        assert ranks[complete[0]] == 0
+    else:
+        assert ranks[complete[0]] < 0
     assert [block.partial for block in result.blocks] == [item != complete for item in ranked]
     actual = {block.meeting_id: block.text for block in result.blocks}
     assert actual[partial[0]] == "azafrán parcial 🧭"
 
-    escaped = search.evidence_snapshot(
-        replace(query, terms=("%", "_"), include_partial=True)
-    )
+    escaped = search.evidence_snapshot(replace(query, terms=("%", "_"), include_partial=True))
     assert _ids(escaped) == list(same_date[2])
 
 
@@ -345,9 +356,7 @@ def test_summary_keyset_is_bound_to_the_selected_revision(tmp_path):
     with closing(library):
         meeting, revision, segments = _publish(repo, 33, texts=("uno", "dos", "tres"))
         search = SearchService(_Factory(tmp_path))
-        query = _scoped(
-            meeting, purpose="summary", terms=(), total=1, per_meeting=1
-        )
+        query = _scoped(meeting, purpose="summary", terms=(), total=1, per_meeting=1)
         first = search.evidence_snapshot(query)
         assert _ids(first) == [segments[0]]
         assert first.revision_id == revision
@@ -380,8 +389,6 @@ def test_invalid_registry_fails_closed_for_both_reads(tmp_path):
 
 
 def _retriever_api(search):
-    from importlib import import_module
-
     try:
         requests = import_module("here.intelligence.models")
         retrieval = import_module("here.intelligence.retrieval")
@@ -431,3 +438,35 @@ def test_retriever_drops_stopwords_and_short_terms(tmp_path):
         assert _ids(
             retriever.retrieve(question(question="the and que una xy cobalto", **scope))
         ) == list(selected[2])
+
+
+def test_r50_origin_alias_is_excluded_before_candidate_and_neighbor_reads(tmp_path):
+    library, repo = _open_catalog(tmp_path)
+    with closing(library):
+        hidden = _publish(repo, 51, texts=("azafrán", "contexto reservado"))
+        visible = _publish(repo, 52, texts=("cobalto",))
+        origin = os.path.normcase(os.path.normpath(str(tmp_path / "synthetic-origin")))
+        fingerprint = "a" * 64
+        with repo.transaction():
+            repo.insert_ingest_source(
+                models.IngestSource(
+                    id=_identity(53),
+                    origin_path=origin,
+                    origin_fingerprint=fingerprint,
+                    meeting_id=hidden[0],
+                    revision_id=hidden[1],
+                )
+            )
+        search = SearchService(_Factory(tmp_path))
+        original = search.evidence_snapshot(_scoped(hidden[0]))
+        assert {block.text for block in original.blocks} == {"azafrán", "contexto reservado"}
+
+        _record(
+            tmp_path,
+            _identity(54),
+            origins=({"origin_path": origin, "origin_fingerprint": fingerprint},),
+        )
+
+        assert search.revalidate_evidence(original) is False
+        query = _scoped(hidden[0], visible[0], per_meeting=1, total=1)
+        assert _ids(search.evidence_snapshot(query)) == list(visible[2])
