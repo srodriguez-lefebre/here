@@ -1061,6 +1061,14 @@ Los rulings nuevos se escriben en español por el ruling 6.
     conserva como diagnóstico de arranque. **Costo si falla:** corregir el
     arnés y repetir la corrida con el mismo catálogo y los mismos límites.
 
+72. **Ruling:** si el `audio.wav` implícito y una ruta declarada en
+    `capture_sources` comparan igual como `Path` de Windows, el reintento
+    exige además identidad física del archivo con `samefile`, después del
+    guard del rol. Se conserva la autoridad de captura v1 para alias
+    legítimos del mismo archivo.
+    **Cost if wrong:** habría que revisar la compatibilidad de alias y
+    repetir los controles de archivos distintos y del mismo archivo.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
@@ -2679,32 +2687,28 @@ The batch covered capture, CLI, Qt, geometry, ownership, suppression and
 11 M3 boundary cases. Independent reviewer `m3_retry_audio_resume_review`
 approved the exact SHA. The six-commit integration at
 `912f63f8191d0312d647806241d352814c52d870` shares its verified tree
-`ff1e45c63d55e7bc63bac70bc5ca9468e5ec5c34`.
-
-72. **Ruling:** si el `Audio.wav` implícito y una ruta declarada en
-    `capture_sources` comparan igual como `Path` de Windows, el reintento
-    exige además identidad física del archivo con `samefile`, después del
-    guard del rol. Se conserva la autoridad de captura v1 para alias
-    legítimos del mismo archivo.
-    **Cost if wrong:** habría que revisar la compatibilidad de alias y
-    repetir los controles de archivos distintos y del mismo archivo.
+`ff1e45c63d55e7bc63bac70bc5ca9468e5ec5c34`. Ruling 72 records the file identity check.
 
 ## 2026-11-27 — M3 B Windows playback probe follow-up
 
 Probe `1dfa531` built, passed synthetic calibration and started WASAPI against
 the `f894923` package. Before Play, the probe reported a discontinuity or an
 invalid timestamp and produced zero measurements. Real playback remains a
-pending level 3 gate.
+pending level 3 gate. The diagnostic Windows package run for head
+`912f63f` is in progress, with level 2 evidence pending.
+[Windows package 46015025767](https://github.com/srodriguez-lefebre/here/actions/runs/46015025767)
 
 ## 2026-11-27 — M4 A retrieval corpus preparation
 
 The synthetic fixture at `a2ce1e1` was validated with 50 meetings and 2,000
-matching segments. Implementation authorization remains pending.
+matching segments. Implementation follows M3 closure and handoff
+under CLAUDE.md §11.
 
 ## 2026-11-27 — M5 B portability adapter RED
 
 Focused level 2 from the M5 B chat. The historical CLI run on `b66d15a`
 recorded 16 expected failures for missing commands, zero errors and zero
 skips in 9.34 s. The Qt run on `7d7c04d` recorded 14 expected failures for
-missing actions, zero errors and zero skips in 17.27 s. The GREEN runs
-based on `bbc1717` are in progress. Claims still depends on M4 B.
+missing actions, zero errors and zero skips in 17.27 s. GREEN implementation is in progress
+on `bbc1717`. The GREEN runs still await the exclusive Windows window.
+Claims still depends on M4 B.

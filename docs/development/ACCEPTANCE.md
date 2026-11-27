@@ -1184,17 +1184,21 @@ La fila de navegación sigue abierta.
 La sonda `1dfa531` compiló, pasó la calibración sintética y arrancó WASAPI
 con el paquete de `f894923`. Antes de pulsar Play devolvió discontinuidad
 o timestamp inválido. Hubo cero mediciones. La reproducción real de nivel 3
-sigue pendiente.
+sigue pendiente. El paquete diagnóstico Windows del head `912f63f` está en
+ejecución y su evidencia de nivel 2 queda pendiente.
+[Corrida 46015025767](https://github.com/srodriguez-lefebre/here/actions/runs/46015025767)
 
 ### M4 A · Corpus de recuperación
 
 `a2ce1e1` registró validación sintética del fixture con 50 reuniones y 2.000
-segmentos coincidentes. El frente sigue en preparación, pendiente de habilitar implementación.
+segmentos coincidentes. La implementación espera el cierre y handoff de M3
+según el orden de CLAUDE.md §11.
 
 ### M5 B · RED de adaptadores de portabilidad
 
 Nivel 2 focalizado en la corrida histórica del chat de M5 B. En `b66d15a`
 fallaron los 16 casos esperados por comandos CLI ausentes, con cero errores y
 omisiones en 9,34 s. En `7d7c04d` fallaron los 14 casos esperados por acciones
-Qt ausentes, con cero errores y omisiones en 17,27 s. Los GREEN sobre `bbc1717`
-siguen en curso. Claims sigue pendiente de M4 B.
+Qt ausentes, con cero errores y omisiones en 17,27 s. Las implementaciones GREEN
+sobre `bbc1717` siguen en curso y sus corridas esperan la ventana exclusiva de Windows.
+Claims sigue pendiente de M4 B.
