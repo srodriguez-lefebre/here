@@ -194,11 +194,18 @@ def test_missing_retry_audio_is_rejected_before_provider_key(
     assert json.loads(result.stdout)["error_category"] in ("conflict", "io")
 
 
+@pytest.mark.parametrize(
+    "omit_recoverable_audio", [False, True], ids=["recoverable-audio", "declared-capture-source"]
+)
 def test_retry_publishes_new_revision_for_unchanged_selected_session(
-    configured_library, failed_session, install_transcriber
+    configured_library, failed_session, install_transcriber, omit_recoverable_audio
 ):
     memory, _ = configured_library
-    selected, _ = failed_session
+    selected, failed = failed_session
+    if omit_recoverable_audio:
+        del failed["recoverable_audio"]
+        failed["output_files"].remove(selected.audio.name)
+        write_json(selected.metadata, failed)
     old_revision = memory.active_revision(MEETING_ID)
     assert old_revision is not None
     text = "Synthetic retry produced fresh evidence."
@@ -226,6 +233,38 @@ def test_retry_publishes_new_revision_for_unchanged_selected_session(
         segment["revision_id"] == new_revision and segment["text"] == text
         for segment in detail["segments"]
     )
+
+
+def test_retry_rejects_undeclared_default_audio_beside_declared_raw_source(
+    configured_library, failed_session, install_transcriber
+):
+    memory, _ = configured_library
+    selected, failed = failed_session
+    old_revision = memory.active_revision(MEETING_ID)
+    assert old_revision is not None
+    raw = selected.directory / "raw.wav"
+    shutil.copyfile(selected.audio, raw)
+    original_audio = selected.audio.read_bytes()
+    del failed["recoverable_audio"]
+    failed["output_files"].remove(selected.audio.name)
+    failed["capture_sources"][0]["audio_file"] = raw.name
+    write_json(selected.metadata, failed)
+
+    calls = []
+
+    def forbidden_provider(session, **options):
+        calls.extend(source.path for source in session.sources)
+        raise AssertionError("An undeclared default WAV reached the provider boundary")
+
+    install_transcriber(forbidden_provider)
+
+    result = CliRunner().invoke(cli.app, ["meetings", "retry", MEETING_ID[:8], "--json"])
+
+    assert calls == []
+    assert result.exit_code in (3, 4), result.output + repr(result.exception)
+    assert json.loads(result.stdout)["error_category"] in ("conflict", "io")
+    assert selected.audio.read_bytes() == raw.read_bytes() == original_audio
+    assert memory.active_revision(MEETING_ID) == old_revision
 
 
 def test_catalog_connection_failure_returns_io_json(configured_library, monkeypatch, tmp_path):
