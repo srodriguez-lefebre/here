@@ -25,6 +25,7 @@ from here.config.settings import get_settings, settings_operation
 from here.live_processing import LiveTranscriptionController
 from here.memory.database import LibraryError, open_library
 from here.memory.models import Citation, MeetingPatch, MeetingQuery, MeetingStatus, SearchQuery
+from here.memory.portability import InvalidPackage, PortabilityService
 from here.memory.search import SearchService
 from here.memory.service import Conflict, InvalidInput, MemoryService, NotFound
 from here.output.metadata import (
@@ -464,6 +465,53 @@ def meetings_import_session(path: Path, json_output: JsonOption = False) -> None
         emit(result, json_output)
         if result.status == "rejected":
             raise typer.Exit(_RESULT_EXIT.get(result.error_category or "", ExitCode.CONFLICT))
+
+
+@meetings_app.command("export")
+@settings_operation
+def meetings_export(
+    meeting_ids: Annotated[list[str], typer.Argument(metavar="ID...")],
+    destination: Annotated[Path, typer.Option("--out")],
+    no_audio: Annotated[bool, typer.Option("--no-audio")] = False,
+) -> None:
+    """Export selected meetings to a portable archive."""
+    with _meetings_errors(False):
+        memory = MemoryService(get_data_dir(), sessions_root=get_settings().TRANSCRIPTIONS_DIR)
+        selection = tuple(_resolve_meeting(memory, identity, False) for identity in meeting_ids)
+        if len(set(selection)) != len(selection):
+            raise InvalidInput("Select each meeting once")
+        result = PortabilityService(memory).export(
+            selection,
+            destination,
+            include_audio=not no_audio,
+            progress=lambda _: None,
+            cancellation=lambda: False,
+        )
+        emit(result.model_dump(mode="json"), False)
+
+
+@meetings_app.command("import")
+@settings_operation
+def meetings_import(path: Path, json_output: JsonOption = False) -> None:
+    """Import a portable archive and report the result for each meeting."""
+    with _meetings_errors(json_output):
+        memory = MemoryService(get_data_dir(), sessions_root=get_settings().TRANSCRIPTIONS_DIR)
+        try:
+            report = PortabilityService(memory).import_archive(
+                path, progress=lambda _: None, cancellation=lambda: False
+            )
+        except InvalidPackage as exc:
+            _meetings_failure(str(exc), "invalid_input", json_output)
+
+        emit(report, json_output)
+        if any(item.reason == "local_recovery_pending" for item in report.meetings):
+            raise typer.Exit(ExitCode.IO)
+        if any(
+            item.status == "conflict" or item.reason == "suppressed" for item in report.meetings
+        ):
+            raise typer.Exit(ExitCode.CONFLICT)
+        if any(item.status == "rejected" for item in report.meetings):
+            raise typer.Exit(ExitCode.IO)
 
 
 @meetings_app.command("reindex")
