@@ -8,6 +8,11 @@ Actualizado: 2026-11-27. Leé CLAUDE.md primero; después este archivo y
 Se reactivaron los chats de M3 A y M5 B con GPT‑6.2 Sol. M2 sigue cerrado en
 0.3.0. Copilot sigue omitido por ruling 64 y dos horas, **omitida por ruling 5**.
 
+**Bloqueo de M3 A.** El PR #28 espera la decisión del usuario sobre una
+extensión SQLite compilada y su toolchain de Windows. La autorización del
+ruling 66 cubre los diagnósticos. La integración requiere conservar los
+bytes v2 y verificar el candidato de producto contra sus gates exactos.
+
 - M3 A recuperó `2710/here` en `e7f84b0`. Nivel 2 diagnóstico de FTS: la
   mediana de la fase bajó de 404,98 a 320,11 ms. Las ocho muestras conservaron
   el mismo SHA sobre 98.901 filas y 387 frames. El RED `ae82ec8` produjo siete
@@ -23,10 +28,9 @@ Se reactivaron los chats de M3 A y M5 B con GPT‑6.2 Sol. M2 sigue cerrado en
   en `codex/m3-native-fts-order-probe`, worktree del mismo nombre. Nivel 2
   diagnóstico R66: pasó 25 controles de orden y 126 compartidos. El par
   5+40 dio 437,93 ms p95 con el agregado nativo canónico y 333,78 ms con
-  el ordenado. Hubo 50 intentos y cero fallbacks. Siguiente decisión del
-  usuario: autorizar la extensión compilada y su toolchain en el producto,
-  condicionada a preservar v2 y pasar los gates exactos. El PR #28 sigue
-  abierto con la evidencia y no cambia su head.
+  el ordenado. Hubo 50 intentos y cero fallbacks. El chat dejó el diseño
+  condicional `33192ac` en el mismo worktree. El PR #28 sigue abierto con
+  la evidencia y conserva el head `0c16065`.
 - M3 B reprodujo en `a31daca` la selección de un WAV normalizado vacío con
   una fuente cruda válida. Nivel 2 focalizado: 1 fallo y 6 pases. `b2dc640`
   pasó 35 casos de reintento y geometría. La revisión independiente detectó
@@ -91,9 +95,11 @@ Se reactivaron los chats de M3 A y M5 B con GPT‑6.2 Sol. M2 sigue cerrado en
   `ad02a06` y Qt `3713784` se integraron en `1498f4c`, rama
   `codex/m5-portability-adapter-integration`. Pasaron 140 pruebas Windows.
   La revisión detectó un aviso perdido si falla la limpieza después de
-  guardar. `9eee8f9` reprodujo los dos fallos esperados y `73cd5c2` alineó
-  el fake normal. `m5_portability_package_io_green_sol` corrige el aviso en
-  `codex/m5-portability-markdown-warning-green`, con worktree homónimo.
+  guardar. `9eee8f9` reprodujo los dos fallos esperados. El arreglo pasó
+  142 casos en `b04d30f`; el ajuste de tipo de test `56166d8` pasó el foco
+  de 12 casos y fue aprobado. `28a5ba7` pasó la integración Qt con catálogo
+  y servicios reales en raíces temporales, con picker simulado. El grupo
+  local está en `5f6324f` (árbol idéntico a `28a5ba7`).
   `d35f31a` pasó 46 casos de reporte parcial y recuperación. El guard
   del orden de manifiesto `0a3f0ea` pasó 22, obtuvo revisión independiente
   y está integrado en `eb63749` con árbol idéntico. Todas las ramas usan
