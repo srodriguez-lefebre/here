@@ -1,14 +1,13 @@
 # M3 playback, evidence navigation and CLI specification
 
-Status: handoff preparation. M2 B merged in PR #25 at
-`b4b3d1beb9b05e33ae03ab8381e805aa6a23ffc8`. M3 A PR #28 publishes head
-`c7695c791cddd16ced8721b36d297963115dc359`. Local source validation at
-`7b04f76` measured search p95 of 397.40 ms and a heartbeat maximum of 9.462 ms
-(level 2). Exact-head Windows suite `46031147690` and package run `46031147574`
-were pending at this checkpoint. M3 A acceptance and merge remain pending.
-Root owns file leases and integration, binds the accepted A merge SHA in the
-handoff documentation PR, and rebases the existing B candidate after that PR
-lands. CLAUDE §11 and rulings 20/35/56 govern group overlap.
+Status: handoff bound to the accepted M3 A merge. M2 B merged in PR #25 at
+`b4b3d1beb9b05e33ae03ab8381e805aa6a23ffc8`. M3 A PR #28 merged at
+`a1a83629cdfab64dd249f877cdd443e7f7d96b08` after independent review and Windows
+suite `46032934133` and package run `46032934126` on exact head
+`3a9cc11afe7e11c76d4bc197968d09b1b1ef9dc7`. See the PLAN for the source
+benchmark and package evidence. Root owns file leases and rebases the existing
+B candidate `b36162a` in `m3-library-group/here` after this contract PR lands.
+The integrated B candidate retains its own acceptance and seek gates.
 Governing design: `PRODUCT_DESIGN.md` §3 and §5, a taken decision (ruling 3).
 Spanish plan and acceptance criteria: `../MILESTONE_3_PLAN.md`.
 
@@ -33,7 +32,7 @@ WAV-only legacy lineage with no historical revision. Metadata-only nonretryable
 catalog warnings grant no media/provider/mutation authority; existing ownership
 and path guards remain fail-closed.
 
-The candidate implements the R39 keysets, R41 partial/fallback routing and R45
+Merged M3 A implements the R39 keysets, R41 partial/fallback routing and R45
 search generations. Its frozen DTOs in `memory.models` include `MeetingQuery`
 and `SearchQuery` with `text`, `from_utc`, `to_utc`, `statuses`,
 `participant_id`, `limit=50`, `cursor` and `include_partial=False`.
@@ -78,7 +77,7 @@ A UI-supplied `CitationTarget` is not proof of its path, status or text: navigat
 resolves authoritative memory and guards before exposing a playable target.
 Optional quote/span fields do not fill null timing or change exact audio links.
 
-`CitationTarget` exists in the candidate's `memory.models` with
+`CitationTarget` exists in merged M3 A's `memory.models` with
 `meeting_id`, `revision_id`, `segment_id`, `title`, nullable `started_at`,
 `text`, nullable `speaker`, nullable `start_ms`/`end_ms`, `timing_source`,
 nullable `audio_path: Path` and `status`. B implements
@@ -146,7 +145,7 @@ contract and M4 may only select a target, never start playback.
 ### Deletion and composition bindings (R51/R52)
 
 Merged B5 provides the deletion phases, native ownership checks and SQL hook
-below. The M3 A candidate carries the R52 composition and the ACK implementation
+below. Merged M3 A carries the R52 composition and the ACK implementation
 from `d8fb75b37691cc9c4e57fa84bb545190b3b9304b`. This is the baseline for B's
 player release binding.
 
@@ -198,7 +197,7 @@ probing or external-root discovery is authorized. Destructive work without expli
 context fails closed with existing recoverable LibraryError/io4, not a Busy claiming
 a proven owner; an existing barrier remains pending/hidden. Reads and non-destructive
 repair remain available. Playback and CLI reuse the merged B5 cleanup and lease
-lifetime. The candidate composes desktop recovery from the
+lifetime. Merged M3 A composes desktop recovery from the
 controller's `memory_service` and explicit output directory.
 
 ### CLI
@@ -224,10 +223,10 @@ service bindings for `meetings`: `show`, `update_meeting(MeetingPatch,
 expected_version)` on the resolved ID, atomic `add_meeting_participant(...,
 speaker_key=...)`, `ingest_session`, `delete_meeting` and `reindex`.
 The optional speaker key belongs to the active revision. Use
-`SearchService.list_meetings` and `search` for query operations. The candidate
-`SearchQuery` has no meeting-ID filter. Task 4 adds an optional `meeting_id`
-scope to the canonical query DTOs under root's shared-file lease, after A is
-frozen. Bind the resolved UUID in SQL before keyset and LIMIT, and include it in
+`SearchService.list_meetings` and `search` for query operations. Merged M3 A's
+`SearchQuery` has no meeting-ID filter. Task 4 integrates B's optional `meeting_id`
+scope into the canonical query DTOs under root's shared-file lease. Bind the
+resolved UUID in SQL before keyset and LIMIT, and include it in
 the cursor scope. Apply it to all query routes, including empty search delegated
 to listing. The scoped query
 still uses corpus-wide BM25 and R45 generation. Apply meeting-ID resolution

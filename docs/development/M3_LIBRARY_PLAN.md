@@ -3,9 +3,8 @@
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
 > review, then independent agent review. Root owns leases, integration and merges
 > under CLAUDE §7 and rulings 16/20/35/64. Steps use checkbox syntax.
-> **Status: handoff preparation.** The B candidate already contains playback and
-> CLI work. Root will bind that work to the exact accepted M3 A merge and land
-> this contract update before dispatching further B work.
+> **Status: handoff bound to the accepted M3 A merge.** The B candidate already
+> contains playback and CLI work. Root will rebase it after this contract PR merges.
 
 **Goal:** Jump from any result or citation to the original segment and, with real
 timing, to the audio at that millisecond; expose the same operations through
@@ -36,21 +35,25 @@ its plugins).
 M2 B merged in PR #25 at `b4b3d1beb9b05e33ae03ab8381e805aa6a23ffc8`, with
 Windows CI `43461764790` and package workflow `43461764783` on reviewed head
 `55d68e2`. [M3 A PR #28](https://github.com/srodriguez-lefebre/here/pull/28)
-is open at `0c16065` and acceptance is pending. The integrated R75 FTS
-candidate `4ba043ec4a4ee0f55281fde78a1678eb237f0aa4` passed independent review.
-Its public 5+40 search benchmark measured 530.14 ms p95 against the unchanged
-<500 ms gate (level 2 failure). The Windows package run `46028557240` for
-that candidate is diagnostic and was pending at this checkpoint. R76 extends
-the same approved native encoding to ACTIVE. The resulting A candidate still
-requires equivalence, public 5+40, heartbeat <50 ms, independent review and
-Windows gates on the final head before protected merge.
+merged on 2026-11-27 at 13:32 Montevideo time in
+`a1a83629cdfab64dd249f877cdd443e7f7d96b08` after independent review and both
+Windows gates on head `3a9cc11afe7e11c76d4bc197968d09b1b1ef9dc7`. Windows suite
+`46032934133` passed 1,619 tests with 104 skips. Package run `46032934126`
+verified build provenance and 736 inventory entries, with 110 shipped-native
+tests and six frozen smoke reports.
+
+The earlier R75 FTS-only candidate `4ba043e` measured 530.14 ms p95 and failed
+the <500 ms gate. With the R76 ACTIVE encoder, local source `7b04f76` measured
+397.40 ms p95 in the public 5+40 and a 9.462 ms heartbeat maximum against the
+<50 ms gate (level 2). The only subsequent production-source change before
+the accepted head was a `BufferedReader` type annotation in the DLL loader.
 
 The existing B candidate `b36162a` in `m3-library-group/here` carries the
-playback, CLI and QtMultimedia work. Use it as the integration input. Root
-records the exact A merge SHA, confirms the accepted public DTOs and reviewed
-deletion ACK (`d8fb75b37691cc9c4e57fa84bb545190b3b9304b` is the prior ACK
-reference), and owns the rebase and file leases. CLAUDE §11 governs group
-overlap. This checkpoint prepares the handoff before further B work.
+playback, CLI and QtMultimedia work. Root owns the file leases and rebases
+that worktree onto the updated base once this contract PR merges. Check the
+integrated public DTOs and deletion ACK against the accepted A base
+(`d8fb75b37691cc9c4e57fa84bb545190b3b9304b` is the prior ACK reference).
+B still needs evidence on its integrated head and the real-WAV seek observation.
 
 A dry merge preview of `4ba043e` and `b36162a` flagged conflicts in
 `.github/workflows/windows-package.yml`, `packaging/windows.spec` and
@@ -60,12 +63,12 @@ the resolved and auto-merged paths against the contracts below.
 
 | Handoff / shared scope | Required owner or dependency |
 |---|---|
-| Query/page/Citation/CitationTarget/error definitions | Candidate DTOs and structured reasons in the SPEC. Confirm them on the final reviewed A PR head and record the merge SHA at rebase. |
+| Query/page/Citation/CitationTarget/error definitions | DTOs and structured reasons from the accepted A merge. Confirm their bindings when integrating B. |
 | Library/detail/request lifecycle | Candidate generation and worker hooks. Playback extends the reviewed ACK in the existing UI lifecycle. |
 | Revision/audio evidence | Merged schema 2 links and receipt 3/marker 3 semantics, nullable dates and original timing. |
 | Title/participant/assignment CLI actions | Merged B4 version and error contracts. |
 | Deletion/reindex/R42 read guard | Merged B5, candidate R53 facade and R52 ACK. Player release on deletion is Task 3 work. |
-| Memory service/models/repository/search, CLI, UI and application adapters | Root serializes all shared writes with M3 A and M5 B. Work from separate worktrees and keep the M3 A candidate frozen during its verification. |
+| Memory service/models/repository/search, CLI, UI and application adapters | Root serializes shared writes with M5 B. Work from separate worktrees. |
 | Shared UI/tests, packaging, dependencies/version/global docs | Root grants exact file leases and serializes integration/metadata and milestone closure. |
 | R75/R76 search and Windows package | Preserve A's accepted native build, load and distribution checks when integrating B's QtMultimedia payload. Verify both on the resulting B head. |
 
@@ -130,7 +133,7 @@ Carry these inherited requirements into the existing tasks below:
 
 ## R51/R52 bindings within the existing tasks
 
-Use merged B5 and the reviewed ACK carried by the M3 A candidate.
+Use merged B5 and the reviewed ACK carried by the accepted M3 A merge.
 - Bind existing delete/error tests to phase-aware DeletionResult: after a valid
   durable barrier, including a prior attempt, ordinary failure is pending with
   canonical UUID, fixed reason and io/exit 4, never rejected/NotFound for absent SQL.
@@ -158,7 +161,7 @@ Use merged B5 and the reviewed ACK carried by the M3 A candidate.
   io4; a valid barrier remains pending/hidden, while reads/non-destructive repair
   continue. Merged B5 revalidates declared roots and lock roles after ACK.
 
-The candidate carries the reviewed R53 facade:
+The accepted M3 A merge carries the reviewed R53 facade:
 `SearchService(connection_factory, *, reindexer=None).reindex()` calls the same
 injected MemoryService callback once, returns its identical R51 report and propagates
 canonical errors unchanged. Constructor performs no maintenance; reindex owns no
