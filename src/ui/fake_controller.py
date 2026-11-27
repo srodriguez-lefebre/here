@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
@@ -227,6 +228,15 @@ class FakeLibraryBackend:
             raise ImportCancelled("Se canceló la importación del ejemplo.")
         progress(len(self.segment.text.encode("utf-8")))
         return ImportReport((_PortableMeetingOutcome(self.meeting.id, "unchanged"),))
+
+    def export_markdown(
+        self, meeting_id: str, destination: Path, cancellation: Callable[[], bool]
+    ) -> Path:
+        if meeting_id != self.meeting.id:
+            raise InvalidInput("La reunión no corresponde al ejemplo.")
+        if cancellation():
+            raise ExportCancelled("Se canceló la exportación del ejemplo.")
+        return destination
 
     def search(self, query):
         text = f"{self.meeting.title} {self.segment.text}".casefold()

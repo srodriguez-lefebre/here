@@ -29,7 +29,7 @@ from here.memory.portability import (
     InvalidPackage,
 )
 from here.memory.search import normalize_query_text
-from here.memory.service import Conflict, InvalidInput
+from here.memory.service import Conflict, InvalidInput, NotFound
 from here.ui.bridge import BackgroundJobs
 from here.ui.contract import ApplicationState, VisualController
 from here.ui.playback_widget import PlaybackWidget
@@ -58,6 +58,7 @@ _NO_DATE = QDate(1900, 1, 1)
 _DETAIL_READS = frozenset({"library-detail", "library-citation"})
 _AUXILIARY_READS = _DETAIL_READS | {"library-participants"}
 _EXPORT_PACKAGE_FILTER = "Paquetes de here (*.here.zip)"
+_EXPORT_MARKDOWN_FILTER = "Documentos Markdown (*.md)"
 _IMPORT_PACKAGE_FILTER = "Paquetes de here (*.zip)"
 _IMPORT_STATUS = {
     "inserted": "Importada",
@@ -222,7 +223,6 @@ class LibraryView(QWidget):
         self._results.setTabKeyNavigation(False)
         self._results.horizontalHeader().setStretchLastSection(True)
         self._results.cellActivated.connect(self._open_row)
-        self._results.itemSelectionChanged.connect(self._update_portable_actions)
         self._more = QPushButton("Cargar más")
         self._more.setAccessibleName("Cargar más resultados")
         self._more.clicked.connect(self._continue)
@@ -242,7 +242,6 @@ class LibraryView(QWidget):
         self._portable_timer = QTimer(self)
         self._portable_timer.setInterval(50)
         self._portable_timer.timeout.connect(self._show_portable_progress)
-        self._update_portable_actions()
 
         self._detail_panel = QWidget()
         detail_layout = QVBoxLayout(self._detail_panel)
@@ -265,6 +264,8 @@ class LibraryView(QWidget):
         self._save = QPushButton("Guardar título")
         self._save.setAccessibleName("Guardar título de reunión")
         self._save.clicked.connect(self._save_title)
+        self._export_markdown = QPushButton("Exportar Markdown")
+        self._export_markdown.clicked.connect(self._choose_markdown_export)
         self._close = QPushButton("Cerrar detalle")
         self._close.setAccessibleName("Cerrar detalle de reunión")
         self._close.clicked.connect(self.close_detail)
@@ -277,8 +278,11 @@ class LibraryView(QWidget):
         detail_layout.addWidget(self._revision_badge)
         detail_layout.addWidget(self._current_revision)
         detail_layout.addWidget(self._playback)
+        detail_layout.addWidget(self._export_markdown)
         detail_layout.addWidget(self._close)
         self._detail_panel.hide()
+        self._results.itemSelectionChanged.connect(self._update_portable_actions)
+        self._update_portable_actions()
 
         layout = QVBoxLayout(self)
         layout.addWidget(self._search)
@@ -313,6 +317,7 @@ class LibraryView(QWidget):
             self._transcript,
             self._title,
             self._save,
+            self._export_markdown,
             self._close,
             self._more,
             self._export,
@@ -522,7 +527,7 @@ class LibraryView(QWidget):
         self._submit("library-page", lambda: operation(query), self._generation)
 
     def _finished(self, request, kind, value, error):
-        if kind in {"portable-export", "portable-import"}:
+        if kind in {"portable-export", "portable-import", "portable-markdown"}:
             self._finish_portable_job(request, kind, value, error)
             return
         if self._closed or kind not in self._requests:
@@ -662,6 +667,7 @@ class LibraryView(QWidget):
         enabled = self._can_transfer()
         self._export.setEnabled(enabled and bool(self._selected_meeting_ids()))
         self._import.setEnabled(enabled)
+        self._export_markdown.setEnabled(enabled and self._detail is not None)
 
     def _choose_export(self):
         ids = self._selected_meeting_ids()
@@ -700,6 +706,24 @@ class LibraryView(QWidget):
                 ),
             )
 
+    def _choose_markdown_export(self):
+        if self._detail is None or not self._can_transfer():
+            return
+        meeting_id = self._detail.meeting.id
+        generation = self._detail_generation
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Exportar Markdown", "reunión.md", _EXPORT_MARKDOWN_FILTER
+        )
+        if not path or generation != self._detail_generation:
+            return
+        destination = Path(path)
+        export = self._controller.export_meeting_markdown
+        self._start_portable_job(
+            "portable-markdown",
+            "Exportando Markdown…",
+            lambda _report, cancelled: export(meeting_id, destination, cancelled),
+        )
+
     def _choose_import(self):
         if not self._can_transfer():
             return
@@ -718,7 +742,7 @@ class LibraryView(QWidget):
         kind: str,
         message: str,
         operation: Callable[
-            [Callable[[int], None], Callable[[], bool]], ExportResult | ImportReport
+            [Callable[[int], None], Callable[[], bool]], ExportResult | ImportReport | Path
         ],
     ):
         if not self._can_transfer():
@@ -766,6 +790,8 @@ class LibraryView(QWidget):
         self._update_portable_actions()
         if error is not None:
             message = self._portable_error(kind, error)
+        elif kind == "portable-markdown":
+            message = "Exportación Markdown finalizada."
         elif isinstance(value, ExportResult):
             message = "\n".join((f"Exportación finalizada · {value.path}", *value.warnings))
         else:
@@ -778,6 +804,8 @@ class LibraryView(QWidget):
         if isinstance(error, (ExportCancelled, ImportCancelled)):
             return "Transferencia cancelada."
         if isinstance(error, InsufficientSpace):
+            if kind == "portable-markdown":
+                return "No hay espacio suficiente para guardar el documento."
             return "No hay espacio suficiente para guardar el paquete."
         if isinstance(error, InvalidPackage):
             return "El paquete es inválido o no se pudo leer."
@@ -785,6 +813,12 @@ class LibraryView(QWidget):
             return "La versión del paquete o del catálogo no es compatible."
         if isinstance(error, IntegrityFailure):
             return "Falló una comprobación de integridad."
+        if kind == "portable-markdown":
+            if isinstance(error, NotFound):
+                return "La reunión ya no está disponible."
+            if isinstance(error, Conflict):
+                return "La reunión cambió. Volvé a intentar la exportación."
+            return "No se pudo exportar el documento Markdown."
         if isinstance(error, Conflict):
             return "La reunión cambió. Revisá la selección y volvé a intentar."
         if kind == "portable-export":
@@ -868,6 +902,7 @@ class LibraryView(QWidget):
 
     def _render_detail(self, detail):
         self._detail = detail
+        self._update_portable_actions()
         self._title.setText(detail.meeting.title)
         self._title.setEnabled(True)
         self._save.setEnabled(True)
@@ -1001,6 +1036,7 @@ class LibraryView(QWidget):
         self._transcript.clear()
         self._title.clear()
         self._detail_panel.hide()
+        self._update_portable_actions()
 
     def _reset_target(self, *, release_playback: bool = True) -> None:
         self._citation_generation += 1
