@@ -95,6 +95,8 @@ class _PortableMeetingOutcome:
 @dataclass(frozen=True, slots=True)
 class ImportReport:
     meetings: tuple[_PortableMeetingOutcome, ...]
+    pending_recovery_ids: tuple[str, ...] = ()
+    cleanup_pending: bool = False
 
 
 class _PortableDocument(BaseModel):
