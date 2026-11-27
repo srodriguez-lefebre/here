@@ -11,8 +11,12 @@ Se reactivaron los chats de M3 A y M5 B con GPT‑6.2 Sol. M2 sigue cerrado en
 **M3 A mergeado.** [PR #28](https://github.com/srodriguez-lefebre/here/pull/28)
 entró a `main` en `a1a83629cdfab64dd249f877cdd443e7f7d96b08` con el head
 revisado `3a9cc11`. Windows CI y el paquete pasaron en ese head, nivel 2.
-Se conservan los cursores v2 y los gates de rendimiento. El traspaso
-documental a M3 B está en marcha y precede el rebase de la rama B.
+Se conservan los cursores v2 y los gates de rendimiento. El
+[PR documental #29](https://github.com/srodriguez-lefebre/here/pull/29)
+fija el traspaso a M3 B antes del rebase. Tiene aprobación independiente
+en el head exacto `d57a43d`. Siguen en curso
+[CI Windows](https://github.com/srodriguez-lefebre/here/actions/runs/46034925816)
+y el [paquete Windows](https://github.com/srodriguez-lefebre/here/actions/runs/46034925769).
 
 ### Frentes activos del ruling 75
 
@@ -35,7 +39,7 @@ documental a M3 B está en marcha y precede el rebase de la rama B.
 | M3 A, evidencia R75/R76 | `codex/m3-a-r75-evidence` | `m3-a-r75-evidence/here` | `e101914`, `m3_nov27_evidence_sol` |
 | M3 B, integración | `codex/m3-library` | `m3-library-group/here` | `b36162a`, orquestador. Espera el merge del traspaso documental |
 | M3 B, SPEC y PLAN de traspaso tras R75 | `codex/m3-b-native-handoff-contracts` | `m3-b-native-handoff-contracts/here` | `ad815db`, `m3_b_native_handoff_docs_sol` |
-| M3 B, PR documental sobre A mergeado | `codex/m3-b-accepted-native-handoff` | `m3-b-accepted-native-handoff/here` | Base `a1a8362`, `m3_b_native_handoff_docs_sol` y orquestador |
+| M3 B, PR documental sobre A mergeado | `codex/m3-b-accepted-native-handoff` | `m3-b-accepted-native-handoff/here` | `d57a43d`, `m3_b_native_handoff_docs_sol` y orquestador |
 | M4 A, fixtures de respuestas sintéticas | `codex/m4-grounded-verifier-fixtures` | `m4-grounded-verifier-fixtures/here` | `0c35b6b`, `m3_b_native_handoff_docs_sol`. Transferir al RED después del cierre de M3 |
 | M5 B, adelanto de portabilidad, chat `01a1af04-b158-75a2-8933-98783880f3e8` | `codex/m5-portability-adapter-integration` | `m5-portability-adapter-integration/here` | `5f6324f`, chat M5 B. Claims esperan M4 B |
 
@@ -101,6 +105,10 @@ canónica y el lote `r76-wheel-3a9cc11` pasó cinco. Recibos
 pasó 1.619 casos y omitió 104. El merge protegido usó
 `--merge --admin --match-head-commit` sobre `3a9cc11`. M3 B aún debe
 integrar el reproductor y empaquetado y cerrar la versión 0.4.0.
+La comparación de ramas para B anticipa conflictos en
+`src/memory/service.py`, `packaging/windows.spec` y
+`.github/workflows/windows-package.yml`. El orquestador los resolverá
+después de mergear #29, conservando R50, ambas rutas nativas y QtMultimedia.
 Los workflows fijan el checkout del head exacto por ruling 77. El PLAN
 preparado de M3 B conserva la ruta nativa cuando incorpora QtMultimedia.
 El orquestador lo vinculará al merge de A en el PR de documentos.
