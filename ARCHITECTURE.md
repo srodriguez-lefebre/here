@@ -431,6 +431,36 @@ cannot restore a row hidden by accepted deletion. Selecting a transcript segment
 emits a reference with its meeting, revision and segment IDs. Playback and
 authoritative audio target resolution are M3 B work.
 
+## Windows search acceleration (M3 A, ruling 75)
+
+The R75 distribution contract adds a private SQLite extension to the frozen
+Windows x64 installer and portable package. The published pure Python wheel
+uses the canonical Python generation path. The Windows build checks the pinned
+Zig 0.15.2 archive and compiler executable and the SQLite 3.53.1 archive and
+interface headers before compilation. The extension uses the SQLite already
+shipped with the packaged CPython runtime. The build records input and DLL
+hashes, compiler flags, architecture, SQLite source ID and notices in the
+distribution provenance and inventory.
+
+The frozen memory package carries a generated private manifest and the fixed
+adjacent `_native_search_v2.dll`. On the intended search connection, the loader
+checks the exact runtime `sqlite_source_id()` against `SQLITE_SOURCE_ID` and
+verifies the DLL SHA-256 against the manifest. It uses SQLite's normal extension
+loading API with the fixed entrypoint and disables extension loading after the
+attempt. Other connections retain their existing configuration. The canonical
+Python path remains available when the extension is unavailable or incompatible.
+
+Search still owns its query, rank, cursor and generation contracts. The
+accelerator must preserve the exact ordered v2 bytes, including frame boundaries
+and storage types, and keep v2 cursors interoperable with the Python path.
+When native ordering or the input domain cannot be proved, search discards
+the partial native section and replays it canonically within the same R50
+read view. Generation and page fetch use that view through completion, with
+its suppression snapshot and existing failure semantics. Packaging provenance,
+installed-product smoke, exact-head Windows CI and the existing responsiveness
+gates are verified through the [M3 search plan](docs/development/M3_SEARCH_PLAN.md).
+
+
 ## Existing Audio Transcription
 
 `here trans {file}` builds the same recoverable session shape from an existing
