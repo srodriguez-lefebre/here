@@ -979,6 +979,47 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Costo si falla:** si el usuario restablece ese requisito, pedir review sobre
     el head vigente de cada PR que siga abierto antes de mergear.
 
+65. **2026-11-13 — Defaults internos del export portable v1.** La fachada recibe
+    la instancia compuesta de `MemoryService`. El callback de progreso recibe
+    bytes acumulados de payload y la cancelación se consulta con un callable
+    sin argumentos. Cancelar antes de publicar levanta `ExportCancelled`, una
+    categoría local de `LibraryError`, y ejecuta la limpieza del temporal propio.
+    `manifest.json` lista `files` con `path`, `size` y `sha256` en hex minúsculo.
+    `meeting.json` contiene `audio_assets` y cada `revision.json` sus `audio_links`
+    con nombre fuente seguro. El audio omitido conserva metadatos y enlaces,
+    usa estado `missing` y ruta portable nula. El modo inicial usa ZIP_STORED
+    para mantener los límites de ratio del importador. Los defaults se comparten
+    con el importador y quedan sujetos a los tests de round-trip. Claims y
+    respuestas esperan el handoff de M4 B.
+    **Costo si falla:** ajustar el contrato privado y sus fixtures antes de
+    publicar formato 1, conservando identidad, hashes y aceptación.
+
+66. **2026-11-13 — Prototipo SQLite nativo acotado para el p95 de M3 A.** El
+    usuario autorizó un prototipo de diagnóstico en worktree separado, con
+    corpus sintético y el mismo recorrido público, guard, proyecciones completas,
+    oráculos y presupuesto estricto de menos de 500 ms. Los insumos de compilación
+    quedan en el scratch del worktree con versiones y hashes registrados. La
+    autorización cubre la medición. Incorporar una dependencia compilada al
+    producto requiere una decisión posterior. El resultado queda como evidencia
+    de diagnóstico y no modifica la definición de terminado ni el criterio.
+    **Costo si falla:** descartar el prototipo, conservar el candidato funcional y
+    mantener abierto el criterio de rendimiento.
+
+67. **2026-11-13 — Lectura acotada de metadatos ZIP de portabilidad v1.**
+    La inspección comprueba los encabezados del directorio central en el mismo
+    archivo abierto y admite hasta 32 MiB de directorio y 8 MiB de manifiesto.
+    El formato exportado usa nombres de rol canónicos con UUIDs y números, una
+    entrada compacta por archivo y sin comentarios de payload. Incluso con
+    10.000 roles, sus metadatos quedan por debajo de esos topes. El manifiesto
+    comprimido admite 1,125 MiB extra para la expansión normal de DEFLATE.
+    Se revisan como máximo 64 campos extra por entrada antes de llamar a
+    `zipfile`, incluyendo la identidad de cualquier alias Unicode. Se rechaza
+    relleno excesivo antes de cargarlo. Se preservan ZIP64 y los límites de
+    10.000 entradas, 20 GiB declarados y ratio 100:1, sin extraer archivos al
+    inspeccionar. Los checks de tamaños y SHA-256 de payload esperan staging.
+    **Costo si falla:** ajustar el presupuesto de metadatos sobre archivos
+    válidos y repetir pruebas hostiles, sin aflojar límites de payload.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
@@ -2531,3 +2572,18 @@ Windows CI [43461764790](https://github.com/srodriguez-lefebre/here/actions/runs
 reported 1273 passes, two installed-wheel skips and 456.71 s. The CI wheel and
 sdist built successfully. The independent fresh wheel run covered the two skips.
 The merge tree is identical to the reviewed head and the package build tree.
+
+## 2026-11-13 — Portability contracts merged and core dispatched
+
+Documentation PR [#26](https://github.com/srodriguez-lefebre/here/pull/26)
+merged at 2026-11-13T16:42:22Z as `5286dd435b1228cc9f69e8ad0dda6f1bec265018`.
+Independent review approved head `4a86b590edf72c3239562c4e74b273fbfa6ec1bc`.
+Windows CI `43464061386` passed 1273 cases with two installed-wheel skips in
+414.50 s. Windows package `43464060858` succeeded on the same head. Root used
+`gh pr merge 26 --merge --admin --match-head-commit 4a86b590edf72c3239562c4e74b273fbfa6ec1bc`.
+Ruling 64 applied. This is automated evidence for unchanged product source and
+static review of the portability contract.
+
+M5 B Task 1 begins at `5286dd4`. The independent RED author owns only the export
+tests in its dedicated worktree. `STATUS.md` records the two worktrees. Claims,
+UI/CLI, playback and settings retain their actual M4/M3/M5 A dependencies.

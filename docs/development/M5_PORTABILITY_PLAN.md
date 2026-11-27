@@ -2,10 +2,9 @@
 
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
 > review, then independent agent review. Root owns dispatch, file leases, integration
-> and merges under rulings 20/35/64. Steps use checkbox syntax. **Status: preparation
-> ready for the contract PR, no implementation started.** M2 B is merged.
-> Core work starts after the contract PR merges and root dispatches the B5
-> handoff. Claims and answers wait for M4 B.
+> and merges under rulings 20/35/64. Steps use checkbox syntax. **Status: Task 1
+> export core dispatched.** M2 B is merged. The contract PR #26 merged at
+> `5286dd4`. Claims and answers wait for M4 B.
 
 **Goal:** Export selected meetings to a validated `.here.zip` and import such packages
 into any library root without losing identity, timing, citations or audio integrity,
@@ -184,6 +183,57 @@ locally validated managed audio references.
 - [ ] Run focused tests and the full offscreen suite; self-review; commit as
   "portability: validated export of meetings".
 
+**Export core evidence (2026-11-13)**
+
+- **Export RED.** Frozen tests `2c427d5653009f25aa440648360e3a03da8f6167`.
+  Selector `tests/test_portability_export.py` ran on Windows Python 3.13.15 in the
+  shared `.venv`, with `QT_QPA_PLATFORM=offscreen`, synthetic `OPENAI_API_KEY` and
+  `HERE_ENV_FILE` pointing to an absent file. Ruff passed. Pytest exited 1 in
+  5.25 s with six expected `ModuleNotFoundError` failures for
+  `here.memory.portability`, before any export assertions could run. This is a
+  baseline without the export implementation. Full cancellation, recovery,
+  free-space and claims coverage remains open.
+- **Windows ownership probe before GREEN.**
+  `.superpowers/m5-portability-windows-probe.py` in the M5 core worktree,
+  SHA-256 `69F7FB55D31F3EFEC10EFB35E17C04EBDBF69E7289EAB1D41B4DAF3805156F3F`.
+  The same development host returned exit 0 in 0.59 s using synthetic files. A held
+  ancestor could not be renamed, exclusive creation preserved an existing name,
+  and the duplicate stream retained the held file's identity. A blocked replacement
+  kept the old bytes, a same-parent atomic rename kept identity and bytes, and exact
+  reopen and disposition after killing a real child preserved unrelated and
+  published files. A hard link was rejected. Symlink privilege was unavailable.
+  This run is level 2 capability evidence for the native binding. It preceded
+  product recovery and registry verification.
+
+- **Initial export GREEN.** `m5-export-core-a69a490` on
+  `a69a490070f14aa235f938ebbf14208672116503` ran
+  `tests/test_portability_export.py`. Six passed in 21.84 s, exit 0.
+  XML SHA-256 `5988D975AC6C064C7F2FD335E214943A3377F2AE5C625DF43C7CA568F4BBDBEC`.
+- **Recovery baseline.** `m5-export-recovery-red-fd57c23` on
+  `fd57c239c16c732551d61912c2a87a10d24d0ade` ran
+  `tests/test_portability_export_recovery.py`.
+  Nine passed and four failed as expected in 24.279 s (XML). The failures
+  covered existing or concurrent destination files, registry retirement after
+  rename, and cleanup before refusing a future catalog schema.
+  XML SHA-256 `0D50BC2BDC7D082198311B2E0A43617563A70CCB71E4AAAF230C5ED7242E59C9`.
+- **Corrected export and recovery.** `m5-export-recovery-green-29d5642` on
+  `29d5642f3743bfa5e613415f8fe822f54cb8c6be` ran
+  `tests/test_portability_export.py` and `tests/test_portability_export_recovery.py`.
+  All 19 passed in 21.81 s with zero failures or skips. Independent static
+  re-review approved this exact source.
+  XML SHA-256 `6DA9D718BFA36939C685C80195EBCCE6A88D0923145844300498B0B5AA136077`.
+
+These are level 2 synthetic observations for the named runs. The XML files are under
+`.superpowers/` in the export service worktree. Recovery includes real process
+kill before and after rename, destination identity changes, deletion ownership
+and destination collision behavior. There is a brief crash window between
+exclusive creation of the sibling and durable registration. An interruption
+there can leave an empty sibling. No package payload is written before
+registration, and cleanup authority requires its durable proof.
+The destination evidence covers local NTFS. A second formatted volume, real
+SMB3 and symlink-privileged runs were unavailable. Claims, UI/CLI, the full
+Windows suite and product acceptance remain pending.
+
 ### Task 2: Import
 
 **Files:** `src/memory/portability.py`, `src/memory/artifacts.py`,
@@ -232,6 +282,17 @@ and facade and run their source edits in sequence under root's file leases.
 - [ ] Implement the adapters.
 - [ ] Run focused tests and the full offscreen suite; self-review; independent agent
   review; commit as "portability: validated import through recoverable operations".
+
+**Archive inspection RED (2026-11-13)**
+
+`m5-import-inspect-red-a326ccf` on tests
+`a326ccfec568746523ab18fe6bbfdd61f8695410` selected
+`tests/test_portability_hostile.py` with synthetic ZIPs. All 38 failed in
+5.13 s because `PortabilityService.inspect` was absent.
+XML SHA-256 `27C800337ACB1648EA8A1E192FCEBBCC523F678774D1748C101080148DD47B79`,
+under `.superpowers/` in the export service worktree. This is the synthetic
+baseline for the inspection contract. Inspection GREEN is underway. Staged
+hash and relation validation, publication, claims and UI/CLI remain pending.
 
 ## Closing the group
 

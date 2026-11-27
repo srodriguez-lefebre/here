@@ -18,10 +18,13 @@ El consumidor R52 pasó dos casos focalizados y review independiente en
 M3 prepara regresiones integradas de búsqueda y borrado. El p95 de 879,48 ms
 frente a 500 ms sigue fallido. M3 B espera el PR abierto de A y su handoff.
 
-El core de M5 B espera el PR de contratos de portabilidad, rama
-`codex/m5-portability-contracts`, worktree
-`C:/Users/savar/.codex/worktrees/m5-portability-contracts/here`. Root integra
-el handoff de B y coordina el próximo frente. Claims y respuestas esperan M4 B.
+El PR de contratos [#26](https://github.com/srodriguez-lefebre/here/pull/26)
+se mergeó en `5286dd4`. M5 B empieza Task 1 por el core de exportación, rama
+`codex/m5-portability`, worktree `C:/Users/savar/.codex/worktrees/m5-portability-core/here`.
+`portability_export_red` posee `tests/test_portability_export.py` en rama
+`codex/m5-portability-export-red`, worktree
+`C:/Users/savar/.codex/worktrees/m5-portability-export-red/here`, base `5286dd4`.
+Root coordina la implementación, review y evidencia. Claims y respuestas esperan M4 B.
 M4 A/B y M5 A/C conservan sus dependencias. Sin certificación nueva de nivel 3.
 Dos horas sigue **omitida por ruling 5**. Ruling 64 sigue vigente.
 

@@ -37,8 +37,8 @@ def validate_session_directory(directory: Path) -> None:
             raise UnsafeSessionPath(f"Unsafe session directory: {parent}")
 
 
-def session_artifact_path(directory: Path, filename: str) -> Path:
-    validate_session_directory(directory)
+def validate_artifact_filename(filename: str) -> None:
+    """Apply the shared Windows-safe basename policy without accessing the filesystem."""
     windows_path = PureWindowsPath(filename)
     reserved_stems = {"CON", "PRN", "AUX", "NUL", "CONIN$", "CONOUT$"} | {
         f"{prefix}{number}" for prefix in ("COM", "LPT") for number in "123456789¹²³"
@@ -56,6 +56,11 @@ def session_artifact_path(directory: Path, filename: str) -> Path:
         or filename.split(".", 1)[0].upper() in reserved_stems
     ):
         raise UnsafeSessionPath("Artifact must be a filename inside the session")
+
+
+def session_artifact_path(directory: Path, filename: str) -> Path:
+    validate_session_directory(directory)
+    validate_artifact_filename(filename)
     path = directory / filename
     try:
         info = path.lstat()
