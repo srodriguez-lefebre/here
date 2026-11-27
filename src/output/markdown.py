@@ -67,6 +67,35 @@ def render_transcript_markdown(metadata: SessionMetadata, transcript_text: str) 
     return "\n".join(lines)
 
 
+def render_meeting_markdown(
+    *,
+    meeting_id: str,
+    title: str,
+    notes: str | None,
+    status: str,
+    started_at: str | None,
+    completed_at: str | None,
+    transcript_text: str,
+) -> str:
+    lines = [
+        f"# {title}",
+        "",
+        "## Details",
+        "",
+        f"- Meeting ID: `{meeting_id}`",
+        f"- Status: {status}",
+    ]
+    if started_at is not None:
+        lines.append(f"- Started: {started_at}")
+    if completed_at is not None:
+        lines.append(f"- Completed: {completed_at}")
+    if notes:
+        lines.append(f"- Notes: {notes}")
+
+    lines.extend(["", "## Transcript", "", transcript_text, ""])
+    return "\n".join(lines)
+
+
 def _format_source_name(label: str, device_name: str | None) -> str:
     if not device_name or device_name == label:
         return label
