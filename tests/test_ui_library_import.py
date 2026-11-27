@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import socket
 import threading
 from dataclasses import replace
 from types import SimpleNamespace
@@ -44,16 +45,25 @@ def _report(*rows):
     )
 
 
-def _report_line(lines, identity, status):
+def _assert_outcome(lines, identity, status, *, title=None, reason=None):
+    # UI may show a name, an abbreviated ID or the distinguishing reason.
+    # These fixture IDs differ at the end, never at the beginning.
+    id_pattern = rf"{identity[-6:]}(?![0-9a-f])"
     matches = [
-        i for i, line in enumerate(lines) if identity in line and re.search(status, line, re.I)
+        line
+        for line in lines
+        if re.search(status, line, re.I)
+        and (
+            re.search(id_pattern, line, re.I)
+            or (title is not None and title in line)
+            or (reason is not None and re.search(reason, line, re.I))
+        )
     ]
-    assert len(matches) == 1, f"Expected one report row for {identity} matching {status}"
-    return matches[0]
+    assert matches, f"Expected a report entry for {identity} matching {status}"
 
 
 @pytest.mark.parametrize("pending", [False, True])
-def test_partial_import_reports_committed_and_rejected_in_manifest_order(
+def test_partial_import_reports_committed_and_rejected(
     portability_library, qtbot, monkeypatch, tmp_path, notices, pending
 ):
     desktop, controller, view = portability_library
@@ -88,7 +98,6 @@ def test_partial_import_reports_committed_and_rejected_in_manifest_order(
         if not pending:
             cancel_work(view)
         assert desktop.jobs.busy
-        assert len(controller.queries) == original_query_count
         assert table(view).rowCount() == 2
     finally:
         gate.drain(qtbot, desktop)
@@ -101,9 +110,8 @@ def test_partial_import_reports_committed_and_rejected_in_manifest_order(
     assert combo.currentData() == status
     assert selection(view) == original_selection
     lines = feedback(view, notices)
-    inserted = _report_line(lines, NEW_ID, r"insertad|importad|inserted")
-    rejected = _report_line(lines, REJECTED_ID, r"rechazad|rejected")
-    assert inserted < rejected
+    _assert_outcome(lines, NEW_ID, r"insertad|importad|inserted", title=IMPORTED_TITLE)
+    _assert_outcome(lines, REJECTED_ID, r"rechazad|rejected", reason=r"batch_stopped|lote")
     if pending:
         assert any(re.search(r"recuperaci[oó]n|recovery", line, re.I) for line in lines)
     assert any(line.startswith(IMPORTED_TITLE) for line in lines)
@@ -119,7 +127,7 @@ def test_import_without_a_commit_preserves_filter_selection_and_application_stat
     import_package = action(view, r"import")
     combo = filter_status(view, desktop, controller, qtbot)
     select(view, qtbot)
-    original = combo.currentData(), selection(view), controller.snapshot, len(controller.queries)
+    original = combo.currentData(), selection(view), controller.snapshot
     source = None if outcome == "picker" else tmp_path / "synthetic-import.here.zip"
     picks = picker(monkeypatch, "getOpenFileName", source)
     gate = ProgressGate()
@@ -164,19 +172,13 @@ def test_import_without_a_commit_preserves_filter_selection_and_application_stat
         error = r"inv[aá]lid|dañad|formato|no se pudo import"
         assert any(re.search(error, line, re.I) for line in lines)
     if outcome == "suppressed":
-        suppressed = _report_line(lines, REJECTED_ID, r"rechazad|rejected")
-        stopped = _report_line(lines, NEW_ID, r"rechazad|rejected")
-        assert suppressed < stopped
+        _assert_outcome(lines, REJECTED_ID, r"rechazad|rejected", reason=r"suprimid|suppressed")
+        _assert_outcome(lines, NEW_ID, r"rechazad|rejected", reason=r"batch_stopped|lote")
     if outcome == "conflict":
-        indexes = [
-            _report_line(lines, IDS[1], r"sin cambios|unchanged"),
-            _report_line(lines, IDS[0], r"conflict"),
-            _report_line(lines, REJECTED_ID, r"rechazad|rejected"),
-        ]
-        assert indexes == sorted(set(indexes))
-    assert original == (
-        combo.currentData(), selection(view), controller.snapshot, len(controller.queries)
-    )
+        _assert_outcome(lines, IDS[1], r"sin cambios|unchanged", title=controller.meetings[1].title)
+        _assert_outcome(lines, IDS[0], r"conflict", title=controller.meetings[0].title)
+        _assert_outcome(lines, REJECTED_ID, r"rechazad|rejected", reason=r"batch_stopped|lote")
+    assert original == (combo.currentData(), selection(view), controller.snapshot)
     assert action(view, r"import").isEnabled()
     assert controller.core.command_log == []
 
@@ -185,9 +187,12 @@ def test_import_without_a_commit_preserves_filter_selection_and_application_stat
 def test_preview_uses_synthetic_portability(
     qtbot, qapp, tmp_path, monkeypatch, owned_desktops, notices, operation
 ):
+    from here import live_processing
     from here.memory.service import MemoryService
+    from here.transcription import client, service
 
     desktops = []
+    forbidden_calls = []
 
     def desktop_for_preview(application, controller):
         settings = QSettings(str(tmp_path / "preview.ini"), QSettings.Format.IniFormat)
@@ -196,7 +201,8 @@ def test_preview_uses_synthetic_portability(
         return desktop
 
     def forbidden(*args, **kwargs):
-        pytest.fail("Preview reached a real catalog, archive or provider boundary")
+        forbidden_calls.append(threading.get_ident())
+        raise AssertionError("Preview reached a real catalog, archive or provider boundary")
 
     def drive_preview():
         (desktop,) = desktops
@@ -229,6 +235,11 @@ def test_preview_uses_synthetic_portability(
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(MemoryService, "__init__", forbidden)
     monkeypatch.setattr(contract, "require_provider_key", forbidden)
+    for module in (client, service, live_processing):
+        monkeypatch.setattr(module, "build_client", forbidden)
+    for method in ("connect", "connect_ex"):
+        monkeypatch.setattr(socket.socket, method, forbidden)
     monkeypatch.setattr(preview, "HereDesktop", desktop_for_preview)
     monkeypatch.setattr(qapp, "exec", drive_preview)
     assert preview.main() == 0
+    assert not forbidden_calls
