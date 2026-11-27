@@ -15,11 +15,12 @@ Se reactivaron los chats de M3 A y M5 B con GPT‑6.2 Sol. M2 sigue cerrado en
   `f04a5f3` y quedó un fallo esperado en la corrida corregida. `7e3bd56`
   pasó 133 controles y omitió dos. Su 5+40 público dio 966,13 ms p95.
   [PR #28](https://github.com/srodriguez-lefebre/here/pull/28) permanece abierto
-  con ambos gates fuera de presupuesto: p95 de 500 ms y gap de 50 ms
-  (último heartbeat 55,349 ms). `m3_native_current_probe_sol` preparó
-  `6781814`, `codex/m3-native-current-probe`, worktree del mismo nombre,
-  para repetir el prototipo aislado R66 con los controles actuales. El chat
-  de M3 A tiene la ventana Windows para ese diagnóstico.
+  por el p95 de 500 ms. Nivel 2: `7e3bd56` pasó el heartbeat con ocho
+  consultas, un máximo de 18,65 ms y tres sellos iguales. El prototipo R66
+  en `cf80ea2`, `codex/m3-native-current-probe`, dio 570,24 ms p95 en 5+40
+  con CPython 3.13.15 y SQLite 3.53.1. Sus cursores v2 y los empates de
+  valores numéricos siguen abiertos. El chat M3 A prepara el diagnóstico
+  de orden FTS en `codex/m3-native-fts-order-probe`, worktree del mismo nombre.
 - M3 B reprodujo en `a31daca` la selección de un WAV normalizado vacío con
   una fuente cruda válida. Nivel 2 focalizado: 1 fallo y 6 pases. `b2dc640`
   pasó 35 casos de reintento y geometría. La revisión independiente detectó
@@ -54,8 +55,13 @@ Se reactivaron los chats de M3 A y M5 B con GPT‑6.2 Sol. M2 sigue cerrado en
   pares QPC con diferencia exacta según los frames. El RED `cc0c0fd` está
   en `m3-audio-capture-boundary-red/here` y falló al faltar los helpers de
   reloj. `62f0404`, `codex/m3-audio-qpc-green`, `m3-audio-qpc-green/here`,
-  implementa la verificación QPC y el control del límite entre paquetes.
-  Quedan el build, la calibración y las cuatro marcas para nivel 3.
+  verificó la continuidad QPC y el límite entre paquetes. Build,
+  calibración y revisión independiente aprobados. Nivel 3 para el seek
+  sobre `912f63f`: `m3-b-seek-912f63f-20261127` pasó las cuatro marcas en
+  reproducción real de Media Foundation. Máximo |error| 2,913 ms y
+  máximo |error| más incertidumbre 36,245 ms frente a 250 ms. Recibos en
+  `C:/Users/savar/.codex/evidence/here/m3-b-seek-912f63f-20261127/`.
+  M3 B espera rebase y suite en su head definitivo después de M3 A.
 - M5 B nivel 2 RED: `b66d15a` dio 16 fallos esperados en CLI. `7d7c04d` dio
   14 fallos esperados en Qt. La base común `bbc1717` en
   `codex/m5-portability-adapter-integration`, `m5-portability-adapter-integration/here`,
@@ -70,10 +76,13 @@ Se reactivaron los chats de M3 A y M5 B con GPT‑6.2 Sol. M2 sigue cerrado en
   parser de ZIP en `e27ec20`. `9dd0422`, rama `codex/m5-portability-adapter-zip-parser-io-green`,
   pasó 61 casos CLI y ZIP hostil y obtuvo review independiente. Root integró
   los adaptadores e I/O en `769bc28`. El chat prepara Markdown desde el
-  detalle en `codex/m5-portability-markdown-red`, y
-  `m5_portability_cli_io_red_sol` prepara el reporte parcial en
-  `codex/m5-portability-partial-report-red`. Ambas ramas tienen worktrees
-  del mismo nombre. Claims espera M4 B.
+  detalle. `974f39a`, `codex/m5-portability-markdown-core-red`, reprodujo
+  10 fallos esperados en Qt y la fachada de exportación. El chat escribe
+  solo el renderizador en `codex/m5-portability-markdown-render-green`.
+  `e5efe92` reprodujo tres fallos de reporte parcial. El responsable
+  `m5_portability_package_io_green_sol` implementa esa corrección en
+  `codex/m5-portability-partial-report-green`. Todos usan worktrees del
+  mismo nombre. Claims espera M4 B.
 - La preparación de M4 A conserva `99f1ec8`. `m4_grounded_fixture_sol`
   entregó el corpus de 50 reuniones y 2.000 coincidencias en `a2ce1e1`,
   rama `codex/m4-grounded-fixture`, worktree `m4-grounded-fixture/here`.
