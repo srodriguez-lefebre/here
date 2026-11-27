@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import sqlite3
 import wave
@@ -16,6 +17,7 @@ from here.application.processing import SessionProcessor
 from here.application.recovery import RecoveryService
 from here.config.settings import ProviderConfigurationError
 from here.memory.service import MemoryService
+from here.recording.models import RecordedAudioSource
 from here.transcription.client import TranscriptionResult
 from here.transcription.segments import TranscriptSegment
 from memory_fixtures import FRAME_COUNT, MEETING_ID, OTHER_MEETING_ID, make_session, write_json
@@ -265,6 +267,30 @@ def test_retry_rejects_undeclared_default_audio_beside_declared_raw_source(
     assert json.loads(result.stdout)["error_category"] in ("conflict", "io")
     assert selected.audio.read_bytes() == raw.read_bytes() == original_audio
     assert memory.active_revision(MEETING_ID) == old_revision
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows pathlib folds path case")
+@pytest.mark.parametrize("same_file", [False, True], ids=["distinct-files", "same-file-alias"])
+def test_declared_recovery_source_requires_file_identity(tmp_path, monkeypatch, same_file):
+    default = tmp_path / "audio.wav"
+    declared = tmp_path / "Audio.wav"
+    assert default == declared and default.name != declared.name
+    source = RecordedAudioSource(
+        path=declared, sample_rate=16000, channels=1, frames=16000, label="synthetic"
+    )
+
+    # Model both directory modes without changing NTFS case sensitivity.
+    def samefile(path, other_path):
+        def file_id(candidate):
+            return 2 if candidate.name == "Audio.wav" and not same_file else 1
+
+        return file_id(path) == file_id(other_path)
+
+    monkeypatch.setattr(Path, "samefile", samefile)
+
+    matched = processing._declared_recovery_source(default, [source])
+
+    assert matched is (source if same_file else None)
 
 
 def test_catalog_connection_failure_returns_io_json(configured_library, monkeypatch, tmp_path):
