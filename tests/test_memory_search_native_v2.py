@@ -165,7 +165,13 @@ def test_real_producer_keeps_the_frozen_v2_stream(
         assert not _canonical_sorts(trace)
 
 
-def test_unavailable_loader_selects_stock_before_native_sql(tmp_path, monkeypatch, loader_module):
+def test_unavailable_loader_selects_stock_before_native_sql(tmp_path, monkeypatch):
+    try:
+        loader_module = importlib.import_module("here.memory._native_search")
+    except ModuleNotFoundError as error:
+        if error.name != "here.memory._native_search":
+            raise
+        pytest.fail("R75 native FTS loader/dispatch is missing", pytrace=False)
     with closing(_vector(tmp_path / "fallback", "rows257")) as library:
         trace = []
         seen = []
@@ -368,3 +374,4 @@ def test_native_non_domain_fault_never_replays_canonical_sql(
     assert _native_statements(factory.trace)
     assert not _canonical_sorts(factory.trace)
     assert len(factory.connections) == 1 and factory.connections[0].closed
+
