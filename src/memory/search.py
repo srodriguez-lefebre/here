@@ -13,6 +13,7 @@ import json
 import math
 import sqlite3
 import unicodedata
+from collections import Counter
 from collections.abc import Callable, Iterator
 from contextlib import closing, contextmanager
 from dataclasses import replace
@@ -23,6 +24,9 @@ from uuid import UUID
 from here.memory import _native_search
 from here.memory.database import LibraryConnection, LibraryError
 from here.memory.models import (
+    EvidenceBlock,
+    EvidenceQuery,
+    EvidenceSnapshot,
     Meeting,
     MeetingPage,
     MeetingQuery,
@@ -46,6 +50,19 @@ _FTS_GENERATION_SELECT = "SELECT meeting_id,revision_id,segment_id,text,title FR
 _FTS_SCHEMA_PREFIX = "CREATE VIRTUAL TABLE segments_fts USING fts5("
 _FTS_TEXT_TYPES = (str, str, str, str, str)
 _ACTIVE_COLUMNS = "m.id,r.id,r.status,s.id,s.ordinal,s.text,s.start_ms,s.end_ms,s.timing_source"
+_EVIDENCE_REVISIONS = (
+    "meetings m JOIN transcript_revisions r ON r.meeting_id=m.id AND r.id=m.active_revision_id"
+)
+_EVIDENCE_SEGMENTS = _EVIDENCE_REVISIONS + " JOIN segments s ON s.revision_id=r.id"
+_EVIDENCE_METADATA = (
+    "m.id AS meeting_id,r.id AS revision_id,s.id AS segment_id,r.content_hash,"
+    "s.ordinal,s.start_ms,s.end_ms,s.timing_source,r.status='partial' AS partial,m.started_at,"
+    "CASE WHEN instr(s.text,char(0))=0 THEN length(s.text) END AS text_chars,"
+    "CASE WHEN instr(s.text,char(0))>0 THEN length(CAST(s.text AS BLOB)) END AS text_bytes"
+)
+_EVIDENCE_RANK_ORDER = (
+    "rank ASC,(started_at IS NULL) ASC,started_at DESC,meeting_id ASC,segment_id ASC"
+)
 _Query = TypeVar("_Query", MeetingQuery, SearchQuery)
 
 
@@ -269,6 +286,60 @@ def _like(token: str) -> str:
     return "%" + token.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
 
 
+def _canonical_uuid(value: object) -> bool:
+    try:
+        return isinstance(value, str) and str(UUID(value)) == value
+    except ValueError:
+        return False
+
+
+def _validated_evidence(query: EvidenceQuery) -> EvidenceQuery:
+    if query.purpose not in ("match", "summary"):
+        raise InvalidInput("Evidence purpose must be match or summary")
+    if type(query.whole_library) is not bool or not isinstance(query.meeting_ids, (tuple, list)):
+        raise InvalidInput("Evidence scope must be explicit")
+    if bool(query.meeting_ids) == query.whole_library:
+        raise InvalidInput("Select meetings or explicitly select the whole library")
+    if not all(_canonical_uuid(value) for value in query.meeting_ids):
+        raise InvalidInput("Meeting identity must be a canonical UUID")
+    meetings = tuple(dict.fromkeys(query.meeting_ids))
+    if not isinstance(query.terms, (tuple, list)):
+        raise InvalidInput("Evidence terms must be a sequence")
+    terms = tuple(dict.fromkeys(filter(None, map(normalize_query_text, query.terms))))
+    for value in (query.per_meeting, query.total, query.evidence_chars):
+        if type(value) is not int or value < 1:
+            raise InvalidInput("Evidence budgets must be positive integers")
+    if query.total > (2**63 - 2) // 4:
+        raise InvalidInput("Evidence total is out of range")
+    if query.purpose == "summary" and (len(meetings) != 1 or terms):
+        raise InvalidInput("Summary requires one selected meeting and no terms")
+    if query.revision_id is not None or query.after_ordinal is not None:
+        if (
+            query.purpose != "summary"
+            or not _canonical_uuid(query.revision_id)
+            or type(query.after_ordinal) is not int
+            or not 0 <= query.after_ordinal < 2**63
+        ):
+            raise InvalidInput("Summary continuation requires a revision and ordinal")
+    filters = _validated(
+        MeetingQuery(
+            from_utc=query.from_utc,
+            to_utc=query.to_utc,
+            statuses=query.statuses,
+            participant_id=query.participant_id,
+            include_partial=query.include_partial,
+        )
+    )
+    return replace(
+        query,
+        terms=terms,
+        meeting_ids=meetings,
+        from_utc=filters.from_utc,
+        to_utc=filters.to_utc,
+        statuses=filters.statuses,
+    )
+
+
 def _filters(
     query: MeetingQuery | SearchQuery,
     parameters: list[object],
@@ -299,6 +370,222 @@ def _filters(
         clauses.append("m.id = ?")
         parameters.append(query.meeting_id)
     return " AND ".join(clauses)
+
+
+def _evidence_filter(
+    query: EvidenceQuery,
+    library: LibraryConnection,
+    suppression: SuppressionSnapshot,
+    parameters: list[object],
+) -> str:
+    filters = MeetingQuery(
+        from_utc=query.from_utc,
+        to_utc=query.to_utc,
+        statuses=query.statuses,
+        participant_id=query.participant_id,
+    )
+    where = _filters(filters, parameters, suppression)
+    revision_status = (
+        "r.status IN ('complete','partial')" if query.include_partial else "r.status='complete'"
+    )
+    where += " AND " + revision_status
+    if query.meeting_ids:
+        library.execute("CREATE TEMP TABLE here_evidence_scope (id TEXT PRIMARY KEY NOT NULL)")
+        library.connection.executemany(
+            "INSERT INTO temp.here_evidence_scope(id) VALUES (?)",
+            ((identity,) for identity in query.meeting_ids),
+        )
+        where += " AND m.id IN (SELECT id FROM temp.here_evidence_scope)"
+    return where
+
+
+def _evidence_candidates(
+    library: LibraryConnection,
+    query: EvidenceQuery,
+    where: str,
+    filters: list[object],
+    *,
+    indexed: bool,
+) -> list[sqlite3.Row]:
+    # Keep BM25 inside its MATCH context. Scope restricts the rows returned by
+    # MATCH while corpus statistics still come from the global FTS index.
+    complete = "SELECT NULL AS id,NULL AS rank WHERE 0"
+    parameters: list[object] = []
+    if indexed:
+        source = (
+            "segments_fts JOIN meetings m ON m.id=segments_fts.meeting_id "
+            "JOIN transcript_revisions r ON r.meeting_id=m.id "
+            "AND r.id=m.active_revision_id AND r.id=segments_fts.revision_id "
+            "JOIN segments s ON s.revision_id=r.id AND s.id=segments_fts.segment_id"
+        )
+        # MIN(rank) leaves a single candidate for each segment even if FTS has
+        # duplicate derived rows. The canonical source provides all other fields.
+        complete = (
+            "SELECT s.id AS id,bm25(segments_fts) AS rank FROM "
+            + source
+            + " WHERE segments_fts MATCH ? AND r.status='complete' AND "
+            + where
+        )
+        expression = " OR ".join('"' + term.replace('"', '""') + '"' for term in query.terms)
+        parameters.extend((expression, *filters))
+    sql = f"WITH complete AS MATERIALIZED ({complete}), hits AS (SELECT id,min(rank) AS rank "
+    sql += "FROM complete GROUP BY id"
+    if not indexed or query.include_partial:
+        # ASCII case folding matches SQLite LIKE; instr treats %, _ and backslash
+        # literally and continues through NUL in the transcript.
+        literal = " OR ".join(
+            "(instr(lower(m.title),lower(?))>0 OR instr(lower(s.text),lower(?))>0)"
+            for _ in query.terms
+        )
+        sql += " UNION ALL SELECT s.id,0 FROM " + _EVIDENCE_SEGMENTS + " WHERE " + where
+        if indexed:
+            sql += " AND r.status='partial'"
+        sql += " AND (" + literal + ")"
+        parameters.extend(filters)
+        parameters.extend(term for term in query.terms for _ in range(2))
+    sql += (
+        "), candidates AS (SELECT hits.rank,"
+        + _EVIDENCE_METADATA
+        + " FROM hits JOIN segments s ON s.id=hits.id "
+        "JOIN transcript_revisions r ON r.id=s.revision_id "
+        "JOIN meetings m ON m.id=r.meeting_id), "
+        "rounds AS (SELECT *,row_number() OVER (PARTITION BY meeting_id ORDER BY "
+        + _EVIDENCE_RANK_ORDER
+        + ") AS round FROM candidates) SELECT * FROM rounds ORDER BY round,"
+        + _EVIDENCE_RANK_ORDER
+        + " LIMIT ?"
+    )
+    # The global window also bounds each meeting. Its final row is a sentinel
+    # only, whether it belongs to a new meeting or follows that meeting's window.
+    parameters.append(4 * query.total + 1)
+    return library.execute(sql, tuple(parameters)).fetchall()
+
+
+def _read_evidence_block(
+    library: LibraryConnection, row: sqlite3.Row, remaining_chars: int
+) -> EvidenceBlock | None:
+    length = row["text_chars"]
+    if length is not None:
+        if length > remaining_chars:
+            return None
+    elif row["text_bytes"] is None or row["text_bytes"] > 4 * remaining_chars:
+        return None
+    source = library.execute(
+        "SELECT text FROM segments WHERE revision_id=? AND id=?",
+        (row["revision_id"], row["segment_id"]),
+    ).fetchone()
+    if source is None:
+        raise LibraryError("Evidence source disappeared inside the catalog read view")
+    text = source["text"]
+    if len(text) > remaining_chars:
+        return None
+    return EvidenceBlock(
+        meeting_id=row["meeting_id"],
+        revision_id=row["revision_id"],
+        segment_id=row["segment_id"],
+        text=text,
+        content_hash=row["content_hash"],
+        ordinal=row["ordinal"],
+        start_ms=row["start_ms"],
+        end_ms=row["end_ms"],
+        timing_source=row["timing_source"],
+        partial=bool(row["partial"]),
+        rank=row["rank"],
+    )
+
+
+def _evidence_neighbors(
+    library: LibraryConnection, block: EvidenceBlock, where: str, filters: list[object]
+) -> Iterator[sqlite3.Row]:
+    # Gaps in legacy ordinals do not make an otherwise adjacent segment vanish.
+    for comparison, order in (("<", "DESC"), (">", "ASC")):
+        row = library.execute(
+            f"SELECT NULL AS rank,{_EVIDENCE_METADATA} FROM {_EVIDENCE_SEGMENTS} WHERE {where}"
+            + f" AND r.id=? AND s.ordinal{comparison}? ORDER BY s.ordinal {order} LIMIT 1",
+            (*filters, block.revision_id, block.ordinal),
+        ).fetchone()
+        if row is not None:
+            yield row
+
+
+def _match_evidence(
+    library: LibraryConnection,
+    query: EvidenceQuery,
+    where: str,
+    filters: list[object],
+    *,
+    indexed: bool,
+) -> EvidenceSnapshot:
+    rows = _evidence_candidates(library, query, where, filters, indexed=indexed)
+    window = 4 * query.total
+    blocks: list[EvidenceBlock] = []
+    counts: Counter[str] = Counter()
+    seen: set[str] = set()
+    remaining = query.evidence_chars
+    truncated = len(rows) > window
+
+    def include(row: sqlite3.Row) -> None:
+        nonlocal remaining, truncated
+        segment_id = row["segment_id"]
+        if segment_id in seen:
+            return
+        seen.add(segment_id)
+        meeting_id = row["meeting_id"]
+        if len(blocks) >= query.total or counts[meeting_id] >= query.per_meeting:
+            truncated = True
+            return
+        block = _read_evidence_block(library, row, remaining)
+        if block is None:
+            truncated = True
+            return
+        blocks.append(block)
+        counts[meeting_id] += 1
+        remaining -= len(block.text)
+
+    for row in rows[:window]:
+        include(row)
+    for match in tuple(blocks):
+        for neighbor in _evidence_neighbors(library, match, where, filters):
+            include(neighbor)
+    return EvidenceSnapshot(query, tuple(blocks), truncated=truncated, degraded=not indexed)
+
+
+def _summarize_evidence(
+    library: LibraryConnection, query: EvidenceQuery, where: str, filters: list[object]
+) -> EvidenceSnapshot:
+    revision = library.execute(
+        "SELECT r.id FROM " + _EVIDENCE_REVISIONS + " WHERE " + where, tuple(filters)
+    ).fetchone()
+    revision_id = revision["id"] if revision is not None else None
+    if query.revision_id is not None and query.revision_id != revision_id:
+        raise InvalidInput("Evidence revision changed; restart retrieval", reason="corpus_changed")
+    if revision_id is None:
+        return EvidenceSnapshot(query)
+    limit = min(query.total, query.per_meeting)
+    after = -1 if query.after_ordinal is None else query.after_ordinal
+    rows = library.execute(
+        f"SELECT NULL AS rank,{_EVIDENCE_METADATA} FROM {_EVIDENCE_SEGMENTS} WHERE {where}"
+        " AND r.id=? AND s.ordinal>? ORDER BY s.ordinal LIMIT ?",
+        (*filters, revision_id, after, limit + 1),
+    ).fetchall()
+    remaining = query.evidence_chars
+    truncated = len(rows) > limit
+    next_ordinal = rows[limit - 1]["ordinal"] if truncated else None
+    blocks = []
+    for row in rows[:limit]:
+        block = _read_evidence_block(library, row, remaining)
+        if block is None:
+            truncated = True
+            continue
+        blocks.append(block)
+        remaining -= len(block.text)
+    return EvidenceSnapshot(
+        query,
+        tuple(blocks),
+        truncated=truncated,
+        next_ordinal=next_ordinal,
+        revision_id=revision_id,
+    )
 
 
 def _literal(text: str, parameters: list[object], *, title_only: bool = False) -> str:
@@ -416,6 +703,55 @@ class SearchService:
     def capabilities(self) -> SearchCapabilities:
         with self._snapshot() as (library, _suppression):
             return self._capabilities(library)
+
+    def evidence_snapshot(self, query: EvidenceQuery) -> EvidenceSnapshot:
+        """Retrieve bounded source evidence inside one guarded catalog view."""
+        normalized = _validated_evidence(query)
+        with self._snapshot() as (library, suppression):
+            if normalized.purpose == "match" and not normalized.terms:
+                return EvidenceSnapshot(normalized)
+            self._prepare_suppression(library, suppression)
+            filters: list[object] = []
+            where = _evidence_filter(normalized, library, suppression, filters)
+            if normalized.purpose == "summary":
+                return _summarize_evidence(library, normalized, where, filters)
+            indexed = self._capabilities(library).fts_available
+            return _match_evidence(library, normalized, where, filters, indexed=indexed)
+
+    def revalidate_evidence(self, snapshot: EvidenceSnapshot) -> bool:
+        """Check exact cited source and current eligibility in a fresh guarded view."""
+        query = _validated_evidence(snapshot.query)
+        with self._snapshot() as (library, suppression):
+            self._prepare_suppression(library, suppression)
+            filters: list[object] = []
+            where = _evidence_filter(query, library, suppression, filters)
+            sql = (
+                f"SELECT 1 FROM {_EVIDENCE_SEGMENTS} WHERE {where}"
+                " AND m.id=? AND r.id=? AND s.id=? AND r.content_hash=?"
+                " AND s.ordinal=? AND s.text COLLATE BINARY=?"
+                " AND s.start_ms IS ? AND s.end_ms IS ? AND s.timing_source=?"
+                " AND (r.status='partial')=?"
+            )
+            for block in snapshot.blocks:
+                current = library.execute(
+                    sql,
+                    (
+                        *filters,
+                        block.meeting_id,
+                        block.revision_id,
+                        block.segment_id,
+                        block.content_hash,
+                        block.ordinal,
+                        block.text,
+                        block.start_ms,
+                        block.end_ms,
+                        block.timing_source,
+                        block.partial,
+                    ),
+                ).fetchone()
+                if current is None:
+                    return False
+            return True
 
     def list_meetings(self, query: MeetingQuery) -> MeetingPage:
         normalized = _validated(query)

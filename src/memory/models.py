@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import StrEnum
 from pathlib import Path
+from typing import Literal
 
 
 def _utc_now() -> str:
@@ -197,6 +198,49 @@ class SearchQuery:
     cursor: str | None = None
     include_partial: bool = False
     meeting_id: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class EvidenceQuery:
+    purpose: Literal["match", "summary"] = "match"
+    terms: tuple[str, ...] = ()
+    meeting_ids: tuple[str, ...] = ()
+    whole_library: bool = False
+    from_utc: str | None = None
+    to_utc: str | None = None
+    statuses: tuple[MeetingStatus, ...] = ()
+    participant_id: str | None = None
+    include_partial: bool = False
+    per_meeting: int = 6
+    total: int = 24
+    evidence_chars: int = 24_000
+    revision_id: str | None = None
+    after_ordinal: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class EvidenceBlock:
+    meeting_id: str
+    revision_id: str
+    segment_id: str
+    text: str
+    content_hash: str
+    ordinal: int
+    start_ms: int | None
+    end_ms: int | None
+    timing_source: str
+    partial: bool
+    rank: float | None
+
+
+@dataclass(frozen=True, slots=True)
+class EvidenceSnapshot:
+    query: EvidenceQuery
+    blocks: tuple[EvidenceBlock, ...] = ()
+    truncated: bool = False
+    degraded: bool = False
+    next_ordinal: int | None = None
+    revision_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
