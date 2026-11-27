@@ -109,6 +109,10 @@ La comparación de ramas para B anticipa conflictos en
 `src/memory/service.py`, `packaging/windows.spec` y
 `.github/workflows/windows-package.yml`. El orquestador los resolverá
 después de mergear #29, conservando R50, ambas rutas nativas y QtMultimedia.
+El fixture de seek ya generado y la identidad de `Probe.dll` se verificaron
+a nivel 2 en `C:/Users/savar/.codex/evidence/here/m3-b-synthetic-seek-fixture-20261127/receipt.json`.
+Conserva los siete insumos sintéticos de la toma anterior para preparar una
+raíz nueva con el paquete integrado de B.
 Los workflows fijan el checkout del head exacto por ruling 77. El PLAN
 preparado de M3 B conserva la ruta nativa cuando incorpora QtMultimedia.
 El orquestador lo vinculará al merge de A en el PR de documentos.
