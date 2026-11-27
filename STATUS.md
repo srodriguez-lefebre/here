@@ -37,6 +37,7 @@ commits sobre ese merge y verifica el candidato `063d974`.
 | M3 A, aislamiento de sonda FTS stock | `codex/m3-a-r76-stock-proof` | `m3-a-r76-stock-proof/here` | `c64b22d`, `native_windows_distribution_red_sol` |
 | M3 A, evidencia R75/R76 | `codex/m3-a-r75-evidence` | `m3-a-r75-evidence/here` | `e101914`, `m3_nov27_evidence_sol` |
 | M3 B, integración | `codex/m3-library` | `m3-library-group/here` | `063d974` sobre `8d0b03d`, orquestador |
+| M3 B, suite completa integrada | HEAD separado | `m3-b-r76-full-verification/here` | `063d974`, orquestador y ventana Windows local |
 | M3 B, SPEC y PLAN de traspaso tras R75 | `codex/m3-b-native-handoff-contracts` | `m3-b-native-handoff-contracts/here` | `ad815db`, `m3_b_native_handoff_docs_sol` |
 | M3 B, PR documental #29 mergeado | `codex/m3-b-accepted-native-handoff` | `m3-b-accepted-native-handoff/here` | `d57a43d` → `8d0b03d`, `m3_b_native_handoff_docs_sol` y orquestador |
 | M4 A, fixtures de respuestas sintéticas | `codex/m4-grounded-verifier-fixtures` | `m4-grounded-verifier-fixtures/here` | `0c35b6b`, `m3_b_native_handoff_docs_sol`. Transferir al RED después del cierre de M3 |
@@ -107,8 +108,15 @@ integrar el reproductor y empaquetado y cerrar la versión 0.4.0.
 El rebase de B resolvió conflictos en `src/memory/service.py`,
 `packaging/windows.spec` y `.github/workflows/windows-package.yml`,
 conservando R50, ambas rutas nativas y QtMultimedia. La rama de respaldo
-`codex/m3-library-before-native-rebase` conserva `b36162a`. Las pruebas
-de rendimiento integradas están en curso en `063d974`.
+`codex/m3-library-before-native-rebase` conserva `b36162a`. La revisión
+independiente aprobó `063d974`. Los gates integrados pasaron a nivel 2 en
+`m3-b-r76-product-gates-063d974`, con p95 de 395,38 ms y heartbeat de
+13,2683 ms máximo en ocho consultas. La suite local con DLL
+`m3-b-r76-full-063d974` sigue en ejecución en su worktree separado.
+El [paquete integrado diagnóstico](https://github.com/srodriguez-lefebre/here/actions/runs/46036939106)
+se construye desde `063d974` en `codex/m3-b-r76-verification`. El seek
+real se mide cuando el paquete verificado esté disponible y la máquina
+local quede libre. El bump a 0.4.0 queda para después de esos criterios.
 El fixture de seek ya generado y la identidad de `Probe.dll` se verificaron
 a nivel 2 en `C:/Users/savar/.codex/evidence/here/m3-b-synthetic-seek-fixture-20261127/receipt.json`.
 Conserva los siete insumos sintéticos de la toma anterior para preparar una
