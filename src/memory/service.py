@@ -86,6 +86,7 @@ from here.output.session_writer import read_session_metadata
 
 if TYPE_CHECKING:
     from here.memory.portable_import import (
+        ImportReport,
         _PortableImportedMeeting,
         _PortableImportInventory,
         _PortableMeetingOutcome,
@@ -155,6 +156,10 @@ class _ExportCleanupPending(LibraryError):
 class _ImportCleanupPending(LibraryError):
     def __init__(self) -> None:
         super().__init__("Portable import staging cleanup pending local recovery")
+
+
+class _ImportCommitUncertain(LibraryError):
+    """The entity transaction body finished but its commit was not confirmed."""
 
 
 def _is_uuid(value: object) -> bool:
@@ -1454,10 +1459,9 @@ class MemoryService:
             for record in _catalog_records(repo)
             if record.phase == "pending" and record.meeting_id != deleting
         }
-        if (
-            (deleting is not None or pending_deletes)
-            and session_artifact_path(stage_root, _IMPORT_REGISTRATION).exists()
-        ):
+        if (deleting is not None or pending_deletes) and session_artifact_path(
+            stage_root, _IMPORT_REGISTRATION
+        ).exists():
             registration = _read_import_registration(stage_root)
             if deleting is not None and deleting not in registration.meeting_ids:
                 return
@@ -1645,15 +1649,16 @@ class MemoryService:
 
     def _publish_portable_import(
         self, batch: _ValidatedPortableImport, *, cancelled: Callable[[], bool]
-    ) -> tuple[_PortableMeetingOutcome, ...]:
+    ) -> ImportReport:
         from here.memory.portability import ImportCancelled
-        from here.memory.portable_import import _PortableMeetingOutcome
+        from here.memory.portable_import import ImportReport, _PortableMeetingOutcome
 
         if cancelled():
             raise ImportCancelled("Portable import cancelled")
         plans = self._prepare_portable_import_work(batch, cancelled=cancelled)
         with self._operation() as repo, ExitStack() as owners:
             outcomes: dict[str, _PortableMeetingOutcome] = {}
+            pending_recovery_ids: list[str] = []
             for identity in sorted(plans):
                 self._retain_native_owners(identity, owners)
                 self._retain_catalog_owner(identity, owners)
@@ -1678,10 +1683,23 @@ class MemoryService:
                         identity, "rejected", "batch_stopped"
                     )
                     continue
-                warning = self._publish_portable_meeting(repo, batch.stage, bundle, plans[identity])
-                outcomes[identity] = _PortableMeetingOutcome(identity, "inserted", warning)
-                blocked = bool(warning)
-            return tuple(outcomes[bundle.detail.meeting.id] for bundle in batch.meetings)
+                try:
+                    warning = self._publish_portable_meeting(
+                        repo, batch.stage, bundle, plans[identity]
+                    )
+                except _ImportCommitUncertain:
+                    pending_recovery_ids.append(identity)
+                    blocked = True
+                except (OSError, ValueError, LibraryError, sqlite3.Error):
+                    outcomes[identity] = _PortableMeetingOutcome(identity, "rejected", "local_io")
+                    blocked = True
+                else:
+                    outcomes[identity] = _PortableMeetingOutcome(identity, "inserted", warning)
+                    blocked = bool(warning)
+            return ImportReport(
+                tuple(outcomes[identity] for identity in plans if identity in outcomes),
+                pending_recovery_ids=tuple(pending_recovery_ids),
+            )
 
     def _publish_portable_meeting(
         self,
@@ -1718,17 +1736,27 @@ class MemoryService:
         provenance = IngestSource(str(uuid4()), origin, plan.manifest_sha256, identity)
         with repo.transaction():
             repo.insert_pending_operation(operation)
-        stage.retain_for_recovery = True
+            # Keep the recovery evidence even if the prepared commit has no acknowledgement.
+            stage.retain_for_recovery = True
         source.rename(destination)
-        with repo.transaction():
-            repo.insert_portable_meeting(local_bundle, provenance)
-            self._index_active_revision(repo, detail.meeting)
+        entity_body_complete = False
+        try:
+            with repo.transaction():
+                repo.insert_portable_meeting(local_bundle, provenance)
+                self._index_active_revision(repo, detail.meeting)
+                entity_body_complete = True
+        except (OSError, ValueError, LibraryError, sqlite3.Error):
+            if entity_body_complete:
+                raise _ImportCommitUncertain(
+                    "Portable meeting commit could not be confirmed"
+                ) from None
+            raise
         try:
             registered = replace(plan, stage_root=portable_stage_io_path(stage.directory.parent))
             self._finish_portable_receipts(repo, destination, registered)
             with repo.transaction():
                 repo.transition_pending_operation(operation.id, "complete")
-        except (OSError, ValueError, LibraryError):
+        except (OSError, ValueError, LibraryError, sqlite3.Error):
             return "local_recovery_pending"
         stage.retain_for_recovery = False
         return ""
@@ -1794,7 +1822,9 @@ class MemoryService:
             )
             if not receipt_path.exists():
                 write_durable_json(
-                    receipt_path, snapshot, staged=stage_root / plan.evidence_stage_name(revision_id)
+                    receipt_path,
+                    snapshot,
+                    staged=stage_root / plan.evidence_stage_name(revision_id),
                 )
             receipt = read_portable_receipt(revision_dir, group)
             if receipt.snapshot != snapshot:

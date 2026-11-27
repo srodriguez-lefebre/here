@@ -66,6 +66,7 @@ _IMPORT_STATUS = {
     "rejected": "Rechazada",
 }
 _IMPORT_REASON = {
+    "local_io": "Falló una operación local de almacenamiento",
     "local_recovery_pending": "Recuperación local pendiente",
     "batch_stopped": "Se detuvo el lote",
     "suppressed": "Reunión suprimida",
@@ -796,7 +797,17 @@ class LibraryView(QWidget):
             reason = _IMPORT_REASON.get(meeting.reason, meeting.reason)
             summary = f"{meeting.meeting_id} · {status}"
             self._portable_report.addItem(f"{summary} · {reason}" if reason else summary)
-        self._portable_report.setVisible(bool(report.meetings))
+        for identity in report.pending_recovery_ids:
+            self._portable_report.addItem(
+                f"{identity} · Confirmación pendiente de recuperación local"
+            )
+        if report.cleanup_pending:
+            self._portable_report.addItem(
+                "Limpieza del área temporal pendiente de recuperación local"
+            )
+        self._portable_report.setVisible(
+            bool(report.meetings or report.pending_recovery_ids or report.cleanup_pending)
+        )
         if any(meeting.status == "inserted" for meeting in report.meetings):
             # A cancellation or local recovery warning can follow a durable commit.
             # Refresh the rows without reopening an unchanged detail or playback.

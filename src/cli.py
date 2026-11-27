@@ -504,7 +504,13 @@ def meetings_import(path: Path, json_output: JsonOption = False) -> None:
             _meetings_failure(str(exc), "invalid_input", json_output)
 
         emit(report, json_output)
-        if any(item.reason == "local_recovery_pending" for item in report.meetings):
+        if (
+            report.cleanup_pending
+            or report.pending_recovery_ids
+            or any(
+                item.reason in {"local_io", "local_recovery_pending"} for item in report.meetings
+            )
+        ):
             raise typer.Exit(ExitCode.IO)
         if any(
             item.status == "conflict" or item.reason == "suppressed" for item in report.meetings

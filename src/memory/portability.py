@@ -9,6 +9,7 @@ import os
 from collections import defaultdict
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager, suppress
+from dataclasses import replace
 from datetime import datetime, timezone
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
@@ -409,6 +410,8 @@ class PortabilityService:
         progress: Callable[[int], None],
         cancellation: Callable[[], bool],
     ) -> ImportReport:
+        from here.memory.service import _ImportCleanupPending
+
         if cancellation():
             raise ImportCancelled("Portable import cancelled")
         with open_inspected_package(source, Manifest) as (archive, summary, manifest_bytes):
@@ -416,13 +419,19 @@ class PortabilityService:
             inventory = import_inventory(manifest)
             if cancellation():
                 raise ImportCancelled("Portable import cancelled")
-            with self._memory._portable_import_stage(inventory) as stage:
-                stage_package_files(archive, stage.directory, inventory, progress, cancellation)
-                batch = validate_staged_import(
-                    stage, manifest, manifest_bytes, inventory, cancellation
-                )
-                outcomes = self._memory._publish_portable_import(batch, cancelled=cancellation)
-            return ImportReport(outcomes)
+            report = None
+            try:
+                with self._memory._portable_import_stage(inventory) as stage:
+                    stage_package_files(archive, stage.directory, inventory, progress, cancellation)
+                    batch = validate_staged_import(
+                        stage, manifest, manifest_bytes, inventory, cancellation
+                    )
+                    report = self._memory._publish_portable_import(batch, cancelled=cancellation)
+            except _ImportCleanupPending:
+                if report is None:
+                    raise
+                return replace(report, cleanup_pending=True)
+            return report
 
     def export(
         self,
