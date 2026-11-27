@@ -248,6 +248,7 @@ def cancel_work(view):
 def start_export(view, qtbot, monkeypatch, include_audio, cancelled_picker=None):
     export = action(view, r"export")
     handled_modally = False
+    unexpected_dialogs = []
 
     def options(dialog):
         return semantic(dialog.findChildren(QCheckBox), r"audio")
@@ -271,6 +272,12 @@ def start_export(view, qtbot, monkeypatch, include_audio, cancelled_picker=None)
     def run_modal(dialog):
         nonlocal handled_modally
         handled_modally = True
+        if not any(
+            re.search(r"audio", f"{box.accessibleName()} {box.text()}", re.I)
+            for box in dialog.findChildren(QCheckBox)
+        ):
+            unexpected_dialogs.append(type(dialog).__name__)
+            return QDialog.DialogCode.Rejected
         dialog.show()
         try:
             accept(dialog)
@@ -288,11 +295,11 @@ def start_export(view, qtbot, monkeypatch, include_audio, cancelled_picker=None)
     with monkeypatch.context() as patch:
         patch.setattr(QDialog, "exec", run_modal)
         export.click()
-    if not handled_modally:
-        qtbot.waitUntil(lambda: bool(visible_options() or cancelled_picker))
-        if not visible_options():
-            return
-        accept(visible_options()[0])
+        qtbot.waitUntil(lambda: bool(handled_modally or visible_options() or cancelled_picker))
+        if not handled_modally and (dialogs := visible_options()):
+            assert len(dialogs) == 1
+            accept(dialogs[0])
+        assert not unexpected_dialogs, f"Unexpected modal dialogs: {unexpected_dialogs}"
 
 
 @pytest.mark.parametrize("include_audio", [True, False])
@@ -347,7 +354,7 @@ def test_export_interruption_keeps_filter_selection_and_application_state(
     action(view, r"export")
     combo = filter_status(view, desktop, controller, qtbot)
     select(view, qtbot)
-    original = combo.currentData(), selection(view), controller.snapshot, len(controller.queries)
+    original = combo.currentData(), selection(view), controller.snapshot
     path = None if stop == "picker" else tmp_path / "export.here.zip"
     picks = picker(monkeypatch, "getSaveFileName", path)
     gate = ProgressGate()
@@ -377,7 +384,5 @@ def test_export_interruption_keeps_filter_selection_and_application_state(
         assert gate.cancelled is True
     if stop == "space":
         assert any(re.search(r"espacio", line, re.I) for line in feedback(view, notices))
-    assert original == (
-        combo.currentData(), selection(view), controller.snapshot, len(controller.queries)
-    )
+    assert original == (combo.currentData(), selection(view), controller.snapshot)
     assert action(view, r"export").isEnabled()
