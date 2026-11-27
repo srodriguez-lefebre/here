@@ -499,8 +499,10 @@ def open_inspected_package(
     """Hold one source through preflight, manifest parsing and any later payload reads."""
     try:
         stream = source.open("rb")
-    except (OSError, ValueError):
+    except (FileNotFoundError, IsADirectoryError, NotADirectoryError, ValueError):
         raise InvalidPackage("Could not open the portable package") from None
+    except OSError:
+        raise LibraryError("Could not open the portable package") from None
     with stream, ExitStack() as scope:
         try:
             layout = _find_zip_layout(stream)
@@ -521,11 +523,12 @@ def open_inspected_package(
                 raise InvalidPackage("Package manifest is missing")
             manifest, manifest_bytes = _read_manifest(archive, info, manifest_type)
             summary = _check_manifest_inventory(manifest, members, total)
+        except OSError:
+            raise LibraryError("Could not read the portable package") from None
         except (
             BadZipFile,
             EOFError,
             NotImplementedError,
-            OSError,
             RecursionError,
             StructError,
             ValidationError,
