@@ -14,7 +14,7 @@ from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 from functools import partial
 from pathlib import Path, PurePosixPath, PureWindowsPath
-from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Iterable, Iterator
+from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Iterable, Iterator, Literal
 from uuid import UUID, uuid4
 
 from here.memory.artifacts import (
@@ -916,10 +916,14 @@ class _PortableExportView:
             yield stream
 
     @contextmanager
-    def _open_export_destination(self, destination: Path) -> Iterator[WindowsExportSibling]:
+    def _open_export_destination(
+        self, destination: Path, *, suffix: Literal[".here.zip", ".md"] = ".here.zip"
+    ) -> Iterator[WindowsExportSibling]:
         if not self._active or self._temporary is not None or self._publish_attempted:
             raise InvalidInput("Export destination scope is unavailable")
-        if not destination.name.casefold().endswith(".here.zip"):
+        if not destination.name.casefold().endswith(suffix):
+            if suffix == ".md":
+                raise InvalidInput("Export destination must name a .md document")
             raise InvalidInput("Export destination must name a .here.zip archive")
         destination = destination.absolute()
         # Application-managed directories recognize a fixed set of owned roles.
