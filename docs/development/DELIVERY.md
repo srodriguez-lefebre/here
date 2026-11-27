@@ -2629,3 +2629,39 @@ passed at that head. Root used `--merge --admin --match-head-commit` and verifie
 merge `94e175f933d3e2fa320df42bdfae1b2ead121285` at 17:27:41 UTC. Level 2 workflow
 evidence covers the documentation PR. M3 B source dispatch still requires the
 reviewed M3 A handoff with its PR open. M3 A performance acceptance is open.
+
+
+## 2026-11-27 — M3 B retry compatibility and package diagnostics
+
+Focused level 2 evidence on synthetic sessions. The local JUnit receipts are
+in `%TEMP%`. The empty normalized WAV alongside a valid raw source reproduced
+on `a31daca` with one expected failure and six passes in 40.862 s
+(`m3-retry-source-red-a31daca-20261127.xml`). The retry and geometry batch
+passed 35 tests in 33.322 s on `b2dc640` before independent review
+(`m3-retry-source-green-20261127.xml`).
+
+The independent P2 review found a legacy capture compatibility regression.
+On `e7f98075921d42129a0a6e6616bb7322fae9726f`,
+`m3-retry-declared-source-red-e7f9807-20261127.xml` recorded one expected
+failure and one pass in 3.529 s. A v1 capture declaring `audio.wav` only in
+`capture_sources`, with no `recoverable_audio` entry, returned conflict
+(exit 3). The control for an undeclared default WAV beside a declared raw
+source passed. Runtime verification of `5edb571`, independent re-review
+and integrated verification remain pending.
+
+The diagnostic Windows package and synthetic installer smoke passed on
+`f894923ae0f1cd040a64279c1f4d6c4ee2339c7a`. The ZIP checksum and 772
+inventory entries matched. The bundled CLI ingested the synthetic WAV and
+the GUI loaded the zero marker. The probe stopped at `0x88890021` before
+measurement. Real playback within 250 ms remains a pending level 3 gate.
+[Windows package 44781729845](https://github.com/srodriguez-lefebre/here/actions/runs/44781729845)
+
+## 2026-11-27 — M3 A FTS phase diagnostic
+
+Level 2 diagnostic. The median FTS phase fell from 404.98 ms to 320.11 ms
+over eight samples on the same SHA with 98,901 rows and 387 frames. A fresh
+public search p95 and a fresh event-loop heartbeat measurement remain pending.
+[PR #28](https://github.com/srodriguez-lefebre/here/pull/28) remains open.
+
+Ruling 64 continues to omit Copilot for the pending PRs. The two-hour run
+remains **omitida por ruling 5**.

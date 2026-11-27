@@ -1124,3 +1124,40 @@ the bundled application's idle baseline, and report baseline plus delta.
 Clean-install verification must use an independent Windows environment without the
 developer virtual environment or repo on PATH. A bundled executable launched from a
 temporary directory tests independence but alone does not prove a clean installation.
+
+
+## Checkpoint M3 — 2026-11-27
+
+### M3 B · Compatibilidad del reintento
+
+Nivel 2 focalizado con sesiones sintéticas. Los recibos JUnit están en `%TEMP%`.
+
+| Candidato y recibo | Resultado observado |
+|---|---|
+| `a31daca` · `m3-retry-source-red-a31daca-20261127.xml` | Un fallo esperado y seis pases en 40,862 s. Se reprodujo la selección de un WAV normalizado vacío junto a una fuente cruda válida. |
+| `b2dc640` · `m3-retry-source-green-20261127.xml` | 35 pases en 33,322 s para reintento y geometría. La revisión independiente posterior señaló una regresión de compatibilidad P2. |
+| `e7f98075921d42129a0a6e6616bb7322fae9726f` · `m3-retry-declared-source-red-e7f9807-20261127.xml` | Un fallo esperado y un pase en 3,529 s. La captura v1 que declara `audio.wav` únicamente en `capture_sources` y omite `recoverable_audio` devolvió conflicto (salida 3). Pasó el control de rechazo del WAV por defecto sin declarar junto a una fuente cruda declarada. |
+
+Quedan pendientes la ejecución del foco sobre `5edb571`, la nueva revisión
+independiente y la verificación integrada. La fila de navegación sigue abierta.
+
+### M3 B · Diagnóstico del paquete Windows
+
+Nivel 2 en el head exacto `f894923ae0f1cd040a64279c1f4d6c4ee2339c7a`.
+El paquete pasó el smoke de instalación con datos sintéticos. Se comprobó
+el checksum del ZIP y sus 772 entradas de inventario. El CLI del bundle
+ingirió el WAV sintético con SHA-256
+`eac58e90b86607135ad0a30562a36f68b2914b95dc81e77a3553b7b664b4cabc`
+y la GUI cargó la marca cero. La sonda se detuvo antes de medir con
+`0x88890021`. La reproducción real dentro de 250 ms sigue pendiente para
+nivel 3. [Corrida 44781729845](https://github.com/srodriguez-lefebre/here/actions/runs/44781729845)
+
+### M3 A · Diagnóstico de fase FTS
+
+Nivel 2 diagnóstico. La mediana de la fase FTS bajó de 404,98 a 320,11 ms
+en ocho muestras del mismo SHA sobre 98.901 filas y 387 frames. Quedan
+pendientes una nueva medición pública de p95 y una nueva medición de heartbeat.
+El PR #28 sigue abierto. [PR #28](https://github.com/srodriguez-lefebre/here/pull/28)
+
+La prueba de dos horas sigue **omitida por ruling 5**. Copilot sigue omitido
+para los PR pendientes por ruling 64.
