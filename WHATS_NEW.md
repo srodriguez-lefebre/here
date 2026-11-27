@@ -1,13 +1,15 @@
 # What's new
 
-## M3 development — Find saved meetings
+## Upcoming in 0.4.0 — Find a meeting and return to the original moment
 
-Open **Biblioteca** to find a saved meeting by title or by words in its transcript.
-Filter by date, status or participant, then open the meeting to read the original
-segments and see who spoke where a speaker has been assigned. A title can be
-corrected from the same detail view. Search and browsing use the local catalog
-without a provider key. This note covers the M3 A candidate while its release
-checks are in progress.
+Open **Biblioteca** to find a saved meeting by title or transcript and filter
+by date, status or participant. Open a result to read the original segment and
+its surrounding context. If the segment has a timestamp and audio is available,
+jump to that point and press Play to listen. You can also correct a meeting's
+title in its detail view.
+
+Use `here meetings` to list, search, inspect and manage saved meetings from
+the terminal. Local browsing, search and playback work without a provider key.
 
 ## 0.3.0 — Local catalog and lifecycle
 

@@ -179,6 +179,19 @@ El hito se considera terminado cuando se cumplen conjuntamente:
     implementado, con las filas M3 de `ACCEPTANCE.md` nombrando la corrida que las
     cierra.
 
+## Estado de verificación del candidato 0.4.0
+
+| Criterios | Evidencia y estado |
+|---|---|
+| 1–4 y 6–10 | Nivel 2 en M3 A, PR #28, y suite local del candidato integrado. |
+| 5 | Nivel 2 en el candidato integrado. p95 de 395,381 ms y heartbeat Qt de 13,2683 ms. |
+| 11–12 y 14–17 | Nivel 2 en la suite local exacta. Cubre resolver, navegación, reproducción, CLI y accesibilidad con backend simulado para los controles de reproducción. |
+| 13 | Nivel 3 histórico para el paquete de `912f63f`. Medición sobre el candidato integrado pendiente. |
+| 18 | Suite local Windows de nivel 2, 1.801 pases y 24 omisiones, y paquete exacto aprobado. CI Windows del PR y release 0.4.0 pendientes. |
+
+Los resultados y recibos están en [ACCEPTANCE.md](development/ACCEPTANCE.md).
+[Paquete integrado 46036939106](https://github.com/srodriguez-lefebre/here/actions/runs/46036939106)
+
 ## Lo que queda pendiente de decidir
 
 - Dónde vive `SearchService`. Default: `src/memory/search.py`, sobre el repositorio

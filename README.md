@@ -225,9 +225,9 @@ deletion record prevents automatic restoration or reimport of the deleted
 meeting. Named runs and their scope are in
 [ACCEPTANCE.md](docs/development/ACCEPTANCE.md).
 
-### Library tab (M3 development)
+### Library tab (0.4.0 candidate)
 
-The M3 A development build adds **Biblioteca** alongside the capture tab in
+Open **Biblioteca** alongside the capture tab in
 `here-gui`. With the search box empty, it lists saved meetings. Enter words to
 search titles and transcripts, or narrow the results by start date, status or
 participant. Use **Incluir transcripciones parciales** to include active partial
@@ -237,6 +237,29 @@ Open a meeting to read its original transcript segments, see participant
 assignments and edit its title. A conflicting title edit reloads the current
 version for review. The library runs locally without a provider key. If FTS5 is
 unavailable, the library shows a notice and uses literal search.
+
+Select a search hit to open its original transcript segment with the surrounding
+context. For a timed segment with available audio, **Reproducir desde mm:ss**
+seeks to that point. Press Play to start listening. An untimed segment shows
+**Sin marca de tiempo**. The player stops when you switch meetings and its
+controls are unavailable while capture is active.
+
+### Meeting commands
+
+Use `here meetings --help` to browse and manage the same local catalog.
+
+```powershell
+here meetings list --json
+here meetings search "project update" --meeting MEETING_ID --json
+here meetings show MEETING_ID --json
+here meetings play MEETING_ID --segment SEGMENT_ID
+```
+
+The group also offers `rename`, `participant`, `retry`, `import-session`,
+`reindex` and `delete`. Deletion requires `--yes`. Exit codes are 0 for success,
+2 for invalid input, 3 for missing items or conflicts, 4 for integrity or I/O
+failures and 5 for a provider failure during explicit `retry`. Local browsing,
+search and playback work without a provider key.
 
 ## Audio Diagnostics
 

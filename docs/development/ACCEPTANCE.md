@@ -20,7 +20,7 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M2 · criterio 15 | Suite completa en CI de Windows sin credencial real ni display | Corrida hospedada sobre el head exacto del PR M2 B | Nivel 2. CI `43461764790` pasó 1273 pruebas y omitió dos smokes de wheel, que pasaron en la corrida no editable. Head `55d68e2`. |
 | M2 | Deletion clears managed memory without resurrection | DB/FTS/files/backup inspection after restart | Nivel 2 en `r62-green-3-61a5088c` (110 pases) y CI `43461764790` (1273 pases). Incluye la matriz R42 de kill/reinicio y orígenes externos. Revisión independiente y PR #25 mergeados. |
 | M2 · 0.3.0 | Installed wheel and Windows package | Fresh wheel and stable installer artifact with checksums | Nivel 2. `m2-030-wheel-a4e464a319f7-a98d6f06` pasó 4 smokes. Package `43461764783` pasó la instalación estable con datos sintéticos y publicó el artefacto `14056018512`; sus seis hashes fueron verificados. |
-| M3 | Listing/filter/search and original moment navigation | End-to-end Qt selection and seek plus real WAV marker playback | Abierto. Focos históricos de búsqueda, Biblioteca y ACK de borrado registrados abajo. Resolver, reproducción y seek real pendientes. |
+| M3 | Listing/filter/search and original moment navigation | End-to-end Qt selection and seek plus real WAV marker playback | Abierto. Navegación, resolver, reproducción, CLI y accesibilidad verificados a nivel 2 en la suite local de `063d974`. Seek nivel 3 histórico en `912f63f`. Seek real integrado y CI Windows del PR pendientes. |
 | M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | M3 A cerrado a nivel 2 por PR #28, merge `a1a8362`. Gates locales en `7b04f76`: 397,395940002 ms p95 (5+40 válidas) y heartbeat Qt de 9,462 ms. CI Windows `46032934133` y paquete `46032934126` verdes en el head exacto revisado `3a9cc11`. |
 | M4 | Multi-meeting answers/extractions with valid evidence | Source-resolution and semantic synthetic corpus, provider smoke | Open |
 | M4 | Uncertainty/injection/cancellation/deletion remain honest | No-evidence, invalid-citation, concurrent delete/redaction tests | Open |
@@ -1286,3 +1286,30 @@ Los gates de p95 y heartbeat conservan el recibo local de `7b04f76`.
 La suite histórica de 1.699 pases, un fallo y 23 omisiones y el
 foco corregido de 13 pases conservan sus propios resultados.
 La navegación integrada de M3 B y el release 0.4 siguen pendientes.
+
+## M3 B · Candidato integrado para 0.4.0
+
+Nivel 2 en `063d974f66ac42da85a82474cfc900a1335e54f3`. La búsqueda
+pública obtuvo 395,381 ms p95 frente al límite de 500 ms y el heartbeat
+Qt registró un gap máximo de 13,2683 ms frente a 50 ms. El workflow de
+paquete Windows integrado terminó en verde sobre ese mismo head.
+La suite local exacta en Windows terminó con 1.801 pases, 24 omisiones y
+dos avisos en 708,50 s. El recibo de salida registró código 0 y cero procesos
+remanentes. El alcance de nivel 2 incluye resolución y navegación de evidencia,
+seek del adaptador con backend simulado, cambio de reunión, controles durante
+captura, contrato CLI y accesibilidad. El seek real integrado espera una sesión
+de escritorio Windows desbloqueada. CI Windows del PR y release 0.4.0 siguen
+pendientes.
+
+Recibos `m3-b-r76-full-063d974.xml` y `m3-b-r76-full-063d974-exit.json` en
+`C:/Users/savar/.codex/evidence/here/m3-native-windows-distribution-20261127/`.
+SHA-256 del JUnit
+`21A46BD91C6D5E99D8F18CE54DF3F0C8EE5431D61948EE74393A74978FBB9EF4`.
+[Paquete 46036939106](https://github.com/srodriguez-lefebre/here/actions/runs/46036939106)
+
+La prueba de seek del 27 de noviembre sobre el paquete de `912f63f`
+es evidencia histórica de nivel 3. Registró cuatro marcas a 1×,
+con máximo de 36,2448 ms de error absoluto más incertidumbre frente
+al límite de 250 ms, en render Media Foundation con loopback Windows
+por proceso. Los recibos están en
+`C:/Users/savar/.codex/evidence/here/m3-b-seek-912f63f-20261127/`.
