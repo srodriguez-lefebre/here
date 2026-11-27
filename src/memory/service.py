@@ -1309,7 +1309,7 @@ class MemoryService:
     ) -> tuple[SuppressionSnapshot, _PortableExportRows]:
         with (
             closing(open_library(self.data_dir)) as library,
-            _catalog_snapshot_locked(library) as suppression,
+            _catalog_snapshot_locked(library, preflight_under_lock=True) as suppression,
         ):
             if set(ids).intersection(suppression.suppressed_meeting_ids):
                 raise NotFound("Selected meeting does not exist")
