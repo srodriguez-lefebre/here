@@ -150,12 +150,18 @@ def test_late_blob_precedes_early_rowid_decode_error_in_canonical_order(
 def test_malformed_text_without_earlier_encoding_error_replays_canonical_sql(
     ordered_catalog, monkeypatch
 ):
+    from here.memory.database import IntegrityFailure
+
     _, library, _ = ordered_catalog
     _add_malformed_text(library, _NUM_ROWS + 6)
     trace = []
     library.connection.set_trace_callback(trace.append)
-    with pytest.raises(sqlite3.OperationalError, match="Could not decode"):
+    with pytest.raises(IntegrityFailure) as failure:
         _producer_bytes(library, monkeypatch)
+    cause = failure.value.__cause__
+    assert type(cause) is sqlite3.OperationalError
+    assert "Could not decode to UTF-8" in str(cause)
+    assert not library.connection.in_transaction
     assert _canonical_sorts(trace)
 
 
