@@ -3,9 +3,9 @@
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
 > review, then independent agent review. Root owns leases, integration and merges
 > under CLAUDE §7 and rulings 16/20/35/64. Steps use checkbox syntax.
-> **Status: preparation only, held before dispatch.** Root may dispatch B on the
-> frozen/reviewed M3 A branch with its PR open after accepted interface handoff
-> and any necessary contract-docs PR merge; rebase B after A merges (CLAUDE §11).
+> **Status: handoff preparation.** The B candidate already contains playback and
+> CLI work. Root will bind that work to the exact accepted M3 A merge and land
+> this contract update before dispatching further B work.
 
 **Goal:** Jump from any result or citation to the original segment and, with real
 timing, to the audio at that millisecond; expose the same operations through
@@ -35,14 +35,28 @@ its plugins).
 
 M2 B merged in PR #25 at `b4b3d1beb9b05e33ae03ab8381e805aa6a23ffc8`, with
 Windows CI `43461764790` and package workflow `43461764783` on reviewed head
-`55d68e2`. The interface comparison pins integrated M3 A candidate
-`31488693152067ae58eeacec08f0b01f47085fe4` and the reviewed deletion ACK
-`d8fb75b37691cc9c4e57fa84bb545190b3b9304b`. This is a static comparison.
-The earlier warm-search p95 of 879.48 ms fails the 500 ms gate. M3 A's PR is
-unopened and its final reviewed head and gates remain pending. Root holds B until
-that head is reviewed, the PR opens, the interfaces are accepted and any required
-contract documentation is merged. Under CLAUDE §11, B can then start on A's
-branch and rebase after A merges.
+`55d68e2`. [M3 A PR #28](https://github.com/srodriguez-lefebre/here/pull/28)
+is open at `0c16065` and acceptance is pending. The integrated R75 FTS
+candidate `4ba043ec4a4ee0f55281fde78a1678eb237f0aa4` passed independent review.
+Its public 5+40 search benchmark measured 530.14 ms p95 against the unchanged
+<500 ms gate (level 2 failure). The Windows package run `46028557240` for
+that candidate is diagnostic and was pending at this checkpoint. R76 extends
+the same approved native encoding to ACTIVE. The resulting A candidate still
+requires equivalence, public 5+40, heartbeat <50 ms, independent review and
+Windows gates on the final head before protected merge.
+
+The existing B candidate `b36162a` in `m3-library-group/here` carries the
+playback, CLI and QtMultimedia work. Use it as the integration input. Root
+records the exact A merge SHA, confirms the accepted public DTOs and reviewed
+deletion ACK (`d8fb75b37691cc9c4e57fa84bb545190b3b9304b` is the prior ACK
+reference), and owns the rebase and file leases. CLAUDE §11 governs group
+overlap. This checkpoint prepares the handoff before further B work.
+
+A dry merge preview of `4ba043e` and `b36162a` flagged conflicts in
+`.github/workflows/windows-package.yml`, `packaging/windows.spec` and
+`src/memory/service.py`. It auto-merged `scripts/windows_notices.py` and
+`src/memory/search.py`. Recheck against the accepted A merge and review both
+the resolved and auto-merged paths against the contracts below.
 
 | Handoff / shared scope | Required owner or dependency |
 |---|---|
@@ -53,6 +67,7 @@ branch and rebase after A merges.
 | Deletion/reindex/R42 read guard | Merged B5, candidate R53 facade and R52 ACK. Player release on deletion is Task 3 work. |
 | Memory service/models/repository/search, CLI, UI and application adapters | Root serializes all shared writes with M3 A and M5 B. Work from separate worktrees and keep the M3 A candidate frozen during its verification. |
 | Shared UI/tests, packaging, dependencies/version/global docs | Root grants exact file leases and serializes integration/metadata and milestone closure. |
+| R75/R76 search and Windows package | Preserve A's accepted native build, load and distribution checks when integrating B's QtMultimedia payload. Verify both on the resulting B head. |
 
 Heavy tests/builds/mypy, benchmark/deadline suites and real seek observations require
 root's exclusive host window. No runtime is authorized by this preparation.
@@ -95,6 +110,23 @@ Carry these inherited requirements into the existing tasks below:
   InvalidInput/corpus_changed → existing CLI exit 2/accepted JSON error shape.
   Do not combine generations; Qt uses its existing fresh request/replacement path.
   Ordinary listing remains insert-stable under its date/ID keyset.
+
+## Native search and Windows package handoff (R75/R76)
+
+- Carry forward the accepted generation bytes and v2 cursors, legacy
+  compatibility, public DTOs and structured errors, BM25 ranking, and the
+  canonical fallback. Preserve the single R50 read view and suppression order
+  when applying the meeting scope before keyset and LIMIT.
+- Preserve the pinned Windows toolchain and fixed shipped DLL
+  `_internal/here/memory/_native_search_v2.dll` and its private generated
+  `_native_search_manifest.py`. Keep the frozen `--smoke-check` activation
+  checks for the assembled GUI and CLI and the installed payload. Retain the
+  workflow's managed CPython shipped-DLL parity tests and native evidence
+  upload alongside B's QtMultimedia distribution check.
+- Keep native build provenance, inventory/checksums and notices in the same
+  audited package as the QtMultimedia binaries, plugins and notices from B.
+  Verify the combined package on the exact B head. Keep the 250 ms real-WAV
+  seek observation separate from package presence and startup smoke evidence.
 
 ## R51/R52 bindings within the existing tasks
 
