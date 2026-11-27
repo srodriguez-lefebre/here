@@ -186,6 +186,13 @@ def _validated_recovery_source(
     )
 
 
+def _declared_recovery_source(
+    audio_path: Path, sources: list[RecordedAudioSource]
+) -> RecordedAudioSource | None:
+    """Match a recovery path to a validated capture source."""
+    return next((source for source in sources if source.path == audio_path), None)
+
+
 def _cleanup_capture_after_commit(cleanup: Callable[[], None], session_dir: Path) -> None:
     """Remove capture files after completed metadata commits, retaining cleanup failures.
 
@@ -1504,17 +1511,20 @@ class SessionProcessor:
         )
         if audio_path.exists():
             if selection is not None and metadata is not None and not metadata.recoverable_audio:
-                raise Conflict("The selected recovery session no longer has usable audio")
-            # Only this shape identifies a single persisted source as audio.wav;
-            # legacy multi-source manifests may instead describe the original inputs.
-            expected = (
-                metadata.sources[0]
-                if metadata is not None
-                and metadata.recoverable_audio == audio_file
-                and len(metadata.sources) == 1
-                else None
-            )
-            recovered_source = _validated_recovery_source(audio_path, expected)
+                declared = _declared_recovery_source(audio_path, raw_sources)
+                if declared is None:
+                    raise Conflict("The selected recovery session no longer has usable audio")
+                recovered_source = declared
+            else:
+                # Legacy multi-source manifests may describe the original inputs.
+                expected = (
+                    metadata.sources[0]
+                    if metadata is not None
+                    and metadata.recoverable_audio == audio_file
+                    and len(metadata.sources) == 1
+                    else None
+                )
+                recovered_source = _validated_recovery_source(audio_path, expected)
             if selection is not None and recovered_source.frames == 0:
                 raise Conflict("The selected recovery session no longer has usable audio")
         else:
