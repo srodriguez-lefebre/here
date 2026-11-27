@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 from contextlib import closing
 from dataclasses import replace
@@ -41,7 +42,7 @@ def _active_statements(trace):
         sql
         for statement in trace
         if "left join segments" in (sql := " ".join(statement.lower().split()))
-        and "order by m.id,r.id,s.ordinal,s.id" in sql
+        and "order by m.id,r.id,s.ordinal,s.id" in re.sub(r"\s*,\s*", ",", sql)
     ]
 
 
@@ -210,11 +211,13 @@ def test_active_stays_native_after_canonical_fts_replay(
         assert _ACTIVE in active
 
 
-@pytest.mark.parametrize("ordinal", [0, 256])
+@pytest.mark.parametrize("ordinal", [0, 300])
 def test_active_real_after_any_frame_replays_the_whole_section(
     tmp_path, monkeypatch, loader_module, native_dll, ordinal
 ):
-    with closing(_vector(tmp_path, "rows257")) as library:
+    library, repo = _open_catalog(tmp_path)
+    with closing(library):
+        _publish(repo, 68, texts=("fixture segment",) * 302)
         library.execute("UPDATE segments SET start_ms=1.25 WHERE ordinal=?", (ordinal,))
         library.connection.commit()
         with monkeypatch.context() as stock:
