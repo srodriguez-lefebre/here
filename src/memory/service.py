@@ -8,31 +8,44 @@ import os
 import re
 import shutil
 import sqlite3
-from contextlib import ExitStack, contextmanager, nullcontext
+from contextlib import ExitStack, closing, contextmanager, nullcontext
 from contextvars import ContextVar
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 from functools import partial
 from pathlib import Path, PurePosixPath, PureWindowsPath
-from typing import Any, Callable, Iterable, Iterator
+from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Iterable, Iterator
 from uuid import UUID, uuid4
 
 from here.memory.artifacts import (
+    PORTABLE_GROUP_NAME,
+    PORTABLE_RECEIPT_NAME,
     PendingIntent,
+    PortableCompletion,
+    PortableCompletionMember,
+    PortableGroup,
+    PortableReceipt,
     SessionArtifacts,
     file_hash,
     managed_path,
     normalized_origin,
+    portable_completion_name,
+    portable_stage_io_path,
     read_artifacts,
     read_meeting_snapshot,
     read_meeting_state,
     read_pending_intent,
+    read_portable_completion,
+    read_portable_group,
+    read_portable_receipt,
     read_retry_artifacts,
     validate_artifact_roles,
+    validate_portable_group_members,
     write_durable_json,
 )
 from here.memory.database import (
     Busy,
+    IntegrityFailure,
     LibraryConnection,
     LibraryError,
     migrate,
@@ -47,7 +60,6 @@ from here.memory.models import (
     IngestSource,
     Meeting,
     MeetingDetail,
-    MeetingParticipant,
     MeetingPatch,
     MeetingStatus,
     Participant,
@@ -55,11 +67,19 @@ from here.memory.models import (
     ReindexReport,
     RevisionAudioAsset,
     Segment,
-    SpeakerAssignment,
     SuppressionSnapshot,
     TranscriptRevision,
 )
-from here.memory.repository import MemoryRepository
+from here.memory.portable_package import validate_entry_name
+from here.memory.repository import MemoryRepository, _PortableExportRows
+from here.output.export_binding import (
+    ExportBindingError,
+    ExportIdentity,
+    WindowsExportSibling,
+    open_export_sibling,
+    recover_export_sibling,
+    validate_export_identity,
+)
 from here.output.metadata import SessionMetadata
 from here.output.ownership import FileLease, LeaseBusy
 from here.output.paths import (
@@ -69,6 +89,14 @@ from here.output.paths import (
     validate_session_directory,
 )
 from here.output.session_writer import read_session_metadata
+
+if TYPE_CHECKING:
+    from here.memory.portable_import import (
+        _PortableImportedMeeting,
+        _PortableImportInventory,
+        _PortableMeetingOutcome,
+        _ValidatedPortableImport,
+    )
 
 
 @dataclass(frozen=True)
@@ -123,6 +151,16 @@ class OwnershipBusy(Busy):
 class _DeleteScopeUnavailable(LibraryError):
     def __init__(self) -> None:
         super().__init__("Private staging retained; pending deletion scope cannot be verified")
+
+
+class _ExportCleanupPending(LibraryError):
+    def __init__(self) -> None:
+        super().__init__("Export temporary cleanup pending local recovery")
+
+
+class _ImportCleanupPending(LibraryError):
+    def __init__(self) -> None:
+        super().__init__("Portable import staging cleanup pending local recovery")
 
 
 def _is_uuid(value: object) -> bool:
@@ -233,6 +271,414 @@ class _DeletionRecord:
             ],
             "phase": self.phase,
         }
+
+
+_EXPORT_SIBLING_NAME = re.compile(r"\.here-export-([0-9a-f]{32})\.partial")
+_EXPORT_REGISTRY_FIELDS = frozenset(
+    {"schema_version", "operation_id", "meeting_ids", "sibling", "parent_identity", "file_identity"}
+)
+
+
+@dataclass(frozen=True, slots=True)
+class _ExportRegistration:
+    operation_id: str
+    meeting_ids: tuple[str, ...]
+    sibling: Path
+    parent_identity: ExportIdentity
+    file_identity: ExportIdentity
+
+    def document(self) -> dict[str, object]:
+        return {
+            "schema_version": 1,
+            "operation_id": self.operation_id,
+            "meeting_ids": self.meeting_ids,
+            "sibling": str(self.sibling),
+            "parent_identity": self.parent_identity,
+            "file_identity": self.file_identity,
+        }
+
+    @classmethod
+    def read(cls, value: object, operation_id: str) -> _ExportRegistration:
+        if not isinstance(value, dict) or value.keys() != _EXPORT_REGISTRY_FIELDS:
+            raise ValueError("Invalid export registration fields")
+        ids = value["meeting_ids"]
+        sibling = value["sibling"]
+        if (
+            type(value["schema_version"]) is not int
+            or value["schema_version"] != 1
+            or not _is_uuid(operation_id)
+            or value["operation_id"] != operation_id
+            or not isinstance(ids, (list, tuple))
+            or not ids
+            or not all(_is_uuid(identity) for identity in ids)
+            or tuple(ids) != tuple(sorted(set(ids)))
+            or not isinstance(sibling, str)
+        ):
+            raise ValueError("Invalid export registration values")
+        path = Path(sibling)
+        match = _EXPORT_SIBLING_NAME.fullmatch(path.name)
+        if (
+            match is None
+            or str(UUID(hex=match[1])) != operation_id
+            or str(path) != sibling
+            or not path.is_absolute()
+            or ".." in path.parts
+        ):
+            raise ValueError("Invalid export temporary role")
+        parent = validate_export_identity(value["parent_identity"])
+        file = validate_export_identity(value["file_identity"])
+        if parent[:2] != file[:2] or parent[2] == file[2]:
+            raise ValueError("Export temporary and parent identities disagree")
+        return cls(operation_id, tuple(ids), path, parent, file)
+
+
+def _export_registrations(data_dir: Path) -> Iterator[tuple[Path, _ExportRegistration]]:
+    directory = managed_path(data_dir, ".exports", directory=True)
+    try:
+        entries = sorted(directory.iterdir(), key=lambda entry: entry.name)
+    except FileNotFoundError:
+        return
+    for entry in entries:
+        path = session_artifact_path(directory, entry.name)
+        if path.suffix == ".json" and _is_uuid(path.stem):
+            yield (
+                path,
+                _ExportRegistration.read(json.loads(path.read_text(encoding="utf-8")), path.stem),
+            )
+            continue
+        stage = re.fullmatch(r"\.([0-9a-f-]{36})\.json\.[A-Za-z0-9_-]{8}\.stage", path.name)
+        if stage is None or not _is_uuid(stage[1]):
+            raise ValueError("Unrecognized export registry entry retained")
+        # Interrupted registry writes were never sufficient to start streaming.
+
+
+_IMPORT_REGISTRATION = ".import.json"
+_IMPORT_LEASE = ".import.lock"
+_IMPORT_WORK = ".import-work.json"
+_IMPORT_STAGE_NAME = re.compile(r"import-([0-9a-f-]{36})")
+
+
+@dataclass(frozen=True, slots=True)
+class _ImportRegistration:
+    operation_id: str
+    meeting_ids: tuple[str, ...]
+    files: tuple[tuple[str, int, str], ...]
+
+    def document(self) -> dict[str, object]:
+        return {
+            "schema_version": 1,
+            "operation_id": self.operation_id,
+            "meeting_ids": self.meeting_ids,
+            "files": self.files,
+        }
+
+    @classmethod
+    def read(cls, value: object, operation_id: str) -> _ImportRegistration:
+        if (
+            not isinstance(value, dict)
+            or value.keys() != {"schema_version", "operation_id", "meeting_ids", "files"}
+            or type(value["schema_version"]) is not int
+            or value["schema_version"] != 1
+            or not _is_uuid(operation_id)
+            or value["operation_id"] != operation_id
+        ):
+            raise ValueError("Invalid portable import stage registration")
+        meeting_ids = value["meeting_ids"]
+        files = value["files"]
+        if (
+            not isinstance(meeting_ids, (list, tuple))
+            or not meeting_ids
+            or not all(_is_uuid(identity) for identity in meeting_ids)
+            or tuple(meeting_ids) != tuple(sorted(set(meeting_ids)))
+            or not isinstance(files, (list, tuple))
+            or not 1 <= len(files) < 10_000
+        ):
+            raise ValueError("Invalid portable import stage inventory")
+        validated: dict[str, tuple[str, int, str]] = {}
+        identities = frozenset(meeting_ids)
+        total = 0
+        for entry in files:
+            if not isinstance(entry, (list, tuple)) or len(entry) != 3:
+                raise ValueError("Invalid portable import stage file")
+            name, size, digest = entry
+            if (
+                not isinstance(name, str)
+                or type(size) is not int
+                or not 0 <= size <= 20 * 1024**3
+                or not isinstance(digest, str)
+                or re.fullmatch(r"[0-9a-f]{64}", digest) is None
+            ):
+                raise ValueError("Invalid portable import stage file metadata")
+            path = validate_entry_name(name)
+            if not _valid_import_payload_role(path.parts, identities):
+                raise ValueError("Invalid portable import stage role")
+            if name in validated:
+                raise ValueError("Duplicate portable import stage role")
+            validated[name] = (name, size, digest)
+            total += size
+            if total > 20 * 1024**3:
+                raise ValueError("Portable import stage inventory exceeds its byte limit")
+        return cls(operation_id, tuple(meeting_ids), tuple(validated.values()))
+
+
+def _valid_import_payload_role(parts: tuple[str, ...], meeting_ids: frozenset[str]) -> bool:
+    match parts:
+        case ("participants.json" | "speaker_assignments.json",):
+            return True
+        case ("meetings", identity, "meeting.json"):
+            return identity in meeting_ids
+        case ("meetings", identity, "revisions", number, "revision.json" | "segments.json"):
+            return identity in meeting_ids and re.fullmatch(r"[1-9][0-9]{0,18}", number) is not None
+        case ("meetings", identity, "audio", name):
+            return identity in meeting_ids and name.endswith(".wav") and _is_uuid(name[:-4])
+        case _:
+            return False  # Answer payloads are gated on the M4 B handoff.
+
+
+@dataclass(slots=True)
+class _PortableImportStage:
+    operation_id: str
+    directory: Path
+    _registration: _ImportRegistration
+    retain_for_recovery: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class _ImportMeetingPlan:
+    group: PortableGroup
+    manifest_sha256: str
+    hashes: dict[str, dict[str, str]]
+    stage_root: Path | None = None
+
+    def evidence_stage_name(self, role: str) -> str:
+        return f".{self.group.operation_id}-{role}.stage"
+
+    def document(self) -> dict[str, object]:
+        return {
+            "group": self.group.document(),
+            "manifest_sha256": self.manifest_sha256,
+            "hashes": self.hashes,
+        }
+
+    @classmethod
+    def read(cls, value: object) -> _ImportMeetingPlan:
+        if not isinstance(value, dict) or value.keys() != {"group", "manifest_sha256", "hashes"}:
+            raise ValueError("Invalid portable meeting plan")
+        group = value["group"]
+        manifest = value["manifest_sha256"]
+        hashes = value["hashes"]
+        if (
+            not isinstance(group, dict)
+            or group.keys() != {"schema_version", "operation_id", "meeting_id", "revision_ids"}
+            or type(group["schema_version"]) is not int
+            or group["schema_version"] != 1
+            or not _is_uuid(group["operation_id"])
+            or not _is_uuid(group["meeting_id"])
+            or not isinstance(group["revision_ids"], (tuple, list))
+            or not all(_is_uuid(identity) for identity in group["revision_ids"])
+            or len(set(group["revision_ids"])) != len(group["revision_ids"])
+            or not isinstance(manifest, str)
+            or re.fullmatch(r"[0-9a-f]{64}", manifest) is None
+            or not isinstance(hashes, dict)
+            or hashes.keys() != set(group["revision_ids"])
+        ):
+            raise ValueError("Invalid portable meeting ownership proof")
+        for roles in hashes.values():
+            if not isinstance(roles, dict) or any(
+                not isinstance(name, str)
+                or re.fullmatch(r"audio_[0-9a-f]{32}\.wav", name) is None
+                or not isinstance(digest, str)
+                or re.fullmatch(r"[0-9a-f]{64}", digest) is None
+                for name, digest in roles.items()
+            ):
+                raise ValueError("Invalid portable meeting artifact inventory")
+        return cls(
+            PortableGroup(group["operation_id"], group["meeting_id"], tuple(group["revision_ids"])),
+            manifest,
+            hashes,
+        )
+
+
+def _read_import_work(
+    stage_root: Path, registration: _ImportRegistration
+) -> dict[str, _ImportMeetingPlan]:
+    proof = session_artifact_path(stage_root, _IMPORT_WORK)
+    try:
+        with proof.open("rb") as stream:
+            data = stream.read(8 * 1024**2 + 1)
+    except FileNotFoundError:
+        return {}
+    if len(data) > 8 * 1024**2:
+        raise ValueError("Portable import work inventory is too large")
+    value = json.loads(data)
+    if (
+        not isinstance(value, dict)
+        or value.keys() != {"schema_version", "operation_id", "plans"}
+        or type(value["schema_version"]) is not int
+        or value["schema_version"] != 1
+        or value["operation_id"] != registration.operation_id
+        or not isinstance(value["plans"], list)
+        or len(value["plans"]) > len(registration.meeting_ids)
+    ):
+        raise ValueError("Invalid portable import work inventory")
+    plans = [_ImportMeetingPlan.read(entry) for entry in value["plans"]]
+    result = {plan.group.meeting_id: plan for plan in plans}
+    if (
+        len(result) != len(plans)
+        or len({plan.group.operation_id for plan in plans}) != len(plans)
+        or result.keys() - set(registration.meeting_ids)
+    ):
+        raise ValueError("Portable import work does not match selected meetings")
+    return result
+
+
+def _write_import_intent(directory: Path, name: str, document: object) -> None:
+    """Stage a locally assigned protocol name recoverable after process death."""
+    directory = portable_stage_io_path(directory)
+    path = session_artifact_path(directory, name)
+    temporary = session_artifact_path(directory, f"{name}.stage")
+    with temporary.open("x", encoding="utf-8") as stream:
+        json.dump(document, stream, ensure_ascii=False)
+        stream.flush()
+        os.fsync(stream.fileno())
+    temporary.replace(path)
+
+
+def _import_tree_entries(
+    root: Path, plan: _ImportMeetingPlan, *, published: bool
+) -> tuple[list[Path], list[Path]]:
+    """Validate all existing entries before removing any incomplete owned tree."""
+    root = portable_stage_io_path(root)
+    validate_session_directory(root)
+    files: list[Path] = []
+    directories: list[Path] = []
+    if not root.exists():
+        return files, directories
+    registration = session_artifact_path(root, PORTABLE_GROUP_NAME)
+    if registration.exists():
+        group = read_portable_group(root, plan.group.meeting_id)
+        if group.document() != plan.group.document():
+            raise ValueError("Portable meeting group changed during cleanup")
+        files.append(registration)
+    elif published:
+        raise ValueError("Published portable meeting has no owned group proof")
+    revisions = root / "revisions"
+    allowed = {PORTABLE_GROUP_NAME, "revisions"}
+    if not published:
+        staged = session_artifact_path(root, f"{PORTABLE_GROUP_NAME}.stage")
+        if staged.exists():
+            files.append(staged)
+        allowed.add(staged.name)
+    if any(entry.name not in allowed for entry in root.iterdir()):
+        raise ValueError("Unknown portable meeting work retained")
+    validate_session_directory(revisions)
+    if revisions.exists():
+        for revision in revisions.iterdir():
+            hashes = plan.hashes.get(revision.name)
+            if hashes is None:
+                raise ValueError("Unknown portable revision work retained")
+            validate_session_directory(revision)
+            for entry in revision.iterdir():
+                if entry.name not in hashes:
+                    raise ValueError("Unknown portable revision material retained")
+                file = session_artifact_path(revision, entry.name)
+                if published and file_hash(file) != hashes[entry.name]:
+                    raise ValueError("Portable revision material changed during cleanup")
+                files.append(file)
+            directories.append(revision)
+        directories.append(revisions)
+    directories.append(root)
+    return files, directories
+
+
+def _stage_payload_tree(
+    root: Path, files: Iterable[tuple[str, int, str]]
+) -> tuple[tuple[Path, ...], tuple[Path, ...]]:
+    """Validate every child before returning any removal authority."""
+    root = portable_stage_io_path(root)
+    inventory = {Path(name): size for name, size, _ in files}
+    directories = {parent for file in inventory for parent in file.parents}
+    present_files: list[Path] = []
+    present_directories: list[Path] = []
+
+    def inspect(directory: Path) -> None:
+        validate_session_directory(directory)
+        for entry in directory.iterdir():
+            relative = entry.relative_to(root)
+            if relative in directories:
+                inspect(entry)
+            elif relative in inventory:
+                path = session_artifact_path(directory, entry.name)
+                if path.stat().st_size > inventory[relative]:
+                    raise ValueError("Portable import stage payload exceeded its registered size")
+                present_files.append(path)
+            else:
+                raise ValueError("Unknown portable import stage material retained")
+        present_directories.append(directory)
+
+    if root.exists():
+        inspect(root)
+    return tuple(present_files), tuple(present_directories)
+
+
+def _read_import_registration(stage_root: Path) -> _ImportRegistration:
+    match = _IMPORT_STAGE_NAME.fullmatch(stage_root.name)
+    if match is None or not _is_uuid(match[1]):
+        raise ValueError("Invalid portable import stage role")
+    path = session_artifact_path(stage_root, _IMPORT_REGISTRATION)
+    with path.open("rb") as stream:
+        data = stream.read(8 * 1024**2 + 1)
+    if len(data) > 8 * 1024**2:
+        raise ValueError("Portable import stage registration is too large")
+    return _ImportRegistration.read(json.loads(data), match[1])
+
+
+def _purge_import_stage_payload(stage_root: Path, registration: _ImportRegistration) -> None:
+    """Prove every file before removing only the registered stage payload."""
+    allowed = {
+        _IMPORT_REGISTRATION,
+        _IMPORT_LEASE,
+        _IMPORT_WORK,
+        f"{_IMPORT_WORK}.stage",
+        "payload",
+        "work",
+    }
+    for name in (_IMPORT_REGISTRATION, _IMPORT_LEASE, _IMPORT_WORK):
+        session_artifact_path(stage_root, name)
+    plans = _read_import_work(stage_root, registration)
+    evidence_roles = {
+        plan.evidence_stage_name(role)
+        for plan in plans.values()
+        for role in ("state", "completion", *plan.group.revision_ids)
+    }
+    evidence_files = []
+    for entry in stage_root.iterdir():
+        if entry.name in evidence_roles:
+            evidence_files.append(session_artifact_path(stage_root, entry.name))
+        elif entry.name not in allowed:
+            raise ValueError("Unknown portable import staging material retained")
+    interrupted_work = session_artifact_path(stage_root, f"{_IMPORT_WORK}.stage")
+    files, directories = _stage_payload_tree(stage_root / "payload", registration.files)
+    work = stage_root / "work"
+    work_files: list[Path] = []
+    work_directories: list[Path] = []
+    validate_session_directory(work)
+    if work.exists():
+        for entry in work.iterdir():
+            if entry.name not in plans:
+                raise ValueError("Unknown portable import meeting work retained")
+            member_files, member_directories = _import_tree_entries(
+                entry, plans[entry.name], published=False
+            )
+            work_files.extend(member_files)
+            work_directories.extend(member_directories)
+        work_directories.append(work)
+    for file in (*files, *work_files, *evidence_files):
+        session_artifact_path(file.parent, file.name).unlink()
+    for directory in (*directories, *work_directories):
+        validate_session_directory(directory)
+        directory.rmdir()
+    interrupted_work.unlink(missing_ok=True)
 
 
 class _CatalogRepository(MemoryRepository):
@@ -388,18 +834,20 @@ def _suppression_snapshot(
 
 
 @contextmanager
-def catalog_read_view(library: LibraryConnection) -> Iterator[SuppressionSnapshot]:
-    """Own only the bounded publication lease and a fresh caller's read transaction."""
+def _catalog_snapshot_locked(
+    library: LibraryConnection, *, preflight_under_lock: bool = False
+) -> Iterator[SuppressionSnapshot]:
+    """Read one snapshot while the caller owns the catalog publication lease."""
     if library.connection.in_transaction:
         raise LibraryError("Catalog read view requires a fresh connection without a transaction")
-    lock: _FileLock | None = None
     owned_transaction = False
     try:
         try:
-            lock = _FileLock(managed_path(library.data_dir, ".memory.lock"))
             library.execute("BEGIN")
             owned_transaction = True
-            records, _ = _deletion_registry(library.data_dir, preflight_under_lock=True)
+            records, _ = _deletion_registry(
+                library.data_dir, preflight_under_lock=preflight_under_lock
+            )
             snapshot = _suppression_snapshot(library, records)
         except sqlite3.Error as exc:
             raise storage_error(exc) from exc
@@ -410,12 +858,148 @@ def catalog_read_view(library: LibraryConnection) -> Iterator[SuppressionSnapsho
         except sqlite3.Error as exc:
             raise storage_error(exc) from exc
     finally:
+        if owned_transaction:
+            library.connection.rollback()
+
+
+def _catalog_publication_lock(data_dir: Path) -> _FileLock:
+    try:
+        return _FileLock(managed_path(data_dir, ".memory.lock"))
+    except (OSError, ValueError) as exc:
+        raise LibraryError("Catalog read view unavailable") from exc
+
+
+@dataclass(slots=True)
+class _PortableExportView:
+    _memory: MemoryService
+    _ids: tuple[str, ...]
+    _suppression: SuppressionSnapshot
+    rows: _PortableExportRows
+    warnings: tuple[str, ...] = ()
+    _active: bool = True
+    _temporary: WindowsExportSibling | None = None
+    _publish_attempted: bool = False
+    _published: bool = False
+
+    @contextmanager
+    def open_audio(self, asset: AudioAsset) -> Iterator[BinaryIO]:
+        if not self._active or not any(asset in item.audio_assets for item in self.rows.meetings):
+            raise InvalidInput("Audio is outside the selected export snapshot")
         try:
-            if owned_transaction:
-                library.connection.rollback()
+            path = managed_path(self._memory.data_dir, asset.relative_path)
+            revision_parent = self._memory.data_dir / "meetings" / asset.meeting_id / "revisions"
+            if (
+                asset.status != "available"
+                or path.parent.parent != revision_parent
+                or not _is_uuid(path.parent.name)
+                or path.suffix.lower() != ".wav"
+            ):
+                raise ValueError("Invalid managed export audio role")
+            imported = self._memory._portable_receipt_for_asset(path, asset.meeting_id)
+            hashes = (
+                imported.hashes
+                if imported is not None
+                else _delete_publication_plan(path.parent)["hashes"]
+            )
+            if hashes.get(path.name) != asset.sha256:
+                raise ValueError("Managed audio disagrees with its publication proof")
+            validate_artifact_roles(path.parent, (path.name,))
+            stream = path.open("rb")
+        except (OSError, ValueError, TypeError, KeyError) as exc:
+            raise IntegrityFailure("Selected audio is unavailable or invalid") from exc
+        with stream:
+            yield stream
+
+    @contextmanager
+    def _open_export_destination(self, destination: Path) -> Iterator[WindowsExportSibling]:
+        if not self._active or self._temporary is not None or self._publish_attempted:
+            raise InvalidInput("Export destination scope is unavailable")
+        if not destination.name.casefold().endswith(".here.zip"):
+            raise InvalidInput("Export destination must name a .here.zip archive")
+        destination = destination.absolute()
+        # Application-managed directories recognize a fixed set of owned roles.
+        # A user package must not become unknown material in those directories.
+        if destination.parent.is_relative_to(self._memory.data_dir):
+            raise InvalidInput("Choose a package destination outside the managed library")
+        registration: Path | None = None
+        cleanup_verified = False
+        try:
+            with ExitStack() as native_scope:
+                try:
+                    temporary = native_scope.enter_context(
+                        open_export_sibling(destination, excluded_root=self._memory.data_dir)
+                    )
+                    self._temporary = temporary
+                    registration = self._memory._register_export(self._ids, temporary)
+                    yield temporary
+                finally:
+                    if self._temporary is not None and not self._published:
+                        try:
+                            self._temporary.remove()
+                        except ExportBindingError as exc:
+                            raise _ExportCleanupPending() from exc
+                        cleanup_verified = True
+                    self._temporary = None
+        except ExportBindingError as exc:
+            if not self._published:
+                raise LibraryError("Could not open or publish the owned export temporary") from exc
+            self.warnings += (str(_ExportCleanupPending()),)
         finally:
-            if lock is not None:
-                lock.close()
+            if (
+                registration is not None
+                and (self._published or cleanup_verified)
+                and not self.warnings
+            ):
+                try:
+                    self._memory._retire_export(registration)
+                except _ExportCleanupPending as exc:
+                    if not self._published:
+                        raise
+                    self.warnings += (str(exc),)
+
+    def publish(self, temporary: WindowsExportSibling, *, cancelled: Callable[[], bool]) -> None:
+        if not self._active or temporary is not self._temporary or self._publish_attempted:
+            raise InvalidInput("Export publication requires its active temporary")
+        self._publish_attempted = True
+
+        def before_rename() -> None:
+            if cancelled():
+                from here.memory.portability import ExportCancelled
+
+                raise ExportCancelled("Export cancelled")
+
+        try:
+            with closing(_catalog_publication_lock(self._memory.data_dir)):
+                try:
+                    suppression, rows = self._memory._portable_rows_locked(self._ids)
+                except NotFound as exc:
+                    raise Conflict(
+                        "Catalog changed during export; select the meetings again"
+                    ) from exc
+                if self._suppression != suppression or self.rows != rows:
+                    raise Conflict("Catalog changed during export; select the meetings again")
+                temporary.replace_destination(before_rename=before_rename)
+                self._published = True
+        except OSError:
+            if not self._published:
+                raise
+            self.warnings += (str(_ExportCleanupPending()),)
+
+
+@contextmanager
+def catalog_read_view(library: LibraryConnection) -> Iterator[SuppressionSnapshot]:
+    """Own only the bounded publication lease and a fresh caller's read transaction."""
+    if library.connection.in_transaction:
+        raise LibraryError("Catalog read view requires a fresh connection without a transaction")
+    try:
+        lock = _catalog_publication_lock(library.data_dir)
+    except sqlite3.Error as exc:
+        raise storage_error(exc) from exc
+    try:
+        with _catalog_snapshot_locked(library, preflight_under_lock=True) as snapshot:
+            yield snapshot
+    finally:
+        lock.close()
 
 
 def _legacy_retry_parent(
@@ -583,7 +1167,9 @@ def _delete_publication_plan(directory: Path) -> dict[str, Any]:
 
 def _delete_file_order(relative: str) -> tuple[int, bool, str]:
     path = Path(relative)
-    if path.name in {"catalog.json", ".publication.json", "session.json"}:
+    if path.name == PORTABLE_GROUP_NAME:
+        role = 5
+    elif path.name in {"catalog.json", ".publication.json", "session.json", PORTABLE_RECEIPT_NAME}:
         role = 4
     elif "states" in path.parts:
         role = 3
@@ -704,12 +1290,640 @@ class MemoryService:
         except (OSError, ValueError) as exc:
             raise LibraryError("Native ownership context could not be verified") from exc
 
+    def _retain_catalog_owner(self, identity: str, leases: ExitStack) -> None:
+        path = managed_path(self.data_dir, f".owners/{identity}.lock")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        leases.enter_context(closing(_FileLock(path, timeout=0)))
+
+    def _portable_rows_locked(
+        self, ids: tuple[str, ...]
+    ) -> tuple[SuppressionSnapshot, _PortableExportRows]:
+        with (
+            closing(open_library(self.data_dir)) as library,
+            _catalog_snapshot_locked(library) as suppression,
+        ):
+            if set(ids).intersection(suppression.suppressed_meeting_ids):
+                raise NotFound("Selected meeting does not exist")
+            rows = MemoryRepository(library).portable_export_rows(ids)
+            if tuple(item.meeting.id for item in rows.meetings) != ids or any(
+                item.meeting.status == MeetingStatus.DELETING for item in rows.meetings
+            ):
+                raise NotFound("Selected meeting does not exist")
+            return suppression, rows
+
     @contextmanager
-    def _operation(self) -> Iterator[MemoryRepository]:
+    def _portable_export_view(self, ids: tuple[str, ...]) -> Iterator[_PortableExportView]:
+        if not ids:
+            raise InvalidInput("Select at least one meeting for export")
+        for identity in ids:
+            self._identity(identity)
+        if len(set(ids)) != len(ids):
+            raise InvalidInput("Select each meeting once for export")
+        ids = tuple(sorted(ids))
+        owners = ExitStack()
+        view: _PortableExportView | None = None
+        try:
+            with closing(_catalog_publication_lock(self.data_dir)):
+                suppression, rows = self._portable_rows_locked(ids)
+                if any(
+                    item.meeting.status in {MeetingStatus.RECORDING, MeetingStatus.PROCESSING}
+                    for item in rows.meetings
+                ):
+                    raise Busy("Capture or processing must finish before export")
+                for identity in ids:
+                    self._retain_native_owners(identity, owners)
+                    self._retain_catalog_owner(identity, owners)
+            view = _PortableExportView(self, ids, suppression, rows)
+            yield view
+        finally:
+            if view is not None:
+                view._active = False
+            try:
+                owners.close()
+            except OSError:
+                if view is None or not view._published:
+                    raise
+                warning = str(_ExportCleanupPending())
+                if warning not in view.warnings:
+                    view.warnings += (warning,)
+
+    def _register_export(self, ids: tuple[str, ...], temporary: WindowsExportSibling) -> Path:
+        match = _EXPORT_SIBLING_NAME.fullmatch(temporary.path.name)
+        if match is None:
+            raise InvalidInput("Export sibling has an invalid operation role")
+        operation_id = str(UUID(hex=match[1]))
+        entry = _ExportRegistration(
+            operation_id, ids, temporary.path, temporary.parent_identity, temporary.file_identity
+        )
+        try:
+            with closing(_catalog_publication_lock(self.data_dir)):
+                directory = managed_path(self.data_dir, ".exports", directory=True)
+                directory.mkdir(exist_ok=True)
+                path = session_artifact_path(directory, f"{operation_id}.json")
+                if path.exists():
+                    raise Conflict("Export registration already exists")
+                write_durable_json(path, entry.document())
+                return path
+        except (OSError, ValueError) as exc:
+            raise LibraryError("Export temporary registration could not be committed") from exc
+
+    def _retire_export(self, registration: Path) -> None:
+        try:
+            with closing(_catalog_publication_lock(self.data_dir)):
+                session_artifact_path(registration.parent, registration.name).unlink()
+        except (OSError, ValueError, LibraryError) as exc:
+            raise _ExportCleanupPending() from exc
+
+    def _recover_exports_locked(self, *, deleting: str | None = None) -> bool:
+        """Recover a stale sibling only after claiming its selected meeting leases."""
+        pending = False
+        try:
+            registrations = tuple(_export_registrations(self.data_dir))
+            for path, entry in registrations:
+                if deleting is not None and deleting not in entry.meeting_ids:
+                    continue
+                try:
+                    with ExitStack() as owners:
+                        for identity in entry.meeting_ids:
+                            if identity != deleting:
+                                self._retain_native_owners(identity, owners)
+                                self._retain_catalog_owner(identity, owners)
+                        recover_export_sibling(
+                            entry.sibling,
+                            entry.parent_identity,
+                            entry.file_identity,
+                            excluded_root=self.data_dir,
+                        )
+                        session_artifact_path(path.parent, path.name).unlink()
+                except Busy:
+                    pending |= deleting is not None
+                except (OSError, ValueError, LibraryError):
+                    pending = True
+        except (OSError, ValueError, LibraryError):
+            pending = True
+        if pending and deleting is not None:
+            raise _ExportCleanupPending()
+        return pending
+
+    @contextmanager
+    def _portable_import_stage(
+        self, inventory: _PortableImportInventory
+    ) -> Iterator[_PortableImportStage]:
+        operation_id = str(uuid4())
+        registration = _ImportRegistration(
+            operation_id,
+            tuple(sorted(inventory.meeting_ids)),
+            tuple((file.path, file.size, file.sha256) for file in inventory.files),
+        )
+        _ImportRegistration.read(registration.document(), operation_id)
+        relative = f".staging/import-{operation_id}"
+        stage_root = managed_path(portable_stage_io_path(self.data_dir), relative, directory=True)
+        stage = _PortableImportStage(
+            operation_id, self.data_dir / relative / "payload", registration
+        )
+        owned = False
+        with ExitStack() as ownership:
+            try:
+                with closing(_catalog_publication_lock(self.data_dir)):
+                    stage_root.parent.mkdir(exist_ok=True)
+                    stage_root.mkdir()
+                    owned = True
+                    ownership.enter_context(
+                        closing(_FileLock(stage_root / _IMPORT_LEASE, timeout=0))
+                    )
+                    _write_import_intent(stage_root, _IMPORT_REGISTRATION, registration.document())
+                    (stage_root / "payload").mkdir()
+                yield stage
+            finally:
+                if owned and not stage.retain_for_recovery:
+                    try:
+                        with closing(_catalog_publication_lock(self.data_dir)):
+                            self._remove_import_stage_locked(stage_root, ownership)
+                    except (OSError, ValueError, LibraryError) as exc:
+                        raise _ImportCleanupPending() from exc
+
+    @staticmethod
+    def _remove_import_stage_locked(stage_root: Path, ownership: ExitStack) -> None:
+        stage_root = portable_stage_io_path(stage_root)
+        if not session_artifact_path(stage_root, _IMPORT_REGISTRATION).exists():
+            # No producer may write payloads before a durable registration.
+            if any(
+                entry.name not in {_IMPORT_LEASE, f"{_IMPORT_REGISTRATION}.stage"}
+                for entry in stage_root.iterdir()
+            ):
+                raise ValueError("Unregistered portable import staging material retained")
+            session_artifact_path(stage_root, f"{_IMPORT_REGISTRATION}.stage").unlink(
+                missing_ok=True
+            )
+        else:
+            _purge_import_stage_payload(stage_root, _read_import_registration(stage_root))
+        ownership.close()
+        session_artifact_path(stage_root, _IMPORT_LEASE).unlink(missing_ok=True)
+        session_artifact_path(stage_root, _IMPORT_WORK).unlink(missing_ok=True)
+        session_artifact_path(stage_root, _IMPORT_REGISTRATION).unlink(missing_ok=True)
+        stage_root.rmdir()
+
+    def _recover_import_stage_locked(
+        self,
+        repo: MemoryRepository,
+        stage_root: Path,
+        *,
+        deleting: str | None = None,
+    ) -> None:
+        relative = stage_root.relative_to(self.data_dir).as_posix()
+        stage_root = managed_path(portable_stage_io_path(self.data_dir), relative, directory=True)
+        pending_deletes = {
+            record.meeting_id
+            for record in _catalog_records(repo)
+            if record.phase == "pending" and record.meeting_id != deleting
+        }
+        if (
+            (deleting is not None or pending_deletes)
+            and session_artifact_path(stage_root, _IMPORT_REGISTRATION).exists()
+        ):
+            registration = _read_import_registration(stage_root)
+            if deleting is not None and deleting not in registration.meeting_ids:
+                return
+            selected_pending = pending_deletes.intersection(registration.meeting_ids)
+            if selected_pending:
+                plans = _read_import_work(stage_root, registration)
+                for identity in selected_pending.intersection(plans):
+                    root = managed_path(self.data_dir, f"meetings/{identity}", directory=True)
+                    if not session_artifact_path(root, PORTABLE_GROUP_NAME).exists():
+                        continue
+                    group = read_portable_group(root, identity)
+                    if group.operation_id != plans[identity].group.operation_id:
+                        continue
+                    if group.document() != plans[identity].group.document():
+                        raise ValueError("Pending portable deletion disagrees with registered work")
+                    if deleting is not None:
+                        raise Busy("Shared portable staging is required by a pending deletion")
+                    return
+            if deleting is not None:
+                pending = repo.library.execute(
+                    "SELECT meeting_id, staging_path FROM pending_operations "
+                    "WHERE kind='publish_portable' AND phase='prepared'"
+                )
+                if any(
+                    row["meeting_id"] != deleting
+                    and isinstance(row["staging_path"], str)
+                    and row["staging_path"].startswith(relative + "/")
+                    for row in pending
+                ):
+                    raise Busy("Shared portable staging is awaiting another meeting's recovery")
+        with ExitStack() as owners:
+            try:
+                owners.enter_context(
+                    closing(_FileLock(stage_root / _IMPORT_LEASE, timeout=0, create=False))
+                )
+            except FileNotFoundError:
+                pass  # A failed registration or partially retired stage has no owner.
+            except Busy:
+                if deleting is not None:
+                    raise
+                return
+            self._remove_import_stage_locked(stage_root, owners)
+
+    def _portable_import_outcome(
+        self,
+        repo: MemoryRepository,
+        bundle: _PortableImportedMeeting,
+        batch: _ValidatedPortableImport,
+    ) -> _PortableMeetingOutcome | None:
+        from here.memory.portable_import import _PortableMeetingOutcome, matches_portable_meeting
+
+        identity = bundle.detail.meeting.id
+        destination = managed_path(self.data_dir, f"meetings/{identity}", directory=True)
+        origin = normalized_origin(destination)
+        records = _catalog_records(repo)
+        suppressed = _suppressed_meeting_ids(repo.library, records)
+        if identity in suppressed or any(
+            (origin, batch.manifest_sha256) in record.origins for record in records
+        ):
+            return _PortableMeetingOutcome(identity, "rejected", "suppressed")
+        self._require_portable_commit_sealed(repo, identity)
+        existing = repo.portable_export_rows((identity,)).meetings
+        if existing:
+            if not matches_portable_meeting(bundle, existing[0], include_audio=batch.include_audio):
+                return _PortableMeetingOutcome(identity, "conflict", "different_meeting")
+            if batch.include_audio and any(
+                not self._portable_existing_audio(asset) for asset in existing[0].audio_assets
+            ):
+                return _PortableMeetingOutcome(identity, "conflict", "audio_unavailable")
+            return _PortableMeetingOutcome(identity, "unchanged")
+        if destination.exists() or repo.get_ingest_source(origin, batch.manifest_sha256):
+            return _PortableMeetingOutcome(identity, "conflict", "destination_exists")
+        detail = bundle.detail
+        for participant in detail.participants:
+            present = repo.get_participant(participant.id)
+            if present is not None and present != participant:
+                return _PortableMeetingOutcome(identity, "conflict", "participant_exists")
+        for table, ids in (
+            ("transcript_revisions", (item.id for item in detail.revisions)),
+            ("segments", (item.id for item in detail.segments)),
+            ("audio_assets", (item.id for item in detail.audio_assets)),
+            ("lifecycle_events", (item.id for item in bundle.lifecycle_events)),
+        ):
+            if any(
+                repo.library.execute(f"SELECT 1 FROM {table} WHERE id=?", (key,)).fetchone()
+                for key in ids
+            ):
+                return _PortableMeetingOutcome(identity, "conflict", "catalog_identity_exists")
+        return None
+
+    def _portable_existing_audio(self, asset: AudioAsset) -> bool:
+        try:
+            path = managed_path(self.data_dir, asset.relative_path)
+            if (
+                asset.status != "available"
+                or path.parent.parent != self.data_dir / "meetings" / asset.meeting_id / "revisions"
+                or not _is_uuid(path.parent.name)
+                or path.suffix.lower() != ".wav"
+            ):
+                return False
+            validate_artifact_roles(path.parent, (path.name,))
+            return path.stat().st_size == asset.size_bytes and file_hash(path) == asset.sha256
+        except (OSError, ValueError):
+            return False
+
+    def _portable_receipt_for_asset(self, path: Path, identity: str) -> PortableReceipt | None:
+        root = self.data_dir / "meetings" / identity
+        registration = session_artifact_path(root, PORTABLE_GROUP_NAME)
+        if not registration.exists():
+            return None
+        group = read_portable_group(root, identity)
+        if path.parent.name not in group.revision_ids:
+            return None
+        return read_portable_receipt(path.parent, group)
+
+    def _prepare_portable_import_work(
+        self, batch: _ValidatedPortableImport, *, cancelled: Callable[[], bool]
+    ) -> dict[str, _ImportMeetingPlan]:
+        from here.memory.portability import ImportCancelled
+
+        stage = batch.stage
+        payload = portable_stage_io_path(stage.directory)
+        stage_root = payload.parent
+        plans: dict[str, _ImportMeetingPlan] = {}
+        for bundle in batch.meetings:
+            meeting = bundle.detail.meeting
+            revisions = tuple(item.id for item in bundle.detail.revisions)
+            group = PortableGroup(str(uuid4()), meeting.id, revisions)
+            hashes: dict[str, dict[str, str]] = {revision: {} for revision in revisions}
+            for asset, _ in bundle.audio_payloads:
+                path = Path(asset.relative_path)
+                hashes[path.parent.name][path.name] = asset.sha256
+            plan = _ImportMeetingPlan(group, batch.manifest_sha256, hashes)
+            plans[meeting.id] = _ImportMeetingPlan.read(plan.document())
+        with closing(_catalog_publication_lock(self.data_dir)):
+            if _read_import_registration(stage_root) != stage._registration:
+                raise ValueError("Portable import scope changed before publication preparation")
+            _write_import_intent(
+                stage_root,
+                _IMPORT_WORK,
+                {
+                    "schema_version": 1,
+                    "operation_id": stage.operation_id,
+                    "plans": [plan.document() for plan in plans.values()],
+                },
+            )
+            (stage_root / "work").mkdir()
+        for bundle in batch.meetings:
+            if cancelled():
+                raise ImportCancelled("Portable import cancelled")
+            identity = bundle.detail.meeting.id
+            root = stage_root / "work" / identity
+            root.mkdir()
+            plan = plans[identity]
+            for revision_id in plan.group.revision_ids:
+                (root / "revisions" / revision_id).mkdir(parents=True)
+            _write_import_intent(root, PORTABLE_GROUP_NAME, plan.group.document())
+            for asset, relative in bundle.audio_payloads:
+                path = Path(asset.relative_path)
+                target = session_artifact_path(root / "revisions" / path.parent.name, path.name)
+                source = managed_path(payload, relative)
+                with source.open("rb") as incoming, target.open("xb") as output:
+                    remaining = asset.size_bytes
+                    digest = hashlib.sha256()
+                    while True:
+                        if cancelled():
+                            raise ImportCancelled("Portable import cancelled")
+                        block = incoming.read(min(1024 * 1024, remaining + 1))
+                        if not block:
+                            break
+                        remaining -= len(block)
+                        if remaining < 0:
+                            raise IntegrityFailure(
+                                "Prepared import audio exceeded its registered size"
+                            )
+                        digest.update(block)
+                        output.write(block)
+                    output.flush()
+                    os.fsync(output.fileno())
+                if remaining or digest.hexdigest() != asset.sha256:
+                    raise IntegrityFailure(
+                        "Prepared import audio does not match its registered proof"
+                    )
+        return plans
+
+    def _publish_portable_import(
+        self, batch: _ValidatedPortableImport, *, cancelled: Callable[[], bool]
+    ) -> tuple[_PortableMeetingOutcome, ...]:
+        from here.memory.portability import ImportCancelled
+        from here.memory.portable_import import _PortableMeetingOutcome
+
+        if cancelled():
+            raise ImportCancelled("Portable import cancelled")
+        plans = self._prepare_portable_import_work(batch, cancelled=cancelled)
+        with self._operation() as repo, ExitStack() as owners:
+            outcomes: dict[str, _PortableMeetingOutcome] = {}
+            for identity in sorted(plans):
+                self._retain_native_owners(identity, owners)
+                self._retain_catalog_owner(identity, owners)
+            with _catalog_snapshot_locked(repo.library):
+                for bundle in batch.meetings:
+                    outcome = self._portable_import_outcome(repo, bundle, batch)
+                    if outcome is not None:
+                        outcomes[outcome.meeting_id] = outcome
+            blocked = any(
+                outcome.status in {"conflict", "rejected"} for outcome in outcomes.values()
+            )
+            for bundle in batch.meetings:
+                identity = bundle.detail.meeting.id
+                if identity in outcomes:
+                    continue
+                if blocked or cancelled():
+                    if not blocked and not any(
+                        item.status == "inserted" for item in outcomes.values()
+                    ):
+                        raise ImportCancelled("Portable import cancelled")
+                    outcomes[identity] = _PortableMeetingOutcome(
+                        identity, "rejected", "batch_stopped"
+                    )
+                    continue
+                warning = self._publish_portable_meeting(repo, batch.stage, bundle, plans[identity])
+                outcomes[identity] = _PortableMeetingOutcome(identity, "inserted", warning)
+                blocked = bool(warning)
+            return tuple(outcomes[bundle.detail.meeting.id] for bundle in batch.meetings)
+
+    def _publish_portable_meeting(
+        self,
+        repo: MemoryRepository,
+        stage: _PortableImportStage,
+        bundle: _PortableImportedMeeting,
+        plan: _ImportMeetingPlan,
+    ) -> str:
+        identity = plan.group.meeting_id
+        source_rel = (
+            (stage.directory.parent / "work" / identity).relative_to(self.data_dir).as_posix()
+        )
+        destination_rel = f"meetings/{identity}"
+        source = managed_path(portable_stage_io_path(self.data_dir), source_rel, directory=True)
+        destination = managed_path(self.data_dir, destination_rel, directory=True)
+        destination.parent.mkdir(exist_ok=True)
+        operation = PendingOperation(
+            plan.group.operation_id,
+            "publish_portable",
+            "prepared",
+            identity,
+            source_rel,
+            destination_rel,
+            json.dumps(plan.document()),
+        )
+        origin = normalized_origin(destination)
+        detail = bundle.detail
+        local_bundle = replace(
+            bundle,
+            detail=replace(
+                detail, revisions=tuple(replace(item, origin=origin) for item in detail.revisions)
+            ),
+        )
+        provenance = IngestSource(str(uuid4()), origin, plan.manifest_sha256, identity)
+        with repo.transaction():
+            repo.insert_pending_operation(operation)
+        stage.retain_for_recovery = True
+        source.rename(destination)
+        with repo.transaction():
+            repo.insert_portable_meeting(local_bundle, provenance)
+            self._index_active_revision(repo, detail.meeting)
+        try:
+            registered = replace(plan, stage_root=portable_stage_io_path(stage.directory.parent))
+            self._finish_portable_receipts(repo, destination, registered)
+            with repo.transaction():
+                repo.transition_pending_operation(operation.id, "complete")
+        except (OSError, ValueError, LibraryError):
+            return "local_recovery_pending"
+        stage.retain_for_recovery = False
+        return ""
+
+    def _finish_portable_receipts(
+        self, repo: MemoryRepository, destination: Path, plan: _ImportMeetingPlan
+    ) -> None:
+        identity = plan.group.meeting_id
+        group = read_portable_group(destination, identity)
+        if group.document() != plan.group.document() or group.group_sha256 is None:
+            raise ValueError("Portable publication group disagrees with committed journal")
+        meeting = repo.get_meeting(identity)
+        if meeting is None:
+            raise ValueError("Portable publication requires a committed meeting")
+        revisions = tuple(
+            row[0]
+            for row in repo.library.execute(
+                "SELECT id FROM transcript_revisions WHERE meeting_id=? ORDER BY revision_number",
+                (identity,),
+            )
+        )
+        states = destination / "states"
+        completion_path = session_artifact_path(
+            states, portable_completion_name(group.operation_id)
+        )
+        receipts = []
+        if completion_path.exists():
+            completion = read_portable_completion(states, group)
+            for revision_id in group.revision_ids:
+                receipt = read_portable_receipt(destination / "revisions" / revision_id, group)
+                receipts.append(receipt)
+            validate_portable_group_members(group, completion, receipts)
+            return
+        stage_root = plan.stage_root
+        if stage_root is None:
+            raise ValueError("Portable publication requires registered evidence staging")
+        if revisions != group.revision_ids:
+            raise ValueError("Portable publication does not match committed revision history")
+        origin = normalized_origin(destination)
+        provenance = repo.get_ingest_source(origin, plan.manifest_sha256)
+        if (
+            provenance is None
+            or provenance.meeting_id != identity
+            or provenance.revision_id is not None
+        ):
+            raise ValueError("Portable publication does not match committed source evidence")
+        for index, revision_id in enumerate(group.revision_ids):
+            revision = repo.get_revision(revision_id)
+            if revision is None or revision.origin != origin:
+                raise ValueError("Portable publication revision has no committed origin")
+            revision_dir = destination / "revisions" / revision_id
+            for name, digest in plan.hashes[revision_id].items():
+                if file_hash(session_artifact_path(revision_dir, name)) != digest:
+                    raise ValueError("Portable publication WAV changed before receipt")
+            receipt_path = session_artifact_path(revision_dir, PORTABLE_RECEIPT_NAME)
+            snapshot = self._revision_snapshot(repo, meeting, revision, plan.hashes[revision_id])
+            snapshot.update(
+                schema_version=4,
+                operation_id=group.operation_id,
+                meeting_id=identity,
+                revision_id=revision_id,
+                ingest_sources=[asdict(provenance)] if index == 0 else [],
+            )
+            if not receipt_path.exists():
+                write_durable_json(
+                    receipt_path, snapshot, staged=stage_root / plan.evidence_stage_name(revision_id)
+                )
+            receipt = read_portable_receipt(revision_dir, group)
+            if receipt.snapshot != snapshot:
+                raise ValueError("Portable publication receipt disagrees with committed evidence")
+            receipts.append(receipt)
+        state_path = self._write_state(repo, identity, portable_plan=plan)
+        if state_path is None:
+            raise ValueError("Portable publication is missing committed lifecycle state")
+        completion = PortableCompletion(
+            group.operation_id,
+            identity,
+            tuple(
+                PortableCompletionMember(
+                    receipt.revision_id, receipt.receipt_sha256, receipt.hashes
+                )
+                for receipt in receipts
+            ),
+            group.group_sha256,
+            state_path.name,
+            file_hash(state_path),
+            read_meeting_snapshot(state_path.parent, state_path.name, identity),
+        )
+        validate_portable_group_members(group, completion, receipts)
+        write_durable_json(
+            completion_path,
+            completion.document(),
+            staged=stage_root / plan.evidence_stage_name("completion"),
+        )
+
+    def _portable_operation_plan(self, operation: PendingOperation) -> _ImportMeetingPlan:
+        plan = _ImportMeetingPlan.read(json.loads(operation.payload_json))
+        identity = plan.group.meeting_id
+        source = (operation.staging_path or "").split("/")
+        match = _IMPORT_STAGE_NAME.fullmatch(source[1]) if len(source) == 4 else None
+        if (
+            operation.kind != "publish_portable"
+            or operation.id != plan.group.operation_id
+            or operation.meeting_id != identity
+            or operation.destination_path != f"meetings/{identity}"
+            or match is None
+            or not _is_uuid(match[1])
+            or source[0] != ".staging"
+            or source[2:] != ["work", identity]
+        ):
+            raise ValueError("Portable publication journal disagrees with managed roles")
+        return plan
+
+    def _reconcile_portable_meeting(
+        self, repo: MemoryRepository, operation: PendingOperation, *, owners_held: bool
+    ) -> None:
+        plan = self._portable_operation_plan(operation)
+        identity = plan.group.meeting_id
+        destination = managed_path(self.data_dir, operation.destination_path or "", directory=True)
+        source = managed_path(
+            portable_stage_io_path(self.data_dir), operation.staging_path or "", directory=True
+        )
+        stage_root = source.parent.parent
+        with ExitStack() as owners:
+            if not owners_held:
+                self._delete_owner(repo, identity, owners, accepted=True)
+            if stage_root.exists():
+                owners.enter_context(
+                    closing(_FileLock(stage_root / _IMPORT_LEASE, timeout=0, create=False))
+                )
+                registration = _read_import_registration(stage_root)
+                work = _read_import_work(stage_root, registration)
+                if work.get(identity) != plan:
+                    raise ValueError("Portable publication disagrees with registered work")
+                plan = replace(plan, stage_root=stage_root)
+            if repo.get_meeting(identity) is not None:
+                self._finish_portable_receipts(repo, destination, plan)
+                phase = "complete"
+            else:
+                if source.exists() and destination.exists():
+                    raise ValueError("Portable publication has ambiguous owned copies")
+                if destination.exists():
+                    if plan.stage_root is None or not source.parent.is_dir():
+                        raise ValueError("Portable rollback requires its registered work slot")
+                    _import_tree_entries(destination, plan, published=True)
+                    # Return the proven tree to its private cleanup scope before
+                    # discarding the SQL journal's prepared phase.
+                    portable_stage_io_path(destination).rename(source)
+                phase = "reverted"
+            with repo.transaction():
+                repo.transition_pending_operation(operation.id, phase)
+
+    @staticmethod
+    def _require_portable_commit_sealed(repo: MemoryRepository, identity: str) -> None:
+        pending = repo.library.execute(
+            "SELECT 1 FROM pending_operations WHERE meeting_id=? "
+            "AND kind='publish_portable' AND phase='prepared' LIMIT 1",
+            (identity,),
+        ).fetchone()
+        if pending is not None:
+            raise Busy("Portable meeting is awaiting local recovery before editing")
+
+    @contextmanager
+    def _operation(
+        self, *, recovery_warnings: list[object] | None = None
+    ) -> Iterator[MemoryRepository]:
         validate_session_directory(self.data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
         lock = _FileLock(self.data_dir / ".memory.lock")
         try:
+            if recovery_warnings is not None and self._recover_exports_locked():
+                recovery_warnings.append(str(_ExportCleanupPending()))
             with self._operation_locked() as repo:
                 yield repo
         finally:
@@ -734,6 +1948,17 @@ class MemoryService:
             "tokenize='unicode61 remove_diacritics 2')"
         )
         return True
+
+    def _index_active_revision(self, repo: MemoryRepository, meeting: Meeting) -> None:
+        if not self._fts(repo) or meeting.active_revision_id is None:
+            return
+        active = repo.get_revision(meeting.active_revision_id)
+        if active is not None and active.status == "complete":
+            for segment in repo.get_segments(active.id):
+                repo.library.execute(
+                    "INSERT INTO segments_fts VALUES (?,?,?,?,?)",
+                    (meeting.id, active.id, segment.id, segment.text, meeting.title),
+                )
 
     def reindex(self) -> ReindexReport:
         """Replace the one derived index, preserving partial and historical evidence."""
@@ -776,6 +2001,16 @@ class MemoryService:
         root = managed_path(self.data_dir, f"meetings/{identity}", directory=True)
         files: dict[str, str] = {}
         directories = {f"meetings/{identity}"}
+        portable_group = None
+        group_path = session_artifact_path(root, PORTABLE_GROUP_NAME)
+        if group_path.exists():
+            portable_group = read_portable_group(root, identity)
+            files[group_path.relative_to(self.data_dir).as_posix()] = file_hash(group_path)
+        pending_plan = (
+            self._pending_portable_cleanup_plan(repo, portable_group)
+            if portable_group is not None
+            else None
+        )
         revisions = managed_path(self.data_dir, f"meetings/{identity}/revisions", directory=True)
         if revisions.exists():
             directories.add(revisions.relative_to(self.data_dir).as_posix())
@@ -783,6 +2018,36 @@ class MemoryService:
                 if not _is_uuid(directory.name):
                     continue
                 validate_session_directory(directory)
+                if portable_group is not None and directory.name in portable_group.revision_ids:
+                    portable_path = session_artifact_path(directory, PORTABLE_RECEIPT_NAME)
+                    if portable_path.exists():
+                        proof = read_portable_receipt(directory, portable_group)
+                        files[portable_path.relative_to(self.data_dir).as_posix()] = (
+                            proof.receipt_sha256
+                        )
+                        hashes = proof.hashes
+                        if (
+                            pending_plan is not None
+                            and hashes != pending_plan.hashes[directory.name]
+                        ):
+                            raise ValueError(
+                                "Portable cleanup receipt disagrees with the work plan"
+                            )
+                    elif pending_plan is not None:
+                        hashes = pending_plan.hashes[directory.name]
+                    elif not any(directory.iterdir()):
+                        # The still-present group proves this exact empty member
+                        # after deletion removed its receipt but before rmdir.
+                        hashes = {}
+                    else:
+                        raise ValueError("Portable revision lacks owned cleanup proof")
+                    directories.add(directory.relative_to(self.data_dir).as_posix())
+                    for name, digest in hashes.items():
+                        path = session_artifact_path(directory, name)
+                        if path.exists() and file_hash(path) != digest:
+                            raise ValueError("Portable cleanup artifact hash mismatch")
+                        files[path.relative_to(self.data_dir).as_posix()] = digest
+                    continue
                 registration = session_artifact_path(directory, ".publication.json")
                 receipt = session_artifact_path(directory, "catalog.json")
                 if not registration.exists():
@@ -851,9 +2116,50 @@ class MemoryService:
         if states.exists():
             directories.add(states.relative_to(self.data_dir).as_posix())
             for path in sorted(states.iterdir()):
+                if portable_group is not None and path.name == portable_completion_name(
+                    portable_group.operation_id
+                ):
+                    completion = read_portable_completion(states, portable_group)
+                    receipts = tuple(
+                        read_portable_receipt(revisions / revision, portable_group)
+                        for revision in portable_group.revision_ids
+                    )
+                    validate_portable_group_members(portable_group, completion, receipts)
+                    files[path.relative_to(self.data_dir).as_posix()] = file_hash(path)
+                    continue
                 read_meeting_snapshot(states, path.name, identity)
                 files[path.relative_to(self.data_dir).as_posix()] = file_hash(path)
         return {"schema_version": 1, "files": files, "directories": sorted(directories)}
+
+    def _pending_portable_cleanup_plan(
+        self, repo: MemoryRepository, group: PortableGroup
+    ) -> _ImportMeetingPlan | None:
+        operation = repo.get_pending_operation(group.operation_id)
+        if operation is not None:
+            plan = self._portable_operation_plan(operation)
+            if plan.group.document() != group.document():
+                raise ValueError("Portable delete group disagrees with the catalog journal")
+            return plan if operation.phase == "prepared" else None
+        staging = managed_path(portable_stage_io_path(self.data_dir), ".staging", directory=True)
+        if not staging.exists():
+            return None
+        found = None
+        for entry in staging.iterdir():
+            if not _IMPORT_STAGE_NAME.fullmatch(entry.name):
+                continue
+            registration_path = session_artifact_path(entry, _IMPORT_REGISTRATION)
+            if not registration_path.exists():
+                continue
+            registration = _read_import_registration(entry)
+            if group.meeting_id not in registration.meeting_ids:
+                continue
+            candidate = _read_import_work(entry, registration).get(group.meeting_id)
+            if candidate is None or candidate.group.operation_id != group.operation_id:
+                continue
+            if found is not None or candidate.group.document() != group.document():
+                raise ValueError("Portable delete has ambiguous local group ownership")
+            found = candidate
+        return found
 
     def _validate_delete_operation(
         self, operation: PendingOperation, record: _DeletionRecord
@@ -886,11 +2192,23 @@ class MemoryService:
             if not path.is_relative_to(root) or re.fullmatch(r"[0-9a-f]{64}", digest) is None:
                 raise ValueError("Delete inventory escapes its meeting")
             parts = path.relative_to(root).parts
-            if len(parts) == 3 and parts[0] == "revisions" and _is_uuid(parts[1]):
-                if path.name not in {"catalog.json", ".publication.json"}:
+            if parts == (PORTABLE_GROUP_NAME,):
+                if path.exists():
+                    read_portable_group(root, record.meeting_id)
+            elif len(parts) == 3 and parts[0] == "revisions" and _is_uuid(parts[1]):
+                if path.name == PORTABLE_RECEIPT_NAME and path.exists():
+                    group = read_portable_group(root, record.meeting_id)
+                    read_portable_receipt(path.parent, group)
+                elif path.name not in {"catalog.json", ".publication.json", PORTABLE_RECEIPT_NAME}:
                     _validate_delete_roles(path.parent, (path.name,))
             elif len(parts) == 2 and parts[0] == "states":
-                if path.exists():
+                match = re.fullmatch(r"portable-group-([0-9a-f-]{36})\.json", path.name)
+                if match is not None and _is_uuid(match[1]):
+                    if path.exists():
+                        group = read_portable_group(root, record.meeting_id)
+                        if group.operation_id != match[1]:
+                            raise ValueError("Portable completion does not match the delete group")
+                elif path.exists():
                     read_meeting_snapshot(path.parent, path.name, record.meeting_id)
                 elif re.fullmatch(r"[1-9][0-9]*-[0-9a-f-]{36}\.json", path.name) is None:
                     raise ValueError("Invalid deleted state role")
@@ -913,10 +2231,7 @@ class MemoryService:
         self, repo: MemoryRepository, identity: str, leases: ExitStack, *, accepted: bool = False
     ) -> None:
         self._retain_native_owners(identity, leases)
-        path = managed_path(self.data_dir, f".owners/{identity}.lock")
-        path.parent.mkdir(parents=True, exist_ok=True)
-        lease = _FileLock(path, timeout=0)
-        leases.callback(lease.close)
+        self._retain_catalog_owner(identity, leases)
         meeting = repo.get_meeting(identity)
         if (
             not accepted
@@ -993,13 +2308,29 @@ class MemoryService:
 
         # Keep A's proof until all registered content has been removed, enabling
         # restart with SQL loss during the file phase. Unknown material is retained.
-        files = sorted(inventory["files"], key=_delete_file_order)
+        root_relative = f"meetings/{record.meeting_id}"
+        group_relative = f"{root_relative}/{PORTABLE_GROUP_NAME}"
+        group_owned = group_relative in inventory["files"]
+        completion_prefix = f"{root_relative}/states/portable-group-"
+        # Drop the completion seal before removing the lifecycle state it hashes.
+        files = sorted(
+            inventory["files"],
+            key=lambda name: (
+                (-1, False, name)
+                if group_owned and name.startswith(completion_prefix)
+                else _delete_file_order(name)
+            ),
+        )
         for relative in files:
-            path = managed_path(self.data_dir, relative)
-            path.unlink(missing_ok=True)
+            if relative != group_relative:
+                managed_path(self.data_dir, relative).unlink(missing_ok=True)
         for relative in sorted(inventory["directories"], key=lambda name: (-name.count("/"), name)):
             path = managed_path(self.data_dir, relative, directory=True)
             if path.exists():
+                if group_owned and relative == root_relative:
+                    if any(entry.name != PORTABLE_GROUP_NAME for entry in path.iterdir()):
+                        raise ValueError("Unregistered portable meeting material retained")
+                    managed_path(self.data_dir, group_relative).unlink(missing_ok=True)
                 path.rmdir()  # Never recursively remove unregistered children.
 
     def _delete_stage_journal(self, row: sqlite3.Row, relative: str) -> dict[str, Any]:
@@ -1052,6 +2383,8 @@ class MemoryService:
                 return
             rows = repo.library.execute("SELECT * FROM pending_operations").fetchall()
             for directory in sorted(staging.iterdir()):
+                if _IMPORT_STAGE_NAME.fullmatch(directory.name):
+                    continue  # Portable registrations are processed separately for every phase.
                 if not _is_uuid(directory.name):
                     raise ValueError("Unidentified private staging retained")
                 relative = directory.relative_to(self.data_dir).as_posix()
@@ -1080,6 +2413,9 @@ class MemoryService:
         for row in rows:
             if row["meeting_id"] != identity or row["staging_path"] is None:
                 continue
+            if row["kind"] == "publish_portable":
+                self._portable_operation_plan(PendingOperation(**dict(row)))
+                continue  # The portable stage registration above owns its work tree.
             relative = row["staging_path"]
             references = _stage_references(self.data_dir, rows, relative, row["id"])
             if len(references) != 1:
@@ -1096,9 +2432,18 @@ class MemoryService:
         self, repo: MemoryRepository, record: _DeletionRecord, operation: PendingOperation
     ) -> DeletionResult:
         warnings = self._prepare_delete(repo, record, operation)
+        self._recover_exports_locked(deleting=record.meeting_id)
         self._recover_delete_staging(repo, record)
         self._purge_delete_stages(repo, record.meeting_id)
         self._purge_delete_files(operation, record)
+        staging = managed_path(self.data_dir, ".staging", directory=True)
+        if staging.exists():
+            try:
+                for entry in staging.iterdir():
+                    if _IMPORT_STAGE_NAME.fullmatch(entry.name):
+                        self._recover_import_stage_locked(repo, entry, deleting=record.meeting_id)
+            except (OSError, ValueError, LibraryError) as exc:
+                raise _ImportCleanupPending() from exc
         repo.library.execute("PRAGMA secure_delete=ON")
         with repo.transaction():
             for purge in tuple(self._derived_row_purgers):
@@ -1145,7 +2490,9 @@ class MemoryService:
         warnings: tuple[str, ...] = (
             "Deletion pending local recovery" if accepted else "Deletion could not start",
         )
-        if isinstance(error, _DeleteScopeUnavailable):
+        if isinstance(
+            error, (_DeleteScopeUnavailable, _ExportCleanupPending, _ImportCleanupPending)
+        ):
             warnings += (str(error),)
         return DeletionResult(
             "pending" if accepted else "rejected",
@@ -1809,6 +3156,7 @@ class MemoryService:
                     return IngestResult(
                         "rejected", identity, ("Origin or identity has been deleted",), "conflict"
                     )
+                self._require_portable_commit_sealed(repo, identity)
                 if previous_origin and revision_of is None:
                     return IngestResult("unchanged", previous_origin.meeting_id)
                 previous = repo.get_meeting(identity)
@@ -2148,6 +3496,9 @@ class MemoryService:
         ):
             # A publication/state operation cannot recreate deleted evidence.
             return
+        if operation.kind == "publish_portable":
+            self._reconcile_portable_meeting(repo, operation, owners_held=owners_held)
+            return
         if operation.kind == "persist_state":
             identity = operation.meeting_id
             if (
@@ -2208,7 +3559,13 @@ class MemoryService:
                     operation.id, "complete" if committed else "reverted"
                 )
 
-    def _write_state(self, repo: MemoryRepository, identity: str) -> None:
+    def _write_state(
+        self,
+        repo: MemoryRepository,
+        identity: str,
+        *,
+        portable_plan: _ImportMeetingPlan | None = None,
+    ) -> Path | None:
         meeting = repo.get_meeting(identity)
         if meeting is None:
             return
@@ -2240,9 +3597,24 @@ class MemoryService:
                     f"SELECT * FROM {table} WHERE meeting_id=? ORDER BY 1", (identity,)
                 )
             ]
-        write_durable_json(
-            session_artifact_path(directory, f"{meeting.row_version}-{uuid4()}.json"), snapshot
-        )
+        if portable_plan is None:
+            path = session_artifact_path(directory, f"{meeting.row_version}-{uuid4()}.json")
+            write_durable_json(path, snapshot)
+        else:
+            stage_root = portable_plan.stage_root
+            if stage_root is None:
+                raise ValueError("Portable state requires registered evidence staging")
+            path = session_artifact_path(
+                directory, f"{meeting.row_version}-{portable_plan.group.operation_id}.json"
+            )
+            if path.exists():
+                if read_meeting_snapshot(directory, path.name, identity) != snapshot:
+                    raise ValueError("Portable lifecycle state disagrees with committed evidence")
+            else:
+                write_durable_json(
+                    path, snapshot, staged=stage_root / portable_plan.evidence_stage_name("state")
+                )
+        return path
 
     def _write_receipt(self, repo: MemoryRepository, operation: PendingOperation) -> None:
         """A receipt is written only after the entity transaction has committed."""
@@ -2257,8 +3629,24 @@ class MemoryService:
         meeting = repo.get_meeting(operation.meeting_id)
         if revision is None or meeting is None or revision.meeting_id != meeting.id:
             raise ValueError("A publication receipt requires committed catalog entities")
-        snapshot = {
-            "schema_version": 3 if "publication" in payload else 2,
+        snapshot = self._revision_snapshot(repo, meeting, revision, payload["hashes"])
+        snapshot["schema_version"] = 3 if "publication" in payload else 2
+        if "publication" in payload:
+            proof = _Publication.read(payload["publication"])
+            if proof.revision_id != revision.id or proof.origin_path != revision.origin:
+                raise ValueError("Publication receipt provenance mismatch")
+            snapshot["publication"] = asdict(proof)
+            snapshot["operation_id"] = operation.id
+        write_durable_json(receipt, snapshot)
+
+    @staticmethod
+    def _revision_snapshot(
+        repo: MemoryRepository,
+        meeting: Meeting,
+        revision: TranscriptRevision,
+        hashes: dict[str, str],
+    ) -> dict[str, Any]:
+        return {
             "meeting": asdict(meeting),
             "revision": asdict(revision),
             "segments": [asdict(segment) for segment in repo.get_segments(revision.id)],
@@ -2282,15 +3670,8 @@ class MemoryService:
                     (revision.id, meeting.id, revision.revision_number),
                 )
             ],
-            "hashes": payload["hashes"],
+            "hashes": hashes,
         }
-        if "publication" in payload:
-            proof = _Publication.read(payload["publication"])
-            if proof.revision_id != revision.id or proof.origin_path != revision.origin:
-                raise ValueError("Publication receipt provenance mismatch")
-            snapshot["publication"] = asdict(proof)
-            snapshot["operation_id"] = operation.id
-        write_durable_json(receipt, snapshot)
 
     def _restore_lifecycle_snapshot(self, repo: MemoryRepository, snapshot: dict[str, Any]) -> None:
         """Restore supplements only after immutable revisions establish their evidence."""
@@ -2402,15 +3783,38 @@ class MemoryService:
                 revisions_path = managed_path(
                     self.data_dir, f"meetings/{identity}/revisions", directory=True
                 )
+                states = managed_path(self.data_dir, f"meetings/{identity}/states", directory=True)
+                group = None
+                completion = None
+                portable_receipts: dict[str, PortableReceipt] = {}
+                if session_artifact_path(directory, PORTABLE_GROUP_NAME).exists():
+                    group = read_portable_group(directory, identity)
+                    completion = read_portable_completion(states, group)
+                    portable_receipts = {
+                        key: read_portable_receipt(revisions_path / key, group)
+                        for key in group.revision_ids
+                    }
+                    validate_portable_group_members(group, completion, portable_receipts.values())
                 snapshots = []
                 for revision_dir in revisions_path.iterdir() if revisions_path.exists() else ():
                     revision_id = str(UUID(revision_dir.name))
                     validate_session_directory(revision_dir)
                     receipt = session_artifact_path(revision_dir, "catalog.json")
-                    if not receipt.exists():
+                    portable_path = session_artifact_path(revision_dir, PORTABLE_RECEIPT_NAME)
+                    portable_receipt = portable_receipts.get(revision_id)
+                    if portable_receipt is not None:
+                        if receipt.exists():
+                            raise ValueError("Portable revision has mixed receipt roles")
+                        snapshot = portable_receipt.snapshot
+                    elif portable_path.exists():
+                        raise ValueError("Portable receipt lacks its complete local group")
+                    elif not receipt.exists():
                         warnings.append(f"Uncertain publication retained: {identity}/{revision_id}")
                         continue
-                    snapshot = _receipt_envelope(json.loads(receipt.read_text(encoding="utf-8")))
+                    else:
+                        snapshot = _receipt_envelope(
+                            json.loads(receipt.read_text(encoding="utf-8"))
+                        )
                     if any(
                         (origin.get("origin_path"), origin.get("origin_fingerprint"))
                         in suppressed_origins
@@ -2420,7 +3824,7 @@ class MemoryService:
                             "Suppressed origin receipt retained for owned cleanup only"
                         )
                     if (
-                        snapshot.get("schema_version") not in {2, 3}
+                        snapshot.get("schema_version") not in ({4} if portable_receipt else {2, 3})
                         or snapshot["meeting"]["id"] != identity
                         or snapshot["revision"]["meeting_id"] != identity
                         or snapshot["revision"]["id"] != revision_id
@@ -2475,7 +3879,8 @@ class MemoryService:
                             or link["ordinal"] != ordinal
                         ):
                             raise ValueError("Managed revision audio relationship mismatch")
-                        validate_artifact_roles(revision_dir, (link["source_file"],))
+                        if portable_receipt is None:
+                            validate_artifact_roles(revision_dir, (link["source_file"],))
                     for origin in snapshot["ingest_sources"]:
                         if origin["meeting_id"] != identity or origin["revision_id"] not in {
                             None,
@@ -2485,10 +3890,15 @@ class MemoryService:
                     snapshots.append(snapshot)
                 snapshots.sort(key=lambda item: item["revision"]["revision_number"])
                 meeting_values = snapshots[-1]["meeting"] if snapshots else None
-                lifecycle_snapshot = None
-                states = managed_path(self.data_dir, f"meetings/{identity}/states", directory=True)
+                lifecycle_snapshot = completion.state if completion is not None else None
+                if lifecycle_snapshot is not None and meeting_values is None:
+                    meeting_values = lifecycle_snapshot["meeting"]
                 if states.exists():
                     for entry in states.iterdir():
+                        if group is not None and entry.name == portable_completion_name(
+                            group.operation_id
+                        ):
+                            continue
                         try:
                             envelope = read_meeting_snapshot(states, entry.name, identity)
                             state = envelope["meeting"]
@@ -2565,14 +3975,7 @@ class MemoryService:
                             "UPDATE meetings SET row_version=? WHERE id=?",
                             (meeting.row_version, identity),
                         )
-                    if self._fts(repo) and meeting.active_revision_id:
-                        active = repo.get_revision(meeting.active_revision_id)
-                        if active and active.status == "complete":
-                            for segment in repo.get_segments(active.id):
-                                repo.library.execute(
-                                    "INSERT INTO segments_fts VALUES (?,?,?,?,?)",
-                                    (identity, active.id, segment.id, segment.text, meeting.title),
-                                )
+                    self._index_active_revision(repo, meeting)
                 completed.append(
                     RecoveryOutcome(identity, "Catalog restored from managed committed evidence")
                 )
@@ -2598,7 +4001,7 @@ class MemoryService:
         reverted: list[RecoveryOutcome] = []
         marked: list[RecoveryOutcome] = []
         skipped: list[RecoveryOutcome] = []
-        with self._operation() as repo, ExitStack() as leases:
+        with self._operation(recovery_warnings=warnings) as repo, ExitStack() as leases:
             records, stages = _deletion_registry(self.data_dir)
             if stages:
                 warnings.append("Uncommitted deletion metadata stages retained")
@@ -2620,7 +4023,9 @@ class MemoryService:
                         completed.append(RecoveryOutcome(record.meeting_id, "Deletion completed"))
                 except Exception as exc:
                     warnings.append("Deletion remains pending local recovery")
-                    if isinstance(exc, _DeleteScopeUnavailable):
+                    if isinstance(
+                        exc, (_DeleteScopeUnavailable, _ExportCleanupPending, _ImportCleanupPending)
+                    ):
                         warnings.append(str(exc))
                     skipped.append(RecoveryOutcome(record.meeting_id, "Deletion cleanup pending"))
             suppressed = set(_suppression_snapshot(repo.library, records).suppressed_meeting_ids)
@@ -2715,7 +4120,7 @@ class MemoryService:
             staging = managed_path(self.data_dir, ".staging", directory=True)
             if staging.exists():
                 journal_rows = repo.library.execute(
-                    "SELECT id,kind,meeting_id,staging_path,destination_path "
+                    "SELECT id,kind,phase,meeting_id,staging_path,destination_path "
                     "FROM pending_operations"
                 ).fetchall()
                 for entry in staging.iterdir():
@@ -2723,6 +4128,17 @@ class MemoryService:
                     if relative in protected:
                         continue
                     try:
+                        if _IMPORT_STAGE_NAME.fullmatch(entry.name):
+                            if any(
+                                row["kind"] == "publish_portable"
+                                and row["phase"] == "prepared"
+                                and isinstance(row["staging_path"], str)
+                                and row["staging_path"].startswith(relative + "/")
+                                for row in journal_rows
+                            ):
+                                continue
+                            self._recover_import_stage_locked(repo, entry)
+                            continue
                         if not _is_uuid(entry.name):
                             raise LibraryError(
                                 "Invalid staging operation identity; material retained"
@@ -2810,12 +4226,19 @@ class MemoryService:
     def begin_capture(self, meeting_id: str, *, started_at: str | None = None) -> None:
         if str(UUID(meeting_id)) != meeting_id:
             raise ValueError("Invalid capture identity")
-        if meeting_id not in self._owners:
+        acquired = meeting_id not in self._owners
+        if acquired:
             self._acquire_owner(meeting_id)
         with self._operation() as repo:
             records, _ = _deletion_registry(self.data_dir)
             if meeting_id in _suppression_snapshot(repo.library, records).suppressed_meeting_ids:
                 raise NotFound("Meeting has been deleted")
+            try:
+                self._require_portable_commit_sealed(repo, meeting_id)
+            except Busy:
+                if acquired:
+                    self._owners.pop(meeting_id).close()
+                raise
             with repo.transaction():
                 if repo.get_meeting(meeting_id) is None:
                     repo.insert_meeting(
@@ -2855,6 +4278,11 @@ class MemoryService:
             records, _ = _deletion_registry(self.data_dir)
             if meeting_id in _suppression_snapshot(repo.library, records).suppressed_meeting_ids:
                 raise NotFound("Meeting has been deleted")
+            try:
+                self._require_portable_commit_sealed(repo, meeting_id)
+            except Busy:
+                self._owners.pop(meeting_id).close()
+                raise
             with repo.transaction():
                 if repo.get_meeting(meeting_id) is None:
                     repo.insert_meeting(Meeting(id=meeting_id, status=MeetingStatus.PROCESSING))
@@ -2963,6 +4391,7 @@ class MemoryService:
         records = _catalog_records(repo)
         if meeting_id in _suppressed_meeting_ids(repo.library, records):
             raise NotFound("Meeting has been deleted")
+        MemoryService._require_portable_commit_sealed(repo, meeting_id)
         meeting = repo.get_meeting(meeting_id)
         if meeting is None or meeting.status == status:
             return
@@ -3001,53 +4430,7 @@ class MemoryService:
         repo: MemoryRepository, meeting_id: str, warnings: tuple[object, ...] = ()
     ) -> MeetingDetail:
         meeting = MemoryService._meeting(repo, meeting_id)
-        revisions = tuple(
-            TranscriptRevision(**dict(row))
-            for row in repo.library.execute(
-                "SELECT * FROM transcript_revisions WHERE meeting_id=? ORDER BY revision_number",
-                (meeting_id,),
-            )
-        )
-        return MeetingDetail(
-            meeting,
-            tuple(
-                AudioAsset(**dict(row))
-                for row in repo.library.execute(
-                    "SELECT * FROM audio_assets WHERE meeting_id=? ORDER BY id", (meeting_id,)
-                )
-            ),
-            revisions,
-            tuple(segment for revision in revisions for segment in repo.get_segments(revision.id)),
-            tuple(
-                link
-                for revision in revisions
-                for link in repo.get_revision_audio_assets(revision.id)
-            ),
-            warnings,
-            tuple(
-                Participant(**dict(row))
-                for row in repo.library.execute(
-                    "SELECT p.* FROM participants p JOIN meeting_participants l "
-                    "ON p.id=l.participant_id WHERE l.meeting_id=? ORDER BY p.id",
-                    (meeting_id,),
-                )
-            ),
-            tuple(
-                MeetingParticipant(**dict(row))
-                for row in repo.library.execute(
-                    "SELECT * FROM meeting_participants WHERE meeting_id=? ORDER BY participant_id",
-                    (meeting_id,),
-                )
-            ),
-            tuple(
-                SpeakerAssignment(**dict(row))
-                for row in repo.library.execute(
-                    "SELECT * FROM speaker_assignments WHERE meeting_id=? "
-                    "ORDER BY revision_id,speaker_key",
-                    (meeting_id,),
-                )
-            ),
-        )
+        return repo.meeting_detail(meeting, warnings)
 
     @contextmanager
     def _read_operation(self) -> Iterator[MemoryRepository]:
@@ -3278,6 +4661,7 @@ class MemoryService:
         with self._operation() as repo:
             with repo.transaction():
                 self._meeting(repo, meeting_id)
+                self._require_portable_commit_sealed(repo, meeting_id)
                 if repo.get_participant(participant_id) is None:
                     raise NotFound("Participant does not exist")
                 repo.library.execute(
@@ -3323,6 +4707,7 @@ class MemoryService:
         with self._operation() as repo:
             with repo.transaction():
                 self._meeting(repo, meeting_id)
+                self._require_portable_commit_sealed(repo, meeting_id)
                 self._speaker_scope(repo, meeting_id, scope, speaker_key)
                 if participant_id is not None:
                     if repo.get_participant(participant_id) is None:
@@ -3363,6 +4748,7 @@ class MemoryService:
         with self._operation() as repo:
             with repo.transaction():
                 meeting = self._meeting(repo, meeting_id)
+                self._require_portable_commit_sealed(repo, meeting_id)
                 if speaker_key is not None:
                     self._speaker_scope(repo, meeting_id, meeting.active_revision_id, speaker_key)
                 repo.insert_participant(participant)
@@ -3399,6 +4785,7 @@ class MemoryService:
         with self._operation() as repo:
             with repo.transaction():
                 meeting = self._meeting(repo, meeting_id)
+                self._require_portable_commit_sealed(repo, meeting_id)
                 if meeting.row_version != expected_version:
                     raise Conflict("Meeting changed; reload its current version")
                 now = datetime.now(timezone.utc).isoformat()

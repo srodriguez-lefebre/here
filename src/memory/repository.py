@@ -6,8 +6,8 @@ import json
 import sqlite3
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from dataclasses import asdict
-from typing import TypeVar
+from dataclasses import asdict, dataclass, replace
+from typing import TYPE_CHECKING, TypeVar
 from uuid import uuid4
 
 from here.memory.database import IntegrityFailure, LibraryConnection, storage_error
@@ -15,25 +15,50 @@ from here.memory.models import (
     AudioAsset,
     IngestSource,
     Meeting,
+    MeetingDetail,
+    MeetingParticipant,
     MeetingStatus,
     Participant,
     PendingOperation,
     RevisionAudioAsset,
     Segment,
+    SpeakerAssignment,
     TranscriptRevision,
 )
 
-T = TypeVar(
-    "T",
-    Meeting,
-    AudioAsset,
-    TranscriptRevision,
-    Segment,
-    IngestSource,
-    PendingOperation,
-    RevisionAudioAsset,
-    Participant,
-)
+if TYPE_CHECKING:
+    from here.memory.portable_import import _PortableImportedMeeting
+
+T = TypeVar("T")
+
+
+@dataclass(frozen=True, slots=True)
+class _PortableLifecycleEvent:
+    id: str
+    meeting_id: str
+    kind: str
+    occurred_at: str
+    recorded_duration_ms: int | None
+    payload: str
+
+
+@dataclass(frozen=True, slots=True)
+class _PortableMeetingRows:
+    detail: MeetingDetail
+    lifecycle_events: tuple[_PortableLifecycleEvent, ...]
+
+    @property
+    def meeting(self) -> Meeting:
+        return self.detail.meeting
+
+    @property
+    def audio_assets(self) -> tuple[AudioAsset, ...]:
+        return self.detail.audio_assets
+
+
+@dataclass(frozen=True, slots=True)
+class _PortableExportRows:
+    meetings: tuple[_PortableMeetingRows, ...]
 
 
 class MemoryRepository:
@@ -126,6 +151,122 @@ class MemoryRepository:
             "SELECT * FROM segments WHERE revision_id=? ORDER BY ordinal", (revision_id,)
         )
         return tuple(Segment(**dict(row)) for row in rows)
+
+    def meeting_detail(self, meeting: Meeting, warnings: tuple[object, ...] = ()) -> MeetingDetail:
+        meeting_id = meeting.id
+        revisions = tuple(
+            TranscriptRevision(**dict(row))
+            for row in self.library.execute(
+                "SELECT * FROM transcript_revisions WHERE meeting_id=? ORDER BY revision_number",
+                (meeting_id,),
+            )
+        )
+        return MeetingDetail(
+            meeting,
+            tuple(
+                AudioAsset(**dict(row))
+                for row in self.library.execute(
+                    "SELECT * FROM audio_assets WHERE meeting_id=? ORDER BY id", (meeting_id,)
+                )
+            ),
+            revisions,
+            tuple(segment for revision in revisions for segment in self.get_segments(revision.id)),
+            tuple(
+                link
+                for revision in revisions
+                for link in self.get_revision_audio_assets(revision.id)
+            ),
+            warnings,
+            tuple(
+                Participant(**dict(row))
+                for row in self.library.execute(
+                    "SELECT p.* FROM participants p JOIN meeting_participants l "
+                    "ON p.id=l.participant_id WHERE l.meeting_id=? ORDER BY p.id",
+                    (meeting_id,),
+                )
+            ),
+            tuple(
+                MeetingParticipant(**dict(row))
+                for row in self.library.execute(
+                    "SELECT * FROM meeting_participants WHERE meeting_id=? ORDER BY participant_id",
+                    (meeting_id,),
+                )
+            ),
+            tuple(
+                SpeakerAssignment(**dict(row))
+                for row in self.library.execute(
+                    "SELECT * FROM speaker_assignments WHERE meeting_id=? "
+                    "ORDER BY revision_id,speaker_key",
+                    (meeting_id,),
+                )
+            ),
+        )
+
+    def portable_export_rows(self, ids: tuple[str, ...]) -> _PortableExportRows:
+        """Detach the complete ordered state of each existing selection for revalidation."""
+        if not self.connection.in_transaction:
+            raise IntegrityFailure("Portable snapshot requires an explicit read transaction")
+        meetings = []
+        for meeting_id in sorted(ids):
+            meeting = self.get_meeting(meeting_id)
+            if meeting is None:
+                continue
+            events = tuple(
+                _PortableLifecycleEvent(**dict(row))
+                for row in self.library.execute(
+                    "SELECT id,meeting_id,kind,occurred_at,recorded_duration_ms,payload "
+                    "FROM lifecycle_events WHERE meeting_id=? ORDER BY occurred_at,id",
+                    (meeting_id,),
+                )
+            )
+            meetings.append(_PortableMeetingRows(self.meeting_detail(meeting), events))
+        return _PortableExportRows(tuple(meetings))
+
+    def insert_portable_meeting(
+        self, bundle: _PortableImportedMeeting, source: IngestSource
+    ) -> None:
+        """Insert validated local history within the caller's existing publication transaction."""
+        self._require_transaction()
+        detail = bundle.detail
+        meeting = detail.meeting
+        if source.meeting_id != meeting.id or source.revision_id is not None:
+            raise IntegrityFailure("Portable source must refer to the whole meeting")
+        if any(
+            revision.meeting_id != meeting.id or revision.origin != source.origin_path
+            for revision in detail.revisions
+        ):
+            raise IntegrityFailure("Portable revisions must use the meeting's local source")
+        if any(event.meeting_id != meeting.id for event in bundle.lifecycle_events):
+            raise IntegrityFailure("Portable lifecycle event belongs to another meeting")
+
+        # The meeting and its active revision refer to one another through immediate FKs.
+        self.insert_meeting(replace(meeting, active_revision_id=None))
+        for revision in detail.revisions:
+            self.insert_revision(revision)
+        self.insert_segments(detail.segments)
+        for asset in detail.audio_assets:
+            self.insert_audio_asset(asset)
+        for link in detail.revision_audio_assets:
+            self.insert_revision_audio_asset(link)
+
+        for participant in detail.participants:
+            existing = self.get_participant(participant.id)
+            if existing is None:
+                self.insert_participant(participant)
+            elif existing != participant:
+                raise IntegrityFailure("Portable participant identity conflicts with the library")
+        for participant_link in detail.participant_links:
+            self._insert("meeting_participants", participant_link)
+        for assignment in detail.speaker_assignments:
+            self._insert("speaker_assignments", assignment)
+        for event in bundle.lifecycle_events:
+            self._insert("lifecycle_events", event)
+        self.insert_ingest_source(source)
+        if meeting.active_revision_id is not None:
+            self.library.execute(
+                "UPDATE meetings SET active_revision_id=? WHERE id=?",
+                (meeting.active_revision_id, meeting.id),
+            )
 
     def activate_revision(self, meeting_id: str, revision_id: str) -> None:
         self._require_transaction()

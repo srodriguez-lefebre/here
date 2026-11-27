@@ -8,19 +8,30 @@ import math
 import os
 import re
 from collections.abc import Iterable
-from dataclasses import dataclass
+from contextlib import nullcontext
+from dataclasses import asdict, dataclass, fields
 from datetime import datetime
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, cast
 from uuid import UUID
 
 import soundfile as sf  # type: ignore[import-untyped]
-from here.memory.models import AudioAsset, IngestSource, Meeting, MeetingStatus, Participant
+from here.memory.models import (
+    AudioAsset,
+    IngestSource,
+    Meeting,
+    MeetingStatus,
+    Participant,
+    RevisionAudioAsset,
+    Segment,
+    TranscriptRevision,
+)
 from here.output.metadata import SessionMetadata
 from here.output.paths import (
     UnsafeSessionPath,
     session_artifact_path,
     staged_artifact_path,
+    validate_artifact_filename,
     validate_session_directory,
 )
 
@@ -103,8 +114,7 @@ def _state_digest(value: object) -> bool:
     )
 
 
-def read_meeting_snapshot(directory: Path, name: str, meeting_id: str) -> dict[str, Any]:
-    """Validate the existing state envelope and its additive lifecycle supplements."""
+def _meeting_state_version(name: str) -> int:
     filename = Path(name)
     version, separator, identity = filename.stem.partition("-")
     try:
@@ -118,15 +128,25 @@ def read_meeting_snapshot(directory: Path, name: str, meeting_id: str) -> dict[s
         valid = False
     if not valid:
         raise ValueError("Unrecognized meeting-state entry retained")
+    return int(version)
+
+
+def read_meeting_snapshot(directory: Path, name: str, meeting_id: str) -> dict[str, Any]:
+    """Validate the existing state envelope and its additive lifecycle supplements."""
+    version = _meeting_state_version(name)
     path = session_artifact_path(directory, name)
     state = json.loads(path.read_text(encoding="utf-8"))
+    return _validate_meeting_snapshot(state, version, meeting_id)
+
+
+def _validate_meeting_snapshot(state: Any, version: int, meeting_id: str) -> dict[str, Any]:
     meeting = state.get("meeting") if isinstance(state, dict) else None
     if (
         not isinstance(state, dict)
         or state.get("schema_version") not in {1, 2}
         or not isinstance(meeting, dict)
         or meeting.get("id") != meeting_id
-        or meeting.get("row_version") != int(version)
+        or meeting.get("row_version") != version
     ):
         raise ValueError("Invalid managed meeting-state envelope")
     if state["schema_version"] == 1:
@@ -184,10 +204,10 @@ def read_meeting_snapshot(directory: Path, name: str, meeting_id: str) -> dict[s
         "audio_assets": set(AudioAsset.__dataclass_fields__),
         "ingest_sources": set(IngestSource.__dataclass_fields__),
     }
-    for table, fields in columns.items():
+    for table, field_names in columns.items():
         entries = state[table]
         if not isinstance(entries, list) or any(
-            not isinstance(entry, dict) or set(entry) != fields for entry in entries
+            not isinstance(entry, dict) or set(entry) != field_names for entry in entries
         ):
             raise ValueError("Invalid lifecycle snapshot table shape")
         if table != "participants" and any(entry["meeting_id"] != meeting_id for entry in entries):
@@ -296,7 +316,7 @@ def read_meeting_snapshot(directory: Path, name: str, meeting_id: str) -> dict[s
         ):
             raise ValueError("Invalid lifecycle origin")
         origins.add(origin_key)
-    return state
+    return cast(dict[str, Any], state)
 
 
 def read_meeting_state(directory: Path, name: str, meeting_id: str) -> dict[str, Any]:
@@ -304,13 +324,427 @@ def read_meeting_state(directory: Path, name: str, meeting_id: str) -> dict[str,
     return cast(dict[str, Any], read_meeting_snapshot(directory, name, meeting_id)["meeting"])
 
 
-def write_durable_json(path: Path, value: object) -> None:
+PORTABLE_GROUP_NAME = ".portable-group.json"
+PORTABLE_RECEIPT_NAME = "portable-catalog.json"
+_PORTABLE_WAV = re.compile(r"audio_[0-9a-f]{32}\.wav")
+
+
+@dataclass(frozen=True, slots=True)
+class PortableGroup:
+    operation_id: str
+    meeting_id: str
+    revision_ids: tuple[str, ...]
+    group_sha256: str | None = None
+
+    def document(self) -> dict[str, object]:
+        return {
+            "schema_version": 1,
+            "operation_id": self.operation_id,
+            "meeting_id": self.meeting_id,
+            "revision_ids": list(self.revision_ids),
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class PortableReceipt:
+    operation_id: str
+    meeting_id: str
+    revision_id: str
+    hashes: dict[str, str]
+    receipt_sha256: str
+    snapshot: dict[str, Any]
+
+
+@dataclass(frozen=True, slots=True)
+class PortableCompletionMember:
+    revision_id: str
+    receipt_sha256: str
+    hashes: dict[str, str]
+
+
+@dataclass(frozen=True, slots=True)
+class PortableCompletion:
+    operation_id: str
+    meeting_id: str
+    members: tuple[PortableCompletionMember, ...]
+    group_sha256: str
+    state_name: str
+    state_sha256: str
+    state: dict[str, Any] | None = None
+
+    def document(self) -> dict[str, object]:
+        return {
+            "schema_version": 1,
+            "operation_id": self.operation_id,
+            "meeting_id": self.meeting_id,
+            "members": [asdict(member) for member in self.members],
+            "group_sha256": self.group_sha256,
+            "state_name": self.state_name,
+            "state_sha256": self.state_sha256,
+        }
+
+
+def portable_completion_name(operation_id: str) -> str:
+    if not _state_uuid(operation_id):
+        raise ValueError("Invalid portable import operation identity")
+    return f"portable-group-{operation_id}.json"
+
+
+def _portable_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    value: dict[str, Any] = {}
+    for key, item in pairs:
+        if key in value:
+            raise ValueError("Duplicate key in portable publication proof")
+        value[key] = item
+    return value
+
+
+def _portable_document(data: bytes) -> dict[str, Any]:
+    value = json.loads(data.decode("utf-8"), object_pairs_hook=_portable_json_object)
+    if not isinstance(value, dict):
+        raise ValueError("Portable publication proof must be an object")
+    return value
+
+
+def _portable_role_document(directory: Path, name: str) -> tuple[dict[str, Any], str]:
+    raw = session_artifact_path(directory, name).read_bytes()
+    return _portable_document(raw), hashlib.sha256(raw).hexdigest()
+
+
+def _portable_fields(value: object, names: set[str]) -> dict[str, Any]:
+    if not isinstance(value, dict) or set(value) != names:
+        raise ValueError("Invalid portable publication proof fields")
+    return value
+
+
+def _portable_envelope(
+    value: dict[str, Any], *, version: int, operation_id: str, meeting_id: str
+) -> None:
+    if (
+        type(value["schema_version"]) is not int
+        or value["schema_version"] != version
+        or not _state_uuid(value["operation_id"])
+        or value["operation_id"] != operation_id
+        or not _state_uuid(value["meeting_id"])
+        or value["meeting_id"] != meeting_id
+    ):
+        raise ValueError("Portable publication proof has a mismatched envelope")
+
+
+def _portable_hashes(value: object) -> dict[str, str]:
+    if not isinstance(value, dict) or any(
+        not isinstance(name, str)
+        or _PORTABLE_WAV.fullmatch(name) is None
+        or not _state_digest(digest)
+        for name, digest in value.items()
+    ):
+        raise ValueError("Invalid portable revision artifact hashes")
+    return dict(value)
+
+
+def read_portable_group(meeting_dir: Path, meeting_id: str) -> PortableGroup:
+    """Read the separately managed registration for an ordered import group."""
+    value, digest = _portable_role_document(meeting_dir, PORTABLE_GROUP_NAME)
+    _portable_fields(value, {"schema_version", "operation_id", "meeting_id", "revision_ids"})
+    _portable_envelope(value, version=1, operation_id=value["operation_id"], meeting_id=meeting_id)
+    revisions = value["revision_ids"]
+    if (
+        meeting_dir.name != meeting_id
+        or not isinstance(revisions, list)
+        or any(not _state_uuid(revision_id) for revision_id in revisions)
+        or len(revisions) != len(set(revisions))
+    ):
+        raise ValueError("Invalid portable import group membership")
+    return PortableGroup(value["operation_id"], meeting_id, tuple(revisions), digest)
+
+
+def _portable_model_fields(value: object, model: type) -> dict[str, Any]:
+    return _portable_fields(value, {item.name for item in fields(model)})
+
+
+def _portable_table(value: object, model: type) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        raise ValueError("Portable receipt table must be an array")
+    return [_portable_model_fields(row, model) for row in value]
+
+
+def _portable_receipt_audio(
+    value: dict[str, Any], group: PortableGroup, revision_id: str
+) -> dict[str, str]:
+    audio = {}
+    local_wavs = {}
+    revision_ids = set(group.revision_ids)
+    for asset in _portable_table(value["audio_assets"], AudioAsset):
+        identity = asset["id"]
+        if (
+            not _state_uuid(identity)
+            or identity in audio
+            or asset["meeting_id"] != group.meeting_id
+            or not _state_digest(asset["sha256"])
+            or asset["status"] not in ("available", "missing")
+            or not isinstance(asset["relative_path"], str)
+        ):
+            raise ValueError("Invalid portable receipt audio identity")
+        basename = f"audio_{UUID(identity).hex}.wav"
+        parts = asset["relative_path"].split("/")
+        if (
+            len(parts) != 5
+            or parts[:3] != ["meetings", group.meeting_id, "revisions"]
+            or parts[3] not in revision_ids
+            or parts[4] != basename
+        ):
+            raise ValueError("Portable receipt audio is outside its registered group")
+        if parts[3] == revision_id and asset["status"] == "available":
+            local_wavs[basename] = asset["sha256"]
+        audio[identity] = asset
+
+    linked = set()
+    names = set()
+    for ordinal, link in enumerate(
+        _portable_table(value["revision_audio_assets"], RevisionAudioAsset)
+    ):
+        if (
+            link["meeting_id"] != group.meeting_id
+            or link["revision_id"] != revision_id
+            or not _state_uuid(link["asset_id"])
+            or link["asset_id"] not in audio
+            or type(link["ordinal"]) is not int
+            or link["ordinal"] != ordinal
+            or not isinstance(link["source_file"], str)
+            or link["source_file"] in names
+        ):
+            raise ValueError("Invalid portable receipt audio link")
+        validate_artifact_filename(link["source_file"])
+        linked.add(link["asset_id"])
+        names.add(link["source_file"])
+    if linked != set(audio):
+        raise ValueError("Portable receipt audio is missing its revision links")
+    return local_wavs
+
+
+def read_portable_receipt(revision_dir: Path, group: PortableGroup) -> PortableReceipt:
+    """Read a group-bound receipt without interpreting ordinary publication formats."""
+    revision_id = revision_dir.name
+    value, digest = _portable_role_document(revision_dir, PORTABLE_RECEIPT_NAME)
+    _portable_fields(
+        value,
+        {
+            "schema_version",
+            "operation_id",
+            "meeting_id",
+            "revision_id",
+            "meeting",
+            "revision",
+            "segments",
+            "audio_assets",
+            "revision_audio_assets",
+            "ingest_sources",
+            "hashes",
+        },
+    )
+    _portable_envelope(
+        value, version=4, operation_id=group.operation_id, meeting_id=group.meeting_id
+    )
+    meeting = _portable_model_fields(value["meeting"], Meeting)
+    revision = _portable_model_fields(value["revision"], TranscriptRevision)
+    if (
+        revision_id not in group.revision_ids
+        or value["revision_id"] != revision_id
+        or meeting["id"] != group.meeting_id
+        or revision["meeting_id"] != group.meeting_id
+        or revision["id"] != revision_id
+        or type(revision["revision_number"]) is not int
+        or revision["revision_number"] < 1
+        or not _state_digest(revision["content_hash"])
+    ):
+        raise ValueError("Portable receipt revision identity disagrees with its group")
+    segments = _portable_table(value["segments"], Segment)
+    segment_ids = set()
+    for ordinal, segment in enumerate(segments):
+        if (
+            segment["revision_id"] != revision_id
+            or not _state_uuid(segment["id"])
+            or segment["id"] in segment_ids
+            or type(segment["ordinal"]) is not int
+            or segment["ordinal"] != ordinal
+            or segment["speaker_key"] is not None
+            and not isinstance(segment["speaker_key"], str)
+        ):
+            raise ValueError("Invalid portable receipt segment identity")
+        segment_ids.add(segment["id"])
+    sources = _portable_table(value["ingest_sources"], IngestSource)
+    if sources and (
+        revision_id != group.revision_ids[0]
+        or len(sources) != 1
+        or sources[0]["meeting_id"] != group.meeting_id
+        or sources[0]["revision_id"] is not None
+        or sources[0]["origin_path"] != revision["origin"]
+        or not _state_uuid(sources[0]["id"])
+        or not _state_digest(sources[0]["origin_fingerprint"])
+    ):
+        raise ValueError("Invalid portable receipt origin")
+    hashes = _portable_hashes(value["hashes"])
+    if hashes != _portable_receipt_audio(value, group, revision_id):
+        raise ValueError("Portable receipt artifact hashes disagree with its audio")
+    return PortableReceipt(group.operation_id, group.meeting_id, revision_id, hashes, digest, value)
+
+
+def read_portable_completion(states_dir: Path, group: PortableGroup) -> PortableCompletion:
+    """Read completion evidence and validate the exact measured lifecycle snapshot."""
+    name = portable_completion_name(group.operation_id)
+    value, _ = _portable_role_document(states_dir, name)
+    _portable_fields(
+        value,
+        {
+            "schema_version",
+            "operation_id",
+            "meeting_id",
+            "members",
+            "group_sha256",
+            "state_name",
+            "state_sha256",
+        },
+    )
+    _portable_envelope(
+        value, version=1, operation_id=group.operation_id, meeting_id=group.meeting_id
+    )
+    state_name = value["state_name"]
+    if (
+        not _state_digest(value["group_sha256"])
+        or value["group_sha256"] != group.group_sha256
+        or not isinstance(state_name, str)
+        or re.fullmatch(r"[1-9][0-9]*-[0-9a-f-]{36}\.json", state_name) is None
+        or not _state_digest(value["state_sha256"])
+        or not isinstance(value["members"], list)
+    ):
+        raise ValueError("Invalid portable import completion binding")
+    state_version = _meeting_state_version(state_name)
+    members = []
+    for item in value["members"]:
+        member = _portable_fields(item, {"revision_id", "receipt_sha256", "hashes"})
+        if not _state_uuid(member["revision_id"]) or not _state_digest(member["receipt_sha256"]):
+            raise ValueError("Invalid portable import completion member")
+        members.append(
+            PortableCompletionMember(
+                member["revision_id"], member["receipt_sha256"], _portable_hashes(member["hashes"])
+            )
+        )
+    if tuple(member.revision_id for member in members) != group.revision_ids:
+        raise ValueError("Portable completion membership differs from its registration")
+
+    raw = session_artifact_path(states_dir, state_name).read_bytes()
+    state_sha256 = hashlib.sha256(raw).hexdigest()
+    if state_sha256 != value["state_sha256"]:
+        raise ValueError("Portable lifecycle snapshot digest mismatch")
+    state = _validate_meeting_snapshot(_portable_document(raw), state_version, group.meeting_id)
+    allowed_revisions = set(group.revision_ids)
+    active_revision = state["meeting"]["active_revision_id"]
+    if (
+        type(state["schema_version"]) is not int
+        or state["schema_version"] != 2
+        or active_revision is not None
+        and active_revision not in allowed_revisions
+    ):
+        raise ValueError("Portable completion requires a complete matching lifecycle snapshot")
+    if any(item["revision_id"] not in allowed_revisions for item in state["speaker_assignments"]):
+        raise ValueError("Portable lifecycle assignment refers to a revision outside the group")
+    sources = state["ingest_sources"]
+    if len(sources) != 1 or sources[0]["revision_id"] is not None:
+        raise ValueError("Portable lifecycle snapshot requires one meeting-level source")
+    return PortableCompletion(
+        group.operation_id,
+        group.meeting_id,
+        tuple(members),
+        value["group_sha256"],
+        state_name,
+        state_sha256,
+        state,
+    )
+
+
+def validate_portable_group_members(
+    group: PortableGroup, completion: PortableCompletion, receipts: Iterable[PortableReceipt]
+) -> None:
+    """Validate every registered member before the caller restores any catalog rows."""
+    state = completion.state
+    if (
+        completion.operation_id != group.operation_id
+        or completion.meeting_id != group.meeting_id
+        or completion.group_sha256 != group.group_sha256
+        or state is None
+        or tuple(member.revision_id for member in completion.members) != group.revision_ids
+    ):
+        raise ValueError("Portable completion binding differs from its registration")
+    receipts_by_id = {}
+    for receipt in receipts:
+        if (
+            receipt.operation_id != group.operation_id
+            or receipt.meeting_id != group.meeting_id
+            or receipt.revision_id in receipts_by_id
+        ):
+            raise ValueError("Mixed or duplicated portable group receipts")
+        receipts_by_id[receipt.revision_id] = receipt
+    if set(receipts_by_id) != set(group.revision_ids):
+        raise ValueError("Portable group is missing its exact receipt set")
+
+    previous_number = 0
+    state_assets = {asset["id"]: asset for asset in state["audio_assets"]}
+    first_revision_by_asset = {}
+    state_origin = state["ingest_sources"][0]
+    speakers_by_revision: dict[str, set[str]] = {}
+    for member in completion.members:
+        receipt = receipts_by_id[member.revision_id]
+        if (
+            member.receipt_sha256 != receipt.receipt_sha256
+            or member.hashes != receipt.hashes
+            or receipt.snapshot["meeting"] != state["meeting"]
+            or receipt.snapshot["revision"]["origin"] != state_origin["origin_path"]
+        ):
+            raise ValueError("Portable receipt evidence differs from its completion proof")
+        number = receipt.snapshot["revision"]["revision_number"]
+        if number <= previous_number:
+            raise ValueError("Portable receipt revision order differs from its registration")
+        previous_number = number
+        speakers_by_revision[member.revision_id] = {
+            segment["speaker_key"]
+            for segment in receipt.snapshot["segments"]
+            if segment["speaker_key"] is not None
+        }
+        for asset in receipt.snapshot["audio_assets"]:
+            if state_assets.get(asset["id"]) != asset:
+                raise ValueError("Portable receipt audio differs from its lifecycle snapshot")
+            first_revision_by_asset.setdefault(asset["id"], member.revision_id)
+        sources = receipt.snapshot["ingest_sources"]
+        if sources and sources != [state_origin]:
+            raise ValueError("Portable receipt source differs from its lifecycle snapshot")
+    if set(first_revision_by_asset) != set(state_assets):
+        raise ValueError("Portable lifecycle snapshot contains unreceipted audio")
+    for asset_id, asset in state_assets.items():
+        if asset["relative_path"].split("/")[3] != first_revision_by_asset[asset_id]:
+            raise ValueError("Portable audio owner is not its first referencing revision")
+    for assignment in state["speaker_assignments"]:
+        if assignment["speaker_key"] not in speakers_by_revision[assignment["revision_id"]]:
+            raise ValueError("Portable lifecycle assignment has no matching scoped speaker")
+
+
+def write_durable_json(path: Path, value: object, *, staged: Path | None = None) -> None:
     """Flush a small owned journal/receipt before its same-volume atomic replace."""
-    with staged_artifact_path(path) as staged:
-        with staged.open("w", encoding="utf-8") as stream:
+    if staged is not None:
+        # The caller's durable inventory owns this role even after process death.
+        session_artifact_path(path.parent, path.name)
+        staged = session_artifact_path(staged.parent, staged.name)
+        if staged.exists():
+            if staged.resolve().name != staged.name:
+                raise UnsafeSessionPath("Registered stage filename disagrees with its local role")
+            staged.unlink()
+    pending = staged_artifact_path(path) if staged is None else nullcontext(staged)
+    with pending as temporary:
+        with temporary.open("w" if staged is None else "x", encoding="utf-8") as stream:
             json.dump(value, stream, ensure_ascii=False)
             stream.flush()
             os.fsync(stream.fileno())
+        if staged is not None:
+            temporary.replace(path)
 
 
 def managed_path(root: Path, relative: str, *, directory: bool = False) -> Path:
@@ -332,6 +766,17 @@ def managed_path(root: Path, relative: str, *, directory: bool = False) -> Path:
         else:
             current = session_artifact_path(current, part)
     return current
+
+
+def portable_stage_io_path(path: Path) -> Path:
+    """Use extended Windows I/O paths for the private portable staging tree."""
+    if os.name != "nt" or str(path).startswith("\\\\?\\"):
+        return path
+    absolute = path.absolute()
+    if ".." in absolute.parts:
+        raise UnsafeSessionPath("Invalid portable staging path")
+    name = str(absolute)
+    return Path("\\\\?\\UNC\\" + name[2:] if name.startswith("\\\\") else "\\\\?\\" + name)
 
 
 def file_hash(path: Path) -> str:
