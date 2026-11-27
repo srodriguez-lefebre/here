@@ -25,8 +25,8 @@ schemas, the existing OpenAI SDK, pytest with mock transport; no new dependency.
   model is missing.
 - Transcript text is inert data: never interpolated into instructions, never a source
   of tools, links, code or policy.
-- The provider never supplies paths, titles, dates or timestamps used for navigation;
-  the verifier drops them and the memory resolves them.
+- Memory resolves paths, titles, dates and timestamps used for navigation. The
+  verifier rejects model-supplied timestamps and derives timing from the segment.
 - Budgets are hard: 6 per meeting, 24 total, 24,000 evidence characters, 2,000 output
   tokens by default; truncation is reported, never hidden.
 - `intelligence/` does not import Qt or Typer and does not open SQLite directly.
