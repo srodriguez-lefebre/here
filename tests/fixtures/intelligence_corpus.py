@@ -76,3 +76,37 @@ def make_intelligence_corpus() -> tuple[IntelligenceMeeting, ...]:
         )
 
     return tuple(meetings)
+
+
+def make_evidence_window_corpus(
+    *, oversized_before: int, oversized_after: int = 2
+) -> tuple[IntelligenceMeeting, IntelligenceMeeting]:
+    """Return a window fixture and a separate shared-neighbor fixture.
+
+    ``oversized_before`` is the zero-based transcript ordinal of the fitting
+    match in the first meeting. Everything before and after it is an oversized
+    match, so the caller can place the fitting match on either side of its
+    consideration boundary using a deterministic order established by the test.
+    Transcript ordinal gives fixture order only. The caller controls search
+    ranking and verifies where the fixture entries land in that order.
+
+    At a 96-character budget, the fitting match fits and every other match in
+    its meeting exceeds the budget. Each oversized match puts NUL immediately
+    after a short matching prefix. The separate meeting brackets a nonmatching
+    neighbor containing NUL with two short matches; all three texts together fit
+    that character budget. NUL, astral Unicode and combining marks are literal
+    source characters in both meetings.
+    """
+    oversized = "cobalto\x00" + " 🌱cafe\u0301" * 20
+    fitting = "cobalto: pieza útil."
+    window = IntelligenceMeeting(
+        meeting_id="94000000-0000-4000-8000-000000000051",
+        title="Ventana de consideración sintética",
+        passages=(oversized,) * oversized_before + (fitting,) + (oversized,) * oversized_after,
+    )
+    shared_neighbor = IntelligenceMeeting(
+        meeting_id="94000000-0000-4000-8000-000000000052",
+        title="Contexto compartido sintético",
+        passages=("cobalto inicial.", "📌 Nota\x00: cafe\u0301 frío.", "azafrán final."),
+    )
+    return window, shared_neighbor
