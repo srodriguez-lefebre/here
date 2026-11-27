@@ -3026,3 +3026,15 @@ Receipts are in
 
 The M3 B contract update binds this merge before rebasing the retained
 `b36162a` candidate. The 0.4.0 release remains part of M3 B.
+
+## 2026-11-27 — M3 B documentation handoff merged
+
+[PR #29](https://github.com/srodriguez-lefebre/here/pull/29) bound the M3 B
+spec and plan to the accepted A merge. `m5_portability_package_io_review_sol`
+approved the exact documentation head `d57a43d451c652da7a474954991af7f5cef24d78`.
+Ruling 64 applied. Windows [CI 46034925816](https://github.com/srodriguez-lefebre/here/actions/runs/46034925816)
+passed 1,619 cases with 104 skips and [package run 46034925769](https://github.com/srodriguez-lefebre/here/actions/runs/46034925769)
+passed on the same head, level 2. Root used the protected merge and verified
+the resulting main commit `8d0b03d92524c78ca6983db0fc64e1048e7b2a6c`.
+The rebase preserves all 34 retained M3 B commits in `063d974`. Integrated
+functional, playback and release gates remain in execution.
