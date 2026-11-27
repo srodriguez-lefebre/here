@@ -47,25 +47,29 @@ offsets nullable. Use FKs for integrity and dependent claim/citation cleanup.
 Deleting a meeting removes the entire answer, including claims and citations for
 other meetings, through R51's private SQL purger. Register it on the same composed
 `MemoryService`. The purger identifies affected answer IDs before core relationships
-are removed and deletes them in the existing final cleanup transaction on the
+are removed, using the union of citation sources and all recorded evidence
+dependencies. It deletes them in the existing final cleanup transaction on the
 supplied repository connection. It runs no transaction control, other connection,
 I/O or provider call. Failure rolls core and derived rows back together and keeps
 the deletion pending and hidden for replay. Preserve the R52 roots and leases and
 the existing cleanup of DB/WAL and managed backups before durable completion.
 
-Persist only the intended answer record and its verifiable source associations.
-Every retained transcript-derived part must be attributable to a guarded source for
-invalidation and whole-answer purge. The A handoff must account for evidence used
-in a result, including context that contributes to a claim or cache key. Keep raw
-provider payloads, evidence-bearing prompts, headers and secrets out of storage and
-logs. Store usage and cost only when supplied by the provider.
+Save the answer and its durable evidence dependency inventory atomically. Record
+meeting ID, revision ID and revision content hash for every source used to produce
+the answer or supplied as context, including sources with no visible citation.
+Requested scope and visible citations do not substitute for this inventory. Keep
+the inventory within the three planned tables. An association field in `answers`
+is a candidate; bind the representation at the A/B handoff. The inventory stores
+source metadata. Keep transcript copies beyond the intended result, raw provider
+payloads, evidence-bearing prompts, headers and secrets out of storage and logs.
+Store usage and cost only when supplied by the provider.
 
 ### Cache and invalidation
 
 `cache_key` is a hash of question, mode, provider, model, prompt and schema version,
 budget, scope and the `content_hash` of every revision used. A repeated question with
 the same key returns the stored answer marked as cached. When a retry activates a new
-revision for any cited meeting, answers citing the old revision become `historical`;
+revision for any source meeting in the inventory, affected answers become `historical`;
 the UI shows them as such and offers explicit regeneration. Before saving and
 publishing a fresh result, use A's active-source validation and guard the save
 against a revision switch or deletion between validation and write. Bind the
@@ -73,8 +77,14 @@ writer-side validation with the memory owner. Use the existing serialized write
 boundary and common suppression parser, without nesting R50 inside a write or
 holding a view during a provider call.
 
+Check cancellation at the durable publication boundary after writer-side source
+validation. If cancellation is accepted before commit wins, stop publication,
+discard the in-flight result and leave no persisted answer, cache entry or completed
+status from that request. If commit wins, report the committed result honestly.
+
 Read cached and historical records under R50. Suppress the entire record if any
-source meeting is pending/complete suppressed, deleting or absent, before cache
+source meeting in its source inventory or citations is pending/complete suppressed,
+deleting or absent, before cache
 reuse or presentation. Historical display requires guarded, still-resolvable source
 identity; it does not satisfy active-evidence publication or a fresh cache lookup.
 An invalid guard fails closed. A deletion invalidates affected in-flight requests

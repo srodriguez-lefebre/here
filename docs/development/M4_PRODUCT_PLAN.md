@@ -53,7 +53,9 @@ dependency.
 - The R51 purger deletes whole affected answers before core relationships vanish.
   A failed cleanup rolls back together and R42 suppression hides pending records.
 - A result arriving after its meeting was deleted or its view closed.
-- Cache key omitting a revision hash because of adjacent context segments.
+- The saved dependency inventory includes uncited context and is atomic with the
+  result. R42/R50 exposure, cache and history, and R51 purge consume it.
+- Cancellation accepted while a verified result waits for the writer guard.
 - Historical marking when only one of several cited meetings was retried.
 - Canary leakage into logs through `str(exc)` on provider errors.
 - CLI scope parsing and exit codes.
@@ -73,14 +75,20 @@ against A before implementation.
 
 - [ ] Write failing migration tests: three tables, FKs, answer-to-claim/citation
   cascades, integrity checks and future-schema rejection.
-- [ ] Write failing tests: cache key changes with any cited revision hash; same key
-  returns the cached answer flagged cached; retry on one meeting marks only answers
-  citing it historical.
+- [ ] Write failing tests: cache key changes with any evidence dependency hash;
+  same key returns the cached answer flagged cached; retry marks affected answers
+  historical, including when the changed revision supplied uncited context.
+  The answer and dependency inventory persist atomically.
 - [ ] Write failing deletion tests: delete a cited meeting, restart, search a canary
   phrase in `answers`, `claims`, FTS, managed backups and caches, expect zero hits;
   delete during an in-flight request discards the result. Cover rollback and pending
   replay, whole-answer removal across meetings, suppression before cache exposure,
-  and a source change between validation and save.
+  and a source change between validation and save. Delete a context-only meeting
+  and verify whole-answer purge and canary removal after restart and replay.
+- [ ] Write a deterministic cancellation test with the answer already verified and
+  the save guard still pending. Cancellation accepted before the durable commit
+  leaves no saved answer, cache entry or completed result and clears the in-flight
+  result. Cover the committed outcome when commit wins first.
 - [ ] Write failing redaction tests: canary key and canary prompt phrase absent from
   database, logs and artifacts after a mock-transport provider run, including provider
   error paths.
