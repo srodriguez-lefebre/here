@@ -13,7 +13,7 @@ from here.memory.service import MemoryService
 from memory_fixtures import MEETING_ID, OTHER_MEETING_ID, make_session
 from typer.testing import CliRunner
 
-UNSELECTED_ID = "33333333-3333-4333-8333-333333333333"
+UNSELECTED_ID = "11111111-3333-4333-8333-333333333333"
 MISSING_ID = "99999999-9999-4999-8999-999999999999"
 runner = CliRunner()
 
@@ -58,21 +58,34 @@ def test_export_writes_only_selected_meetings_to_requested_archive(
     _seed_catalog(tmp_path, MEETING_ID, OTHER_MEETING_ID, UNSELECTED_ID)
     destination = tmp_path / "selected meetings.here.zip"
     selection = (OTHER_MEETING_ID, MEETING_ID)
+    real_init = MemoryService.__init__
     real_export = PortabilityService.export
+    compositions = {}
     forwarded = []
 
+    def observe_composition(memory, data_dir, *, sessions_root=None):
+        real_init(memory, data_dir, sessions_root=sessions_root)
+        compositions[memory] = (data_dir, sessions_root)
+
     def observe_export(service, ids, destination, include_audio, progress, cancellation):
-        forwarded.append((ids, destination, include_audio))
+        forwarded.append((service, ids, destination, include_audio))
         return real_export(service, ids, destination, include_audio, progress, cancellation)
 
+    monkeypatch.setattr(MemoryService, "__init__", observe_composition)
     monkeypatch.setattr(PortabilityService, "export", observe_export)
-    arguments = ["meetings", "export", *selection, "--out", str(destination)]
+    arguments = ["meetings", "export", OTHER_MEETING_ID[:8], MEETING_ID, "--out", str(destination)]
     if not include_audio:
         arguments.append("--no-audio")
     result = runner.invoke(app, arguments)
 
     assert result.exit_code == 0, result.output + repr(result.exception)
-    assert forwarded == [(selection, destination, include_audio)]
+    [(service, ids, actual_destination, actual_audio)] = forwarded
+    assert isinstance(ids, tuple)
+    assert len(ids) == len(selection)
+    assert set(ids) == set(selection)
+    assert actual_destination == destination
+    assert actual_audio is include_audio
+    assert compositions[service._memory] == (tmp_path / "catalog", tmp_path / "sessions")
     with ZipFile(destination) as archive:
         manifest = json.loads(archive.read("manifest.json"))
         assert sorted(manifest["meeting_ids"]) == sorted(selection)
@@ -99,17 +112,18 @@ def test_export_requires_ids_and_out(arguments: tuple[str, ...]) -> None:
     ("identities", "filename", "code"),
     [
         (("not-a-uuid",), "selected.here.zip", 2),
+        ((MEETING_ID[:8],), "selected.here.zip", 2),
         ((MEETING_ID, MEETING_ID), "selected.here.zip", 2),
         ((MEETING_ID,), "selected.zip", 2),
         ((MISSING_ID,), "selected.here.zip", 3),
     ],
-    ids=["invalid-id", "duplicate-id", "invalid-destination", "missing-meeting"],
+    ids=["invalid-id", "ambiguous-id", "duplicate-id", "invalid-destination", "missing-meeting"],
 )
 def test_export_refuses_invalid_or_missing_selection(
     tmp_path: Path, identities: tuple[str, ...], filename: str, code: int
 ) -> None:
     _require_command()
-    _seed_catalog(tmp_path, MEETING_ID)
+    _seed_catalog(tmp_path, MEETING_ID, UNSELECTED_ID)
     destination = tmp_path / filename
     result = runner.invoke(app, ["meetings", "export", *identities, "--out", str(destination)])
 
