@@ -25,7 +25,11 @@ se omite por ruling 64. La prueba de dos horas sigue **omitida por ruling 5**.
 
 El contrato M4 A vincula el producto M3 aceptado a las operaciones de
 recuperación y revalidación de evidencia de ruling 79. El orquestador inicia
-T1 una vez mergeado este PR documental con §7. El primer paso es RED
+T1 una vez mergeado el [PR documental #31](https://github.com/srodriguez-lefebre/here/pull/31)
+con §7. El head exacto `f900d11` tiene revisión independiente aprobada. Están
+en curso [CI 46041541216](https://github.com/srodriguez-lefebre/here/actions/runs/46041541216)
+y [paquete 46041541205](https://github.com/srodriguez-lefebre/here/actions/runs/46041541205).
+El primer paso de implementación es RED
 independiente contra M4_GROUNDED, con los fixtures preparados. M5 B sigue
 adelantado dentro de §11, con integración de claims después de M4 B.
 
@@ -55,6 +59,7 @@ suites sensibles. Migraciones, `pyproject.toml` y versiones van en serie.
 | M3 B, cerrado | `codex/m3-library` → remoto `codex/m3-library-product`, `m3-library-group/here` | Orquestador, review `m5_portability_package_io_review_sol`, merge `7239ba6` |
 | M4 A, contrato | `codex/m4-grounded-accepted-handoff`, `m4-grounded-accepted-handoff/here` | Orquestador, docs `m3_b_native_handoff_docs_sol`; base `7239ba6` y preparación `f10c3ec` |
 | M4 A, fixtures | `codex/m4-grounded-fixture`, `m4-grounded-fixture/here`; `codex/m4-grounded-verifier-fixtures`, `m4-grounded-verifier-fixtures/here` | `dc5e0e3` y `0c35b6b`. Transferir también `tests/grounded_fixtures.py` del worktree `m2-preparation/here` |
+| M4 B, preparación documental | `codex/m4-product-contract-prep`, `m4-product-contract-prep/here` | `m3_b_native_handoff_docs_sol`, base `f900d11`. Sin producto |
 | M5 B, core y adaptadores | `codex/m5-portability-adapter-integration`, `m5-portability-adapter-integration/here` | Chat `01a1af04-b158-75a2-8933-98783880f3e8`, GPT-6.2 Sol, checkpoint `5f6324f` |
 | M5 B, mapa de traslado | `codex/m5-b-post-m3-prep`, `m5-b-post-m3-prep/here` | Mismo chat, `c643b1e`, cruces R50 y claims |
 | M5 B, traslado sobre 0.4.0 | `codex/m5-b-post-m3-integration`, `m5-b-post-m3-integration/here` | Chat `01a1af04-b158-75a2-8933-98783880f3e8`, despacho sobre `7239ba6`, sin claims ni cambios de versión |
