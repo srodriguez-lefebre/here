@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
+from contextlib import contextmanager
 from io import BufferedReader
 from os import SEEK_END
 from pathlib import Path
@@ -12,11 +13,14 @@ from zipfile import ZipFile
 import pytest
 from here.cli import app
 from here.memory.database import IntegrityFailure
+from here.memory.repository import MemoryRepository
 from here.memory.service import MemoryService
 from memory_fixtures import MEETING_ID, OTHER_MEETING_ID, make_session
 from typer.testing import CliRunner
 
 MANIFEST_ORDER = (OTHER_MEETING_ID, MEETING_ID)
+THIRD_MEETING_ID = "33333333-3333-4333-8333-333333333333"
+PARTIAL_BATCH_ORDER = (*MANIFEST_ORDER, THIRD_MEETING_ID)
 requires_native_export = pytest.mark.skipif(
     sys.platform != "win32", reason="synthetic packages use the native portable exporter"
 )
@@ -45,11 +49,11 @@ def _require_command() -> None:
     assert result.exit_code == 0, result.output + repr(result.exception)
 
 
-def _origin(tmp_path: Path) -> MemoryService:
+def _origin(tmp_path: Path, ids: tuple[str, ...] = MANIFEST_ORDER) -> MemoryService:
     sessions = tmp_path / "origin-sessions"
     sessions.mkdir()
     memory = MemoryService(tmp_path / "origin-catalog", sessions_root=sessions)
-    for identity in MANIFEST_ORDER:
+    for identity in ids:
         source = make_session(sessions / identity, meeting_id=identity)
         assert memory.ingest_session(source.directory).status == "inserted"
     return memory
@@ -266,3 +270,115 @@ def test_import_maps_package_access_failure_to_io_exit(
     assert error["error_category"] == "io"
     assert error["error"]
     assert "meetings" not in error
+
+
+@pytest.fixture
+def partial_batch(tmp_path: Path) -> tuple[Path, MemoryService]:
+    _require_command()
+    origin = _origin(tmp_path, PARTIAL_BATCH_ORDER)
+    package = _package(origin, tmp_path / "partial-report.here.zip", PARTIAL_BATCH_ORDER)
+    return package, _target(tmp_path)
+
+
+@requires_native_export
+def test_import_reports_earlier_commit_and_later_rollback(
+    partial_batch: tuple[Path, MemoryService], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    package, target = partial_batch
+    original_insert = MemoryRepository.insert_portable_meeting
+    attempted = []
+
+    def fail_second_insert(self, bundle, source):
+        original_insert(self, bundle, source)
+        if self.library.data_dir == target.data_dir:
+            identity = bundle.detail.meeting.id
+            attempted.append(identity)
+            if identity == MEETING_ID:
+                raise IntegrityFailure("Synthetic integrity failure before entity commit")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(MemoryRepository, "insert_portable_meeting", fail_second_insert)
+        report = _import_json(package, code=4)
+
+    assert attempted == [OTHER_MEETING_ID, MEETING_ID]
+    assert _outcomes(report) == [
+        (OTHER_MEETING_ID, "inserted", ""),
+        (MEETING_ID, "rejected", "local_io"),
+        (THIRD_MEETING_ID, "rejected", "batch_stopped"),
+    ]
+    assert not report.get("pending_recovery_ids")
+    target.reconcile()
+    assert target.show(OTHER_MEETING_ID) is not None
+    assert target.show(MEETING_ID) is None
+    assert target.show(THIRD_MEETING_ID) is None
+
+
+@requires_native_export
+def test_import_reports_uncertain_commit_separately_and_retains_recovery_registration(
+    partial_batch: tuple[Path, MemoryService], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    package, target = partial_batch
+    original_transaction = MemoryRepository.transaction
+    injected = False
+
+    @contextmanager
+    def fail_after_second_commit(self):
+        nonlocal injected
+        with original_transaction(self) as repo:
+            second_missing = (
+                self.library.data_dir == target.data_dir and repo.get_meeting(MEETING_ID) is None
+            )
+            yield repo
+            second_inserted = second_missing and repo.get_meeting(MEETING_ID) is not None
+        if second_inserted:
+            injected = True
+            raise IntegrityFailure("Synthetic failure returning from durable entity commit")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(MemoryRepository, "transaction", fail_after_second_commit)
+        report = _import_json(package, code=4)
+
+    assert injected
+    assert _outcomes(report) == [
+        (OTHER_MEETING_ID, "inserted", ""),
+        (THIRD_MEETING_ID, "rejected", "batch_stopped"),
+    ]
+    assert report["pending_recovery_ids"] == [MEETING_ID]
+    (stage,) = (target.data_dir / ".staging").glob("import-*")
+    assert (stage / ".import.json").is_file()
+
+    target.reconcile()
+    assert not stage.exists()
+    assert target.show(OTHER_MEETING_ID) is not None
+    assert target.show(MEETING_ID) is not None
+    assert target.show(THIRD_MEETING_ID) is None
+
+
+@requires_native_export
+def test_import_reports_commits_when_stage_cleanup_fails(
+    partial_batch: tuple[Path, MemoryService], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    package, target = partial_batch
+    injected = False
+
+    def fail_cleanup(stage_root, ownership):
+        nonlocal injected
+        assert stage_root.name.startswith("import-")
+        assert (stage_root / ".import.json").is_file()
+        injected = True
+        raise OSError("Synthetic failure cleaning the registered import stage")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(MemoryService, "_remove_import_stage_locked", staticmethod(fail_cleanup))
+        report = _import_json(package, code=4)
+
+    assert injected
+    assert _outcomes(report) == [(identity, "inserted", "") for identity in PARTIAL_BATCH_ORDER]
+    assert report["cleanup_pending"] is True
+    assert not report.get("pending_recovery_ids")
+    (stage,) = (target.data_dir / ".staging").glob("import-*")
+    assert (stage / ".import.json").is_file()
+
+    target.reconcile()
+    assert not stage.exists()
+    assert all(target.show(identity) is not None for identity in PARTIAL_BATCH_ORDER)
