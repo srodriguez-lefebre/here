@@ -792,15 +792,16 @@ class LibraryView(QWidget):
         return "No se pudo importar el paquete."
 
     def _show_import_report(self, report: ImportReport):
+        rows: dict[str, str] = {}
         for meeting in report.meetings:
             status = _IMPORT_STATUS[meeting.status]
             reason = _IMPORT_REASON.get(meeting.reason, meeting.reason)
             summary = f"{meeting.meeting_id} · {status}"
-            self._portable_report.addItem(f"{summary} · {reason}" if reason else summary)
+            rows[meeting.meeting_id] = f"{summary} · {reason}" if reason else summary
         for identity in report.pending_recovery_ids:
-            self._portable_report.addItem(
-                f"{identity} · Confirmación pendiente de recuperación local"
-            )
+            rows[identity] = f"{identity} · Confirmación pendiente de recuperación local"
+        order = report.manifest_order or tuple(rows)
+        self._portable_report.addItems([rows[identity] for identity in order if identity in rows])
         if report.cleanup_pending:
             self._portable_report.addItem(
                 "Limpieza del área temporal pendiente de recuperación local"

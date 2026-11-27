@@ -97,6 +97,7 @@ class ImportReport:
     meetings: tuple[_PortableMeetingOutcome, ...]
     pending_recovery_ids: tuple[str, ...] = ()
     cleanup_pending: bool = False
+    manifest_order: tuple[str, ...] = ()
 
 
 class _PortableDocument(BaseModel):
