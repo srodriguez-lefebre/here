@@ -151,9 +151,12 @@ def test_runtime_storage_class_uses_canonical_order_and_preserves_bytes(
     # Earlier cells tie. SQLite storage order, rather than comparing Python
     # objects or turning numeric/NULL values into text, decides the fourth cell.
     _add(library, ("z", "rev", "seg", value, "é"), _NUM_ROWS + 6)
-    assert library.execute(
-        "SELECT typeof(text) FROM segments_fts WHERE rowid=?", (_NUM_ROWS + 6,)
-    ).fetchone()[0] == storage
+    assert (
+        library.execute(
+            "SELECT typeof(text) FROM segments_fts WHERE rowid=?", (_NUM_ROWS + 6,)
+        ).fetchone()[0]
+        == storage
+    )
     trace = []
     library.connection.set_trace_callback(trace.append)
     after_text = _producer_bytes(library, monkeypatch)
