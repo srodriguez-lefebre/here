@@ -20,8 +20,10 @@ def main() -> int:
             Path.cwd() / "transcriptions",
             memory_service=library,
             search_service=library,
+            portability_service=library,
         ),
     )
+    desktop.main_window.setWindowTitle("here · Vista previa sintética")
     desktop.show()
     return application.exec()
 

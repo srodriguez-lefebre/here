@@ -7,6 +7,7 @@ transcription, persistence, or concrete controller implementations.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
@@ -39,6 +40,7 @@ from here.memory.models import (
     SearchPage,
     SearchQuery,
 )
+from here.memory.portability import ExportResult, ImportReport, PortabilityService
 from here.memory.search import SearchService
 from here.memory.service import MemoryService
 
@@ -59,6 +61,21 @@ class _QueryBackend(Protocol):
     def list_meetings(self, query: MeetingQuery) -> MeetingPage: ...
 
     def search(self, query: SearchQuery) -> SearchPage | MeetingPage: ...
+
+
+class _PortabilityBackend(Protocol):
+    def export(
+        self,
+        ids: tuple[str, ...],
+        destination: Path,
+        include_audio: bool,
+        progress: Callable[[int], None],
+        cancellation: Callable[[], bool],
+    ) -> ExportResult: ...
+
+    def import_archive(
+        self, source: Path, progress: Callable[[int], None], cancellation: Callable[[], bool]
+    ) -> ImportReport: ...
 
 
 @runtime_checkable
@@ -124,6 +141,19 @@ class VisualController(Protocol):
 
     def update_meeting(self, meeting_id: str, patch: MeetingPatch, expected_version: int): ...
 
+    def export_meetings(
+        self,
+        ids: tuple[str, ...],
+        destination: Path,
+        include_audio: bool,
+        progress: Callable[[int], None],
+        cancellation: Callable[[], bool],
+    ) -> ExportResult: ...
+
+    def import_meetings(
+        self, source: Path, progress: Callable[[int], None], cancellation: Callable[[], bool]
+    ) -> ImportReport: ...
+
 
 class ApplicationUiAdapter:
     """Translate visual intent into the stable application-core contract."""
@@ -137,6 +167,7 @@ class ApplicationUiAdapter:
         recovery_service=None,
         memory_service: _MemoryBackend | None = None,
         search_service: _QueryBackend | None = None,
+        portability_service: _PortabilityBackend | None = None,
     ) -> None:
         self._controller = controller
         self._output_dir = output_dir
@@ -150,6 +181,7 @@ class ApplicationUiAdapter:
         self._recovery = recovery_service
         self._memory = memory_service
         self._search = search_service
+        self._portability = portability_service
 
     def _memory_backend(self) -> _MemoryBackend:
         # The controller's accepted R48 getter preserves injected/custom data roots.
@@ -187,6 +219,31 @@ class ApplicationUiAdapter:
 
     def update_meeting(self, meeting_id: str, patch: MeetingPatch, expected_version: int):
         return self._memory_backend().update_meeting(meeting_id, patch, expected_version)
+
+    def _portability_backend(self) -> _PortabilityBackend:
+        if self._portability is not None:
+            return self._portability
+        memory = self._memory_backend()
+        if not isinstance(memory, MemoryService):
+            raise LibraryError("La portabilidad de la biblioteca aún no está disponible.")
+        return PortabilityService(memory)
+
+    def export_meetings(
+        self,
+        ids: tuple[str, ...],
+        destination: Path,
+        include_audio: bool,
+        progress: Callable[[int], None],
+        cancellation: Callable[[], bool],
+    ) -> ExportResult:
+        return self._portability_backend().export(
+            ids, destination, include_audio, progress, cancellation
+        )
+
+    def import_meetings(
+        self, source: Path, progress: Callable[[int], None], cancellation: Callable[[], bool]
+    ) -> ImportReport:
+        return self._portability_backend().import_archive(source, progress, cancellation)
 
     @property
     def snapshot(self) -> ApplicationSnapshot:
