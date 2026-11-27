@@ -8,7 +8,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from uuid import UUID
 
-from here.application.processing import SessionProcessor, _validated_recovery_source
+from here.application.processing import (
+    SessionProcessor,
+    _declared_recovery_source,
+    _validated_recovery_source,
+)
 from here.config.paths import get_data_dir
 from here.memory.artifacts import managed_path, normalized_origin, read_pending_intent
 from here.memory.database import Busy, LibraryError
@@ -50,21 +54,20 @@ def _retry_audio_available(directory: Path, metadata: SessionMetadata) -> bool:
 
 
 def validate_recovery_audio(directory: Path, metadata: SessionMetadata) -> bool:
-    raw_available = False
-    for source in metadata.capture_sources:
-        if source.audio_file:
-            actual = _validated_recovery_source(
-                session_artifact_path(directory, source.audio_file), source
-            )
-            raw_available |= actual.frames > 0
+    raw_sources = [
+        _validated_recovery_source(session_artifact_path(directory, source.audio_file), source)
+        for source in metadata.capture_sources
+        if source.audio_file
+    ]
     # The worker rebuilds normalized audio from raw sources only if its output is absent.
     normalized = session_artifact_path(directory, metadata.recoverable_audio or AUDIO_FILE)
     try:
         normalized.stat()
     except FileNotFoundError:
-        return raw_available
+        return any(source.frames > 0 for source in raw_sources)
     if not metadata.recoverable_audio:
-        return False
+        declared = _declared_recovery_source(normalized, raw_sources)
+        return declared is not None and declared.frames > 0
     expected = metadata.sources[0] if len(metadata.sources) == 1 else None
     return _validated_recovery_source(normalized, expected).frames > 0
 
