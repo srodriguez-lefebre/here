@@ -1,15 +1,14 @@
 # M3 playback, evidence navigation and CLI specification
 
-Status: preparation only, held before dispatch. M2 B merged in PR #25 at
-`b4b3d1beb9b05e33ae03ab8381e805aa6a23ffc8`. The interface comparison uses
-integrated M3 A candidate `31488693152067ae58eeacec08f0b01f47085fe4`.
-M3 A's PR is unopened and its final review and acceptance remain pending.
-The measured R63 warm-search
-p95 of 879.48 ms exceeds the 500 ms gate. That measurement predates this candidate.
-Under CLAUDE §11 and rulings 20/35/56, root may dispatch B after reviewing the
-actual M3 A head and opening its PR, accepting the interfaces and merging any
-required contract-documentation PR. Rebase B after A merges. Root owns file
-leases, integration and merges.
+Status: handoff preparation. M2 B merged in PR #25 at
+`b4b3d1beb9b05e33ae03ab8381e805aa6a23ffc8`. M3 A PR #28 publishes head
+`c7695c791cddd16ced8721b36d297963115dc359`. Local source validation at
+`7b04f76` measured search p95 of 397.40 ms and a heartbeat maximum of 9.462 ms
+(level 2). Exact-head Windows suite `46031147690` and package run `46031147574`
+were pending at this checkpoint. M3 A acceptance and merge remain pending.
+Root owns file leases and integration, binds the accepted A merge SHA in the
+handoff documentation PR, and rebases the existing B candidate after that PR
+lands. CLAUDE §11 and rulings 20/35/56 govern group overlap.
 Governing design: `PRODUCT_DESIGN.md` §3 and §5, a taken decision (ruling 3).
 Spanish plan and acceptance criteria: `../MILESTONE_3_PLAN.md`.
 
@@ -44,7 +43,17 @@ snippet, title, nullable date/bounds, timing source and partial flag.
 Both pages have `next_cursor` and search has `degraded`. Merged B4/B5 provide
 editing, participants, suppression and reindex. Final integration uses those
 services on the actual roots. Before dispatch, verify these bindings against
-the reviewed M3 A PR head.
+the accepted M3 A merge.
+
+R75/R76 add the compiled SQLite encoders for FTS and ACTIVE generation in the
+Windows package. Preserve the generation bytes, public v2 cursors and legacy
+compatibility, query and page DTOs, R50 read view and suppression, canonical
+fallback, and the R41 literal/degraded route. When adding QtMultimedia, preserve
+the fixed shipped DLL, private generated manifest, frozen GUI/CLI activation smoke,
+managed-Python parity against the shipped DLL, and build provenance and notices.
+R77 binds the package checkout and provenance to the published PR head, or the
+event SHA for push and manual runs. These checks carry through to the combined
+package alongside the existing media and seek criteria.
 
 R53's `SearchService(connection_factory, *, reindexer=None).reindex()`
 delegates exactly once to the callback on the same injected MemoryService, returns
