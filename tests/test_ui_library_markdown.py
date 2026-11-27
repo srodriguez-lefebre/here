@@ -58,7 +58,7 @@ class MarkdownController(ApplicationUiAdapter):
     # Proposed UI seam. The fake supplies the worker outcome, not the cached detail.
     def export_meeting_markdown(
         self, meeting_id: str, destination: Path, cancellation: Callable[[], bool]
-    ) -> Path | SimpleNamespace:
+    ) -> SimpleNamespace:
         self.calls.append((meeting_id, destination, threading.get_ident()))
         self.entered.set()
         assert self.release.wait(5), "Test did not release the export worker"
@@ -72,9 +72,8 @@ class MarkdownController(ApplicationUiAdapter):
         if self.outcome == "cancelled":
             raise AssertionError("The cancellation did not reach the export worker")
         destination.write_text(f"# {FRESH_TITLE}\n\n{FRESH_TRANSCRIPT}\n", encoding="utf-8")
-        if self.outcome == "saved_warning":
-            return SimpleNamespace(path=destination, warnings=(CLEANUP_WARNING,))
-        return destination
+        warnings = (CLEANUP_WARNING,) if self.outcome == "saved_warning" else ()
+        return SimpleNamespace(path=destination, warnings=warnings)
 
 
 @pytest.fixture
