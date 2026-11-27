@@ -1116,6 +1116,16 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Cost if wrong:** corregir o retirar esta ruta y repetir equivalencia,
     regresiones y los gates del candidato con recibos nuevos.
 
+77. **2026-11-27 — Checkout exacto para los gates Windows.** En un evento de
+    pull request, CI y el build de Windows usan el SHA del head publicado
+    como ref de checkout. Push y despacho manual usan el SHA del evento.
+    Antes de verificar, el orquestador comprueba que el head incluye el
+    estado de `origin/main`. La revisión, la evidencia de CI y la
+    procedencia del paquete se vinculan al head que pasa a
+    `--match-head-commit`. Se conservan los jobs y los requisitos de §7.
+    **Cost if wrong:** corregir la referencia y repetir los gates en el
+    head revisado.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings

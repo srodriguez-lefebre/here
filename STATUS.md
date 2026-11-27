@@ -27,6 +27,7 @@ v2, los límites de rendimiento vigentes y CI Windows en el head exacto.
 | M3 A, perfil de etapas | HEAD separado | `m3-a-r75-phase-diagnostic/here` | `4ba043e`, orquestador. Conserva DLL y manifest generados para reproducir |
 | M3 A, encoding ACTIVE, chat `01a1af04-e779-7363-be61-c840651b0b18` | `codex/m3-search-native-active-v2` | `m3-search-native-active-v2/here` | Base `4ba043e`, chat M3 A |
 | M3 B, integración | `codex/m3-library` | `m3-library-group/here` | `b36162a`, orquestador. Pendiente la integración de M3 A |
+| M3 B, PLAN de traspaso tras R75 | `codex/m3-b-native-handoff-contracts` | `m3-b-native-handoff-contracts/here` | `2a1f850`, `m3_b_native_handoff_docs_sol` |
 | M5 B, adelanto de portabilidad, chat `01a1af04-b158-75a2-8933-98783880f3e8` | `codex/m5-portability-adapter-integration` | `m5-portability-adapter-integration/here` | `5f6324f`, chat M5 B. Claims esperan M4 B |
 
 El orquestador administra la ventana Windows exclusiva para candidato,
@@ -58,6 +59,9 @@ sigue abierto en `0c16065` con la evidencia nueva en su descripción.
 El [paquete diagnóstico Windows](https://github.com/srodriguez-lefebre/here/actions/runs/46028557240)
 de `4ba043e` está en curso. El candidato siguiente requiere 5+40, heartbeat
 y gates en su head final.
+Los workflows fijan el checkout del head exacto por ruling 77. El PLAN
+preparado de M3 B conserva la ruta nativa cuando incorpora QtMultimedia.
+El orquestador lo vinculará al merge de A en el PR de documentos.
 
 - M3 A recuperó `2710/here` en `e7f84b0`. Nivel 2 diagnóstico de FTS: la
   mediana de la fase bajó de 404,98 a 320,11 ms. Las ocho muestras conservaron
