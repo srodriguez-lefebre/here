@@ -277,6 +277,10 @@ def fts_digest(library: LibraryConnection, digest: Any) -> Any:
 
 def active_digest(library: LibraryConnection, digest: Any, sql: str) -> Any:
     """Hash the native ACTIVE projection, or abandon the trial for canonical replay."""
+    # A reduced SQLite value limit could reject a JSON-expanded BLOB
+    # even when the unencoded cells fit. Use the canonical row path.
+    if library.connection.getlimit(sqlite3.SQLITE_LIMIT_LENGTH) < _MAX_PACKET_BYTES:
+        return None
     trial = digest.copy()
     trial.update(b"active\x00")
     try:
