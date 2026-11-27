@@ -105,6 +105,40 @@ def test_rowid_reassignment_preserves_bytes_pages_and_old_cursor(
     assert _canonical_sorts(factory.trace)
 
 
+def test_interior_inversion_after_one_batch_replays_canonical_sql(tmp_path, monkeypatch):
+    library, repo = _open_catalog(tmp_path / "interior")
+    try:
+        _publish(repo, 83, texts=("needle 🦊 café",) * 520)
+        ordered = _rows(library, "rowid")
+        assert len(ordered) == 520 and ordered == _rows(library, _CELLS)
+        before = _producer_bytes(library, monkeypatch)
+        assert before["digest"]
+
+        # Swap positions 258 and 259, beyond the first 256-row frame and
+        # before the last 256 rows. Keep both the contents and rowid set.
+        with repo.transaction():
+            _move(library, 258, 521)
+            _move(library, 259, 258)
+            _move(library, 521, 259)
+        reordered = _rows(library, "rowid")
+        assert reordered == ordered[:257] + [ordered[258], ordered[257]] + ordered[259:]
+        assert _rows(library, _CELLS) == ordered
+
+        trace = []
+        library.connection.set_trace_callback(trace.append)
+        assert _producer_bytes(library, monkeypatch) == before
+        (canonical,) = _canonical_sorts(trace)
+        assert any(
+            re.search(
+                r"\bfrom segments_fts order by rowid(?: asc)?;?$",
+                " ".join(sql.lower().split()),
+            )
+            for sql in trace[: trace.index(canonical)]
+        ), "Canonical sort must follow the attempted ascending FTS rowid scan"
+    finally:
+        library.close()
+
+
 @pytest.mark.parametrize("value,storage", [(2, "integer"), (1.25, "real"), (None, "null")])
 def test_runtime_storage_class_uses_canonical_order_and_preserves_bytes(
     ordered_catalog, monkeypatch, value, storage
