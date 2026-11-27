@@ -106,6 +106,10 @@ def test_rowid_reassignment_preserves_bytes_pages_and_old_cursor(
 
 
 def test_interior_inversion_after_one_batch_replays_canonical_sql(tmp_path, monkeypatch):
+    from here.memory import _native_search
+
+    # This trace assertion targets the stock Python scan even in a compiled test profile.
+    monkeypatch.setattr(_native_search, "load_fts_encoder", lambda _library: False)
     library, repo = _open_catalog(tmp_path / "interior")
     try:
         _publish(repo, 83, texts=("needle 🦊 café",) * 520)
