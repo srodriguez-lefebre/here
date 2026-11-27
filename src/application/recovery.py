@@ -22,7 +22,7 @@ from here.memory.service import (
 from here.output.metadata import ErrorMetadataDocument, SessionMetadata
 from here.output.ownership import FileLease, LeaseBusy
 from here.output.paths import UnsafeSessionPath, session_artifact_path, validate_session_directory
-from here.output.session_writer import ERRORS_FILE, read_session_metadata
+from here.output.session_writer import AUDIO_FILE, ERRORS_FILE, read_session_metadata
 from here.recording.journal import CaptureJournal
 from here.recording.models import CaptureFailed
 
@@ -50,26 +50,23 @@ def _retry_audio_available(directory: Path, metadata: SessionMetadata) -> bool:
 
 
 def validate_recovery_audio(directory: Path, metadata: SessionMetadata) -> bool:
-    available = False
+    raw_available = False
     for source in metadata.capture_sources:
         if source.audio_file:
             actual = _validated_recovery_source(
                 session_artifact_path(directory, source.audio_file), source
             )
-            available |= actual.frames > 0
-    if metadata.recoverable_audio:
-        # Validate redirects/nonregular entries before distinguishing an absent derived WAV.
-        # Only absence may use the validated raw sources above; corrupt existing audio fails.
-        normalized = session_artifact_path(directory, metadata.recoverable_audio)
-        try:
-            normalized.stat()
-        except FileNotFoundError:
-            pass
-        else:
-            expected = metadata.sources[0] if len(metadata.sources) == 1 else None
-            actual = _validated_recovery_source(normalized, expected)
-            available |= actual.frames > 0
-    return available
+            raw_available |= actual.frames > 0
+    # The worker rebuilds normalized audio from raw sources only if its output is absent.
+    normalized = session_artifact_path(directory, metadata.recoverable_audio or AUDIO_FILE)
+    try:
+        normalized.stat()
+    except FileNotFoundError:
+        return raw_available
+    if not metadata.recoverable_audio:
+        return False
+    expected = metadata.sources[0] if len(metadata.sources) == 1 else None
+    return _validated_recovery_source(normalized, expected).frames > 0
 
 
 @dataclass(frozen=True, slots=True)

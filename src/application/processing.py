@@ -1503,6 +1503,8 @@ class SessionProcessor:
             else []
         )
         if audio_path.exists():
+            if selection is not None and metadata is not None and not metadata.recoverable_audio:
+                raise Conflict("The selected recovery session no longer has usable audio")
             # Only this shape identifies a single persisted source as audio.wav;
             # legacy multi-source manifests may instead describe the original inputs.
             expected = (
@@ -1513,6 +1515,8 @@ class SessionProcessor:
                 else None
             )
             recovered_source = _validated_recovery_source(audio_path, expected)
+            if selection is not None and recovered_source.frames == 0:
+                raise Conflict("The selected recovery session no longer has usable audio")
         else:
             raw_sources = [source for source in raw_sources if source.frames > 0]
             if not raw_sources:
