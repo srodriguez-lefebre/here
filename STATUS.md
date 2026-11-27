@@ -4,7 +4,7 @@ Actualizado el 2026-11-27. Leé `CLAUDE.md`, este archivo,
 `docs/MASTER_PLAN.md` y el SPEC y PLAN del grupo activo. Los rulings y
 la evidencia histórica están en [DELIVERY.md](docs/development/DELIVERY.md).
 
-## M3 cerrado en 0.4.0. Siguiente, contrato documental de M4 A
+## M3 cerrado en 0.4.0. M4 A en ejecución
 
 El [PR #30](https://github.com/srodriguez-lefebre/here/pull/30) entró a
 `main` como `7239ba64e03e7e3230b36b5d8d952cefbbe54e47` el 27 de noviembre
@@ -23,15 +23,18 @@ se omite por ruling 64. La prueba de dos horas sigue **omitida por ruling 5**.
   de reproducción de nivel 2 en los paquetes sucesores están registradas
   en [ACCEPTANCE.md](docs/development/ACCEPTANCE.md) y ruling 78.
 
-El contrato M4 A vincula el producto M3 aceptado a las operaciones de
-recuperación y revalidación de evidencia de ruling 79. El orquestador inicia
-T1 una vez mergeado el [PR documental #31](https://github.com/srodriguez-lefebre/here/pull/31)
-con §7. El head exacto `f900d11` tiene revisión independiente aprobada. Están
-en curso [CI 46041541216](https://github.com/srodriguez-lefebre/here/actions/runs/46041541216)
-y [paquete 46041541205](https://github.com/srodriguez-lefebre/here/actions/runs/46041541205).
-El primer paso de implementación es RED
-independiente contra M4_GROUNDED, con los fixtures preparados. M5 B sigue
-adelantado dentro de §11, con integración de claims después de M4 B.
+El [PR documental #31](https://github.com/srodriguez-lefebre/here/pull/31)
+se mergeó a las 14:33 Montevideo en `5792a080544688e7d7da59056128748c28f276b7`
+desde el head revisado `f900d11`. [CI 46041541216](https://github.com/srodriguez-lefebre/here/actions/runs/46041541216)
+y [paquete 46041541205](https://github.com/srodriguez-lefebre/here/actions/runs/46041541205)
+pasaron sobre ese head, nivel 2. La anotación de merge en `DELIVERY.md`
+está en `4641742` para llevar a la entrega M4 A.
+
+El chat M4 A tiene el brief de T1 sobre el merge exacto del contrato, con
+RED de modelos y recuperación en worktrees separados. Los focos locales
+M5 B tienen la ventana Windows hasta las 14:37 Montevideo. El orquestador
+confirma salida y reasigna la ventana antes de las corridas de M4 A.
+M5 B prepara los cruces de R50 e importación; claims esperan M4 B.
 
 ## Orden de grupos
 
@@ -41,7 +44,7 @@ adelantado dentro de §11, con integración de claims después de M4 B.
 | M2 B | `M2_LIFECYCLE` | [Merge #25](https://github.com/srodriguez-lefebre/here/pull/25), 0.3.0 |
 | M3 A | `M3_SEARCH` | [Merge #28](https://github.com/srodriguez-lefebre/here/pull/28), contrato #29 |
 | M3 B | `M3_LIBRARY` | [Merge #30](https://github.com/srodriguez-lefebre/here/pull/30), 0.4.0 |
-| M4 A | `M4_GROUNDED` | PR documental de contrato, producto por iniciar |
+| M4 A | `M4_GROUNDED` | Contrato [merge #31](https://github.com/srodriguez-lefebre/here/pull/31), T1 RED despachado |
 | M4 B | `M4_PRODUCT` | Espera contrato y ventana de solapamiento de M4 A |
 | M5 A | `M5_SETTINGS` | Espera cierre M4 |
 | M5 B | `M5_PORTABILITY` | Adelanto permitido de nivel 2, claims esperan M4 B |
@@ -58,11 +61,14 @@ suites sensibles. Migraciones, `pyproject.toml` y versiones van en serie.
 | M3 A, cerrado | `codex/m3-a-r75-integration`, `m3-a-r75-integration/here` | Chat `01a1af04-e779-7363-be61-c840651b0b18` y orquestador. Merge `a1a8362` |
 | M3 B, cerrado | `codex/m3-library` → remoto `codex/m3-library-product`, `m3-library-group/here` | Orquestador, review `m5_portability_package_io_review_sol`, merge `7239ba6` |
 | M4 A, contrato | `codex/m4-grounded-accepted-handoff`, `m4-grounded-accepted-handoff/here` | Orquestador, docs `m3_b_native_handoff_docs_sol`; base `7239ba6` y preparación `f10c3ec` |
+| M4 A, grupo | `codex/m4-grounded`, `m4-grounded-group/here` | Chat `01a1af04-e779-7363-be61-c840651b0b18`, GPT-6.2 Sol, base `5792a08`, responsable de T1–T3 |
+| M4, ledger del contrato | `codex/m4-delivery-ledger`, `m4-delivery-ledger/here` | `4641742`, orquestador |
 | M4 A, fixtures | `codex/m4-grounded-fixture`, `m4-grounded-fixture/here`; `codex/m4-grounded-verifier-fixtures`, `m4-grounded-verifier-fixtures/here` | `dc5e0e3` y `0c35b6b`. Transferir también `tests/grounded_fixtures.py` del worktree `m2-preparation/here` |
-| M4 B, preparación documental | `codex/m4-product-contract-prep`, `m4-product-contract-prep/here` | `m3_b_native_handoff_docs_sol`, base `f900d11`. Sin producto |
+| M4 B, preparación documental | `codex/m4-product-contract-prep`, `m4-product-contract-prep/here` | `m3_b_native_handoff_docs_sol`, `041c892`, revisión estática independiente. Sin producto |
 | M5 B, core y adaptadores | `codex/m5-portability-adapter-integration`, `m5-portability-adapter-integration/here` | Chat `01a1af04-b158-75a2-8933-98783880f3e8`, GPT-6.2 Sol, checkpoint `5f6324f` |
 | M5 B, mapa de traslado | `codex/m5-b-post-m3-prep`, `m5-b-post-m3-prep/here` | Mismo chat, `c643b1e`, cruces R50 y claims |
-| M5 B, traslado sobre 0.4.0 | `codex/m5-b-post-m3-integration`, `m5-b-post-m3-integration/here` | Chat `01a1af04-b158-75a2-8933-98783880f3e8`, despacho sobre `7239ba6`, sin claims ni cambios de versión |
+| M5 B, traslado sobre 0.4.0 | `codex/m5-b-post-m3-integration`, `m5-b-post-m3-integration/here` | Chat `01a1af04-b158-75a2-8933-98783880f3e8`, `ff6805d` revisado estáticamente sobre `7239ba6` |
+| M5 B, RED de cruces | `codex/m5-b-m3-cross-group-red`, `m5-b-m3-cross-group-red/here`; `codex/m5-b-read-preflight-red`, `m5-b-read-preflight-red/here` | Chat M5 B, base `ff6805d`, focos livianos en serie. Resultados pendientes |
 | M5 B, fixture legado | `codex/m5-b-cross-group-fixtures`, `m5-b-cross-group-fixtures/here` | Mismo chat, `8d70d6f`, dos revisiones sintéticas con WAV legado |
 
 Evidencia local de M3 en
