@@ -1069,6 +1069,15 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Cost if wrong:** habría que revisar la compatibilidad de alias y
     repetir los controles de archivos distintos y del mismo archivo.
 
+73. **Ruling:** la sonda aislada de reproducción usa el reloj QPC en
+    unidades de 100 ns del mismo `GetBuffer`. Entre paquetes compara el
+    avance del reloj con los frames y tolera hasta 1 ms inclusive.
+    Ante discontinuidad verifica ambas orillas. También verifica el flag
+    `TimestampError` del paquete y los 200 ms de silencio. El criterio
+    de seek sigue en 250 ms y la sonda no persiste PCM.
+    **Cost if wrong:** corregir la comprobación temporal, recalibrar y
+    repetir la observación de audio antes de certificar nivel 3.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
@@ -2741,4 +2750,49 @@ The workflow completed successfully at exact head
 `912f63f8191d0312d647806241d352814c52d870` and published artifact
 `15206436217`. Level 2 covers the package workflow. Real seek certification
 remains pending.
+[Windows package 46015025767](https://github.com/srodriguez-lefebre/here/actions/runs/46015025767)
+
+
+## 2026-11-27 — M5 B adapter and ZIP I/O verification
+
+Focused level 2. CLI `ee4506c` passed all 16 cases in 14.70 s and
+independent review. Qt `1523399` had 13 harness failures due to the PySide6
+call signature and one preview pass. Harness correction `e0fee3e`
+preserved production source, passed all 14 cases in 8.24 s and received
+independent approval.
+
+The package access RED `e1b55e9` produced two failures, one pass and
+five deselections. OS errors opening the ZIP or accessing its central
+directory mapped to exit 2. The follow-up RED `e27ec20` exposed the
+CPython ZIP parser's internal EOCD seek, with one failure, three passes
+and five deselections. `9dd0422` passed independent review and 61 CLI
+and hostile ZIP cases in 21.564 s in JUnit and 25.19 s in the shell.
+The group was integrated at `769bc28`. The combined suite, Markdown,
+partial report and claims remain pending. Claims depends on M4 B.
+
+The JUnit receipts in `%TEMP%` are
+`m5-package-access-red-e1b55e9-20261127.xml`,
+`m5-package-zip-parser-io-red-e27ec20-20261127.xml` and
+`m5-package-zip-parser-io-green-9dd0422-20261127.xml`.
+
+## 2026-11-27 — M3 B staged package and process-loopback diagnostics
+
+Level 2 diagnostic on `912f63f`. All six hashes and 772 inventory files
+were verified, with the duplicate inventory copy excluded from the count.
+The ZIP, inventory and GUI executable SHA-256 values follow.
+
+| File | SHA-256 |
+|---|---|
+| ZIP | `72C3DDAECE7FCF500FFA3DC1E5AFD3C061532EED18123D772EF719FC5DEB3C48` |
+| Inventory | `AEA3CF2E057F879D25ECB087FF6C2FCC9F53B2D7FA25362082E449F0C3AF3613` |
+| GUI executable | `48EA2B8388F21722A4BC43232399799CB1B8A702AA0690569FD6606B28AD1BBA` |
+
+With a clean harness working directory, the identical synthetic WAV and
+an actual Play button click, probe `7472090` observed 601 audible packets.
+All device positions were zero. There were zero discontinuity or timestamp
+error flags and 600 QPC pairs with a maximum error of 0 ms. Probe exit was 2.
+The 250 ms real seek gate and level 3 certification remain pending.
+Ruling 73 records the clock validation for the isolated probe.
+
+Log `%TEMP%/here-m3-audio-4ff2a45044334ee6ac28633fc434a1cd/m3-seek-timing-diagnostic-7472090-b-20261127.log`.
 [Windows package 46015025767](https://github.com/srodriguez-lefebre/here/actions/runs/46015025767)

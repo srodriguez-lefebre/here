@@ -1230,3 +1230,48 @@ El paquete diagnóstico de M3 B terminó con éxito en
 `15206436217`. Nivel 2 para el workflow del paquete. El seek real
 sigue pendiente de certificación.
 [Corrida 46015025767](https://github.com/srodriguez-lefebre/here/actions/runs/46015025767)
+
+
+## M5 B · Adaptadores de portabilidad y errores de E/S — 2026-11-27
+
+Nivel 2 focalizado. CLI `ee4506c` pasó 16 de 16 casos en 14,70 s y
+revisión independiente. La corrida Qt de `1523399` obtuvo 13 fallos
+del arnés por la firma de PySide6 y un pase de preview. La corrección
+del arnés `e0fee3e` conservó el código de producción, pasó 14 de 14
+casos en 8,24 s y obtuvo aprobación independiente.
+
+En el foco de E/S de ZIP, `e1b55e9` produjo dos fallos, un pase y cinco
+casos deseleccionados. La apertura del archivo y el acceso al directorio
+central devolvían salida 2 ante errores del sistema operativo. El RED
+`e27ec20` expuso el seek interno al registro EOCD de CPython con un
+fallo, tres pases y cinco deselecciones. `9dd0422` pasó revisión
+independiente y 61 casos CLI y de ZIP hostiles en 21,564 s en JUnit
+(25,19 s de shell). El grupo quedó integrado en `769bc28`. Quedan
+pendientes la suite combinada, Markdown, el reporte parcial y claims.
+Claims espera M4 B.
+
+Los JUnit en `%TEMP%` son `m5-package-access-red-e1b55e9-20261127.xml`,
+`m5-package-zip-parser-io-red-e27ec20-20261127.xml` y
+`m5-package-zip-parser-io-green-9dd0422-20261127.xml`.
+
+## M3 B · Verificación del paquete y diagnóstico de audio — 2026-11-27
+
+Nivel 2 diagnóstico en el paquete de `912f63f`. Se verificaron seis hashes
+y 772 archivos del inventario. Se excluyó la copia duplicada del inventario
+del recuento.
+
+| Archivo | SHA-256 |
+|---|---|
+| ZIP | `72C3DDAECE7FCF500FFA3DC1E5AFD3C061532EED18123D772EF719FC5DEB3C48` |
+| Inventario | `AEA3CF2E057F879D25ECB087FF6C2FCC9F53B2D7FA25362082E449F0C3AF3613` |
+| Ejecutable GUI | `48EA2B8388F21722A4BC43232399799CB1B8A702AA0690569FD6606B28AD1BBA` |
+
+Con el directorio de trabajo del arnés limpio, el WAV sintético idéntico
+y una pulsación real de Play, la sonda `7472090` registró 601 paquetes
+audibles. Todos informaron posición de dispositivo cero. Hubo cero flags
+de discontinuidad o timestamp inválido y 600 pares QPC con error máximo
+de 0 ms. La sonda devolvió salida 2. Sigue pendiente una medición aceptada
+del seek dentro de 250 ms para nivel 3.
+
+Log `%TEMP%/here-m3-audio-4ff2a45044334ee6ac28633fc434a1cd/m3-seek-timing-diagnostic-7472090-b-20261127.log`.
+[Paquete 46015025767](https://github.com/srodriguez-lefebre/here/actions/runs/46015025767)
