@@ -218,7 +218,10 @@ def test_active_real_after_any_frame_replays_the_whole_section(
     library, repo = _open_catalog(tmp_path)
     with closing(library):
         _publish(repo, 68, texts=("fixture segment",) * 302)
-        library.execute("UPDATE segments SET start_ms=1.25 WHERE ordinal=?", (ordinal,))
+        library.execute(
+            "UPDATE segments SET start_ms=?,end_ms=?,timing_source=? WHERE ordinal=?",
+            (1.25, 2.5, "imported_explicit", ordinal),
+        )
         library.connection.commit()
         with monkeypatch.context() as stock:
             stock.setattr(loader_module, "load_fts_encoder", lambda _library: False)
