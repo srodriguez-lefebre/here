@@ -12,10 +12,14 @@ Se reactivaron los chats de M3 A y M5 B con GPT‑6.2 Sol. M2 sigue cerrado en
   mediana de la fase bajó de 404,98 a 320,11 ms. Las ocho muestras conservaron
   el mismo SHA sobre 98.901 filas y 387 frames. El RED `ae82ec8` produjo siete
   pases, un fallo esperado de la ruta y un fallo del arnés corregido en
-  `f04a5f3`. El chat tiene la ventana Windows para equivalencia, controles
-  R50 y medición del candidato. [PR #28](https://github.com/srodriguez-lefebre/here/pull/28)
-  permanece abierto con el último p95 público de 1.431,6706 ms y el heartbeat
-  de 55,349 ms fuera de presupuesto.
+  `f04a5f3` y quedó un fallo esperado en la corrida corregida. `7e3bd56`
+  pasó 133 controles y omitió dos. Su 5+40 público dio 966,13 ms p95.
+  [PR #28](https://github.com/srodriguez-lefebre/here/pull/28) permanece abierto
+  con ambos gates fuera de presupuesto: p95 de 500 ms y gap de 50 ms
+  (último heartbeat 55,349 ms). `m3_native_current_probe_sol` preparó
+  `6781814`, `codex/m3-native-current-probe`, worktree del mismo nombre,
+  para repetir el prototipo aislado R66 con los controles actuales. El chat
+  de M3 A tiene la ventana Windows para ese diagnóstico.
 - M3 B reprodujo en `a31daca` la selección de un WAV normalizado vacío con
   una fuente cruda válida. Nivel 2 focalizado: 1 fallo y 6 pases. `b2dc640`
   pasó 35 casos de reintento y geometría. La revisión independiente detectó
@@ -34,7 +38,8 @@ Se reactivaron los chats de M3 A y M5 B con GPT‑6.2 Sol. M2 sigue cerrado en
   worktree `m3-library-retry-file-identity-green/here`, pasó 247 casos.
   `m3_retry_audio_resume_review` aprobó ese SHA. El árbol integrado en
   `912f63f`, `codex/m3-library`, es idéntico y tiene un
-  [paquete diagnóstico Windows en ejecución](https://github.com/srodriguez-lefebre/here/actions/runs/46015025767).
+  [paquete diagnóstico Windows exitoso](https://github.com/srodriguez-lefebre/here/actions/runs/46015025767).
+  Se verificaron seis hashes, 772 archivos y el inventario incrustado.
 - Sonda de seek M3 B: build local y calibración PCM sintética pasaron, nivel 2.
   El artefacto Windows de `f894923`, corrida `44781729845`, coincidió con el
   checksum del ZIP y las 772 entradas del inventario. El CLI del bundle ingirió
@@ -43,8 +48,14 @@ Se reactivaron los chats de M3 A y M5 B con GPT‑6.2 Sol. M2 sigue cerrado en
   `1dfa531` corrigió las flags de WASAPI, compiló, pasó la calibración y
   armó la captura. Antes de reproducir, devolvió una discontinuidad o un
   timestamp inválido. Hubo cero mediciones. `m3_audio_capture_integrity_red_sol`
-  dejó `7af6935` en `m3-audio-capture-quality-red/here`. Falta su RED y GREEN
-  en la próxima ventana y medir el audio renderizado para nivel 3.
+  dejó `7af6935` en `m3-audio-capture-quality-red/here`. La sonda `8620e8e`
+  pasó calibración. La toma diagnóstica `7472090` sobre `912f63f` observó
+  601 paquetes audibles, todos con posición de dispositivo cero, y 600
+  pares QPC con diferencia exacta según los frames. El RED `cc0c0fd` está
+  en `m3-audio-capture-boundary-red/here` y falló al faltar los helpers de
+  reloj. `62f0404`, `codex/m3-audio-qpc-green`, `m3-audio-qpc-green/here`,
+  implementa la verificación QPC y el control del límite entre paquetes.
+  Quedan el build, la calibración y las cuatro marcas para nivel 3.
 - M5 B nivel 2 RED: `b66d15a` dio 16 fallos esperados en CLI. `7d7c04d` dio
   14 fallos esperados en Qt. La base común `bbc1717` en
   `codex/m5-portability-adapter-integration`, `m5-portability-adapter-integration/here`,
@@ -52,7 +63,17 @@ Se reactivaron los chats de M3 A y M5 B con GPT‑6.2 Sol. M2 sigue cerrado en
   escritores desde las ramas `codex/m5-portability-adapter-cli-green` y
   `codex/m5-portability-adapter-qt-green`, con worktrees del mismo nombre
   bajo `C:/Users/savar/.codex/worktrees/`. Root es dueño de la integración.
-  Las corridas GREEN esperan la ventana. Claims espera M4 B.
+  Nivel 2 focalizado: CLI `ee4506c` pasó 16 casos y fue aprobado. Qt `e0fee3e`
+  pasó 14 casos al corregir la firma del doble de PySide6, luego de 13 fallos
+  de arnés en `1523399` y obtuvo revisión independiente. El RED adicional
+  de acceso ZIP reprodujo dos errores de clasificación en `e1b55e9` y el del
+  parser de ZIP en `e27ec20`. `9dd0422`, rama `codex/m5-portability-adapter-zip-parser-io-green`,
+  pasó 61 casos CLI y ZIP hostil y obtuvo review independiente. Root integró
+  los adaptadores e I/O en `769bc28`. El chat prepara Markdown desde el
+  detalle en `codex/m5-portability-markdown-red`, y
+  `m5_portability_cli_io_red_sol` prepara el reporte parcial en
+  `codex/m5-portability-partial-report-red`. Ambas ramas tienen worktrees
+  del mismo nombre. Claims espera M4 B.
 - La preparación de M4 A conserva `99f1ec8`. `m4_grounded_fixture_sol`
   entregó el corpus de 50 reuniones y 2.000 coincidencias en `a2ce1e1`,
   rama `codex/m4-grounded-fixture`, worktree `m4-grounded-fixture/here`.
