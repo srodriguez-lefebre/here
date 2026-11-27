@@ -108,6 +108,30 @@ def _helper_proof() -> dict[str, bool]:
     return {"helper_rejected_request": rejected, "helper_timeout_reaped": True}
 
 
+def _native_search_proof(data_dir: Path) -> bool:
+    """Observe the native aggregate during a real search of an owned empty catalog."""
+    from here.memory.database import LibraryConnection, open_library
+    from here.memory.models import SearchPage, SearchQuery
+    from here.memory.search import SearchService
+    from here.memory.service import MemoryService
+
+    MemoryService(data_dir).reindex()
+    aggregate_seen = False
+
+    def observe(statement: str) -> None:
+        nonlocal aggregate_seen
+        if statement.startswith("SELECT here_search_v2_fts_batch("):
+            aggregate_seen = True
+
+    def connect() -> LibraryConnection:
+        library = open_library(data_dir)
+        library.connection.set_trace_callback(observe)
+        return library
+
+    page = SearchService(connect).search(SearchQuery(text="synthetic smoke"))
+    return aggregate_seen and page == SearchPage()
+
+
 @contextlib.contextmanager
 def _isolated_environment(root: Path):
     keys = (
@@ -147,7 +171,8 @@ def smoke_check(report_path: Path) -> int:
     }
     try:
         with tempfile.TemporaryDirectory(prefix="here-smoke-") as scratch:
-            with _isolated_environment(Path(scratch)):
+            scratch_root = Path(scratch)
+            with _isolated_environment(scratch_root):
                 # Imports are local-only. Constructing OpenAI clients and invoking
                 # capture/diagnostic operations are deliberately outside this check.
                 import here.application  # noqa: F401
@@ -183,6 +208,11 @@ def smoke_check(report_path: Path) -> int:
                 desktop.overlay.close()
                 desktop.application.processEvents()
                 checks.update(_helper_proof())
+                if report["frozen"] and sys.platform == "win32":
+                    native_search = _native_search_proof(scratch_root / "native-search")
+                    checks["native_search_v2"] = native_search
+                    if not native_search:
+                        raise RuntimeError("Frozen search did not use the audited SQLite extension")
                 if not checks["desktop_visible"] or checks["recording_started"]:
                     raise RuntimeError("Desktop startup check failed")
                 report["status"] = "ok"
