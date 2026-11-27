@@ -1142,6 +1142,19 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Cost if wrong:** repetir las cuatro marcas sobre el binario que
     cambie la cadena de reproducción y actualizar la evidencia.
 
+79. **2026-11-27 — Lectura de evidencia de M4 A.** Memoria ofrece a
+    inteligencia una operación R50 de recuperación con selección explícita
+    y OR literal, separada del cursor v2 de Biblioteca. El ranking usa BM25
+    global para completas y considera candidatos por rondas entre reuniones.
+    La ventana de metadatos es hasta cuatro veces el total más un marcador
+    de truncamiento. Vecinos y coincidencias comparten el presupuesto,
+    con lectura acotada de texto y conteo de caracteres Unicode aun con NUL.
+    El resumen explícito continúa por ordinal en una sola revisión. Una
+    vista R50 nueva revalida las citas antes de publicar. Se conservan los
+    presupuestos y requisitos del hito.
+    **Cost if wrong:** ajustar el contrato interno y repetir recuperación,
+    cobertura y revalidación sobre el corpus de aceptación.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
