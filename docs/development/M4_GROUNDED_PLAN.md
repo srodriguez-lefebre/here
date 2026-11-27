@@ -1,9 +1,12 @@
 # M4 grounded core implementation plan
 
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
-> review, then independent agent review. The author merges after Copilot review, CI and independent subagent review (rulings 16 and 17). Steps use checkbox
-> syntax. **Status: not in execution (ruling 15).** Start only on an explicit user
-> instruction after M3 closes.
+> review, then independent agent review. Root owns leases, integration and merges
+> under rulings 20/35, with current-head Windows CI and Copilot omitted under
+> ruling 64. Ruling 69 selects GPT-6.2 Sol for active agent work.
+> Steps use checkbox syntax. **Status: contract preparation on M3 0.4.0.**
+> Ruling 20 authorizes M4 and ruling 79 sets the evidence-read contract. M4 A
+> implementation starts after this contract PR merges and root dispatches the work.
 
 **Goal:** Questions and extractions over selected meetings, in a local mode with no
 network and a provider mode whose every citation is mechanically verified.
@@ -22,8 +25,8 @@ schemas, the existing OpenAI SDK, pytest with mock transport; no new dependency.
   model is missing.
 - Transcript text is inert data: never interpolated into instructions, never a source
   of tools, links, code or policy.
-- The provider never supplies paths, titles, dates or timestamps used for navigation;
-  the verifier drops them and the memory resolves them.
+- Memory resolves paths, titles, dates and timestamps used for navigation. The
+  verifier rejects model-supplied timestamps and derives timing from the segment.
 - Budgets are hard: 6 per meeting, 24 total, 24,000 evidence characters, 2,000 output
   tokens by default; truncation is reported, never hidden.
 - `intelligence/` does not import Qt or Typer and does not open SQLite directly.
@@ -31,6 +34,102 @@ schemas, the existing OpenAI SDK, pytest with mock transport; no new dependency.
   provider smoke reads `HERE_PROVIDER_SMOKE_KEY` only (ruling 19) and stores no key.
 - Register `here.intelligence` in `pyproject.toml`. Touched files leave ruff clean and
   formatted; no new mypy errors in them (baseline not clean, `CLAUDE.md` §6).
+
+## Inherited contracts and planned M4 interfaces
+
+Foundation is merged M2 A `53712c5beedafc2d40e2abf10c13362a1c3c9f78` and contracts
+`73d3cb384bd422de6899d8c7b761f3f3159ea3f1`. M3 A search merged in PR #28 at
+`a1a83629cdfab64dd249f877cdd443e7f7d96b08` and the M3 B handoff contracts merged
+in PR #29 at `8d0b03d92524c78ca6983db0fc64e1048e7b2a6c`. M3 B closed 0.4.0 in
+PR #30 at `7239ba64e03e7e3230b36b5d8d952cefbbe54e47` on 2026-11-27 at 14:21
+Montevideo time, with reviewed head `d29f83a1c7f69caa3261bb7ddab579a75d4bc4b9`.
+Use the interfaces from that merge as the M4 implementation baseline.
+
+| Boundary | Current contract and unresolved handoff |
+|---|---|
+| Query owner | `memory.search.SearchService(connection_factory)`, `search(SearchQuery) -> SearchPage \| MeetingPage`; fresh LibraryConnection per operation, closed by the service. No presumed MemoryService.search. |
+| Scoped evidence | Merged M3 B's `SearchQuery.meeting_id` scopes one canonical UUID before keyset and LIMIT and binds it to the cursor. Empty search passes scope through to listing. Under R79, Task 1 adds memory-owned `SearchService.evidence_snapshot(EvidenceQuery) -> EvidenceSnapshot` for selected-set literal OR, global BM25, ranked rounds, adjacent context and the budgets defined in the SPEC. Public M3 search, cursors and schema stay unchanged. |
+| Read suppression | Search and citation resolution in M3 0.4.0 share R50 `catalog_read_view`, which owns lock-before-BEGIN and one transaction. The caller opens and closes the fresh connection. The snapshot carries resolved suppressed IDs and a fingerprint covering registry records and alias resolution. Registry roles and paths are preflighted under the lock and the boundary fails closed. The planned retrieval and `SearchService.revalidate_evidence(EvidenceSnapshot) -> bool` each use a separate coherent R50 view. |
+| Native search generation | R75/R76 are private Windows SQLite encoders for FTS and ACTIVE generation. Consume public v2 cursors and preserve canonical fallback inside R50. Retrieval requires no native-loader binding. |
+| Citation source | Merged M3 B's `MemoryService.resolve_citation(Citation) -> CitationTarget` validates membership, literal quotes, paired Unicode bounds, and exact revision/audio links with artifact role guards. Unvalidated audio yields `status="missing"` without a path, possibly with verified text. The resolver can return historical evidence; M4 still has to revalidate the selected active revision before publication. |
+| Participants/root | R48 real IDs/roles/nullable assignments, request-scoped speakers; R40/R52 same injected service/configured root. No new .env reader or origin-derived root probing. |
+| Future persistence | R51 private SQL purger on B's same final cleanup transaction; future M4 B only, never a citation resolver or an M4 A migration/task. |
+
+Within the existing retrieval/verifier tests, preserve R39 NULL/date/keysets,
+R41 complete/partial/fallback semantics and R45 whole-corpus generation. Reuse the
+canonical InvalidInput.reason including corpus_changed; never concatenate stale
+ranked pages. R47 empty search is MeetingPage, not evidence or implicit scope
+expansion. The memory-owned evidence method applies selected-set eligibility and
+suppression before keyset and LIMIT, with global BM25 and fair, repeatable ranked
+rounds as defined in the SPEC. Exclude raw MATCH input, per-ID search fan-out, post-LIMIT
+scope filtering and direct intelligence SQL. Do not hold a database
+transaction/ownership lock while calling the provider. Actual guarded source
+revalidation must precede publication; concurrent loss/change does not certify a
+stale result. R42/R50 pending/complete suppression also applies to adjacent context,
+with aliases resolved before exposure; invalid registry state fails closed.
+
+Use the SPEC's metadata-only window (`4 * Budget.total` overall and per meeting,
+plus a sentinel) before reading full text. Charge exact Unicode characters and
+cover embedded NUL without an unbounded read. Restrict neighbor reads to the two
+immediate ordinals of each selected match. Preserve R41 for `match`: global BM25
+for indexed complete revisions, escaped literal OR and neutral rank for opted-in
+partials and the degraded fallback, and literal transcript evidence for all routes.
+For explicit `summary`, continue from the last considered ordinal on the same
+revision with bounded batches, progress and cancellation between batches.
+
+M3 B accepts `Citation` for desktop navigation and re-resolves identity through
+the injected memory backend even when called with a `CitationTarget`. Navigation
+uses the service passed to `create_default_controller(memory_service=...)`;
+the controller's default processor receives the same instance. In M3 0.4.0,
+a measured zero seek waits for a ready, seekable backend and
+capture clears the pending seek. These playback behaviors provide no authority
+for M4 text publication.
+
+Keep quote offsets in original Unicode source coordinates even when the existing
+minimal verifier normalization is used. Put the exact source substring in the
+passive Citation. Revalidate the segment and revision even when playable audio is
+unavailable. Keep audio and paths out of provider payloads. Do not normalize away
+uncertain owners/dates, invent timestamps from targets, or promote a request speaker
+label into a participant.
+Future M4 B's derived-row purger is SQL-only on the supplied final transaction;
+no commit/BEGIN/rollback/other connection/I/O/provider and no use from retrieval.
+R51 accepted-barrier failures remain pending with canonical ID/reason/io, not fake
+rejection after SQL disappearance. These are inherited boundaries, not added M4 A work.
+
+## Prepared corpus and evidence boundaries
+
+Root transfers the already prepared and independently inspected
+`tests/grounded_fixtures.py` once from m2-preparation to the future independent RED
+owner. Preserve that file and its provenance; do not regenerate it under a new name.
+It provides four synthetic meetings/thirteen passages, literal evidence notes and
+lifecycle descriptions, not product assertions or approved model answers.
+The budget corpus is separately prepared at `a2ce1e1` in
+`tests/fixtures/intelligence_corpus.py`. It yields 50 meetings and 2,000 OR
+matches, with 400 in the selected set and 100 in the sparse-only subset. It
+includes a shared nonmatching neighbor, long Unicode passages and a title-only
+token. Commit `dc5e0e3` extends the same file with embedded NUL and Unicode text,
+oversized matches, adjustable placement of a fitting match relative to the
+consideration window, and a shared neighbor. Root transfers the extended fixture
+once with its base provenance. The RED owner establishes the ranking order,
+ingests the data through accepted memory APIs and temporary roots, supplies
+lifecycle and suppression cases, and writes the retrieval assertions and missing
+English/mocked-provider/verifier cases. The pure corpus supplies inputs and counts;
+ingestion, ranking, budget enforcement and coverage require tests on the bound head.
+
+The prepared verifier payloads at `0c35b6b` in
+`tests/fixtures/intelligence_provider_payloads.py` include bilingual E1/E2
+quotes with original Unicode coordinates, isolated invalid responses and empty
+claim/extraction arrays. Root transfers the fixture once to the RED owner with
+its provenance. The mock claims use `false` provisionally for `uncertainty`.
+The eventual schema owns that type and the exact size limits. The fixture supplies
+mock response values and source anchors for verifier tests on the bound head.
+
+All existing acceptance and complete checkbox blocks remain binding. Registering the
+future package in pyproject is a later root-serialized task, not permission to edit
+dependencies/version now. Choose and verify INTELLIGENCE_MODEL only at implementation
+time, recording its dated ruling; no model is selected here. Provider traffic remains
+explicit-action only, tests use mock transport, and only the opt-in synthetic smoke
+uses HERE_PROVIDER_SMOKE_KEY without recording it. No key/Qt/SQLite access is added.
 
 ## Review focus
 
@@ -46,16 +145,21 @@ schemas, the existing OpenAI SDK, pytest with mock transport; no new dependency.
 ### Task 1: Models, citations and budgeted retrieval
 
 **Files:** `src/intelligence/__init__.py`, `src/intelligence/models.py`,
-`src/intelligence/retrieval.py`, `pyproject.toml`; tests in
-`tests/test_intelligence_models.py`, `tests/test_intelligence_retrieval.py`; a
-synthetic corpus builder in `tests/fixtures/intelligence_corpus.py`.
+`src/intelligence/retrieval.py`, `pyproject.toml`, `src/memory/models.py`
+(`EvidenceQuery` and `EvidenceSnapshot`) and `src/memory/search.py`
+(bounded retrieval and revalidation under R50); tests in
+`tests/test_intelligence_models.py`, `tests/test_intelligence_retrieval.py`;
+the existing `tests/grounded_fixtures.py` via root's one-time handoff, plus the
+required budget corpus whose final test-helper location is bound before execution.
 
 **Interfaces:** immutable DTOs `QuestionRequest`, `ExtractionRequest`, `Budget`,
 `EvidenceBlock` (`id`, `meeting_id`, `revision_id`, `segment_id`, `text`,
 `start_ms|None`, `end_ms|None`), `Coverage`, `Claim`, `Extraction`, `Answer`,
 reusing M2 `Citation`; `Retriever.retrieve(request) -> RetrievalResult` with
-evidence blocks and coverage, built on `MemoryService.search` and the segment
-repository; typed errors `InvalidInput`, `ProviderUnavailable`, `VerificationFailed`.
+evidence blocks and coverage, consuming `SearchService.evidence_snapshot` and
+the revalidation boundary described above; canonical
+`InvalidInput`, plus planned `ProviderUnavailable` and `VerificationFailed`.
+These intelligence interfaces remain planned; no existing memory API is invented.
 
 - [ ] Write failing tests: empty selection without `whole_library` raises
   `InvalidInput`; `whole_library` only when set; term extraction drops stopwords and
@@ -63,7 +167,15 @@ repository; typed errors `InvalidInput`, `ProviderUnavailable`, `VerificationFai
 - [ ] Write failing budget tests on a 50-meeting, 2,000-hit corpus: at most 6 per
   meeting and 24 total, character budget respected with adjacent context counted,
   `Coverage` equals the sent set and flags truncation; only active complete revisions
-  unless requested.
+  unless requested. Include mixed selected/unselected hits, literal OR terms and
+  skewed meeting volumes. Verify selected-set eligibility before limits, global
+  ranking, ranked rounds, stable ordering and context counted once. Cover a run of
+  oversized candidates with the next fitting match inside and outside the window,
+  sentinel truncation and exact lengths for text with embedded NUL. Assert partial
+  and degraded literal OR routing, neutral ranks, canonical ties and source text.
+  Check empty `match` abstention and explicit `summary` continuation, cancellation
+  and progress across bounded batches, including a changed revision. Exercise
+  `revalidate_evidence` against changed and absent sources and suppression failures.
 - [ ] Implement models, retrieval, diversification and coverage; register the package.
 - [ ] Run focused tests and the full offscreen suite; self-review; commit as
   "intelligence: models and budgeted retrieval".
@@ -131,6 +243,8 @@ Verified | Rejected(reasons)`; one bounded repair attempt then `VerificationFail
   `docs/MILESTONE_4_PLAN.md` (criteria 1–9, 12 status), `ACCEPTANCE.md` (M4 rows
   with the runs that close them, smoke model and date) and `WHATS_NEW.md` only if a
   user-facing capability ships (it does not until group B).
-- Open one PR with the three task commits, self-review and independent agent review in
-  the description, CI green. The author merges per rulings 16 and 17. Then group B starts from
-  `M4_PRODUCT_PLAN.md`.
+- Root coordinates the group PR with self-review and independent review, verifies
+  current-head Windows CI and performs the guarded merge under rulings 20/35.
+  For the pending PRs, omit Copilot under ruling 64. Reconcile the existing
+  `M4_PRODUCT_PLAN.md` with accepted contracts before its dispatch, preserving the
+  same-milestone open-PR overlap and later rebase allowed by CLAUDE §11.

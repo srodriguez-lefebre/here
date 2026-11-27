@@ -1,7 +1,9 @@
 # M4 grounded core specification
 
-Status: written 2026-11-05, not in execution (ruling 15). Implementation starts only
-on an explicit user instruction after M3 closes. Governing design:
+Status: contract preparation on the merged M3 0.4.0 base. Ruling 20 authorizes M4
+and ruling 79 sets the evidence-read contract. M4 A implementation starts after
+this contract PR merges and root dispatches the work.
+Governing design:
 `PRODUCT_DESIGN.md` §3, §6, §8 and §9, a taken decision (ruling 3). Spanish plan and
 acceptance criteria: `../MILESTONE_4_PLAN.md`.
 
@@ -14,6 +16,16 @@ network and no key, and a provider mode with structured output whose every citat
 mechanically verified before anything is shown. Transcript text is data, never
 instructions. Missing evidence produces an honest abstention, not a guess.
 
+## Inherited foundation and handoff boundary
+
+Foundation: M2 A merge `53712c5beedafc2d40e2abf10c13362a1c3c9f78` and contract
+merge `73d3cb384bd422de6899d8c7b761f3f3159ea3f1`. M3 A merged in PR #28 at
+`a1a83629cdfab64dd249f877cdd443e7f7d96b08`. The M3 B handoff contracts merged
+in PR #29 at `8d0b03d92524c78ca6983db0fc64e1048e7b2a6c`. M3 B closed 0.4.0 in
+PR #30 at `7239ba64e03e7e3230b36b5d8d952cefbbe54e47` on 2026-11-27 at 14:21
+Montevideo time, with reviewed head `d29f83a1c7f69caa3261bb7ddab579a75d4bc4b9`.
+M4 inherits the search, read guard and citation APIs from that merge.
+
 ## Decisions
 
 ### Package and dependencies
@@ -22,9 +34,13 @@ New package `src/intelligence/` with `models.py`, `retrieval.py`, `local.py`,
 `providers.py`, `verifier.py`, `service.py`, registered in `pyproject.toml`. No Qt, no
 Typer. The provider adapter reuses the OpenAI SDK already in the project and the
 client factory in `src/transcription/client.py` (`build_client`,
-`require_provider_key`); no new runtime dependency. Retrieval reads through
-`MemoryService.search` and the segment repository of M2; it never opens SQLite on its
-own.
+`require_provider_key`); no new runtime dependency. Retrieval consumes the memory-owned
+query/read boundary: current M3 defines `SearchService(connection_factory)` in
+`memory/search.py`, with `search(SearchQuery) -> SearchPage | MeetingPage`.
+The factory returns a fresh LibraryConnection per operation and SearchService closes
+it. Intelligence never opens SQLite or implements its own query/index/registry reader.
+There is no assumed `MemoryService.search` facade. The exact scoped retrieval and
+adjacent-segment snapshot handoff below must be accepted before implementing it.
 
 ### Requests and scope
 
@@ -45,6 +61,88 @@ revisions by default. `Coverage` reports segments and meetings consulted and whe
 any budget truncated; the caller shows it as "N fragmentos de M reuniones", never as
 an exhaustive review. "Summarize this meeting" selects all segments of that meeting
 and processes them in bounded batches with progress and cancellation.
+
+### Query, scope and coherent evidence handoff
+
+R39/R41/R45 remain memory-owned: opaque cursor/filter/backend binding, actual null
+dates, complete-only persistent FTS, opt-in read-only partials and literal/degraded
+fallback. Never fabricate dates, rank precision or another indexer. Search generation
+covers the actual full rank corpus, including nonmatching/filtered/suppressed rows
+still indexed. Canonical `memory.service.InvalidInput.reason="corpus_changed"`
+rejects stale ranked continuation; evidence assembled across incompatible snapshots
+cannot be combined. Ordinary listing keeps its original date/ID insertion behavior.
+
+R47 normalized empty search returns MeetingPage with listing filters/limit/cursor
+intact, not invented SearchHits or segments. That page is not evidence and cannot
+widen the explicit M4 scope. Removing stopwords must not turn an empty retrieval
+expression into an implicit whole-library request.
+
+Merged M3 A exposes text and listing filters. Its FTS builder quotes each input
+token and joins tokens with spaces, and its literal fallback combines term predicates
+with AND. Merged M3 B's `SearchQuery.meeting_id: str | None = None` accepts
+one canonical UUID, applies it before keyset and LIMIT, and binds it to cursor scope.
+FTS ranking still uses global BM25. Empty search carries the same scope into listing.
+R75/R76 use private Windows SQLite encoders for FTS and ACTIVE generation, preserving
+generation bytes, public v2 cursors and canonical fallback within R50. Retrieval
+consumes the public search contracts and has no native-loader dependency.
+M4 A adds the memory-owned `SearchService.evidence_snapshot(query: EvidenceQuery)`
+returning `EvidenceSnapshot`. `EvidenceQuery` carries an explicit `match` or `summary`
+purpose, normalized literal terms, mutually exclusive `meeting_ids` or explicit
+`whole_library`, inherited date/status/participant filters and `include_partial`, and
+the `per_meeting`, `total` and `evidence_chars` limits from `Budget`. Apply scope
+and suppression to candidate eligibility before ranked rounds and limits.
+
+`match` with no terms yields no evidence and preserves scope. When FTS is available,
+complete revisions use global BM25 and MATCH built from escaped literal OR terms.
+Eligible opt-in partials use escaped literal OR, carry the partial flag and receive
+neutral rank 0, as in M3. When FTS is unavailable, all eligible matches use escaped
+literal OR and neutral rank 0. Preserve the date/ID tie-breakers and ranked rounds
+for these routes, and surface degraded coverage in fallback. Source evidence is exact
+transcript text. The memory boundary constructs both query forms from bound terms.
+
+Use one R50 view for matching and context. Deduplicate segments. Within a meeting,
+take ranked matches in order. Consume the first match of each meeting before the
+second and sort each round by M3 order (rank, date descending with NULL last,
+meeting ID, segment ID). Rank and return only IDs, ordinals, metadata and length
+information in the candidate phase. Bound consideration in SQL before returning
+rows to Python to `candidate_limit = 4 * Budget.total` overall and per meeting.
+Use a metadata-only sentinel row to detect eligible candidates beyond the window.
+Give matches priority, then consider at most two neighbors per selected match, its
+immediate predecessor and successor by ordinal in the same revision. Deduplicate
+and apply the same limits and bounded reads in reproducible order.
+
+Fetch complete text only for selected candidates that pass the remaining-character
+preflight. Account for embedded NUL in the length calculation, since SQLite's text
+`length()` stops there. A byte-length preflight for such values may bound the read
+to at most four UTF-8 bytes per remaining character, followed by an exact Unicode
+character count. Recheck the exact text length before charging the budget. Omit
+segments that cannot fit, mark truncation, and continue within the window if another
+candidate fits. A sentinel marks truncation and contributes no evidence or coverage.
+Compute coverage from the actual set included. The snapshot carries exact segment text,
+meeting/revision/segment identity, revision content hash and citation timing metadata.
+It carries no paths. Preserve public M3 search and cursor contracts and the schema.
+
+`summary` requires exactly one selected meeting and no terms. Traverse its revision
+in bounded ordinal batches. Bind continuation to the same `revision_id` and the last
+considered ordinal, and keep source IDs on the blocks. The service reports progress
+and checks cancellation between batches, surfaces truncation and revalidates the
+evidence before publication. A revision change cannot continue an earlier batch.
+
+R42/R50 suppression must guard all source/context reads and revalidation, before
+exposure and keyset/LIMIT. The approved `catalog_read_view(library)` contract has
+caller-owned fresh connection/close, B-owned lock-before-BEGIN and one transaction
+through generation/fetch. Its immutable snapshot IDs/fingerprint include registry
+UUIDs and exact normalized-origin/fingerprint aliases resolved in that DB view.
+Pending and complete suppress; invalid/inaccessible state fails closed. The memory
+boundary owns this integration, not an intelligence-side parser or nested transaction.
+Search and citation resolution both use this guard in M3 0.4.0. Task 1 adds
+`SearchService.revalidate_evidence(snapshot: EvidenceSnapshot) -> bool`. It opens a
+separate coherent R50 view and checks each block against the current eligible meeting,
+active revision and revision hash, segment identity, exact content and citation timing
+metadata. Absence or staleness returns `False`; a guard failure prevents publication.
+Revalidation accesses no media. Release the retrieval view before any provider call
+and revalidate before publication. The resolver's existing historical navigation is
+independent of this check. Both new methods still await implementation and acceptance.
 
 ### Local mode
 
@@ -85,12 +183,44 @@ A rejection carries the reason per item. The service may retry once with the rea
 Verification proves citation existence, not semantic truth; the result keeps claim
 kinds so the UI can label synthesis.
 
+R46 supplies the passive `Citation(meeting_id, revision_id, segment_id, quote=None,
+start_char=None, end_char=None)`. Validate source membership and any supplied quote
+or Unicode character span; offsets must address original source text, not bytes or
+positions invented in normalized snippets. Preserve the verifier's existing minimal
+normalization rule without broadening it. When it accepts a normalized match,
+populate the passive citation with the exact original substring and original
+character coordinates. Merged M3 B resolves membership and validates
+literal quotes or paired, bounded Unicode offsets inside one `catalog_read_view`.
+It derives navigation metadata and validates exact revision audio through managed
+artifact role and path guards. Only a target resolved by memory can grant
+navigation authority. Null dates/times stay absent, measured zero stays zero, and
+request-scoped speakers retain their scope (R46/R48).
+
 ### Results
 
 `Answer` carries mode, model, coverage, verified claims and extractions, each with
 `Citation` objects resolvable through `MemoryService.resolve_citation`. Visible
 messages are redacted: no key, no meeting text by default. Typed errors as in
 `PRODUCT_DESIGN.md` §3 plus `ProviderUnavailable` and `VerificationFailed`.
+Merged M3 B exposes `MemoryService.resolve_citation(Citation) -> CitationTarget`.
+It returns `status="missing"` without a playable path when audio is unvalidated.
+Audio authority requires the revision's single ordinal-zero WAV link, an
+available asset owned by the meeting, validated artifact roles, and matching
+file size and digest. Verified segment text may still be present. A missing
+revision can yield a missing target for a bare reference when the segment is
+also absent; a quote or span supplied in that case is invalid. The resolver also
+accepts historical revisions. Use the verified source and revision state,
+independently of playback status, to revalidate evidence before publication. The
+playback resolver grants audio authority only for navigation and must never supply
+audio or paths to the provider.
+
+Future M4 B persistence consumes R51's private trusted `_derived_row_purgers` only
+as ordered SQL on B's same final cleanup transaction before core relationships are
+removed; no own transaction/commit/connection/I/O/provider. Failure rolls derived/core
+rows back together into pending replay. It is not a read resolver or an M4 A task.
+R51/R52 keep accepted deletion pending/hidden after a barrier even if SQL rows vanish.
+Composition reuses the injected service and explicit configured roots; no second
+service, new .env reader or origin-derived root probing belongs to intelligence.
 
 ## Acceptance
 
