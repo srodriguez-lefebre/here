@@ -40,6 +40,7 @@ commits sobre ese merge y verifica el candidato `063d974`.
 | M3 B, suite completa integrada | HEAD separado | `m3-b-r76-full-verification/here` | `063d974`, orquestador y ventana Windows local |
 | M3 B, SPEC y PLAN de traspaso tras R75 | `codex/m3-b-native-handoff-contracts` | `m3-b-native-handoff-contracts/here` | `ad815db`, `m3_b_native_handoff_docs_sol` |
 | M3 B, PR documental #29 mergeado | `codex/m3-b-accepted-native-handoff` | `m3-b-accepted-native-handoff/here` | `d57a43d` → `8d0b03d`, `m3_b_native_handoff_docs_sol` y orquestador |
+| M4 A, preparación de SPEC y PLAN | `codex/m4-grounded-candidate-handoff` | `m4-grounded-candidate-handoff/here` | `2cf53f5`, `m3_b_native_handoff_docs_sol`. Vincular al merge final de B |
 | M4 A, fixtures de respuestas sintéticas | `codex/m4-grounded-verifier-fixtures` | `m4-grounded-verifier-fixtures/here` | `0c35b6b`, `m3_b_native_handoff_docs_sol`. Transferir al RED después del cierre de M3 |
 | M5 B, adelanto de portabilidad, chat `01a1af04-b158-75a2-8933-98783880f3e8` | `codex/m5-portability-adapter-integration` | `m5-portability-adapter-integration/here` | `5f6324f`, chat M5 B. Claims esperan M4 B |
 
@@ -120,7 +121,9 @@ local quede libre. El bump a 0.4.0 queda para después de esos criterios.
 El fixture de seek ya generado y la identidad de `Probe.dll` se verificaron
 a nivel 2 en `C:/Users/savar/.codex/evidence/here/m3-b-synthetic-seek-fixture-20261127/receipt.json`.
 Conserva los siete insumos sintéticos de la toma anterior para preparar una
-raíz nueva con el paquete integrado de B.
+raíz nueva con el paquete integrado de B. El mismo directorio contiene
+`stage-marker-package.ps1` para verificar y preparar esa raíz antes del
+smoke, con el recibo del paquete exacto y los tests de QtMultimedia.
 Los workflows fijan el checkout del head exacto por ruling 77. El PLAN
 preparado de M3 B conserva la ruta nativa cuando incorpora QtMultimedia.
 El orquestador lo vinculará al merge de A en el PR de documentos.
