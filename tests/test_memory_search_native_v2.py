@@ -3,14 +3,18 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import importlib
 import json
 import os
 import sqlite3
+import shutil
 import struct
+import sys
 from contextlib import closing
 from dataclasses import replace
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 from test_memory_delete import _record
@@ -375,3 +379,34 @@ def test_native_non_domain_fault_never_replays_canonical_sql(
     assert not _canonical_sorts(factory.trace)
     assert len(factory.connections) == 1 and factory.connections[0].closed
 
+
+@pytest.mark.parametrize("metadata", ["valid", "wrong-sha", "wrong-source", "foreign-origin"])
+def test_packaged_loader_checks_provenance_before_registration(
+    tmp_path, monkeypatch, native_dll, loader_module, metadata
+):
+    package = tmp_path / "package"
+    package.mkdir()
+    dll = package / "_native_search_v2.dll"
+    shutil.copyfile(native_dll, dll)
+    monkeypatch.setattr(loader_module, "__file__", str(package / "_native_search.py"))
+
+    manifest = ModuleType("here.memory._native_search_manifest")
+    origin = tmp_path if metadata == "foreign-origin" else package
+    manifest.__file__ = str(origin / "_native_search_manifest.py")
+    manifest.DLL_SHA256 = hashlib.sha256(dll.read_bytes()).hexdigest()
+    if metadata == "wrong-sha":
+        manifest.DLL_SHA256 = "0" * 64
+    monkeypatch.setitem(sys.modules, manifest.__name__, manifest)
+
+    with closing(sqlite3.connect(":memory:")) as connection:
+        (source_id,) = connection.execute("SELECT sqlite_source_id()").fetchone()
+        manifest.SQLITE_SOURCE_ID = source_id if metadata != "wrong-source" else "different SQLite"
+        loaded = loader_module.load_packaged_encoder(connection)
+        assert loaded is (metadata == "valid")
+        assert not connection.getconfig(sqlite3.SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION)
+        connection.execute("CREATE TABLE batch(a, b, c, d, e)")
+        if loaded:
+            assert _aggregate(connection) is None
+        else:
+            with pytest.raises(sqlite3.OperationalError, match="no such function"):
+                _aggregate(connection)
