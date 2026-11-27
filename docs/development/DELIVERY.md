@@ -2712,3 +2712,33 @@ skips in 9.34 s. The Qt run on `7d7c04d` recorded 14 expected failures for
 missing actions, zero errors and zero skips in 17.27 s. GREEN implementation is in progress
 on `bbc1717`. The GREEN runs still await the exclusive Windows window.
 Claims still depends on M4 B.
+
+
+## 2026-11-27 — M3 A public search gate and stage diagnostics
+
+Level 2. The public warm-search gate failed on
+`7e3bd56b61d47ed1c842e6aeb8ff1b7735210b7c` at 966.13 ms p95 against
+the 500 ms threshold. The fixture stayed intact with 1,000 meetings,
+100,000 segments, 98,901 FTS rows, 220 tombstones and 221 suppressed
+meetings. The run used five warmups and 40 samples with zero exclusions.
+The focused R50 and equivalence batch returned 133 passes and two skips.
+Independent review approved that scope. Canonical replay preserved the
+v2 bytes after an interior inversion.
+
+Ingestion, revision and reindex produced early inversions. The diagnostic
+late-replay FTS median rose from 469.13 to 764.01 ms. The isolated ACTIVE
+stage median fell from 406.84 to 316.51 ms with an identical digest. The
+last measured heartbeat result still stands.
+[PR #28](https://github.com/srodriguez-lefebre/here/pull/28) remains open.
+
+Receipts in `C:/Users/savar/.codex/evidence/here/m3-a-fts-product-20261127-01/`
+include `post.json`, `public-p95-7e3.xml`, `candidate-focused-7e3.xml`,
+`late-replay-stage-e7.xml` and `active-only-stage-e7.xml`.
+
+## 2026-11-27 — M3 B diagnostic Windows package passed
+
+The workflow completed successfully at exact head
+`912f63f8191d0312d647806241d352814c52d870` and published artifact
+`15206436217`. Level 2 covers the package workflow. Real seek certification
+remains pending.
+[Windows package 46015025767](https://github.com/srodriguez-lefebre/here/actions/runs/46015025767)

@@ -1202,3 +1202,31 @@ omisiones en 9,34 s. En `7d7c04d` fallaron los 14 casos esperados por acciones
 Qt ausentes, con cero errores y omisiones en 17,27 s. Las implementaciones GREEN
 sobre `bbc1717` siguen en curso y sus corridas esperan la ventana exclusiva de Windows.
 Claims sigue pendiente de M4 B.
+
+
+## M3 · Gate público de búsqueda y paquete diagnóstico — 2026-11-27
+
+Nivel 2. La búsqueda pública del head `7e3bd56b61d47ed1c842e6aeb8ff1b7735210b7c`
+falló el gate de 500 ms con 966,13 ms p95. El fixture se mantuvo intacto,
+con 1.000 reuniones, 100.000 segmentos, 98.901 filas FTS, 220 tombstones
+y 221 reuniones suprimidas. Hubo cinco precalentamientos y 40 muestras,
+sin exclusiones. El foco de equivalencia y controles R50 obtuvo 133 pases
+y dos omisiones. La revisión independiente aprobó ese alcance. Una
+inversión interior conservó los bytes v2 mediante replay canónico.
+
+La ingesta, la revisión y el reindex produjeron inversiones tempranas.
+En la etapa FTS diagnóstica, el replay tardío llevó la mediana de 469,13
+a 764,01 ms. En el diagnóstico aislado de la etapa ACTIVE, la mediana
+bajó de 406,84 a 316,51 ms con digest idéntico. El heartbeat conserva
+su última medición. [PR #28](https://github.com/srodriguez-lefebre/here/pull/28)
+sigue abierto.
+
+Los recibos están en `C:/Users/savar/.codex/evidence/here/m3-a-fts-product-20261127-01/`.
+Incluyen `post.json`, `public-p95-7e3.xml`, `candidate-focused-7e3.xml`,
+`late-replay-stage-e7.xml` y `active-only-stage-e7.xml`.
+
+El paquete diagnóstico de M3 B terminó con éxito en
+`912f63f8191d0312d647806241d352814c52d870` y publicó el artefacto
+`15206436217`. Nivel 2 para el workflow del paquete. El seek real
+sigue pendiente de certificación.
+[Corrida 46015025767](https://github.com/srodriguez-lefebre/here/actions/runs/46015025767)
