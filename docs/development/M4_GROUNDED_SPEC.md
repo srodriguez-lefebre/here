@@ -25,9 +25,11 @@ DELIVERY through `03f31ba` (R20/35/39–52) and the frozen M3 B preparation cont
 M3 A checkpoint `00cf0ea` has real SearchService/query DTOs and local evidence;
 its B5 integration, full group gates and M3 closure remain pending. None is
 substituted by this document or a prepared fixture. Root owns handoffs and leases.
-The 2026-11-20 follow-up records the M3 A query handoff at `0c16065` and the
-M3 B resolver candidate at `7323613`. Both still require final source binding
-at M3 close.
+The earlier inspection used M3 A `0c16065` and M3 B `7323613`. The later
+candidate inspection uses M3 A `7e3bd56` and M3 B
+`912f63f8191d0312d647806241d352814c52d870`. Final source binding still
+requires M3 closure, reconciliation on the integrated base and the contract
+document PR.
 
 ## Decisions
 
@@ -80,10 +82,13 @@ intact, not invented SearchHits or segments. That page is not evidence and canno
 widen the explicit M4 scope. Removing stopwords must not turn an empty retrieval
 expression into an implicit whole-library request.
 
-M3 A's canonical SearchQuery lacks selected meeting IDs and literal OR semantics.
-M3 B Task 4 separately specifies an optional `meeting_id`: one exact UUID bound
-before keyset and LIMIT with cursor scope and corpus-wide ranking preserved. It leaves
-selected sets and OR unresolved. The **pending memory-owned handoff** must apply
+M3 A's inspected `SearchQuery` exposes text and listing filters. Its FTS builder
+quotes each input token and joins tokens with spaces; its literal fallback combines
+term predicates with AND. The M3 B candidate adds `meeting_id: str | None`:
+one canonical UUID, applied before keyset and LIMIT, bound to the cursor scope
+and ranked over the global FTS index. Both candidates expose paged search hits
+rather than a batched evidence-and-neighbor snapshot. Selected sets and literal
+OR remain unresolved. The **pending memory-owned handoff** must apply
 the selected set, filters and suppression to candidate eligibility before keyset
 and LIMIT, preserve global BM25 for ranked matches, and fetch bounded matches
 and adjacent context from one coherent view. It must support fair per-meeting
@@ -165,9 +170,13 @@ messages are redacted: no key, no meeting text by default. Typed errors as in
 `PRODUCT_DESIGN.md` §3 plus `ProviderUnavailable` and `VerificationFailed`.
 The M3 B candidate exposes `MemoryService.resolve_citation(Citation) -> CitationTarget`.
 It returns `status="missing"` without a playable path when audio is unvalidated.
-Verified segment text may still be present. A missing revision can also yield a
-missing target without source text, so status alone cannot establish or reject
-text evidence. Use guarded text and revision revalidation for publication. The
+Audio authority requires the revision's single ordinal-zero WAV link, an
+available asset owned by the meeting, validated artifact roles, and matching
+file size and digest. Verified segment text may still be present. A missing
+revision can yield a missing target for a bare reference when the segment is
+also absent; a quote or span supplied in that case is invalid. The resolver also
+accepts historical revisions. Use the verified source and revision state,
+independently of playback status, to revalidate evidence before publication. The
 playback resolver grants audio authority only for navigation and must never supply
 audio or paths to the provider. Final binding to the integrated M3 head is pending.
 
