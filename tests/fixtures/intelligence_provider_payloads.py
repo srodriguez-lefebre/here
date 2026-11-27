@@ -67,3 +67,56 @@ REJECTED_RESPONSES = {
 }
 
 EMPTY_RESPONSE = {"claims": [], "extractions": []}
+
+# These are independent sent sets. Spans list the original source occurrences
+# without prescribing how a verifier selects among repeated matches.
+UNICODE_QUOTE_CASES = {
+    "full_case_expansion": {
+        "source_text": {"E1": "🌱 Maß. Ende."},
+        "response": {
+            "claims": [
+                {
+                    "kind": "fact",
+                    "text": "The note reads Maß.",
+                    "evidence_ids": ["E1"],
+                    "quotes": ["MASS"],
+                    "uncertainty": False,
+                },
+            ],
+            "extractions": [],
+        },
+        "original_spans": ((2, 5, "Maß"),),
+    },
+    "partial_case_expansion": {
+        "source_text": {"E1": "ß"},
+        "response": {
+            "claims": [
+                {
+                    "kind": "fact",
+                    "text": "The note contains the letter s.",
+                    "evidence_ids": ["E1"],
+                    "quotes": ["s"],
+                    "uncertainty": False,
+                },
+            ],
+            "extractions": [],
+        },
+        "original_spans": (),
+    },
+    "repeated_literal_quote": {
+        "source_text": {"E1": "🌱 Maß, Maß."},
+        "response": {
+            "claims": [
+                {
+                    "kind": "fact",
+                    "text": "The note repeats Maß.",
+                    "evidence_ids": ["E1"],
+                    "quotes": ["Maß"],
+                    "uncertainty": False,
+                },
+            ],
+            "extractions": [],
+        },
+        "original_spans": ((2, 5, "Maß"), (7, 10, "Maß")),
+    },
+}
