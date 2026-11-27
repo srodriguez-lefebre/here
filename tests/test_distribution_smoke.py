@@ -8,6 +8,29 @@ from pathlib import Path
 import pytest
 
 
+def test_native_search_smoke_queries_one_real_active_hit(tmp_path, monkeypatch):
+    from here.distribution import _native_search_proof
+    from here.memory.models import SearchPage
+    from here.memory.search import SearchService
+
+    search = SearchService.search
+    pages = []
+
+    def record_search(service, query):
+        page = search(service, query)
+        pages.append(page)
+        return page
+
+    monkeypatch.setattr(SearchService, "search", record_search)
+    _native_search_proof(tmp_path / "owned catalog")
+
+    (page,) = pages
+    assert isinstance(page, SearchPage)
+    assert not page.degraded
+    assert len(page.items) == 1
+    assert not page.items[0].partial
+
+
 @pytest.mark.parametrize("entry", ["cli_main", "gui_main"])
 def test_wheel_smoke_opens_isolated_desktop_and_reaps_helper(tmp_path, entry):
     interpreter = os.environ.get("HERE_WHEEL_PYTHON")
