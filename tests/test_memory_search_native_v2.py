@@ -427,9 +427,15 @@ def selected_encoder(tmp_path, monkeypatch, loader_module):
 def test_sqlite_load_refusal_replays_canonical_search_in_same_r50(
     catalog, monkeypatch, loader_module, selected_encoder
 ):
-    root, _, repo = catalog
+    root, library, repo = catalog
     search, models = _api()
     visible = _publish(repo, 83, texts=("needle visible",) * 3)
+    # Force the canonical encoder to sort instead of accepting its rowid fast path.
+    with repo.transaction():
+        _move(library, 1, -1)
+        _move(library, 2, 1)
+        _move(library, -1, 2)
+    assert _rows(library, "rowid") != _rows(library, _COLUMNS)
     query = models.SearchQuery(text="needle", limit=2)
     with monkeypatch.context() as stock:
         stock.setattr(loader_module, "load_fts_encoder", lambda _library: False)
