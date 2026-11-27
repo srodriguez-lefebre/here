@@ -36,7 +36,7 @@ jobs:
           HERE_WINDOWS_BUNDLE: ${{ github.workspace }}/dist/windows/here
           QT_QPA_PLATFORM: offscreen
           OPENAI_API_KEY: synthetic-test-key
-        run: uv run --frozen --python 3.13.15 pytest tests/test_windows_search_native_distribution.py --junitxml=dist/windows/evidence/native-search.xml
+        run: uv run --frozen --managed-python --python 3.13.15 pytest tests/test_windows_search_native_distribution.py --junitxml=dist/windows/evidence/native-search.xml
       - name: Verify actual delivered stable-AppId installation and data preservation
         shell: pwsh
         run: ./scripts/smoke_windows.ps1 -BundlePath ./dist/windows/here -InstallerPath ./dist/windows/here-0.3.0-windows-x64-setup.exe

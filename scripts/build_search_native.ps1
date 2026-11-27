@@ -54,8 +54,6 @@ if ($LASTEXITCODE -ne 0 -or $taskRuntimeId -cne $taskSQLiteSourceId) {
 $taskSourceHash = Get-SHA256 $taskSource
 $taskWork = Join-Path ([IO.Path]::GetTempPath()) ("here-native-" + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $taskWork | Out-Null
-$taskOriginalLocalCache = $env:ZIG_LOCAL_CACHE_DIR
-$taskOriginalGlobalCache = $env:ZIG_GLOBAL_CACHE_DIR
 try {
     $taskZigRoot = Expand-PinnedArchive $taskZigUrl $taskZigFolder $taskZigArchiveHash
     $taskHeaderRoot = Expand-PinnedArchive $taskSQLiteUrl $taskSQLiteFolder $taskSQLiteArchiveHash
@@ -64,8 +62,6 @@ try {
     foreach ($taskHeader in $taskHeaderHashes.Keys) {
         Assert-SHA256 (Join-Path $taskHeaderRoot $taskHeader) $taskHeaderHashes[$taskHeader]
     }
-    $env:ZIG_LOCAL_CACHE_DIR = Join-Path $taskWork 'local-cache'
-    $env:ZIG_GLOBAL_CACHE_DIR = Join-Path $taskWork 'global-cache'
     $taskPayload = Join-Path $taskWork 'payload'
     $taskNotices = Join-Path $taskPayload 'native-search'
     New-Item -ItemType Directory -Path $taskNotices -Force | Out-Null
@@ -74,8 +70,34 @@ try {
     Assert-SHA256 $taskStagedSource $taskSourceHash
     $taskDll = Join-Path $taskPayload '_native_search_v2.dll'
     $taskFlags = @('-target','x86_64-windows-gnu','-std=c11','-O3','-Wall','-Wextra','-Werror','-g0','-shared')
-    & $taskZig cc @taskFlags -I $taskHeaderRoot $taskStagedSource -o $taskDll
-    if ($LASTEXITCODE -ne 0) { throw "Native search compiler failed with exit $LASTEXITCODE" }
+    # Zig and Clang consult environment overrides for libraries, headers and flags.
+    # Give the compiler exactly the pinned library tree and an owned working area.
+    $taskStart = [Diagnostics.ProcessStartInfo]::new()
+    $taskStart.FileName = $taskZig
+    $taskStart.WorkingDirectory = $taskWork
+    $taskStart.UseShellExecute = $false
+    $taskWindows = [Environment]::GetFolderPath([Environment+SpecialFolder]::Windows)
+    $taskStart.Environment.Clear()
+    $taskStart.Environment['SystemRoot'] = $taskWindows
+    $taskStart.Environment['WINDIR'] = $taskWindows
+    $taskStart.Environment['PATH'] = @([Environment]::SystemDirectory, $taskWindows) -join ';'
+    $taskStart.Environment['TMP'] = $taskWork
+    $taskStart.Environment['TEMP'] = $taskWork
+    $taskStart.Environment['ZIG_LIB_DIR'] = Join-Path $taskZigRoot 'lib'
+    $taskStart.Environment['ZIG_LOCAL_CACHE_DIR'] = Join-Path $taskWork 'local-cache'
+    $taskStart.Environment['ZIG_GLOBAL_CACHE_DIR'] = Join-Path $taskWork 'global-cache'
+    foreach ($taskArgument in (@('cc') + $taskFlags + @('-I',$taskHeaderRoot,$taskStagedSource,'-o',$taskDll))) {
+        $taskStart.ArgumentList.Add($taskArgument)
+    }
+    $taskCompilerProcess = [Diagnostics.Process]::Start($taskStart)
+    try {
+        $taskCompilerProcess.WaitForExit()
+        if ($taskCompilerProcess.ExitCode -ne 0) {
+            throw "Native search compiler failed with exit $($taskCompilerProcess.ExitCode)"
+        }
+    } finally {
+        $taskCompilerProcess.Dispose()
+    }
 
     $taskDllHash = Get-SHA256 $taskDll
     @(
@@ -112,8 +134,6 @@ try {
         Copy-Item -LiteralPath (Join-Path $taskPayload $taskFile) -Destination $taskOutput -Recurse
     }
 } finally {
-    $env:ZIG_LOCAL_CACHE_DIR = $taskOriginalLocalCache
-    $env:ZIG_GLOBAL_CACHE_DIR = $taskOriginalGlobalCache
     $taskResolvedWork = (Resolve-Path -LiteralPath $taskWork).Path
     if ($taskResolvedWork -ceq $taskWork) {
         Remove-Item -LiteralPath $taskResolvedWork -Recurse -Force
