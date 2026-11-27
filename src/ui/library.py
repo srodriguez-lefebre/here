@@ -27,6 +27,7 @@ from here.memory.portability import (
     ImportReport,
     InsufficientSpace,
     InvalidPackage,
+    MarkdownExportResult,
 )
 from here.memory.search import normalize_query_text
 from here.memory.service import Conflict, InvalidInput, NotFound
@@ -742,7 +743,8 @@ class LibraryView(QWidget):
         kind: str,
         message: str,
         operation: Callable[
-            [Callable[[int], None], Callable[[], bool]], ExportResult | ImportReport | Path
+            [Callable[[int], None], Callable[[], bool]],
+            ExportResult | ImportReport | MarkdownExportResult,
         ],
     ):
         if not self._can_transfer():
@@ -791,7 +793,7 @@ class LibraryView(QWidget):
         if error is not None:
             message = self._portable_error(kind, error)
         elif kind == "portable-markdown":
-            message = "Exportación Markdown finalizada."
+            message = "\n".join(("Exportación Markdown finalizada.", *value.warnings))
         elif isinstance(value, ExportResult):
             message = "\n".join((f"Exportación finalizada · {value.path}", *value.warnings))
         else:

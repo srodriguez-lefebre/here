@@ -34,7 +34,13 @@ from here.memory.models import (
     Segment,
     TranscriptRevision,
 )
-from here.memory.portability import ExportCancelled, ExportResult, ImportCancelled, ImportReport
+from here.memory.portability import (
+    ExportCancelled,
+    ExportResult,
+    ImportCancelled,
+    ImportReport,
+    MarkdownExportResult,
+)
 from here.memory.portable_import import _PortableMeetingOutcome
 from here.memory.service import Conflict, InvalidInput
 
@@ -231,12 +237,12 @@ class FakeLibraryBackend:
 
     def export_markdown(
         self, meeting_id: str, destination: Path, cancellation: Callable[[], bool]
-    ) -> Path:
+    ) -> MarkdownExportResult:
         if meeting_id != self.meeting.id:
             raise InvalidInput("La reunión no corresponde al ejemplo.")
         if cancellation():
             raise ExportCancelled("Se canceló la exportación del ejemplo.")
-        return destination
+        return MarkdownExportResult(path=destination)
 
     def search(self, query):
         text = f"{self.meeting.title} {self.segment.text}".casefold()

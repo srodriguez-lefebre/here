@@ -9,7 +9,7 @@ import os
 from collections import defaultdict
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager, suppress
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
@@ -110,6 +110,12 @@ class ExportResult(BaseModel):
     omitted_answer_ids: tuple[str, ...]
     payload_bytes: int
     archive_bytes: int
+    warnings: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class MarkdownExportResult:
+    path: Path
     warnings: tuple[str, ...] = ()
 
 
@@ -410,7 +416,7 @@ class PortabilityService:
         meeting_id: str,
         destination: Path,
         cancellation: Callable[[], bool],
-    ) -> Path:
+    ) -> MarkdownExportResult:
         from here.memory.service import NotFound
 
         _check_cancelled(cancellation)
@@ -451,7 +457,7 @@ class PortabilityService:
                 if error.errno == errno.ENOSPC:
                     raise InsufficientSpace("Not enough space for Markdown export") from error
                 raise LibraryError("Could not write the Markdown export") from error
-        return destination
+        return MarkdownExportResult(path=destination, warnings=view.warnings)
 
     def import_archive(
         self,

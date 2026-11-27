@@ -40,7 +40,12 @@ from here.memory.models import (
     SearchPage,
     SearchQuery,
 )
-from here.memory.portability import ExportResult, ImportReport, PortabilityService
+from here.memory.portability import (
+    ExportResult,
+    ImportReport,
+    MarkdownExportResult,
+    PortabilityService,
+)
 from here.memory.search import SearchService
 from here.memory.service import MemoryService
 
@@ -75,7 +80,7 @@ class _PortabilityBackend(Protocol):
 
     def export_markdown(
         self, meeting_id: str, destination: Path, cancellation: Callable[[], bool]
-    ) -> Path: ...
+    ) -> MarkdownExportResult: ...
 
     def import_archive(
         self, source: Path, progress: Callable[[int], None], cancellation: Callable[[], bool]
@@ -156,7 +161,7 @@ class VisualController(Protocol):
 
     def export_meeting_markdown(
         self, meeting_id: str, destination: Path, cancellation: Callable[[], bool]
-    ) -> Path: ...
+    ) -> MarkdownExportResult: ...
 
     def import_meetings(
         self, source: Path, progress: Callable[[int], None], cancellation: Callable[[], bool]
@@ -250,7 +255,7 @@ class ApplicationUiAdapter:
 
     def export_meeting_markdown(
         self, meeting_id: str, destination: Path, cancellation: Callable[[], bool]
-    ) -> Path:
+    ) -> MarkdownExportResult:
         return self._portability_backend().export_markdown(
             meeting_id, destination, cancellation=cancellation
         )
