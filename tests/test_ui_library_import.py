@@ -19,14 +19,18 @@ from test_ui_library_export import (
     cancel_work,
     feedback,
     filter_status,
-    notices as notices,
     picker,
-    portability_library as portability_library,
     select,
     selection,
     show_library,
     start_export,
     table,
+)
+from test_ui_library_export import (
+    notices as notices,
+)
+from test_ui_library_export import (
+    portability_library as portability_library,
 )
 
 NEW_ID = "00000000-0000-0000-0000-000000000302"
@@ -117,6 +121,51 @@ def test_partial_import_reports_committed_and_rejected(
     assert any(line.startswith(IMPORTED_TITLE) for line in lines)
     assert controller.snapshot == snapshot
     assert controller.core.command_log == []
+
+
+def test_partial_import_shows_pending_meeting_in_manifest_order(
+    portability_library, qtbot, monkeypatch, tmp_path, notices
+):
+    desktop, controller, view = portability_library
+    pending_id = "00000000-0000-0000-0000-000000000303"
+    manifest_order = (NEW_ID, pending_id, REJECTED_ID)
+    query_count = len(controller.queries)
+    source = tmp_path / "partial-import.here.zip"
+    picker(monkeypatch, "getOpenFileName", source)
+
+    def run(path, progress, cancellation):
+        assert path == source
+        controller.meetings += (replace(controller.meetings[1], id=NEW_ID, title=IMPORTED_TITLE),)
+        report = _report(
+            (NEW_ID, "inserted", ""),
+            (REJECTED_ID, "rejected", "batch_stopped"),
+        )
+        return SimpleNamespace(
+            meetings=report.meetings,
+            pending_recovery_ids=(pending_id,),
+            cleanup_pending=False,
+            manifest_order=manifest_order,
+        )
+
+    controller.import_operation = run
+    action(view, r"import").click()
+    qtbot.waitUntil(lambda: table(view).rowCount() == 3 and not desktop.jobs.busy)
+
+    assert len(controller.queries) > query_count
+    assert not notices
+    rows = [
+        (identity, line)
+        for line in feedback(view)
+        for identity in manifest_order
+        if identity in line
+    ]
+    _assert_outcome([line for _, line in rows], NEW_ID, r"insertad|importad|inserted")
+    _assert_outcome([line for _, line in rows], REJECTED_ID, r"rechazad|rejected")
+    (pending_line,) = [line for identity, line in rows if identity == pending_id]
+    assert re.search(r"pendiente|pending", pending_line, re.I)
+    assert re.search(r"recuperaci[oó]n|recovery", pending_line, re.I)
+    assert not re.search(r"rechazad|rejected", pending_line, re.I)
+    assert tuple(identity for identity, _ in rows) == manifest_order
 
 
 @pytest.mark.parametrize("outcome", ["picker", "worker", "invalid", "conflict", "suppressed"])
