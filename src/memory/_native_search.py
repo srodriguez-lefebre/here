@@ -170,10 +170,12 @@ def _load_encoder(connection: sqlite3.Connection, *, catalog: bool) -> bool:
                 return False
 
         # Enable the C loading API without enabling SQL load_extension().
-        # Errors after selecting a verified artifact keep their SQLite path.
         connection.setconfig(setting, True)
         try:
             connection.load_extension(str(dll), entrypoint=_ENTRYPOINT)
+        except sqlite3.OperationalError:
+            # Load refusal leaves the stock encoder available in this read view.
+            return False
         finally:
             connection.setconfig(setting, False)
     return True
@@ -190,6 +192,7 @@ def load_fts_encoder(library: LibraryConnection) -> bool:
     if not connection.in_transaction:
         raise IntegrityFailure("Native FTS encoding requires a catalog read view")
     return _load_encoder(connection, catalog=True)
+
 
 def _invalid_packet() -> IntegrityFailure:
     return IntegrityFailure("Native FTS encoder returned an invalid batch")

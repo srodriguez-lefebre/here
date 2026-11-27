@@ -254,7 +254,8 @@ def test_canonical_blob_error_precedes_physically_earlier_utf8_error(
         stock.setattr(loader_module, "load_fts_encoder", lambda _library: False)
         expected = _producer_bytes(library, stock)
     assert expected["error"] == {
-        "type": "builtins.TypeError", "args": ["Object of type bytes is not JSON serializable"]
+        "type": "builtins.TypeError",
+        "args": ["Object of type bytes is not JSON serializable"],
     }
     _install_real_loader(monkeypatch, loader_module, native_dll)
     trace = []
