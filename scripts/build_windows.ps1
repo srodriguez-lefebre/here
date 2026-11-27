@@ -3,7 +3,8 @@ param(
     [string]$CompilerPath,
     [string]$OutputDirectory,
     [string]$TestAppId,
-    [string]$TestGroup
+    [string]$TestGroup,
+    [string]$NativeToolchainArchives
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -38,8 +39,15 @@ try {
     $taskWheel = $taskWheels[0]
     Invoke-Checked uv @('pip','install','--python',$taskPython,'--no-deps',$taskWheel.FullName)
     Invoke-Checked $taskPython @('-I','-B','-c',"import here,sys,importlib.metadata; assert 'site-packages' in here.__file__; assert importlib.metadata.version('here')=='0.3.0'; assert not any(n.startswith('__editable__') for n in sys.modules)")
-    Invoke-Checked $taskPython @('-B',"$taskRoot/scripts/windows_notices.py",'prepare',"$taskBuild/notices",'--wheel',$taskWheel.FullName)
+    $taskNativeOutput = Join-Path $taskBuild ("native-search-" + [guid]::NewGuid().ToString('N'))
+    & "$PSScriptRoot/build_search_native.ps1" -Python $taskPython -OutputDirectory $taskNativeOutput -ToolchainArchives $NativeToolchainArchives
+    $taskSitePackages = & $taskPython -I -B -c 'import sysconfig; print(sysconfig.get_path("purelib"))'
+    if ($LASTEXITCODE -ne 0) { throw 'Could not resolve the isolated build environment site-packages' }
+    $taskNativeManifest = Join-Path $taskNativeOutput '_native_search_manifest.py'
+    Copy-Item -LiteralPath $taskNativeManifest -Destination (Join-Path $taskSitePackages 'here/memory/_native_search_manifest.py')
+    Invoke-Checked $taskPython @('-B',"$taskRoot/scripts/windows_notices.py",'prepare',"$taskBuild/notices",'--wheel',$taskWheel.FullName,'--native-build',$taskNativeOutput)
     $env:HERE_BUILD_NOTICES = "$taskBuild/notices"
+    $env:HERE_BUILD_SEARCH_NATIVE = Join-Path $taskNativeOutput '_native_search_v2.dll'
     # Native dependency resolution must not borrow DLLs from arbitrary developer
     # PATH entries (for example an unrelated image/codec tool's ICU/UCRT build).
     $taskOriginalPath = $env:PATH
@@ -50,7 +58,7 @@ try {
         Invoke-Checked $taskPython @('-I','-B','-m','PyInstaller','--clean','--noconfirm','--distpath',$taskOutput,
             '--workpath',"$taskBuild/pyinstaller","$taskRoot/packaging/windows.spec")
     } finally { $env:PATH = $taskOriginalPath }
-    Invoke-Checked $taskPython @('-B',"$taskRoot/scripts/windows_notices.py",'audit',"$taskOutput/here",'--wheel',$taskWheel.FullName)
+    Invoke-Checked $taskPython @('-B',"$taskRoot/scripts/windows_notices.py",'audit',"$taskOutput/here",'--wheel',$taskWheel.FullName,'--native-build',$taskNativeOutput)
     if (-not $CompilerPath) {
         $taskCompilerRoot = Join-Path $taskBuild 'inno-6.7.0'
         New-Item -ItemType Directory -Force -Path $taskCompilerRoot | Out-Null
@@ -78,5 +86,6 @@ try {
     Invoke-Checked $taskPython @('-B',"$taskRoot/scripts/windows_notices.py",'checksums',$taskOutput,'--compiler',$CompilerPath)
 } finally {
     Remove-Item Env:HERE_BUILD_NOTICES -ErrorAction SilentlyContinue
+    Remove-Item Env:HERE_BUILD_SEARCH_NATIVE -ErrorAction SilentlyContinue
     Pop-Location
 }
