@@ -2782,3 +2782,30 @@ attempt produced zero measurements. Receipts are in
 `C:/Users/savar/.codex/evidence/here/m3-b-seek-063d974-20261127/`.
 The 0.4.0 exact Windows jobs, protected merge and post-merge ledger entry
 remain pending.
+
+## 2026-11-27 — Verified Windows 0.4.0 artifacts
+
+Level 2. The exact reviewed PR #30 source
+`d29f83a1c7f69caa3261bb7ddab579a75d4bc4b9` produced a clean
+0.4.0 wheel, installer and portable bundle. Independent verification
+matched six hashes and 776 portable inventory entries. The workflow
+passed 110 native SQLite controls, six frozen GUI/CLI activation
+smokes, the QtMultimedia presence check, the installer, and
+reinstall/data-preservation controls. Relative paths and SHA-256
+matched for 156 playback runtime files, including the only packaged
+Media Foundation plugin.
+[Workflow 46039585947](https://github.com/srodriguez-lefebre/here/actions/runs/46039585947)
+[Artifact 15219935874](https://github.com/srodriguez-lefebre/here/actions/runs/46039585947/artifacts/15219935874)
+
+| Artifact | SHA-256 |
+|---|---|
+| `build-provenance.json` | `2895e6c118634dccc12a5e0449716360ae80a9f7ad86b3171f83139daae0331b` |
+| `bundle-inventory.json` | `81a0a4de89adef0b9fb12811eefe29bca5d2989f7c3b0fe57005c800afa7464c` |
+| `compiler-provenance.json` | `b6332898d505c6d341c8dc07243d4a8a4c8d12709c8a55ab5dca4366e7e5b71e` |
+| `here-0.4.0-py3-none-any.whl` | `721e8e55e2d63e46d3e56a7e23c12d05699623a41d6178210591d962cf11f4f5` |
+| `here-0.4.0-windows-x64-setup.exe` | `a8eaa4ffb948e7ee1d5cd0741214b961ca2f42dcc0bc844f6dd049cfe9a09fca` |
+| `here-0.4.0-windows-x64.zip` | `db7a943c547630cf91438f5dabc4e37ac9d151a839ee2b8452c58fc6e0100a45` |
+| `SHA256SUMS.txt` | `34cbbece530df5ac4a62b1515f935308de8ec510b231f594a1940694c3c34945` |
+
+Receipts are in `package-46039585947-verified.json` and
+`package-46039585947-playback-equivalence.json` under the M3 evidence directory.
