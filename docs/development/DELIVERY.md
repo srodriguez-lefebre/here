@@ -1126,6 +1126,22 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Cost if wrong:** corregir la referencia y repetir los gates en el
     head revisado.
 
+78. **2026-11-27 — Evidencia del seek de M3 B.** El criterio 13 conserva el
+    ensayo sobre WAV real y el umbral de 250 ms. La medición de nivel 3
+    corresponde al paquete Windows de `912f63f` y su mayor error absoluto
+    más incertidumbre fue 36,244753 ms. El paquete integrado `063d974`
+    conserva el resolver de citas, la UI, el reproductor y el único
+    backend Media Foundation. El preflight R50 se verificó por separado
+    con la suite exacta. La comparación de nivel 2 verificó rutas y
+    hashes idénticos de 155 componentes de reproducción y 154 entradas
+    de la biblioteca estándar congelada. La revisión independiente
+    confirmó que estos alcances satisfacen el criterio y el gate de
+    paquete exacto. El intento de repetir la medición quedó sin lectura
+    al bloquearse el escritorio. La instalación limpia de M5 sigue su
+    protocolo propio.
+    **Cost if wrong:** repetir las cuatro marcas sobre el binario que
+    cambie la cadena de reproducción y actualizar la evidencia.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
@@ -2720,3 +2736,36 @@ Receipts are in
 
 The M3 B contract update binds this merge before rebasing the retained
 `b36162a` candidate. The 0.4.0 release remains part of M3 B.
+
+## 2026-11-27 — M3 B documentation handoff merged
+
+[PR #29](https://github.com/srodriguez-lefebre/here/pull/29) bound the M3 B
+spec and plan to the accepted A merge. `m5_portability_package_io_review_sol`
+approved the exact documentation head `d57a43d451c652da7a474954991af7f5cef24d78`.
+Ruling 64 applied. Windows [CI 46034925816](https://github.com/srodriguez-lefebre/here/actions/runs/46034925816)
+passed 1,619 cases with 104 skips and [package run 46034925769](https://github.com/srodriguez-lefebre/here/actions/runs/46034925769)
+passed on the same head, level 2. Root used the protected merge and verified
+the resulting main commit `8d0b03d92524c78ca6983db0fc64e1048e7b2a6c`.
+The rebase preserves all 34 retained M3 B commits in `063d974`.
+
+## 2026-11-27 — M3 B integrated verification and 0.4.0 candidate
+
+[PR #30](https://github.com/srodriguez-lefebre/here/pull/30) tracks the original
+reviewed implementation head `063d974` and the following release candidate.
+Level 2 local compiled-profile `m3-b-r76-full-063d974` passed 1,801 cases
+with 24 skips in 708.50 s, exit zero and no residual workers. The 143 cases
+covering the citation and guarded read view, library, navigation, player and CLI
+playback all passed. The public corpus reached 395.381 ms p95 and eight Qt
+queries had a maximum heartbeat interval of 13.2683 ms in
+`m3-b-r76-product-gates-063d974`.
+[Package 46036939106](https://github.com/srodriguez-lefebre/here/actions/runs/46036939106)
+verified 776 inventory entries, 110 native tests and six frozen activation smokes.
+
+Level 3 seek evidence remains `m3-b-seek-912f63f-20261127`, four markers
+on Windows 11 and a maximum bound of 36.244753 ms. The independent review
+and package comparison bind that playback path to the integrated product
+per ruling 78. The controlled comparison is level 2 and the aborted desktop
+attempt produced zero measurements. Receipts are in
+`C:/Users/savar/.codex/evidence/here/m3-b-seek-063d974-20261127/`.
+The 0.4.0 exact Windows jobs, protected merge and post-merge ledger entry
+remain pending.
