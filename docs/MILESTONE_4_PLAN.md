@@ -1,8 +1,8 @@
 # Hito 4 — Inteligencia sobre la memoria
 
-Estado: **preparación autorizada por ruling 20**. La implementación queda pendiente
-del cierre de M3 (0.4.0), la confirmación del traspaso sobre el merge final y el PR
-de contratos de M4. El
+Estado: M3 cerró en 0.4.0 con el merge del PR #30 (`7239ba6`). Ruling 20 autoriza
+M4 y ruling 79 fija la lectura de evidencia. La implementación de M4 A arranca
+tras el merge de este PR de contratos y el despacho del orquestador. El
 diseño detallado está en [`development/PRODUCT_DESIGN.md`](development/PRODUCT_DESIGN.md),
 secciones 3, 6, 8 y 9, que es decisión tomada (ruling 3). Este plan no lo repite: fija
 alcance, orden, criterios verificables y lo que queda fuera.
@@ -18,7 +18,7 @@ sistema lo dice en vez de inventar.
 
 ## Qué dejan M2 y M3 y qué falta
 
-Lo que M4 consume del catálogo de M2 y la navegación de M3, sujeto al traspaso final:
+Lo que M4 consume del catálogo de M2 y la navegación de M3 0.4.0:
 
 - Catálogo SQLite con `meetings`, `transcript_revisions` inmutables con `content_hash`,
   `segments` con tiempos nulos permitidos y `speaker_key` por solicitud, e índice FTS5

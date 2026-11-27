@@ -1,8 +1,8 @@
 # M4 grounded core specification
 
-Status: preparation only, not in execution. Ruling 20 supersedes the historical
-ruling 15 pause, but M4 A implementation still requires M3 closure, accepted actual
-handoffs, the normal contract-document PR and root dispatch. No M4 GO is granted.
+Status: contract preparation on the merged M3 0.4.0 base. Ruling 20 authorizes M4
+and ruling 79 sets the evidence-read contract. M4 A implementation starts after
+this contract PR merges and root dispatches the work.
 Governing design:
 `PRODUCT_DESIGN.md` §3, §6, §8 and §9, a taken decision (ruling 3). Spanish plan and
 acceptance criteria: `../MILESTONE_4_PLAN.md`.
@@ -21,11 +21,10 @@ instructions. Missing evidence produces an honest abstention, not a guess.
 Foundation: M2 A merge `53712c5beedafc2d40e2abf10c13362a1c3c9f78` and contract
 merge `73d3cb384bd422de6899d8c7b761f3f3159ea3f1`. M3 A merged in PR #28 at
 `a1a83629cdfab64dd249f877cdd443e7f7d96b08`. The M3 B handoff contracts merged
-in PR #29 at `8d0b03d92524c78ca6983db0fc64e1048e7b2a6c`. This preparation
-inspects the provisional M3 B integration at `063d974f66ac42da85a82474cfc900a1335e54f3`,
-with the 34 transferred commits on that handoff base. M3 B acceptance, merge
-and 0.4.0 closure remain pending. Root owns handoffs and leases and will bind
-M4 to the final integrated M3 base before the M4 contract-document PR.
+in PR #29 at `8d0b03d92524c78ca6983db0fc64e1048e7b2a6c`. M3 B closed 0.4.0 in
+PR #30 at `7239ba64e03e7e3230b36b5d8d952cefbbe54e47` on 2026-11-27 at 14:21
+Montevideo time, with reviewed head `d29f83a1c7f69caa3261bb7ddab579a75d4bc4b9`.
+M4 inherits the search, read guard and citation APIs from that merge.
 
 ## Decisions
 
@@ -80,7 +79,7 @@ expression into an implicit whole-library request.
 
 Merged M3 A exposes text and listing filters. Its FTS builder quotes each input
 token and joins tokens with spaces, and its literal fallback combines term predicates
-with AND. The inspected M3 B `SearchQuery.meeting_id: str | None = None` accepts
+with AND. Merged M3 B's `SearchQuery.meeting_id: str | None = None` accepts
 one canonical UUID, applies it before keyset and LIMIT, and binds it to cursor scope.
 FTS ranking still uses global BM25. Empty search carries the same scope into listing.
 R75/R76 use private Windows SQLite encoders for FTS and ACTIVE generation, preserving
@@ -136,7 +135,7 @@ through generation/fetch. Its immutable snapshot IDs/fingerprint include registr
 UUIDs and exact normalized-origin/fingerprint aliases resolved in that DB view.
 Pending and complete suppress; invalid/inaccessible state fails closed. The memory
 boundary owns this integration, not an intelligence-side parser or nested transaction.
-Search and citation resolution both use this guard in `063d974`. Task 1 adds
+Search and citation resolution both use this guard in M3 0.4.0. Task 1 adds
 `SearchService.revalidate_evidence(snapshot: EvidenceSnapshot) -> bool`. It opens a
 separate coherent R50 view and checks each block against the current eligible meeting,
 active revision and revision hash, segment identity, exact content and citation timing
@@ -190,7 +189,7 @@ or Unicode character span; offsets must address original source text, not bytes 
 positions invented in normalized snippets. Preserve the verifier's existing minimal
 normalization rule without broadening it. When it accepts a normalized match,
 populate the passive citation with the exact original substring and original
-character coordinates. The M3 B candidate resolves membership and validates
+character coordinates. Merged M3 B resolves membership and validates
 literal quotes or paired, bounded Unicode offsets inside one `catalog_read_view`.
 It derives navigation metadata and validates exact revision audio through managed
 artifact role and path guards. Only a target resolved by memory can grant
@@ -203,7 +202,7 @@ request-scoped speakers retain their scope (R46/R48).
 `Citation` objects resolvable through `MemoryService.resolve_citation`. Visible
 messages are redacted: no key, no meeting text by default. Typed errors as in
 `PRODUCT_DESIGN.md` §3 plus `ProviderUnavailable` and `VerificationFailed`.
-The M3 B candidate exposes `MemoryService.resolve_citation(Citation) -> CitationTarget`.
+Merged M3 B exposes `MemoryService.resolve_citation(Citation) -> CitationTarget`.
 It returns `status="missing"` without a playable path when audio is unvalidated.
 Audio authority requires the revision's single ordinal-zero WAV link, an
 available asset owned by the meeting, validated artifact roles, and matching
@@ -213,7 +212,7 @@ also absent; a quote or span supplied in that case is invalid. The resolver also
 accepts historical revisions. Use the verified source and revision state,
 independently of playback status, to revalidate evidence before publication. The
 playback resolver grants audio authority only for navigation and must never supply
-audio or paths to the provider. Final binding to the integrated M3 head is pending.
+audio or paths to the provider.
 
 Future M4 B persistence consumes R51's private trusted `_derived_row_purgers` only
 as ordered SQL on B's same final cleanup transaction before core relationships are

@@ -4,9 +4,9 @@
 > review, then independent agent review. Root owns leases, integration and merges
 > under rulings 20/35, with current-head Windows CI and Copilot omitted under
 > ruling 64. Ruling 69 selects GPT-6.2 Sol for active agent work.
-> Steps use checkbox syntax. **Status: preparation only, no M4 GO.** Ruling 20
-> replaces ruling 15's pause; implementation still waits for M3 closure, accepted
-> actual handoffs and the required contract-document PR before root dispatch.
+> Steps use checkbox syntax. **Status: contract preparation on M3 0.4.0.**
+> Ruling 20 authorizes M4 and ruling 79 sets the evidence-read contract. M4 A
+> implementation starts after this contract PR merges and root dispatches the work.
 
 **Goal:** Questions and extractions over selected meetings, in a local mode with no
 network and a provider mode whose every citation is mechanically verified.
@@ -35,24 +35,23 @@ schemas, the existing OpenAI SDK, pytest with mock transport; no new dependency.
 - Register `here.intelligence` in `pyproject.toml`. Touched files leave ruff clean and
   formatted; no new mypy errors in them (baseline not clean, `CLAUDE.md` §6).
 
-## Actual contracts and pending handoffs
+## Inherited contracts and planned M4 interfaces
 
 Foundation is merged M2 A `53712c5beedafc2d40e2abf10c13362a1c3c9f78` and contracts
 `73d3cb384bd422de6899d8c7b761f3f3159ea3f1`. M3 A search merged in PR #28 at
 `a1a83629cdfab64dd249f877cdd443e7f7d96b08` and the M3 B handoff contracts merged
-in PR #29 at `8d0b03d92524c78ca6983db0fc64e1048e7b2a6c`. The provisional B
-integration inspected here is `063d974f66ac42da85a82474cfc900a1335e54f3`, with the
-34 transferred commits on that handoff base. B acceptance, merge and M3's
-0.4.0 closure are pending. Root confirms the interfaces on the final integrated
-base and merges the M4 contract-document PR before source work.
+in PR #29 at `8d0b03d92524c78ca6983db0fc64e1048e7b2a6c`. M3 B closed 0.4.0 in
+PR #30 at `7239ba64e03e7e3230b36b5d8d952cefbbe54e47` on 2026-11-27 at 14:21
+Montevideo time, with reviewed head `d29f83a1c7f69caa3261bb7ddab579a75d4bc4b9`.
+Use the interfaces from that merge as the M4 implementation baseline.
 
 | Boundary | Current contract and unresolved handoff |
 |---|---|
 | Query owner | `memory.search.SearchService(connection_factory)`, `search(SearchQuery) -> SearchPage \| MeetingPage`; fresh LibraryConnection per operation, closed by the service. No presumed MemoryService.search. |
-| Scoped evidence | Provisional B `SearchQuery.meeting_id` scopes one canonical UUID before keyset and LIMIT and binds it to the cursor. Empty search passes scope through to listing. Task 1 adds memory-owned `SearchService.evidence_snapshot(EvidenceQuery) -> EvidenceSnapshot` for selected-set literal OR, global BM25, ranked rounds, adjacent context and the budgets defined in the SPEC. Public M3 search, cursors and schema stay unchanged. |
-| Read suppression | Search and citation resolution at `063d974` share R50 `catalog_read_view`, which owns lock-before-BEGIN and one transaction. The caller opens and closes the fresh connection. The snapshot carries resolved suppressed IDs and a fingerprint covering registry records and alias resolution. Registry roles and paths are preflighted under the lock and the boundary fails closed. The planned retrieval and `SearchService.revalidate_evidence(EvidenceSnapshot) -> bool` each use a separate coherent R50 view. |
+| Scoped evidence | Merged M3 B's `SearchQuery.meeting_id` scopes one canonical UUID before keyset and LIMIT and binds it to the cursor. Empty search passes scope through to listing. Under R79, Task 1 adds memory-owned `SearchService.evidence_snapshot(EvidenceQuery) -> EvidenceSnapshot` for selected-set literal OR, global BM25, ranked rounds, adjacent context and the budgets defined in the SPEC. Public M3 search, cursors and schema stay unchanged. |
+| Read suppression | Search and citation resolution in M3 0.4.0 share R50 `catalog_read_view`, which owns lock-before-BEGIN and one transaction. The caller opens and closes the fresh connection. The snapshot carries resolved suppressed IDs and a fingerprint covering registry records and alias resolution. Registry roles and paths are preflighted under the lock and the boundary fails closed. The planned retrieval and `SearchService.revalidate_evidence(EvidenceSnapshot) -> bool` each use a separate coherent R50 view. |
 | Native search generation | R75/R76 are private Windows SQLite encoders for FTS and ACTIVE generation. Consume public v2 cursors and preserve canonical fallback inside R50. Retrieval requires no native-loader binding. |
-| Citation source | Candidate `MemoryService.resolve_citation(Citation) -> CitationTarget` validates membership, literal quotes, paired Unicode bounds, and exact revision/audio links with artifact role guards. Unvalidated audio yields `status="missing"` without a path, possibly with verified text. The resolver can return historical evidence; M4 still has to revalidate the selected active revision before publication. Confirm both bindings on the integrated M3 head. |
+| Citation source | Merged M3 B's `MemoryService.resolve_citation(Citation) -> CitationTarget` validates membership, literal quotes, paired Unicode bounds, and exact revision/audio links with artifact role guards. Unvalidated audio yields `status="missing"` without a path, possibly with verified text. The resolver can return historical evidence; M4 still has to revalidate the selected active revision before publication. |
 | Participants/root | R48 real IDs/roles/nullable assignments, request-scoped speakers; R40/R52 same injected service/configured root. No new .env reader or origin-derived root probing. |
 | Future persistence | R51 private SQL purger on B's same final cleanup transaction; future M4 B only, never a citation resolver or an M4 A migration/task. |
 
@@ -81,9 +80,8 @@ revision with bounded batches, progress and cancellation between batches.
 M3 B accepts `Citation` for desktop navigation and re-resolves identity through
 the injected memory backend even when called with a `CitationTarget`. Navigation
 uses the service passed to `create_default_controller(memory_service=...)`;
-the controller's default processor receives the same instance. M3 B review,
-playback evidence and seek verification remain integration gates.
-In the candidate, a measured zero seek waits for a ready, seekable backend and
+the controller's default processor receives the same instance. In M3 0.4.0,
+a measured zero seek waits for a ready, seekable backend and
 capture clears the pending seek. These playback behaviors provide no authority
 for M4 text publication.
 
@@ -109,8 +107,11 @@ The budget corpus is separately prepared at `a2ce1e1` in
 `tests/fixtures/intelligence_corpus.py`. It yields 50 meetings and 2,000 OR
 matches, with 400 in the selected set and 100 in the sparse-only subset. It
 includes a shared nonmatching neighbor, long Unicode passages and a title-only
-token. Root can transfer it once after the final base is bound. The RED owner
-still ingests the data through accepted memory APIs and temporary roots, supplies
+token. Commit `dc5e0e3` extends the same file with embedded NUL and Unicode text,
+oversized matches, adjustable placement of a fitting match relative to the
+consideration window, and a shared neighbor. Root transfers the extended fixture
+once with its base provenance. The RED owner establishes the ranking order,
+ingests the data through accepted memory APIs and temporary roots, supplies
 lifecycle and suppression cases, and writes the retrieval assertions and missing
 English/mocked-provider/verifier cases. The pure corpus supplies inputs and counts;
 ingestion, ranking, budget enforcement and coverage require tests on the bound head.
