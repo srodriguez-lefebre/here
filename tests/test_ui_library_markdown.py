@@ -264,3 +264,5 @@ def test_markdown_export_delegates_current_identity_and_preserves_detail(
             label.text() for label in view.findChildren(QLabel) if label.isVisible()
         }
         assert notices or any(text.strip() for text in labels_after - labels_before)
+    else:
+        assert not notices
