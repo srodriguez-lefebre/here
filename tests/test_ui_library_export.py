@@ -141,8 +141,8 @@ def select(view, qtbot, row=0, modifier=Qt.KeyboardModifier.NoModifier):
     qtbot.mouseClick(
         widget.viewport(),
         Qt.MouseButton.LeftButton,
-        modifier=modifier,
-        pos=widget.visualItemRect(item).center(),
+        modifier,
+        widget.visualItemRect(item).center(),
     )
 
 
