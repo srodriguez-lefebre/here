@@ -153,13 +153,13 @@ def test_markdown_revalidates_catalog_through_guarded_publication(
     memory: MemoryService, destination: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     before = memory.get_meeting(MEETING_ID).meeting
-    destination.write_bytes(_EXISTING)
     publish = _PortableExportView.publish
     published_title = "Synthetic edit during export"
 
     def edit_before_publish(
         view: _PortableExportView, temporary: WindowsExportSibling, *, cancelled: Callable[[], bool]
     ) -> None:
+        destination.write_bytes(_EXISTING)
         memory.update_meeting(MEETING_ID, MeetingPatch(title=published_title), before.row_version)
         publish(view, temporary, cancelled=cancelled)
 
