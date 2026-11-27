@@ -33,6 +33,8 @@ from here.memory.models import (
     Segment,
     TranscriptRevision,
 )
+from here.memory.portability import ExportCancelled, ExportResult, ImportCancelled, ImportReport
+from here.memory.portable_import import _PortableMeetingOutcome
 from here.memory.service import Conflict, InvalidInput
 
 
@@ -204,6 +206,27 @@ class FakeLibraryBackend:
             query.participant_id is None
         )
         return MeetingPage(items=(MeetingSummary(self.meeting),) if matches else ())
+
+    def export(self, ids, destination, include_audio, progress, cancellation) -> ExportResult:
+        if ids != (self.meeting.id,):
+            raise InvalidInput("La selección no corresponde al ejemplo.")
+        if cancellation():
+            raise ExportCancelled("Se canceló la exportación del ejemplo.")
+        payload_bytes = len(self.segment.text.encode("utf-8"))
+        progress(payload_bytes)
+        return ExportResult(
+            path=destination,
+            included_answer_ids=(),
+            omitted_answer_ids=(),
+            payload_bytes=payload_bytes,
+            archive_bytes=0,
+        )
+
+    def import_archive(self, source, progress, cancellation) -> ImportReport:
+        if cancellation():
+            raise ImportCancelled("Se canceló la importación del ejemplo.")
+        progress(len(self.segment.text.encode("utf-8")))
+        return ImportReport((_PortableMeetingOutcome(self.meeting.id, "unchanged"),))
 
     def search(self, query):
         text = f"{self.meeting.title} {self.segment.text}".casefold()

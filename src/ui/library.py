@@ -5,7 +5,10 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import replace
 from datetime import datetime, time, timezone
+from pathlib import Path
+from threading import Event, Lock
 
+from here.memory.database import IntegrityFailure, UnsupportedSchema
 from here.memory.models import (
     Citation,
     CitationTarget,
@@ -17,17 +20,28 @@ from here.memory.models import (
     SearchHit,
     SearchQuery,
 )
+from here.memory.portability import (
+    ExportCancelled,
+    ExportResult,
+    ImportCancelled,
+    ImportReport,
+    InsufficientSpace,
+    InvalidPackage,
+)
 from here.memory.search import normalize_query_text
 from here.memory.service import Conflict, InvalidInput
 from here.ui.bridge import BackgroundJobs
 from here.ui.contract import ApplicationState, VisualController
 from here.ui.playback_widget import PlaybackWidget
-from PySide6.QtCore import QDate, Qt, QTimer, Signal
+from PySide6.QtCore import QDate, QItemSelectionModel, Qt, QTimer, Signal
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QCheckBox,
     QComboBox,
     QDateEdit,
+    QDialog,
+    QDialogButtonBox,
+    QFileDialog,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -43,6 +57,24 @@ from PySide6.QtWidgets import (
 _NO_DATE = QDate(1900, 1, 1)
 _DETAIL_READS = frozenset({"library-detail", "library-citation"})
 _AUXILIARY_READS = _DETAIL_READS | {"library-participants"}
+_EXPORT_PACKAGE_FILTER = "Paquetes de here (*.here.zip)"
+_IMPORT_PACKAGE_FILTER = "Paquetes de here (*.zip)"
+_IMPORT_STATUS = {
+    "inserted": "Importada",
+    "unchanged": "Sin cambios",
+    "conflict": "Conflicto",
+    "rejected": "Rechazada",
+}
+_IMPORT_REASON = {
+    "local_recovery_pending": "Recuperación local pendiente",
+    "batch_stopped": "Se detuvo el lote",
+    "suppressed": "Reunión suprimida",
+    "different_meeting": "El identificador corresponde a otra reunión",
+    "audio_unavailable": "Audio local no disponible",
+    "destination_exists": "Ya existe el destino local",
+    "participant_exists": "Ya existe un participante con ese identificador",
+    "catalog_identity_exists": "Ya existe un registro con ese identificador",
+}
 _STATUS_LABELS = {
     MeetingStatus.RECORDING: "Grabando",
     MeetingStatus.PROCESSING: "Procesando",
@@ -88,6 +120,23 @@ class _DateFilter(QDateEdit):
         return QWidget.focusNextPrevChild(self, forward)
 
 
+class _PortableProgress:
+    """Share only the latest measured byte count with the Qt thread."""
+
+    def __init__(self):
+        self.cancelled = Event()
+        self._lock = Lock()
+        self._bytes: int | None = None
+
+    def report(self, byte_count: int) -> None:
+        with self._lock:
+            self._bytes = byte_count
+
+    def latest(self) -> int | None:
+        with self._lock:
+            return self._bytes
+
+
 class LibraryView(QWidget):
     """Render canonical pages; stale requests cannot mutate the current view."""
 
@@ -117,6 +166,8 @@ class LibraryView(QWidget):
         self._detail_notice = ""
         self._speaker_names: dict[tuple[str, str], str] = {}
         self._loading = False
+        self._restore_selection: frozenset[str] = frozenset()
+        self._portable_job: tuple[int, _PortableProgress] | None = None
 
         self._search = QLineEdit()
         self._search.setAccessibleName("Buscar en la biblioteca")
@@ -165,14 +216,32 @@ class LibraryView(QWidget):
             ["Título / coincidencia", "Fecha", "Duración", "Estado", "Audio", "Transcripción"]
         )
         self._results.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self._results.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self._results.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self._results.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self._results.setTabKeyNavigation(False)
         self._results.horizontalHeader().setStretchLastSection(True)
         self._results.cellActivated.connect(self._open_row)
+        self._results.itemSelectionChanged.connect(self._update_portable_actions)
         self._more = QPushButton("Cargar más")
         self._more.setAccessibleName("Cargar más resultados")
         self._more.clicked.connect(self._continue)
+
+        self._export = QPushButton("Exportar selección")
+        self._export.clicked.connect(self._choose_export)
+        self._import = QPushButton("Importar paquete")
+        self._import.clicked.connect(self._choose_import)
+        self._portable_cancel = QPushButton("Cancelar transferencia")
+        self._portable_cancel.clicked.connect(self._cancel_portable_job)
+        self._portable_cancel.hide()
+        self._portable_progress = _label()
+        self._portable_report = QListWidget()
+        self._portable_report.setAccessibleName("Resultado por reunión")
+        self._portable_report.setMaximumHeight(120)
+        self._portable_report.hide()
+        self._portable_timer = QTimer(self)
+        self._portable_timer.setInterval(50)
+        self._portable_timer.timeout.connect(self._show_portable_progress)
+        self._update_portable_actions()
 
         self._detail_panel = QWidget()
         detail_layout = QVBoxLayout(self._detail_panel)
@@ -224,6 +293,13 @@ class LibraryView(QWidget):
         layout.addWidget(self._results)
         layout.addWidget(self._more)
         layout.addWidget(self._detail_panel)
+        transfer_actions = QHBoxLayout()
+        for button in (self._export, self._import, self._portable_cancel):
+            transfer_actions.addWidget(button)
+        transfer_actions.addStretch()
+        layout.addLayout(transfer_actions)
+        layout.addWidget(self._portable_progress)
+        layout.addWidget(self._portable_report)
         self._more.hide()
         order = (
             self._search,
@@ -238,6 +314,10 @@ class LibraryView(QWidget):
             self._save,
             self._close,
             self._more,
+            self._export,
+            self._import,
+            self._portable_cancel,
+            self._portable_report,
         )
         for previous, following in zip(order, order[1:]):
             QWidget.setTabOrder(previous, following)
@@ -336,6 +416,7 @@ class LibraryView(QWidget):
                 # actual exit permits replacement reads.
                 self._load_participants()
                 self._request_first()
+            self._update_portable_actions()
         elif was_read:
             self._dispatch_pending_reads()
 
@@ -408,9 +489,12 @@ class LibraryView(QWidget):
         self.close_detail()
         self._request_first()
 
-    def _request_first(self):
+    def _request_first(self, *, retain_selection=False):
         if self._closed or self._deletion_jobs:
             return
+        self._restore_selection = (
+            frozenset(self._selected_meeting_ids()) if retain_selection else frozenset()
+        )
         self._query = self._make_query()
         self._cursor = None
         self._items.clear()
@@ -437,6 +521,9 @@ class LibraryView(QWidget):
         self._submit("library-page", lambda: operation(query), self._generation)
 
     def _finished(self, request, kind, value, error):
+        if kind in {"portable-export", "portable-import"}:
+            self._finish_portable_job(request, kind, value, error)
+            return
         if self._closed or kind not in self._requests:
             return
         expected_request, generation = self._requests[kind]
@@ -511,6 +598,7 @@ class LibraryView(QWidget):
                 self.refresh()
 
     def _render_page(self, page):
+        restore_selection, self._restore_selection = self._restore_selection, frozenset()
         self._items.extend(page.items)
         self._cursor = page.next_cursor
         self._results.setRowCount(len(self._items))
@@ -538,6 +626,11 @@ class LibraryView(QWidget):
                 )
             for column, text in enumerate(values):
                 self._results.setItem(row, column, QTableWidgetItem(text))
+            if self._meeting_id(item) in restore_selection:
+                model = self._results.selectionModel()
+                index = self._results.model().index(row, 0)
+                flags = QItemSelectionModel.SelectionFlag
+                model.select(index, flags.Select | flags.Rows)
         self._results.resizeRowsToContents()
         self._more.setVisible(self._cursor is not None)
         self._more.setEnabled(True)
@@ -553,10 +646,174 @@ class LibraryView(QWidget):
         self._record.setVisible(not self._items and not filtered)
         self._clear.setVisible(not self._items and filtered)
 
+    def _selected_meeting_ids(self) -> tuple[str, ...]:
+        rows = sorted(
+            index.row()
+            for index in self._results.selectionModel().selectedRows()
+            if 0 <= index.row() < len(self._items)
+        )
+        return tuple(dict.fromkeys(self._meeting_id(self._items[row]) for row in rows))
+
+    def _can_transfer(self) -> bool:
+        return not self._closed and not self._deletion_jobs and self._portable_job is None
+
+    def _update_portable_actions(self):
+        enabled = self._can_transfer()
+        self._export.setEnabled(enabled and bool(self._selected_meeting_ids()))
+        self._import.setEnabled(enabled)
+
+    def _choose_export(self):
+        ids = self._selected_meeting_ids()
+        if not ids or not self._can_transfer():
+            return
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Exportar reuniones")
+        checkbox = QCheckBox("Incluir audio")
+        checkbox.setChecked(True)
+        options = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        options.accepted.connect(dialog.accept)
+        options.rejected.connect(dialog.reject)
+        layout = QVBoxLayout(dialog)
+        layout.addWidget(checkbox)
+        layout.addWidget(options)
+        try:
+            accepted = dialog.exec() == QDialog.DialogCode.Accepted.value
+            include_audio = checkbox.isChecked()
+        finally:
+            dialog.deleteLater()
+        if not accepted or not self._can_transfer():
+            return
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Exportar reuniones", "reuniones.here.zip", _EXPORT_PACKAGE_FILTER
+        )
+        if path:
+            destination = Path(path)
+            export = self._controller.export_meetings
+            self._start_portable_job(
+                "portable-export",
+                "Preparando exportación…",
+                lambda report, cancelled: export(
+                    ids, destination, include_audio, report, cancelled
+                ),
+            )
+
+    def _choose_import(self):
+        if not self._can_transfer():
+            return
+        path, _ = QFileDialog.getOpenFileName(self, "Importar paquete", "", _IMPORT_PACKAGE_FILTER)
+        if path:
+            source = Path(path)
+            import_archive = self._controller.import_meetings
+            self._start_portable_job(
+                "portable-import",
+                "Preparando importación…",
+                lambda report, cancelled: import_archive(source, report, cancelled),
+            )
+
+    def _start_portable_job(
+        self,
+        kind: str,
+        message: str,
+        operation: Callable[
+            [Callable[[int], None], Callable[[], bool]], ExportResult | ImportReport
+        ],
+    ):
+        if not self._can_transfer():
+            return
+        progress = _PortableProgress()
+        request = self._jobs.submit(
+            kind, lambda: operation(progress.report, progress.cancelled.is_set)
+        )
+        if request is None:
+            return
+        self._portable_job = (request, progress)
+        self._portable_report.clear()
+        self._portable_report.hide()
+        self._portable_progress.setText(message)
+        self._portable_cancel.setEnabled(True)
+        self._portable_cancel.show()
+        self._update_portable_actions()
+        self._portable_timer.start()
+
+    def _show_portable_progress(self):
+        if self._portable_job is None:
+            return
+        _, progress = self._portable_job
+        byte_count = progress.latest()
+        cancelling = progress.cancelled.is_set()
+        if byte_count is not None:
+            text = f"{byte_count} bytes procesados"
+            self._portable_progress.setText(f"Cancelando… {text}" if cancelling else text)
+        elif cancelling:
+            self._portable_progress.setText("Cancelando…")
+
+    def _cancel_portable_job(self):
+        if self._portable_job is not None:
+            _, progress = self._portable_job
+            progress.cancelled.set()
+            self._portable_cancel.setEnabled(False)
+            self._show_portable_progress()
+
+    def _finish_portable_job(self, request, kind, value, error):
+        if self._portable_job is None or self._closed or request != self._portable_job[0]:
+            return
+        self._portable_timer.stop()
+        self._portable_job = None
+        self._portable_cancel.hide()
+        self._update_portable_actions()
+        if error is not None:
+            message = self._portable_error(kind, error)
+        elif isinstance(value, ExportResult):
+            message = "\n".join((f"Exportación finalizada · {value.path}", *value.warnings))
+        else:
+            message = "Importación finalizada"
+            self._show_import_report(value)
+        self._portable_progress.setText(message)
+
+    @staticmethod
+    def _portable_error(kind, error):
+        if isinstance(error, (ExportCancelled, ImportCancelled)):
+            return "Transferencia cancelada."
+        if isinstance(error, InsufficientSpace):
+            return "No hay espacio suficiente para guardar el paquete."
+        if isinstance(error, InvalidPackage):
+            return "El paquete es inválido o no se pudo leer."
+        if isinstance(error, UnsupportedSchema):
+            return "La versión del paquete o del catálogo no es compatible."
+        if isinstance(error, IntegrityFailure):
+            return "Falló una comprobación de integridad."
+        if isinstance(error, Conflict):
+            return "La reunión cambió. Revisá la selección y volvé a intentar."
+        if kind == "portable-export":
+            return "No se pudo exportar la selección."
+        return "No se pudo importar el paquete."
+
+    def _show_import_report(self, report: ImportReport):
+        for meeting in report.meetings:
+            status = _IMPORT_STATUS[meeting.status]
+            reason = _IMPORT_REASON.get(meeting.reason, meeting.reason)
+            summary = f"{meeting.meeting_id} · {status}"
+            self._portable_report.addItem(f"{summary} · {reason}" if reason else summary)
+        self._portable_report.setVisible(bool(report.meetings))
+        if any(meeting.status == "inserted" for meeting in report.meetings):
+            # A cancellation or local recovery warning can follow a durable commit.
+            # Refresh the rows without reopening an unchanged detail or playback.
+            if not self._deletion_jobs:
+                self._debounce.stop()
+                self._generation += 1
+                self._load_participants()
+                self._request_first(retain_selection=True)
+
+    @staticmethod
+    def _meeting_id(item: MeetingSummary | SearchHit) -> str:
+        return item.meeting_id if isinstance(item, SearchHit) else item.meeting.id
+
     def _open_row(self, row, _column=0):
         if 0 <= row < len(self._items):
             item = self._items[row]
-            identity = item.meeting_id if isinstance(item, SearchHit) else item.meeting.id
+            identity = self._meeting_id(item)
             self.meeting_selected.emit(identity)
             if isinstance(item, SearchHit):
                 self.open_target(Citation(item.meeting_id, item.revision_id, item.segment_id))
@@ -753,6 +1010,7 @@ class LibraryView(QWidget):
         if self._closed:
             raise RuntimeError("Library view is closed")
         self._deletion_jobs.add(request)
+        self._update_portable_actions()
         self._debounce.stop()
         self._generation += 1
         self._participant_generation += 1
@@ -784,6 +1042,9 @@ class LibraryView(QWidget):
         if self._closed:
             return
         self._closed = True
+        self._cancel_portable_job()
+        self._portable_timer.stop()
+        self._portable_job = None
         self._closing.emit()
         self._deletion_jobs.clear()
         self._pending_reads.clear()
