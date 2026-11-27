@@ -12,8 +12,8 @@ Se reactivaron los chats de M3 A y M5 B con GPT‑6.2 Sol. M2 sigue cerrado en
   mediana de la fase bajó de 404,98 a 320,11 ms. Las ocho muestras conservaron
   el mismo SHA sobre 98.901 filas y 387 frames. El RED `ae82ec8` produjo siete
   pases, un fallo esperado de la ruta y un fallo del arnés corregido en
-  `f04a5f3`, pendiente de ejecución. El chat prepara estáticamente perfiles
-  de ingesta y fallback. [PR #28](https://github.com/srodriguez-lefebre/here/pull/28)
+  `f04a5f3`. El chat tiene la ventana Windows para equivalencia, controles
+  R50 y medición del candidato. [PR #28](https://github.com/srodriguez-lefebre/here/pull/28)
   permanece abierto con el último p95 público de 1.431,6706 ms y el heartbeat
   de 55,349 ms fuera de presupuesto.
 - M3 B reprodujo en `a31daca` la selección de un WAV normalizado vacío con
@@ -29,21 +29,33 @@ Se reactivaron los chats de M3 A y M5 B con GPT‑6.2 Sol. M2 sigue cerrado en
   Windows `Path` iguala. `m3_retry_declared_source_red` cubrió ese caso y los
   aliases del mismo archivo en `d12d483`, rama
   `codex/m3-library-retry-file-identity-red`, worktree
-  `m3-library-retry-file-identity-red/here`. Corrida pendiente.
+  `m3-library-retry-file-identity-red/here`. RED nivel 2: un fallo esperado
+  y un pase. GREEN `cffa2de` en `codex/m3-library-retry-file-identity-green`,
+  worktree `m3-library-retry-file-identity-green/here`, pasó 247 casos.
+  `m3_retry_audio_resume_review` aprobó ese SHA. El árbol integrado en
+  `912f63f`, `codex/m3-library`, es idéntico y tiene un
+  [paquete diagnóstico Windows en ejecución](https://github.com/srodriguez-lefebre/here/actions/runs/46015025767).
 - Sonda de seek M3 B: build local y calibración PCM sintética pasaron, nivel 2.
   El artefacto Windows de `f894923`, corrida `44781729845`, coincidió con el
   checksum del ZIP y las 772 entradas del inventario. El CLI del bundle ingirió
   el WAV sintético con hash `eac58e90b86607135ad0a30562a36f68b2914b95dc81e77a3553b7b664b4cabc`.
-  La GUI cargó la marca cero. La sonda falló antes de armar la medición con
-  `0x88890021`. `1dfa531` corrige las flags documentadas de WASAPI. Falta
-  repetir el build y medir el audio renderizado para nivel 3.
-- M5 B preparó y revisó estáticamente 16 casos CLI en `b66d15a` y 14 Qt en
-  `7d7c04d`, ramas de adaptadores del checkpoint anterior. Su chat tiene la
-  ventana Windows para ejecutar ambos RED en serie. El servicio `41150f5`
-  conserva los 4 + 89 pases. Claims sigue pendiente de M4 B.
-- La preparación de M4 A conserva `99f1ec8`. En paralelo,
-  `m4_grounded_fixture_sol` prepara solo el corpus sintético en
-  `codex/m4-grounded-fixture`, worktree `m4-grounded-fixture/here`.
+  La GUI cargó la marca cero. La sonda falló antes de armar con `0x88890021`.
+  `1dfa531` corrigió las flags de WASAPI, compiló, pasó la calibración y
+  armó la captura. Antes de reproducir, devolvió una discontinuidad o un
+  timestamp inválido. Hubo cero mediciones. `m3_audio_capture_integrity_red_sol`
+  dejó `7af6935` en `m3-audio-capture-quality-red/here`. Falta su RED y GREEN
+  en la próxima ventana y medir el audio renderizado para nivel 3.
+- M5 B nivel 2 RED: `b66d15a` dio 16 fallos esperados en CLI. `7d7c04d` dio
+  14 fallos esperados en Qt. La base común `bbc1717` en
+  `codex/m5-portability-adapter-integration`, `m5-portability-adapter-integration/here`,
+  integra el servicio `41150f5` y las pruebas. El chat de M5 B coordina dos
+  escritores desde las ramas `codex/m5-portability-adapter-cli-green` y
+  `codex/m5-portability-adapter-qt-green`, con worktrees del mismo nombre
+  bajo `C:/Users/savar/.codex/worktrees/`. Root es dueño de la integración.
+  Las corridas GREEN esperan la ventana. Claims espera M4 B.
+- La preparación de M4 A conserva `99f1ec8`. `m4_grounded_fixture_sol`
+  entregó el corpus de 50 reuniones y 2.000 coincidencias en `a2ce1e1`,
+  rama `codex/m4-grounded-fixture`, worktree `m4-grounded-fixture/here`.
   La implementación espera el cierre de M3.
 
 ## Pausa solicitada — 2026-11-20
