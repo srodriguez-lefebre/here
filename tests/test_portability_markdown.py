@@ -24,6 +24,14 @@ _SOURCE_MARKUP_CANARY = "synthetic-source-markup-canary"
 _EXISTING = b"preexisting destination contents"
 
 
+def _set_timezone_free_dates(metadata_path: Path) -> None:
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    # As in historical M1 recordings, timezone-free dates are unknown to the catalog.
+    metadata["started_at"] = "2026-01-01T12:00:00"
+    metadata["completed_at"] = "2026-01-01T12:05:02"
+    write_json(metadata_path, metadata)
+
+
 @pytest.fixture
 def memory(tmp_path: Path) -> MemoryService:
     sources = tmp_path / "synthetic-sources"
@@ -33,11 +41,7 @@ def memory(tmp_path: Path) -> MemoryService:
         transcript_text=_OLD_TEXT,
         segments=[{"text": _OLD_TEXT}],
     )
-    metadata = json.loads(source.metadata.read_text(encoding="utf-8"))
-    # As in historical M1 recordings, timezone-free dates are unknown to the catalog.
-    metadata["started_at"] = "2026-01-01T12:00:00"
-    metadata["completed_at"] = "2026-01-01T12:05:02"
-    write_json(source.metadata, metadata)
+    _set_timezone_free_dates(source.metadata)
     memory = MemoryService(tmp_path / "configured-library", sessions_root=sources)
     assert memory.ingest_session(source.directory).status == "inserted"
     return memory
@@ -62,6 +66,7 @@ def test_markdown_exports_active_transcript_and_allowed_metadata(
         transcript_text=_ACTIVE_TEXT,
         segments=[{"text": _ACTIVE_TEXT}],
     )
+    _set_timezone_free_dates(revised.metadata)
     (revised.directory / "transcript.md").write_text(
         f"<script>{_SOURCE_MARKUP_CANARY}</script>", encoding="utf-8"
     )
