@@ -88,8 +88,15 @@ y [paquete verde](https://github.com/srodriguez-lefebre/here/actions/runs/460311
 La revisión aprobó `3a9cc11` exacto. [PR #28](https://github.com/srodriguez-lefebre/here/pull/28)
 lo publica con [CI Windows](https://github.com/srodriguez-lefebre/here/actions/runs/46032934133)
 y [workflow de paquete](https://github.com/srodriguez-lefebre/here/actions/runs/46032934126)
-en curso sobre ese SHA. El entorno de wheel no editable se prepara bajo
-la carpeta de evidencia R75 para usar el artefacto exacto cuando llegue.
+sobre ese SHA. **Paquete y wheel verificados a nivel 2.** La corrida
+`46032934126` pasó 110 controles nativos y seis smokes congelados.
+Se verificaron los seis hashes externos, las 736 entradas del ZIP y
+la procedencia limpia del head. El wheel de ese artefacto se instaló en
+un entorno no editable separado, encontró el hit sintético por la ruta
+canónica y el lote `r76-wheel-3a9cc11` pasó cinco. Recibos
+`package-46032934126-verified.json`, `r76-wheel-search-3a9cc11.json` y
+`r76-wheel-3a9cc11.xml` bajo evidencia R75. La suite de CI Windows
+`46032934133` sigue en curso antes del merge.
 Los workflows fijan el checkout del head exacto por ruling 77. El PLAN
 preparado de M3 B conserva la ruta nativa cuando incorpora QtMultimedia.
 El orquestador lo vinculará al merge de A en el PR de documentos.
