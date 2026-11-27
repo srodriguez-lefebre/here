@@ -1326,3 +1326,33 @@ Recibos `post.json`, `heartbeat-python-7e3.xml`, `5-plus-40-py313-03.xml` y
 ative-py313-03.xml` en
 `C:/Users/savar/.codex/evidence/here/m3-native-current-20261127-01/`.
 [PR #28](https://github.com/srodriguez-lefebre/here/pull/28)
+
+
+## 2026-11-27 — M5 B · Reporte parcial y exportación Markdown
+
+Nivel 2 focalizado. El RED `e5efe92` obtuvo tres fallos en 9,02 s de shell.
+Faltaba `meetings` en las respuestas de rollback de la segunda reunión,
+COMMIT ambiguo y cleanup. `d35f31a` pasó 46 casos de CLI, Qt, importación,
+recuperación e interrupción en 86,83 s de shell. La revisión detectó el
+orden A/C/B en Qt. `774ddf8` lo reprodujo con un fallo en 3,48 s de shell.
+`0a3f0ea` pasó 22 casos CLI y Qt en 19,88 s de shell y obtuvo aprobación
+en la nueva revisión. La integración `eb63749` tiene el mismo árbol.
+
+Recibos en `%TEMP%`:
+`m5-import-partial-report-red-e5efe92-20261127.xml`,
+`m5-import-partial-report-green-d35f31a-20261127.xml`,
+`m5-import-partial-order-red-774ddf8-20261127.xml` y
+`m5-import-partial-order-green-0a3f0ea-20261127.xml`.
+
+Markdown: `01de2d0` registró nueve fallos esperados y un fallo por la fecha
+del fixture. Con ese fixture corregido, `974f39a` obtuvo diez fallos
+esperados en 5,48 s (cinco de fachada y cinco de Qt). `5a01130` ajustó
+solo el test de carrera del temporal. El renderer `412bb49` pasó revisión
+estática. Las implementaciones GREEN de fachada y Qt están en curso y sus
+corridas siguen pendientes.
+
+## 2026-11-27 — M4 A · Preparación del handoff
+
+`02ca1bb7` documenta los candidatos exactos de M3 A `7e3bd56` y M3 B
+`912f63f`. El fixture sigue en `a2ce1e1`. La ejecución de M4 espera el
+cierre y rebase de M3 y el PR de documentación de handoff.

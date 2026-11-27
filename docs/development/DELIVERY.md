@@ -1078,6 +1078,15 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Cost if wrong:** corregir la comprobación temporal, recalibrar y
     repetir la observación de audio antes de certificar nivel 3.
 
+74. **Ruling:** el reporte parcial de importación conserva en orden los
+    resultados confirmados. Si el COMMIT es incierto, informa el UUID
+    afectado por separado y conserva su staging. Un fallo de cleanup
+    genera una advertencia de lote. El resultado de error conserva el
+    código 4. Qt muestra cada resultado en la posición del manifiesto
+    y refresca la biblioteca solo tras un commit confirmado.
+    **Cost if wrong:** habría que corregir los reportes de CLI y Qt y
+    repetir los controles de rollback, COMMIT incierto y cleanup.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
@@ -2839,3 +2848,33 @@ Receipts `post.json`, `heartbeat-python-7e3.xml`, `5-plus-40-py313-03.xml`
 and `native-py313-03.xml` are in
 `C:/Users/savar/.codex/evidence/here/m3-native-current-20261127-01/`.
 [PR #28](https://github.com/srodriguez-lefebre/here/pull/28)
+
+
+## 2026-11-27 — M5 B partial import reports and Markdown preparation
+
+Focused level 2. RED `e5efe92` failed three cases in 9.02 s shell time.
+Responses omitted `meetings` after rollback of the second meeting, an
+ambiguous COMMIT or a cleanup failure. `d35f31a` passed 46 CLI, Qt, import,
+recovery and interruption cases in 86.83 s shell time. Independent review
+found Qt ordering A/C/B. RED `774ddf8` reproduced the mismatch with one
+failure in 3.48 s shell time. `0a3f0ea` passed 22 CLI and Qt cases in
+19.88 s shell time and received independent re-review approval. Integration
+`eb63749` shares its verified tree. Ruling 74 records the report behavior.
+
+JUnit receipts in `%TEMP%` are
+`m5-import-partial-report-red-e5efe92-20261127.xml`,
+`m5-import-partial-report-green-d35f31a-20261127.xml`,
+`m5-import-partial-order-red-774ddf8-20261127.xml` and
+`m5-import-partial-order-green-0a3f0ea-20261127.xml`.
+
+Markdown RED `01de2d0` recorded nine expected failures and one fixture date
+failure. With the fixture corrected, `974f39a` returned ten expected failures
+in 5.48 s (five facade and five Qt). Test-only `5a01130` adjusted the temp
+race. Renderer `412bb49` passed static review. Facade and Qt GREEN
+implementations are in progress and their test runs remain pending.
+
+## 2026-11-27 — M4 A handoff preparation
+
+Documentation at `02ca1bb7` records the exact M3 A and M3 B candidates
+`7e3bd56` and `912f63f`. The synthetic fixture remains at `a2ce1e1`.
+M4 execution follows M3 closure and rebase and the handoff docs PR.
