@@ -73,6 +73,10 @@ class _PortabilityBackend(Protocol):
         cancellation: Callable[[], bool],
     ) -> ExportResult: ...
 
+    def export_markdown(
+        self, meeting_id: str, destination: Path, cancellation: Callable[[], bool]
+    ) -> Path: ...
+
     def import_archive(
         self, source: Path, progress: Callable[[int], None], cancellation: Callable[[], bool]
     ) -> ImportReport: ...
@@ -149,6 +153,10 @@ class VisualController(Protocol):
         progress: Callable[[int], None],
         cancellation: Callable[[], bool],
     ) -> ExportResult: ...
+
+    def export_meeting_markdown(
+        self, meeting_id: str, destination: Path, cancellation: Callable[[], bool]
+    ) -> Path: ...
 
     def import_meetings(
         self, source: Path, progress: Callable[[int], None], cancellation: Callable[[], bool]
@@ -238,6 +246,13 @@ class ApplicationUiAdapter:
     ) -> ExportResult:
         return self._portability_backend().export(
             ids, destination, include_audio, progress, cancellation
+        )
+
+    def export_meeting_markdown(
+        self, meeting_id: str, destination: Path, cancellation: Callable[[], bool]
+    ) -> Path:
+        return self._portability_backend().export_markdown(
+            meeting_id, destination, cancellation=cancellation
         )
 
     def import_meetings(
