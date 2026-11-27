@@ -1699,6 +1699,7 @@ class MemoryService:
             return ImportReport(
                 tuple(outcomes[identity] for identity in plans if identity in outcomes),
                 pending_recovery_ids=tuple(pending_recovery_ids),
+                manifest_order=tuple(plans) if pending_recovery_ids else (),
             )
 
     def _publish_portable_meeting(
