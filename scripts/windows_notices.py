@@ -112,7 +112,7 @@ def prepare(destination, wheel, native_build):
     lines = [
         "# Third-party notices",
         "",
-        "here 0.3.0 Windows distribution.",
+        "here 0.4.0 Windows distribution.",
         "",
         "Full license/copyright texts are retained under component-specific paths.",
         "Wheel versions below describe the exact installed locked build environment.",
@@ -387,7 +387,7 @@ def checksums(destination, compiler):
         destination / "compiler-provenance.json", {"version": "6.7.0", "sha256": digest(compiler)}
     )
     bundle = destination / "here"
-    archive = destination / "here-0.3.0-windows-x64.zip"
+    archive = destination / "here-0.4.0-windows-x64.zip"
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as output:
         for path in sorted(bundle.rglob("*")):
             if path.is_file():
