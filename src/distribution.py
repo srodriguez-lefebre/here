@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import ctypes
+import hashlib
 import importlib.metadata
 import json
 import os
@@ -13,6 +14,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from uuid import uuid4
 
 APP_MUTEX = "here.application.94BE3378-6B95-48A1-BD13-C534746C7319"
 
@@ -109,13 +111,45 @@ def _helper_proof() -> dict[str, bool]:
 
 
 def _native_search_proof(data_dir: Path) -> bool:
-    """Observe both native encoders during a real search of an owned empty catalog."""
+    """Observe both native encoders in a real search over one synthetic segment."""
     from here.memory.database import LibraryConnection, open_library
-    from here.memory.models import SearchPage, SearchQuery
+    from here.memory.models import (
+        Meeting,
+        MeetingStatus,
+        SearchPage,
+        SearchQuery,
+        Segment,
+        TranscriptRevision,
+    )
+    from here.memory.repository import MemoryRepository
     from here.memory.search import SearchService
     from here.memory.service import MemoryService
 
-    MemoryService(data_dir).reindex()
+    memory = MemoryService(data_dir)
+    meeting_id, revision_id, segment_id = (str(uuid4()) for _ in range(3))
+    text = "synthetic search smoke"
+    with (
+        contextlib.closing(open_library(data_dir)) as library,
+        MemoryRepository(library).transaction() as repo,
+    ):
+        repo.insert_meeting(Meeting(id=meeting_id, status=MeetingStatus.COMPLETED))
+        repo.insert_revision(
+            TranscriptRevision(
+                id=revision_id,
+                meeting_id=meeting_id,
+                revision_number=1,
+                raw_text=text,
+                provider="synthetic",
+                model="synthetic",
+                origin="smoke",
+                content_hash=hashlib.sha256(text.encode("utf-8")).hexdigest(),
+            )
+        )
+        repo.insert_segments(
+            (Segment(id=segment_id, revision_id=revision_id, ordinal=0, text=text),)
+        )
+        repo.activate_revision(meeting_id, revision_id)
+    memory.reindex()
     aggregate_seen = False
     active_seen = False
 
@@ -131,8 +165,14 @@ def _native_search_proof(data_dir: Path) -> bool:
         library.connection.set_trace_callback(observe)
         return library
 
-    page = SearchService(connect).search(SearchQuery(text="synthetic smoke"))
-    return aggregate_seen and active_seen and page == SearchPage()
+    page = SearchService(connect).search(SearchQuery(text=text))
+    return (
+        aggregate_seen
+        and active_seen
+        and isinstance(page, SearchPage)
+        and not page.degraded
+        and tuple(hit.segment_id for hit in page.items) == (segment_id,)
+    )
 
 
 @contextlib.contextmanager
