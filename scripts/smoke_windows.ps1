@@ -64,9 +64,13 @@ function Check-Bundle([string]$Path, [string]$Label) {
     foreach ($taskExecutable in @('here.exe','here-cli.exe')) {
         $taskReport = Join-Path $taskEvidence ($Label + '-' + $taskExecutable + '.json')
         $taskExit = Invoke-Process (Join-Path $Path $taskExecutable) @('--smoke-check', ('"' + $taskReport + '"'))
-        if ($taskExit -ne 0) { throw "Frozen startup failed for $taskExecutable, exit $taskExit" }
+        if ($taskExit -ne 0) { throw "Frozen startup failed for $taskExecutable ($Label), exit $taskExit" }
         $taskSmoke = Get-Content -Raw -LiteralPath $taskReport | ConvertFrom-Json
         if ($taskSmoke.status -ne 'ok' -or -not $taskSmoke.frozen -or $taskSmoke.checks.provider_configured -or $taskSmoke.checks.hardware_opened -or $taskSmoke.checks.recording_started -or $taskSmoke.checks.editable_finder) { throw 'Frozen smoke violated startup contract' }
+        $taskNativeSearch = $taskSmoke.checks.PSObject.Properties['native_search_v2']
+        if ($null -eq $taskNativeSearch -or $taskNativeSearch.Value -isnot [bool] -or -not $taskNativeSearch.Value) {
+            throw "Frozen native search smoke failed for $taskExecutable ($Label at $Path): expected checks.native_search_v2 to be true"
+        }
         if ($taskExecutable -eq 'here.exe' -and -not $taskSmoke.checks.windowed_stdio_absent) { throw 'GUI unexpectedly has Python console stdio' }
     }
     $taskResult.checks[$Label] = $true

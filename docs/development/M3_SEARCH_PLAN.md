@@ -276,6 +276,97 @@ root reserves any common UI/contract file against B's concurrent GUI integration
 - [ ] Run focused Qt tests and the full offscreen suite; self-review; independent
   agent review; commit as "ui: library tab with search, filters and editing".
 
+## Extensión SQLite y distribución Windows (R75)
+
+R75 incorpora un acelerador privado de la generación de búsqueda al
+instalador y al paquete portable Windows x64. El wheel publicado permanece
+puro y usa la generación canónica Python. La extensión se construye para
+el SQLite que ya trae CPython 3.13.15 y se carga mediante la API normal
+de SQLite en la conexión de búsqueda prevista. R75 conserva los criterios
+y el contrato de consultas de M3.
+
+- [ ] Construir desde el head exacto en Windows x64 con
+  `scripts/build_windows.ps1` y CPython 3.13.15 administrado por `uv`.
+  `scripts/build_search_native.ps1` verifica SHA-256 del ZIP de Zig 0.15.2,
+  de `zig.exe`, del ZIP de amalgamación SQLite 3.53.1 y de `sqlite3.h` y
+  `sqlite3ext.h`. Rechazar el build si `sqlite_source_id()` no coincide
+  exactamente con el identificador fijado. Usar un directorio de salida
+  nuevo y los mismos checks para archivos locales o descargados.
+- [ ] Comprobar que el build genera `_native_search_manifest.py` con
+  `SQLITE_SOURCE_ID` y `DLL_SHA256` para el entorno de congelado y que
+  PyInstaller coloca `_native_search_v2.dll` en
+  `_internal/here/memory/`. Auditar el PE x64, el entrypoint
+  `sqlite3_here_search_v2_init` y la coincidencia entre DLL, manifiesto
+  generado, inventario y procedencia de build. Vincular el hash del
+  binario a fuente, compilador, flags y headers y comprobar los avisos
+  de Zig, MinGW y SQLite en la distribución. Verificar el ZIP portable,
+  el payload instalado y sus checksums. Instalar el wheel por separado
+  en un entorno no editable y comprobar que usa Python con el mismo
+  contrato de búsqueda.
+- [ ] Probar activación en la conexión de búsqueda prevista con
+  `SQLITE_SOURCE_ID` y SHA-256 exactos y DLL de nombre y ubicación fijos
+  respecto del módulo. Verificar que la carga de extensiones solo se
+  habilita durante esa operación y se vuelve a deshabilitar aun si falla.
+  Probar ruta canónica cuando faltan el manifiesto o la DLL, el hash
+  o el source ID difieren, o SQLite no permite cargarla. Comprobar que
+  las conexiones ajenas a búsqueda no habilitan carga.
+- [ ] Comparar bytes de generación v2, páginas, ranking y continuación
+  de cursores en ambos sentidos con la ruta Python. Cubrir tipos, NULL,
+  Unicode, empates INTEGER/REAL, cero con signo, límites de frame y una
+  inversión al interior del orden físico. Cuando la prueba de orden o
+  dominio nativo falla, el replay canónico empieza la sección afectada
+  desde el inicio dentro de la misma vista transaccional R50, sin mezclar
+  bytes parciales. Ejercitar la supresión R50 y sus fallos tipados,
+  el cambio real de generación y la compatibilidad de cursores legados.
+- [ ] En la ventana de verificación del candidato exacto, obtener el
+  benchmark público de búsqueda cálida de 1.000 reuniones y 100.000
+  segmentos, con 5 precalentamientos y 40 muestras válidas, y p95
+  inferior a 500 ms. Medir el heartbeat Qt durante consultas con el
+  límite vigente de 50 ms, registrar cuentas y huellas del fixture y
+  guardar head, máquina, runtime, resultados y recibos. El prototipo
+  R66 de 333,78 ms es diagnóstico de nivel 2. El baseline público
+  de 966,13 ms también es nivel 2. El tiempo del candidato R75 está
+  pendiente.
+- [ ] Requerir revisión independiente, CI Windows y workflow de paquete
+  verdes en el head exacto. Ejecutar el smoke del instalador con datos
+  sintéticos y verificar una búsqueda del producto instalado que
+  ejercite el acelerador con la DLL auditada, además de la auditoría
+  del bundle. Registrar los recibos con sus hashes y el head en
+  `ACCEPTANCE.md` y `DELIVERY.md` antes del merge protegido.
+
+
+### Encoding nativo acotado de ACTIVE (R76)
+
+R76 prioriza ACTIVE tras el p95 de 530,14 ms de R75. La corrida de fases
+2+8 diagnosticó tiempo de encoding y conserva alcance diagnóstico.
+El candidato revisado requiere su propio 5+40 público y heartbeat Qt.
+
+- [ ] Usar el encoder nativo por fila como ruta predeterminada de ACTIVE
+  solo cuando la conexión de búsqueda haya activado la extensión R75 y
+  pueda ejecutar la misma consulta canónica con el mismo ORDER BY. Python
+  conserva la proyección lógica, las relaciones, filtros, bindings, orden,
+  batch256, framing y SHA; SQLite devuelve bytes JSON para TEXT, INTEGER
+  y NULL. Acotar la vida de filas y buffers al lote en curso, dentro de
+  la vista R50. El camino Python sigue disponible.
+- [ ] Conservar byte por byte el JSON y la generación v2. Probar NULL,
+  Unicode, escape JSON, límites INTEGER, empates y límites de lote.
+  Una fila fuera del dominio descarta el estado parcial de ACTIVE, cierra
+  el cursor nativo y repite esa sección desde el inicio por la ruta canónica
+  dentro de la misma vista R50. Cubrir rechazo tardío después de un frame
+  y verificar un digest limpio, orden canónico de errores y rollback/cierre
+  de la vista en errores que deban propagarse.
+- [ ] Verificar generación, páginas, ranking, cursores v2 cruzados,
+  continuaciones legadas y supresión R50 en la integración. Repetir gates
+  y revisión del head exacto con la verificación R75 del paquete. Conservar
+  esquema, formato, toolchain y presupuestos.
+
+**Checkpoint local R76.** En `7b04f76`, la corrida serial de gates
+pasó con 397,395940002 ms p95 (5+40 válidas) y 9,462 ms de gap máximo
+del heartbeat Qt. La revisión estática independiente aprobó el mismo
+head. El checkpoint de [aceptación](ACCEPTANCE.md) registra los recibos
+de nivel 2. La suite completa local, los gates Windows finales y el
+merge siguen pendientes.
+
 ## Closing the group
 
 - Update `README.md` (library tab), `ARCHITECTURE.md` (search service and request

@@ -1,0 +1,141 @@
+param(
+    [Parameter(Mandatory)][string]$Python,
+    [Parameter(Mandatory)][string]$OutputDirectory,
+    [string]$ToolchainArchives
+)
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
+if (-not $IsWindows) { throw 'Build the native search extension on Windows x64' }
+
+$taskRoot = Split-Path -Parent $PSScriptRoot
+$taskSource = Join-Path $taskRoot 'native/search_v2.c'
+$taskOutput = [IO.Path]::GetFullPath($OutputDirectory)
+$taskZigVersion = '0.15.2'
+$taskSQLiteVersion = '3.53.1'
+$taskSQLiteSourceId = '2026-05-05 10:34:17 c88b22011a54b4f6fbd149e9f8e4de77658ce58143a1af0e3785e4e6475127e9'
+$taskZigFolder = "zig-x86_64-windows-$taskZigVersion"
+$taskSQLiteFolder = 'sqlite-amalgamation-3530100'
+$taskZigArchiveHash = '3a0ed1e8799a2f8ce2a6e6290a9ff22e6906f8227865911fb7ddedc3cc14cb0c'
+$taskZigExecutableHash = 'd408dd38eed3e5204af841bcebf70502a4dbbb8399a3a3262be55059370bc018'
+$taskSQLiteArchiveHash = '36ad6e7f38540a3b21a2ac36340833f0a9e426bc1c752751c3ba669466827eae'
+$taskHeaderHashes = [ordered]@{
+    'sqlite3.h' = '16d6e2f265fb13ece42329da39a865d4c540045b444d16b4bf9f7e1a7e39408f'
+    'sqlite3ext.h' = 'ac9645e5c9ff0cf176efdd6e75cb5e98f46295d38e02db5c4d208826a39ab4be'
+}
+$taskZigUrl = "https://ziglang.org/download/$taskZigVersion/$taskZigFolder.zip"
+$taskSQLiteUrl = "https://www.sqlite.org/2026/$taskSQLiteFolder.zip"
+$taskBundleNoticePrefix = '_internal/notices/native-search'
+
+function Get-SHA256([string]$Path) {
+    (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+}
+
+function Assert-SHA256([string]$Path, [string]$Expected) {
+    if ((Get-SHA256 $Path) -ne $Expected) { throw "Native build input checksum mismatch: $Path" }
+}
+
+function Expand-PinnedArchive([string]$Url, [string]$Name, [string]$Expected) {
+    $taskArchive = Join-Path $taskWork "$Name.zip"
+    if ($ToolchainArchives) {
+        Copy-Item -LiteralPath (Join-Path $ToolchainArchives "$Name.zip") -Destination $taskArchive
+    } else {
+        Invoke-WebRequest -Uri $Url -OutFile $taskArchive
+    }
+    Assert-SHA256 $taskArchive $Expected
+    [IO.Compression.ZipFile]::ExtractToDirectory($taskArchive, $taskWork)
+    Join-Path $taskWork $Name
+}
+
+if (Test-Path -LiteralPath $taskOutput) { throw 'Native build requires a new output directory' }
+$taskRuntimeId = & $Python -I -B -c 'import platform, sqlite3; assert platform.machine() == "AMD64"; print(sqlite3.connect(":memory:").execute("select sqlite_source_id()").fetchone()[0])'
+if ($LASTEXITCODE -ne 0 -or $taskRuntimeId -cne $taskSQLiteSourceId) {
+    throw 'Build Python does not match the pinned Windows x64 SQLite source ID'
+}
+$taskSourceHash = Get-SHA256 $taskSource
+$taskWork = Join-Path ([IO.Path]::GetTempPath()) ("here-native-" + [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $taskWork | Out-Null
+try {
+    $taskZigRoot = Expand-PinnedArchive $taskZigUrl $taskZigFolder $taskZigArchiveHash
+    $taskHeaderRoot = Expand-PinnedArchive $taskSQLiteUrl $taskSQLiteFolder $taskSQLiteArchiveHash
+    $taskZig = Join-Path $taskZigRoot 'zig.exe'
+    Assert-SHA256 $taskZig $taskZigExecutableHash
+    foreach ($taskHeader in $taskHeaderHashes.Keys) {
+        Assert-SHA256 (Join-Path $taskHeaderRoot $taskHeader) $taskHeaderHashes[$taskHeader]
+    }
+    $taskPayload = Join-Path $taskWork 'payload'
+    $taskNotices = Join-Path $taskPayload 'native-search'
+    New-Item -ItemType Directory -Path $taskNotices -Force | Out-Null
+    $taskStagedSource = Join-Path $taskWork 'search_v2.c'
+    Copy-Item -LiteralPath $taskSource -Destination $taskStagedSource
+    Assert-SHA256 $taskStagedSource $taskSourceHash
+    $taskDll = Join-Path $taskPayload '_native_search_v2.dll'
+    $taskFlags = @('-target','x86_64-windows-gnu','-std=c11','-O3','-Wall','-Wextra','-Werror','-g0','-shared')
+    # Zig and Clang consult environment overrides for libraries, headers and flags.
+    # Give the compiler exactly the pinned library tree and an owned working area.
+    $taskStart = [Diagnostics.ProcessStartInfo]::new()
+    $taskStart.FileName = $taskZig
+    $taskStart.WorkingDirectory = $taskWork
+    $taskStart.UseShellExecute = $false
+    $taskWindows = [Environment]::GetFolderPath([Environment+SpecialFolder]::Windows)
+    $taskStart.Environment.Clear()
+    $taskStart.Environment['SystemRoot'] = $taskWindows
+    $taskStart.Environment['WINDIR'] = $taskWindows
+    $taskStart.Environment['PATH'] = @([Environment]::SystemDirectory, $taskWindows) -join ';'
+    $taskStart.Environment['TMP'] = $taskWork
+    $taskStart.Environment['TEMP'] = $taskWork
+    $taskStart.Environment['ZIG_LIB_DIR'] = Join-Path $taskZigRoot 'lib'
+    $taskStart.Environment['ZIG_LOCAL_CACHE_DIR'] = Join-Path $taskWork 'local-cache'
+    $taskStart.Environment['ZIG_GLOBAL_CACHE_DIR'] = Join-Path $taskWork 'global-cache'
+    foreach ($taskArgument in (@('cc') + $taskFlags + @('-I',$taskHeaderRoot,$taskStagedSource,'-o',$taskDll))) {
+        $taskStart.ArgumentList.Add($taskArgument)
+    }
+    $taskCompilerProcess = [Diagnostics.Process]::Start($taskStart)
+    try {
+        $taskCompilerProcess.WaitForExit()
+        if ($taskCompilerProcess.ExitCode -ne 0) {
+            throw "Native search compiler failed with exit $($taskCompilerProcess.ExitCode)"
+        }
+    } finally {
+        $taskCompilerProcess.Dispose()
+    }
+
+    $taskDllHash = Get-SHA256 $taskDll
+    @(
+        '# Generated by scripts/build_search_native.ps1.'
+        "DLL_SHA256 = '$taskDllHash'"
+        "SQLITE_SOURCE_ID = '$taskSQLiteSourceId'"
+    ) | Set-Content -LiteralPath (Join-Path $taskPayload '_native_search_manifest.py') -Encoding ascii
+    Copy-Item -LiteralPath (Join-Path $taskZigRoot 'LICENSE') -Destination (Join-Path $taskNotices 'Zig-LICENSE.txt')
+    Copy-Item -LiteralPath (Join-Path $taskZigRoot 'lib/libc/mingw/COPYING') -Destination (Join-Path $taskNotices 'MinGW-COPYING.txt')
+    @(
+        "SQLite $taskSQLiteVersion"
+        'https://sqlite.org/copyright.html'
+        'The SQLite source and interface headers are in the public domain.'
+        'The extension uses the SQLite C interface from the packaged Python runtime.'
+    ) | Set-Content -LiteralPath (Join-Path $taskNotices 'SQLite-PUBLIC-DOMAIN.txt') -Encoding ascii
+    $taskNoticePaths = @(Get-ChildItem -LiteralPath $taskNotices -File | Sort-Object Name | ForEach-Object {
+        "$taskBundleNoticePrefix/$($_.Name)"
+    })
+    [ordered]@{
+        path = '_internal/here/memory/_native_search_v2.dll'
+        sha256 = $taskDllHash
+        architecture = 'x86_64'
+        entrypoint = 'sqlite3_here_search_v2_init'
+        source = @{ path = 'native/search_v2.c'; sha256 = $taskSourceHash }
+        compiler = @{ version = $taskZigVersion; sha256 = $taskZigArchiveHash; executable_sha256 = $taskZigExecutableHash; url = $taskZigUrl }
+        sqlite_headers = @{ version = $taskSQLiteVersion; sha256 = $taskSQLiteArchiveHash; url = $taskSQLiteUrl; files = $taskHeaderHashes }
+        sqlite_source_id = $taskSQLiteSourceId
+        compiler_flags = $taskFlags
+        notices = $taskNoticePaths
+    } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $taskPayload 'native-search-provenance.json') -Encoding utf8
+    New-Item -ItemType Directory -Path $taskOutput -Force | Out-Null
+    $taskOutputFiles = @('_native_search_v2.dll', '_native_search_manifest.py', 'native-search-provenance.json', 'native-search')
+    foreach ($taskFile in $taskOutputFiles) {
+        Copy-Item -LiteralPath (Join-Path $taskPayload $taskFile) -Destination $taskOutput -Recurse
+    }
+} finally {
+    $taskResolvedWork = (Resolve-Path -LiteralPath $taskWork).Path
+    if ($taskResolvedWork -ceq $taskWork) {
+        Remove-Item -LiteralPath $taskResolvedWork -Recurse -Force
+    }
+}

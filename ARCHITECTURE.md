@@ -65,10 +65,10 @@ creates temporary local settings, initializes the real desktop, drains owned job
 and checks rejected/timeout child IPC without hardware, sessions or provider calls.
 
 The Windows interface and live logo run in the same process as the application
-controller. `ApplicationEventBridge` is the only asynchronous entry into Qt: it
-marshals application callbacks onto the UI event loop, then distributes immutable
-snapshots and the reduced combined audio level. Widgets never open an audio
-device, parse logs, inspect session files, or invoke the CLI.
+controller. `ApplicationEventBridge` marshals application callbacks onto the UI
+event loop and distributes immutable snapshots and the reduced combined audio
+level. Widgets never open an audio device, parse logs, inspect session files,
+or invoke the CLI.
 
 `ApplicationUiAdapter` is the narrow integration seam. It translates UI intent
 into the stable application commands, including a combined-source `StartRequest`.
@@ -386,8 +386,80 @@ exceptions.
 Reindex uses the existing `segments_fts` index and rebuilds it from active complete
 revisions visible through suppression. It runs locally and preserves historical
 revisions and partial transcripts. Lifecycle logic stays in the memory core,
-which has no dependency on Qt or Typer. Search and desktop playback integration
-are tracked in M3.
+which has no dependency on Qt or Typer.
+
+## Library search and desktop workers
+
+The M3 A candidate's `SearchService` reads the same catalog used by the
+application controller. Its connection factory opens one fresh connection per
+read and closes it after the R50 guarded view. That view resolves R42 suppression
+by meeting UUID and exact origin/fingerprint aliases. SQL applies suppression
+and date, status and participant filters before keyset paging. An unavailable
+suppression registry fails the read with a typed catalog error.
+
+Empty normalized search uses the meeting list, ordered by descending start date
+with unknown dates last and meeting ID as the tie-breaker. Complete transcript
+search binds a quoted token expression to FTS5 and uses BM25 ranking. The optional
+active-partial branch uses literal title/segment matching and rank zero in the
+same result page.
+When FTS5 is unavailable, both branches use the literal route and the search page
+carries a degraded flag. Search returns plain-text snippets and preserves
+nullable dates and segment bounds. Maintenance delegates once to
+`MemoryService.reindex()` on the same root.
+
+The version 2 cursor binds a fixed-size digest of the normalized query and
+filters. Ranked cursors also bind backend and corpus generation. Valid version
+1 continuations remain readable. The FTS route selects each segment's best BM25
+match before applying the cursor and limit. The generation includes every
+logical FTS document and the eligibility data, including the coherent
+suppression snapshot, in the same
+transaction as the page. An obsolete ranked continuation raises
+`InvalidInput(reason="corpus_changed")`. List continuations keep the date/ID
+keyset.
+
+`LibraryView` calls the application adapter through `BackgroundJobs`. A 200 ms
+debounce coalesces search input. Request IDs and separate page, participant and
+detail generations prevent older callbacks from changing the current view.
+Closing the detail invalidates its outstanding reads. A corpus-change error on
+continuation restarts the search at page one. Title edits send the displayed row version
+to the memory service, which updates the catalog and indexed title together.
+
+The desktop registers a deletion acknowledgement on the composed memory service.
+A tracked worker sends a queued Qt ticket and waits for the view to invalidate
+its reads. Replacement reads wait for the worker to settle, so a late result
+cannot restore a row hidden by accepted deletion. Selecting a transcript segment
+emits a reference with its meeting, revision and segment IDs. Playback and
+authoritative audio target resolution are M3 B work.
+
+## Windows search acceleration (M3 A, ruling 75)
+
+The R75 distribution contract adds a private SQLite extension to the frozen
+Windows x64 installer and portable package. The published pure Python wheel
+uses the canonical Python generation path. The Windows build checks the pinned
+Zig 0.15.2 archive and compiler executable and the SQLite 3.53.1 archive and
+interface headers before compilation. The extension uses the SQLite already
+shipped with the packaged CPython runtime. The build records input and DLL
+hashes, compiler flags, architecture, SQLite source ID and notices in the
+distribution provenance and inventory.
+
+The frozen memory package carries a generated private manifest and the fixed
+adjacent `_native_search_v2.dll`. On the intended search connection, the loader
+checks the exact runtime `sqlite_source_id()` against `SQLITE_SOURCE_ID` and
+verifies the DLL SHA-256 against the manifest. It uses SQLite's normal extension
+loading API with the fixed entrypoint and disables extension loading after the
+attempt. Other connections retain their existing configuration. The canonical
+Python path remains available when the extension is unavailable or incompatible.
+
+Search still owns its query, rank, cursor and generation contracts. The
+accelerator must preserve the exact ordered v2 bytes, including frame boundaries
+and storage types, and keep v2 cursors interoperable with the Python path.
+When native ordering or the input domain cannot be proved, search discards
+the partial native section and replays it canonically within the same R50
+read view. Generation and page fetch use that view through completion, with
+its suppression snapshot and existing failure semantics. Packaging provenance,
+installed-product smoke, exact-head Windows CI and the existing responsiveness
+gates are verified through the [M3 search plan](docs/development/M3_SEARCH_PLAN.md).
+
 
 ## Existing Audio Transcription
 

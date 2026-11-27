@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import ctypes
+import hashlib
 import importlib.metadata
 import json
 import os
@@ -13,6 +14,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from uuid import uuid4
 
 APP_MUTEX = "here.application.94BE3378-6B95-48A1-BD13-C534746C7319"
 
@@ -108,6 +110,71 @@ def _helper_proof() -> dict[str, bool]:
     return {"helper_rejected_request": rejected, "helper_timeout_reaped": True}
 
 
+def _native_search_proof(data_dir: Path) -> bool:
+    """Observe both native encoders in a real search over one synthetic segment."""
+    from here.memory.database import LibraryConnection, open_library
+    from here.memory.models import (
+        Meeting,
+        MeetingStatus,
+        SearchPage,
+        SearchQuery,
+        Segment,
+        TranscriptRevision,
+    )
+    from here.memory.repository import MemoryRepository
+    from here.memory.search import SearchService
+    from here.memory.service import MemoryService
+
+    memory = MemoryService(data_dir)
+    meeting_id, revision_id, segment_id = (str(uuid4()) for _ in range(3))
+    text = "synthetic search smoke"
+    with (
+        contextlib.closing(open_library(data_dir)) as library,
+        MemoryRepository(library).transaction() as repo,
+    ):
+        repo.insert_meeting(Meeting(id=meeting_id, status=MeetingStatus.COMPLETED))
+        repo.insert_revision(
+            TranscriptRevision(
+                id=revision_id,
+                meeting_id=meeting_id,
+                revision_number=1,
+                raw_text=text,
+                provider="synthetic",
+                model="synthetic",
+                origin="smoke",
+                content_hash=hashlib.sha256(text.encode("utf-8")).hexdigest(),
+            )
+        )
+        repo.insert_segments(
+            (Segment(id=segment_id, revision_id=revision_id, ordinal=0, text=text),)
+        )
+        repo.activate_revision(meeting_id, revision_id)
+    memory.reindex()
+    aggregate_seen = False
+    active_seen = False
+
+    def observe(statement: str) -> None:
+        nonlocal aggregate_seen, active_seen
+        if statement.startswith("SELECT here_search_v2_fts_batch("):
+            aggregate_seen = True
+        elif statement.startswith("SELECT here_search_v2_active_row("):
+            active_seen = True
+
+    def connect() -> LibraryConnection:
+        library = open_library(data_dir)
+        library.connection.set_trace_callback(observe)
+        return library
+
+    page = SearchService(connect).search(SearchQuery(text=text))
+    return (
+        aggregate_seen
+        and active_seen
+        and isinstance(page, SearchPage)
+        and not page.degraded
+        and tuple(hit.segment_id for hit in page.items) == (segment_id,)
+    )
+
+
 @contextlib.contextmanager
 def _isolated_environment(root: Path):
     keys = (
@@ -147,7 +214,8 @@ def smoke_check(report_path: Path) -> int:
     }
     try:
         with tempfile.TemporaryDirectory(prefix="here-smoke-") as scratch:
-            with _isolated_environment(Path(scratch)):
+            scratch_root = Path(scratch)
+            with _isolated_environment(scratch_root):
                 # Imports are local-only. Constructing OpenAI clients and invoking
                 # capture/diagnostic operations are deliberately outside this check.
                 import here.application  # noqa: F401
@@ -183,6 +251,11 @@ def smoke_check(report_path: Path) -> int:
                 desktop.overlay.close()
                 desktop.application.processEvents()
                 checks.update(_helper_proof())
+                if report["frozen"] and sys.platform == "win32":
+                    native_search = _native_search_proof(scratch_root / "native-search")
+                    checks["native_search_v2"] = native_search
+                    if not native_search:
+                        raise RuntimeError("Frozen search did not use the audited SQLite extension")
                 if not checks["desktop_visible"] or checks["recording_started"]:
                     raise RuntimeError("Desktop startup check failed")
                 report["status"] = "ok"

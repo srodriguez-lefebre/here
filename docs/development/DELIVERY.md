@@ -979,6 +979,153 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Costo si falla:** si el usuario restablece ese requisito, pedir review sobre
     el head vigente de cada PR que siga abierto antes de mergear.
 
+65. **2026-11-13 — Defaults internos del export portable v1.** La fachada recibe
+    la instancia compuesta de `MemoryService`. El callback de progreso recibe
+    bytes acumulados de payload y la cancelación se consulta con un callable
+    sin argumentos. Cancelar antes de publicar levanta `ExportCancelled`, una
+    categoría local de `LibraryError`, y ejecuta la limpieza del temporal propio.
+    `manifest.json` lista `files` con `path`, `size` y `sha256` en hex minúsculo.
+    `meeting.json` contiene `audio_assets` y cada `revision.json` sus `audio_links`
+    con nombre fuente seguro. El audio omitido conserva metadatos y enlaces,
+    usa estado `missing` y ruta portable nula. El modo inicial usa ZIP_STORED
+    para mantener los límites de ratio del importador. Los defaults se comparten
+    con el importador y quedan sujetos a los tests de round-trip. Claims y
+    respuestas esperan el handoff de M4 B.
+    **Costo si falla:** ajustar el contrato privado y sus fixtures antes de
+    publicar formato 1, conservando identidad, hashes y aceptación.
+
+66. **2026-11-13 — Prototipo SQLite nativo acotado para el p95 de M3 A.** El
+    usuario autorizó un prototipo de diagnóstico en worktree separado, con
+    corpus sintético y el mismo recorrido público, guard, proyecciones completas,
+    oráculos y presupuesto estricto de menos de 500 ms. Los insumos de compilación
+    quedan en el scratch del worktree con versiones y hashes registrados. La
+    autorización cubre la medición. Incorporar una dependencia compilada al
+    producto requiere una decisión posterior. El resultado queda como evidencia
+    de diagnóstico y no modifica la definición de terminado ni el criterio.
+    **Costo si falla:** descartar el prototipo, conservar el candidato funcional y
+    mantener abierto el criterio de rendimiento.
+
+67. **2026-11-13 — Lectura acotada de metadatos ZIP de portabilidad v1.**
+    La inspección comprueba los encabezados del directorio central en el mismo
+    archivo abierto y admite hasta 32 MiB de directorio y 8 MiB de manifiesto.
+    El formato exportado usa nombres de rol canónicos con UUIDs y números, una
+    entrada compacta por archivo y sin comentarios de payload. Incluso con
+    10.000 roles, sus metadatos quedan por debajo de esos topes. El manifiesto
+    comprimido admite 1,125 MiB extra para la expansión normal de DEFLATE.
+    Se revisan como máximo 64 campos extra por entrada antes de llamar a
+    `zipfile`, incluyendo la identidad de cualquier alias Unicode. Se rechaza
+    relleno excesivo antes de cargarlo. Se preservan ZIP64 y los límites de
+    10.000 entradas, 20 GiB declarados y ratio 100:1, sin extraer archivos al
+    inspeccionar. Los checks de tamaños y SHA-256 de payload esperan staging.
+    **Costo si falla:** ajustar el presupuesto de metadatos sobre archivos
+    válidos y repetir pruebas hostiles, sin aflojar límites de payload.
+
+68. **2026-11-13 — Límite simétrico para el JSON de paquetes portables.** El
+    usuario autorizó 32 MiB acumulados para los documentos JSON de cada paquete,
+    aplicado antes de publicar una exportación y antes de cargar payloads en la
+    importación. Se conserva el límite total de 20 GiB y el de 8 MiB del
+    manifiesto. El usuario puede dividir selecciones grandes en varios paquetes.
+    La implementación y las pruebas de borde quedan pendientes en esta pausa.
+    **Costo si falla:** medir el uso de memoria y ajustar la lectura por lotes
+    bajo una nueva decisión de alcance, conservando la simetría del formato.
+
+69. **2026-11-20 — Reanudación y modelo de ejecución.** El usuario reanuda
+    M3–M5 desde la pausa y elige GPT‑6.2 Sol para los chats y subagentes activos.
+    La orden se aplica a los modelos que ejecutan el trabajo de ingeniería. El
+    modelo de producto de M4 se decide en su propio hito según ruling 7.
+    **Costo si falla:** reactivar el rol correspondiente con el modelo indicado
+    desde su rama y sus recibos, sin duplicar el trabajo ya entregado.
+
+70. **2026-11-20 — Candidato Windows para reproducción WAV de M3 B.** Se prueba
+    el plugin Media Foundation de Qt Multimedia 6.11.2 que trae el wheel fijado
+    de PySide6. El paquete registra el módulo, la DLL y el plugin en su inventario
+    y adjunta los avisos de Qt Multimedia, `dr_libs` y TLSF. La revisión estática
+    verificó la procedencia de los binarios y de los avisos. El workflow debe
+    verificar los archivos producidos y el smoke posterior del instalador. La
+    carga del backend y el seek se verifican con audio sintético reproducido en
+    el ejecutable congelado. La selección es provisional hasta esas corridas.
+    Windows 11 N requiere Media Feature Pack para este backend.
+    [Microsoft Support](https://support.microsoft.com/en-us/windows/experience/platform-variants/media-feature-pack-for-windows-n)
+    **Costo si falla:**
+    revisar el backend de Qt y sus avisos antes del gate de distribución y
+    repetir el build y el seek con el candidato que corresponda.
+
+71. **2026-11-20 — Alcance del heartbeat de M3 A.** La instrumentación del
+    arranque registró ocho `VACUUM` de reconciliación y cambios de fase de
+    tombstones antes del primer tick. El SPEC mide los gaps durante una
+    consulta. El arnés usa la inyección `recovery_service` que ya existe para
+    aislar ese trabajo de arranque. Mantiene el adaptador de consultas, el
+    catálogo, la vista de supresión, workers y render reales. Exige las mismas
+    ocho consultas y el límite de 50 ms, con verificación de cuentas y huellas
+    antes del arranque, al medir y después del drenaje. El fallo anterior se
+    conserva como diagnóstico de arranque. **Costo si falla:** corregir el
+    arnés y repetir la corrida con el mismo catálogo y los mismos límites.
+
+72. **Ruling:** si el `audio.wav` implícito y una ruta declarada en
+    `capture_sources` comparan igual como `Path` de Windows, el reintento
+    exige además identidad física del archivo con `samefile`, después del
+    guard del rol. Se conserva la autoridad de captura v1 para alias
+    legítimos del mismo archivo.
+    **Cost if wrong:** habría que revisar la compatibilidad de alias y
+    repetir los controles de archivos distintos y del mismo archivo.
+
+73. **Ruling:** la sonda aislada de reproducción usa el reloj QPC en
+    unidades de 100 ns del mismo `GetBuffer`. Entre paquetes compara el
+    avance del reloj con los frames y tolera hasta 1 ms inclusive.
+    Ante discontinuidad verifica ambas orillas. También verifica el flag
+    `TimestampError` del paquete y los 200 ms de silencio. El criterio
+    de seek sigue en 250 ms y la sonda no persiste PCM.
+    **Cost if wrong:** corregir la comprobación temporal, recalibrar y
+    repetir la observación de audio antes de certificar nivel 3.
+
+74. **Ruling:** el reporte parcial de importación conserva en orden los
+    resultados confirmados. Si el COMMIT es incierto, informa el UUID
+    afectado por separado y conserva su staging. Un fallo de cleanup
+    genera una advertencia de lote. El resultado de error conserva el
+    código 4. Qt muestra cada resultado en la posición del manifiesto
+    y refresca la biblioteca solo tras un commit confirmado.
+    **Cost if wrong:** habría que corregir los reportes de CLI y Qt y
+    repetir los controles de rollback, COMMIT incierto y cleanup.
+
+75. **2026-11-27 — Extensión SQLite compilada para M3 A.** El usuario
+    autoriza incorporar la extensión y su toolchain de Windows al producto
+    y pide continuar hasta cerrar M5. Ruling 66 conserva el alcance histórico
+    de los prototipos. El candidato de producto mantiene los bytes, los
+    cursores v2 y la compatibilidad legada, la vista y supresión R50, el
+    ranking y la ruta canónica ante entradas fuera del dominio nativo.
+    El binario se construye con insumos fijados y verificables, con procedencia
+    y avisos en la distribución. La aceptación exige equivalencia, p95 de
+    búsqueda <500 ms, heartbeat <50 ms, revisión independiente y CI Windows
+    con el head exacto antes del merge protegido. Los demás gates de M3–M5,
+    ruling 64 y la omisión por ruling 5 conservan su alcance.
+    **Cost if wrong:** corregir o retirar el acelerador y repetir los controles
+    y gates sobre el candidato resultante, conservando los resultados previos.
+
+76. **2026-11-27 — Acelerar el encoding de ACTIVE dentro de R75.** El
+    5+40 sin instrumentación de `4ba043e` dio 530,14 ms p95 y falló. La
+    medición 2+8 separada en el mismo head registró 246,94 ms de mediana
+    para ACTIVE, 116,78 ms para FTS nativo y 2,78 ms para cargar la DLL.
+    Se prioriza el encoding de filas ACTIVE en la extensión ya autorizada.
+    Python conserva la consulta y el ORDER BY canónicos, batch256, framing
+    y SHA; SQLite entrega bytes JSON idénticos para TEXT/INTEGER/NULL.
+    Todo valor fuera del dominio reinicia la sección canónica dentro
+    de la misma vista R50, conservando el orden de errores. Sin cambios de
+    esquema, formato, supresión, ranking, presupuestos o toolchain. La
+    medición instrumentada es nivel 2 diagnóstico. Solo un 5+40 público
+    nuevo y un heartbeat nuevo del candidato pueden satisfacer los gates.
+    **Cost if wrong:** corregir o retirar esta ruta y repetir equivalencia,
+    regresiones y los gates del candidato con recibos nuevos.
+
+77. **2026-11-27 — Checkout exacto para los gates Windows.** En un evento de
+    pull request, CI y el build de Windows usan el SHA del head publicado
+    como ref de checkout. Push y despacho manual usan el SHA del evento.
+    Antes de verificar, el orquestador comprueba que el head incluye el
+    estado de `origin/main`. La revisión, la evidencia de CI y la
+    procedencia del paquete se vinculan al head que pasa a
+    `--match-head-commit`. Se conservan los jobs y los requisitos de §7.
+    **Cost if wrong:** corregir la referencia y repetir los gates en el
+    head revisado.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings

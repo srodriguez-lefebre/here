@@ -8,10 +8,11 @@ import os
 import re
 import shutil
 import sqlite3
-from contextlib import ExitStack, contextmanager
+from contextlib import ExitStack, contextmanager, nullcontext
 from contextvars import ContextVar
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
+from functools import partial
 from pathlib import Path, PureWindowsPath
 from typing import Any, Callable, Iterable, Iterator
 from uuid import UUID, uuid4
@@ -59,7 +60,12 @@ from here.memory.models import (
 from here.memory.repository import MemoryRepository
 from here.output.metadata import SessionMetadata
 from here.output.ownership import FileLease, LeaseBusy
-from here.output.paths import UnsafeSessionPath, session_artifact_path, validate_session_directory
+from here.output.paths import (
+    UnsafeSessionPath,
+    preflight_session_artifacts,
+    session_artifact_path,
+    validate_session_directory,
+)
 from here.output.session_writer import read_session_metadata
 
 
@@ -296,27 +302,37 @@ def _origin_pair(value: object) -> tuple[str, str]:
     return path, fingerprint
 
 
-def _deletion_registry(data_dir: Path) -> tuple[tuple[_DeletionRecord, ...], tuple[str, ...]]:
+def _deletion_registry(
+    data_dir: Path, *, preflight_under_lock: bool = False
+) -> tuple[tuple[_DeletionRecord, ...], tuple[str, ...]]:
     """The sole registry parser, shared by locked reads, writers and recovery."""
     try:
         directory = managed_path(data_dir, ".deletions", directory=True)
-        try:
-            entries = sorted(directory.iterdir(), key=lambda entry: entry.name)
-        except FileNotFoundError:
-            return (), ()
         records = []
         stages = []
-        # Validate EVERY role/path before opening even the first final record.
         finals = []
-        for entry in entries:
-            stage = re.fullmatch(r"\.([0-9a-f-]{36})\.json\.[A-Za-z0-9_-]{8}\.stage", entry.name)
-            if stage is not None and _is_uuid(stage[1]):
-                session_artifact_path(directory, entry.name)
-                stages.append(entry.name)
-            elif entry.suffix == ".json" and _is_uuid(entry.stem):
-                finals.append(session_artifact_path(directory, entry.name))
-            else:
-                raise ValueError("Unrecognized deletion registry entry retained")
+        preflight = (
+            preflight_session_artifacts(directory)
+            if preflight_under_lock
+            else nullcontext(partial(session_artifact_path, directory))
+        )
+        # Finish every role/path check and exit the preflight before any read.
+        with preflight as check_artifact:
+            try:
+                entries = sorted(directory.iterdir(), key=lambda entry: entry.name)
+            except FileNotFoundError:
+                return (), ()
+            for entry in entries:
+                stage = re.fullmatch(
+                    r"\.([0-9a-f-]{36})\.json\.[A-Za-z0-9_-]{8}\.stage", entry.name
+                )
+                if stage is not None and _is_uuid(stage[1]):
+                    check_artifact(entry.name)
+                    stages.append(entry.name)
+                elif entry.suffix == ".json" and _is_uuid(entry.stem):
+                    finals.append(check_artifact(entry.name))
+                else:
+                    raise ValueError("Unrecognized deletion registry entry retained")
         for path in finals:
             value = json.loads(path.read_text(encoding="utf-8"))
             if (
@@ -381,7 +397,7 @@ def catalog_read_view(library: LibraryConnection) -> Iterator[SuppressionSnapsho
             lock = _FileLock(managed_path(library.data_dir, ".memory.lock"))
             library.execute("BEGIN")
             owned_transaction = True
-            records, _ = _deletion_registry(library.data_dir)
+            records, _ = _deletion_registry(library.data_dir, preflight_under_lock=True)
             snapshot = _suppression_snapshot(library, records)
         except sqlite3.Error as exc:
             raise storage_error(exc) from exc

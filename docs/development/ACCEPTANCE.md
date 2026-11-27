@@ -20,14 +20,65 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M2 · criterio 15 | Suite completa en CI de Windows sin credencial real ni display | Corrida hospedada sobre el head exacto del PR M2 B | Nivel 2. CI `43461764790` pasó 1273 pruebas y omitió dos smokes de wheel, que pasaron en la corrida no editable. Head `55d68e2`. |
 | M2 | Deletion clears managed memory without resurrection | DB/FTS/files/backup inspection after restart | Nivel 2 en `r62-green-3-61a5088c` (110 pases) y CI `43461764790` (1273 pases). Incluye la matriz R42 de kill/reinicio y orígenes externos. Revisión independiente y PR #25 mergeados. |
 | M2 · 0.3.0 | Installed wheel and Windows package | Fresh wheel and stable installer artifact with checksums | Nivel 2. `m2-030-wheel-a4e464a319f7-a98d6f06` pasó 4 smokes. Package `43461764783` pasó la instalación estable con datos sintéticos y publicó el artefacto `14056018512`; sus seis hashes fueron verificados. |
-| M3 | Listing/filter/search and original moment navigation | End-to-end Qt selection and seek plus real WAV marker playback | Open |
-| M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | Abierto. `r63-query-benchmark-1` en `ca80f49` con fuente `64013ade` falló por p95 de 879,4833999891125 ms frente al límite de 500 ms. Cinco precalentamientos y 40 muestras válidas, mediana 809,5637999940664 ms. Nivel 2 y review independiente aprobada para los focos R63 de oráculo (8), generación (10) y regresión (240). R58 `12774` verificó ocho consultas UI con máximo de 8,9216 ms en su propio alcance. Sin corrida combinada ni certificación nueva. |
+| M3 | Listing/filter/search and original moment navigation | End-to-end Qt selection and seek plus real WAV marker playback | Abierto. Focos históricos de búsqueda, Biblioteca y ACK de borrado registrados abajo. Resolver, reproducción y seek real pendientes. |
+| M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | Gates locales aprobados, nivel 2 en `7b04f76`. Búsqueda pública 397,395940002 ms p95 (5+40 válidas) y heartbeat Qt con gap máximo de 9,462 ms. La suite completa local obtuvo un fallo de arnés. El foco corregido pasó 13 casos. Gates Windows finales y merge pendientes. |
 | M4 | Multi-meeting answers/extractions with valid evidence | Source-resolution and semantic synthetic corpus, provider smoke | Open |
 | M4 | Uncertainty/injection/cancellation/deletion remain honest | No-evidence, invalid-citation, concurrent delete/redaction tests | Open |
 | M5 | Offline first run, settings, tray/startup and safe exit | Qt, process concurrency and Windows settings tests | Open |
 | M5 | Portable data including optional audio and citations | Export/import on a fresh root, hashes and hostile ZIP tests | Open |
 | M5 | Install/update/uninstall preserve user memory | N to N+1 installation and separate uninstall test | Open |
 | All | PR groups reviewed and merged | PR URLs, reviewed heads, CI and merge SHAs, applicable review threads | M2 A mergeado en `53712c5` (PR21), M2 B en `b4b3d1b` (PR25). Siete grupos pendientes con revisión independiente, CI Windows y merge protegido. Ruling 64 omite Copilot. |
+
+## Checkpoint de integración M3 A · 2026-11-13
+
+El candidato `31488693152067ae58eeacec08f0b01f47085fe4` reunió búsqueda y
+Biblioteca. La revisión independiente reprodujo duplicados FTS, un cursor de
+consulta larga que el propio servicio rechazaba y el uso de otro catálogo
+durante la recuperación del adaptador directo. Los tres hallazgos tienen
+corridas RED y GREEN focales. Queda pendiente la suite completa sobre la
+integración corregida.
+
+| Corrida y fuente | Resultado de nivel 2 | Alcance |
+|---|---|---|
+| `r63-query-benchmark-1` en `ca80f49`, fuente `64013ade` | Falló. p95 879,4833999891125 ms frente a 500 ms. Mediana 809,5637999940664 ms, cinco precalentamientos y 40 consultas medidas. | Fixture sintético original de 1.000 reuniones y 100.000 segmentos. XML SHA-256 `94F2CEA4A1025D397B3B618D49D57B601246DB3890B7756A527E5DB6E825EBD8`. |
+| `r52-b-r58-integrated-1` en `2ece845` | 107 pasan, 52,308 s en XML. Heartbeat máximo 7,6934 ms, 1.894 ticks y ocho consultas entregadas, con todos los workers drenados. | Windows 11 10.0.26300, AMD64 Family 25 Model 80, 16 CPUs lógicas, Python 3.13.15 y Qt 6.11.2 offscreen. Ejercitó la búsqueda bajo R50, el render y el drenaje sobre el fixture 1.000/100.000. XML SHA-256 `97013543102B24FA907A9B8E41A34B3B6436C3EA77FBAF4A8520018B0662275B`. |
+| `task-2-delete-ack-green-1` en `d8fb75b` | 2 pasan, 5,438 s en XML. | Una página tardía y un detalle tardío quedan invalidados tras el borrado. XML SHA-256 `9B1C89FFFA3307496EFFAA92450E32774254D0C49214CE57F3E10197031E10FD`. |
+| `m3-final-functional-1` en `3148869` | 1.538 pasan, 19 fallan, 21 omitidos, 769,32 s. | El lanzador fijó `TRANSCRIPTIONS_DIR` (nueve fallos) y `HERE_SETTINGS_FILE` (dos), y dejó `HERE_R61_ORACLE_PATH` presente con valor vacío (ocho). XML SHA-256 `BD72E33597A46AA414FFF4AA1E7671CA1E18DCAD896D39AD63CADB010CD26E1C`. |
+| `m3-review-environment-focused-1` en `3148869` | 31 pasan, una omisión intencional de captura de oráculo. | Los 19 casos previos pasaron sin cambios de código y con las variables corregidas. XML SHA-256 `7B09CD7759DDBFB4154B60F3D42E781812BC2762D69BE37515446AAF71A879AD`. |
+| `m3-review-search-red-1` en `b146aae` y `m3-search-correctness-green-1` en `0c0f77b` | Tres fallos esperados en RED. En GREEN 260 pasan, una omisión intencional de captura de oráculo. | Deduplicación con rangos iguales y distintos, continuación larga, cursores v1/v2 y oráculos de generación. XML GREEN SHA-256 `11938D6CABBDED3CD45EB31B3ED82C84E77FE8F9201AD95BB1C8F6087BC70208`. |
+| `m3-review-adapter-red-1` en `7c73be5` y `m3-adapter-root-green-1` en `064b339` | Dos fallos esperados y un pase fake en RED. En GREEN 32 pasan. | Recuperación con catálogo inyectado y regresiones de R52, ACK, Qt y entrypoint. XML GREEN SHA-256 `6626B3ABE22C23AB43FD4E4CFDE92FDC2D30C143CBD89B57ED99BC95195D5C44`. |
+
+Cada corrida conserva el alcance de su fuente. El p95 y el heartbeat se
+midieron en fuentes distintas. Quedan pendientes la suite completa del
+candidato integrado, el seek real y la aceptación de M3. Sin nueva
+certificación de nivel 3.
+Dos horas sigue **omitida por ruling 5**.
+
+### Diagnóstico aislado R66
+
+El worktree de diagnóstico partió de `ca80f49a4427c1a047cac4c06d7d16c606560c88`.
+La primera corrida de controles por argumentos dio 264 pases y cuatro fallos.
+Los cuatro esperaban un error al invocar una función desde una vista TEMP.
+La corrección ajustó esa expectativa del arnés. Los resultados conservan
+alcance diagnóstico, con los desempates de tipos y la integración en el
+producto pendientes.
+
+| Corrida | Resultado | XML SHA-256 |
+|---|---|---|
+| `m3-native-argument-controls-2` | 268 pasan en 60,46 s. | `D03FC477E9BC3D71510A735BCDCA80C5A98D5A6462AE1C62F43BE0232C4C228D` |
+| `m3-native-subquery-controls-2` | 268 pasan en 68,20 s. | `101CF4910CB6296FB9047F70AC26759FBCA4B979F472055B143BD9667F2939D7` |
+| `m3-native-subquery-p95-2` | Falló. p95 621,3700499982224 ms frente al límite de 500 ms. | `16FC1A7061EE45BDB835564434DE5E8FBC6EAF12AFF79421223252B3CCA77A18` |
+
+El p95 usa cinco precalentamientos y 40 consultas medidas sobre el corpus
+original de 1.000 reuniones, 100.000 segmentos y 98.901 documentos FTS, con
+220 registros R50 y 221 IDs suprimidos. Los logs y XML están en
+`.superpowers/sdd/M3_SEARCH_PLAN/` del worktree del chat M3 A. Los controles
+son evidencia de nivel 2 para el diagnóstico. El criterio de rendimiento
+del producto sigue abierto con el mismo umbral.
+
+El PR documental [#27](https://github.com/srodriguez-lefebre/here/pull/27)
+mergeó en `94e175f` desde `dbc9d16`, con evidencia de nivel 2 para ese head.
+M3 B conserva pendiente el despacho de implementación sobre el PR revisado de A.
 
 ## Cierre de M2 · 0.3.0 · 2026-11-13
 
@@ -1079,3 +1130,120 @@ the bundled application's idle baseline, and report baseline plus delta.
 Clean-install verification must use an independent Windows environment without the
 developer virtual environment or repo on PATH. A bundled executable launched from a
 temporary directory tests independence but alone does not prove a clean installation.
+
+
+## 2026-11-27 — M3 A · R75 distribución nativa Windows y rendimiento
+
+Nivel 2 en el candidato local `4ba043ec4a4ee0f55281fde78a1678eb237f0aa4`.
+La revisión independiente estática aprobó ese head. Su corrida pública
+`r75-public-p95-4ba043e` falló con p95 de 530,14 ms frente al límite
+estricto de 500 ms. Completó cinco precalentamientos y 40 muestras
+válidas. SHA-256 del JUnit
+`d6ee080d7f82121b6e09ab5c113a47a39b7b3150e7451e1baf0a0d177230fd6e`.
+
+- Paridad v2 y R50 en `ed571ed`: 160 pases y una omisión intencional
+  de captura de oráculo. El smoke del paquete staged ejercitó dos lotes
+  nativos FTS para 257 filas y reprodujo el oráculo v2.
+- El build aislado de `2ee8ac6` compiló con Zig fijado y descartó
+  variables de compilación inválidas del entorno padre. El RED del
+  bundle anterior registró dos errores de setup por ausencia de la DLL.
+  El RED de carga `7f78f1d` dio un fallo y dos pases. Su GREEN dio tres
+  pases e incluyó la recuperación canónica dentro de la misma vista R50
+  ante el rechazo de SQLite y errores visibles de configuración.
+- Diagnóstico instrumentado separado del mismo head, 2+8. Medianas
+  de 246,94 ms para ACTIVE, 116,78 ms para FTS nativo y 2,78 ms para carga
+  de la DLL. R76 aborda el encoding de ACTIVE. La instrumentación queda
+  acotada al diagnóstico de nivel 2.
+
+La corrida diagnóstica de paquete real `46028557240` sigue pendiente en
+este checkpoint. El candidato combinado todavía debe medir p95 público y
+heartbeat Qt. [Paquete 46028557240](https://github.com/srodriguez-lefebre/here/actions/runs/46028557240)
+
+Recibos `build-2ee8ac6.json`, `package-red.xml`,
+`load-refusal-red-7f78f1d.xml`, `load-refusal-green-02.xml`,
+`r75-public-p95-4ba043e{.log,.xml,-exit.json}` y `phases-4ba043e.json` en
+`C:/Users/savar/.codex/evidence/here/m3-native-windows-distribution-20261127/`.
+Los recibos `green-focused-fixed.xml` y `staged-package-smoke.xml` están en
+`C:/Users/savar/.codex/evidence/here/m3-search-native-v2-equivalence-01/`.
+
+
+### Seguimiento R75 · Paquete diagnóstico Windows 46028557240
+
+Nivel 2 para el paquete construido sobre el head exacto
+`4ba043ec4a4ee0f55281fde78a1678eb237f0aa4`, con
+`tracked_tree_dirty: false`. El workflow terminó en verde. El foco
+Windows pasó 88 casos con cero fallos, errores u omisiones. Los seis
+recibos de CLI y GUI confirmaron activación nativa sin API key, fuera
+del repo, tras instalar y tras reinstalar. Se verificaron los SHA-256 de
+los seis archivos publicados, incluidos wheel y archivos de procedencia.
+
+| Componente | SHA-256 |
+|---|---|
+| DLL nativa | `a5d7b4e9fa6e54705645ed0a3047c7a0662ba2021ce165d62376a9cb92331e0b` |
+| Instalador | `e47793c9435f884c828c81c8df47587253e162be42f7aa6967ef75998842f6c0` |
+| ZIP portable | `6d5d6bae825cc79adfae704623c6cedb1feb777b89fd0d3057a49b1b3ec68e10` |
+| Inventario | `7fe85bc3a939e0d840d146e86760c13737a2baa7b55710c58fafa5480cac139a` |
+
+El p95 público de 530,14 ms sigue fallido. Quedan pendientes los gates
+Windows, el p95 público y el heartbeat Qt del head combinado con ACTIVE.
+Recibo `package-46028557240-receipt.json` en
+`C:/Users/savar/.codex/evidence/here/m3-native-windows-distribution-20261127/`.
+[Paquete 46028557240](https://github.com/srodriguez-lefebre/here/actions/runs/46028557240)
+
+
+### R76 · Gates locales de búsqueda en el candidato combinado
+
+Nivel 2 en `7b04f768ca633a2e42e52b65fe92328721e99aef`, con aprobación
+estática independiente. Un solo proceso ejecutó ambos gates en serie
+sobre el mismo candidato. El JUnit registró dos pases, cero fallos,
+errores u omisiones. Pytest emitió dos avisos por la marca `slow`.
+
+- Búsqueda pública: 397,395940002 ms p95 frente al límite de 500 ms,
+  con cinco precalentamientos y las 40 muestras válidas.
+- Heartbeat Qt: gap máximo de 9,462 ms frente al límite de 50 ms,
+  988 ticks, ocho consultas entregadas, cero errores, todos los workers
+  drenados y tres sellos de corpus iguales.
+
+El foco ACTIVE `r76-active-green-02.xml` de `44c1bc1` registró 175 pases
+y una omisión. El SHA-256 del C compilado, idéntico en la integración, fue
+`7a860838c875bf4d25b95c98558ef465f9d5a1474b5af4f0e72d40ad28b0981b`.
+El RED de la semilla del smoke `91417c5` produjo un fallo. El GREEN
+obtuvo un pase con un único resultado real de búsqueda sin degradación.
+SHA-256 de la DLL staged
+`62a302398c119baa1b2db4d508a9b6cd76ebe210aa2433a375754684bbef7ab4`.
+
+Los gates locales de rendimiento pasaron. La suite completa local
+`r76-full-7b04f76` seguía en curso al registrar este checkpoint.
+Quedan pendientes los gates Windows finales y el merge. La corrida
+fallida de `4ba043e` sigue registrada como evidencia histórica.
+
+Recibos `r76-product-gates-7b04f76.xml`, su log y exit JSON,
+`r76-active-smoke-red-91417c5.xml` y `r76-active-smoke-green-01.xml` en
+`C:/Users/savar/.codex/evidence/here/m3-native-windows-distribution-20261127/`.
+SHA-256 del JUnit de gates
+`C8619BBBF4BF5AA418FAF0C31C8BB27562F350ED9C768EF8CC63EF38B573AB28`.
+El foco ACTIVE está en
+`C:/Users/savar/.codex/evidence/here/m3-native-active-v2-20261127-01/`.
+
+
+### R76 · Suite local con DLL real y corrección del control FTS
+
+Nivel 2 en `7b04f76`. La suite `r76-full-7b04f76` terminó con 1.699
+pases, un fallo, 23 omisiones y dos avisos, sin procesos remanentes.
+El control stock de inversión FTS esperaba el SQL de escaneo por rowid
+ascendente cuando se seleccionaba el camino nativo. Las comprobaciones de
+digest y replay canónicos pasaron. `2286bd7` fuerza el camino stock solo
+en ese test y conserva todas sus aserciones. El foco pasó 13 casos con
+el mismo perfil de DLL y cubrió replay stock y nativo.
+`0d45b03` solo cambió el formato del test.
+
+El paquete diagnóstico Windows `46031147574` terminó en verde sobre
+`c7695c791cddd16ced8721b36d297963115dc359`. Los gates Windows finales
+sobre el descendiente con la corrección de test y documentación siguen
+pendientes. [Paquete 46031147574](https://github.com/srodriguez-lefebre/here/actions/runs/46031147574)
+
+Recibos `r76-full-7b04f76.xml`, `r76-full-7b04f76.log` y
+`r76-stock-native-inversion-2286bd7.xml` en
+`C:/Users/savar/.codex/evidence/here/m3-native-windows-distribution-20261127/`.
+SHA-256 del JUnit de la suite
+`533309B72A746F0639940876E0E48468D5C525C0C5BDB12F6BF1FE381C4B9187`.

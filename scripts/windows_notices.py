@@ -16,6 +16,9 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+NATIVE_SOURCE = "native/search_v2.c"
+NATIVE_DLL = "_native_search_v2.dll"
+NATIVE_RELATIVE = f"_internal/here/memory/{NATIVE_DLL}"
 BUILD_ONLY = {
     "altgraph",
     "packaging",
@@ -44,9 +47,12 @@ def distributions():
     return sorted(metadata.distributions(), key=lambda dist: normalize(dist.metadata["Name"]))
 
 
-def prepare(destination, wheel):
+def prepare(destination, wheel, native_build):
     destination.mkdir(parents=True, exist_ok=True)
     shutil.copytree(ROOT / "packaging/notices", destination, dirs_exist_ok=True)
+    shutil.copytree(
+        native_build / "native-search", destination / "native-search", dirs_exist_ok=True
+    )
     entries = []
     for dist in distributions():
         name = normalize(dist.metadata["Name"])
@@ -145,6 +151,9 @@ def prepare(destination, wheel):
         "- Loguru's release wheel omits its MIT text; upstream/loguru-0.7.3 supplies it.",
         "- PyInstaller's installed COPYING.txt includes the bootloader distribution exception.",
         "- Inno Setup 6.7.0: upstream/inno-6.7.0/LICENSE.txt accompanies installer/runtime.",
+        "- Native SQLite search: native-search retains the Zig and MinGW license texts",
+        "  and the SQLite public-domain notice. The compiler, headers and DLL hashes",
+        "  are recorded in build-provenance.json.",
         "",
         "sources.json records immutable upstream URLs and copied text SHA-256 values.",
         "This is a notice/provenance inventory, not an independent legal certificate.",
@@ -154,8 +163,8 @@ def prepare(destination, wheel):
     print(f"Prepared {len(entries)} namespaced wheel/runtime notice entries")
 
 
-def source_records():
-    records = {}
+def source_records(native):
+    records = {native["sha256"]: [{"kind": "here SQLite extension", **native}]}
     for dist in distributions():
         for relative in dist.files or []:
             if Path(relative).suffix.lower() not in {".dll", ".pyd", ".exe"}:
@@ -232,12 +241,27 @@ def pe_version(path):
     return None
 
 
-def audit(bundle, wheel):
+def audit(bundle, wheel, native_build):
     import _ssl
     import pyexpat
     import zlib
 
-    provenance = source_records()
+    receipt = native_build / "native-search-provenance.json"
+    native = json.loads(receipt.read_text(encoding="utf-8"))
+    source = {"path": NATIVE_SOURCE, "sha256": digest(ROOT / NATIVE_SOURCE)}
+    if (
+        native["path"] != NATIVE_RELATIVE
+        or native["sha256"] != digest(native_build / NATIVE_DLL)
+        or native["sha256"] != digest(bundle / NATIVE_RELATIVE)
+        or native["source"] != source
+    ):
+        raise RuntimeError("Native search receipt does not match the source and shipped DLL")
+    for relative in native["notices"]:
+        if relative != f"_internal/notices/native-search/{Path(relative).name}" or digest(
+            bundle / relative
+        ) != digest(native_build / "native-search" / Path(relative).name):
+            raise RuntimeError(f"Native search notice does not match the build input: {relative}")
+    provenance = source_records(native)
     files = []
     for path in sorted(bundle.rglob("*")):
         if not path.is_file():
@@ -272,7 +296,7 @@ def audit(bundle, wheel):
     ).stdout.strip()
     inputs = {
         path.relative_to(ROOT).as_posix(): digest(path)
-        for folder in ("src", "packaging", "scripts")
+        for folder in ("src", "packaging", "scripts", "native")
         for path in (ROOT / folder).rglob("*")
         if path.is_file() and "__pycache__" not in path.parts
     }
@@ -284,6 +308,7 @@ def audit(bundle, wheel):
             "source_commit": result.stdout.strip(),
             "tracked_tree_dirty": bool(dirty),
             "source_inputs_sha256": inputs,
+            "native_search_v2": native,
             "wheel": {"filename": wheel.name, "sha256": digest(wheel)},
             "lock_sha256": digest(ROOT / "uv.lock"),
             "python": sys.version,
@@ -363,10 +388,13 @@ if __name__ == "__main__":
     parser.add_argument("path", type=Path)
     parser.add_argument("--wheel", type=Path)
     parser.add_argument("--compiler", type=Path)
+    parser.add_argument("--native-build", type=Path)
     arguments = parser.parse_args()
+    if arguments.action in {"prepare", "audit"} and arguments.native_build is None:
+        parser.error("prepare and audit require --native-build")
     if arguments.action == "prepare":
-        prepare(arguments.path, arguments.wheel)
+        prepare(arguments.path, arguments.wheel, arguments.native_build)
     elif arguments.action == "audit":
-        audit(arguments.path, arguments.wheel)
+        audit(arguments.path, arguments.wheel, arguments.native_build)
     else:
         checksums(arguments.path, arguments.compiler)

@@ -7,6 +7,7 @@ from PyInstaller.utils.hooks import collect_submodules, copy_metadata
 
 root = Path(SPECPATH).parent
 notices = Path(os.environ["HERE_BUILD_NOTICES"])
+search_native = Path(os.environ["HERE_BUILD_SEARCH_NATIVE"])
 hidden = collect_submodules(
     "here", filter=lambda name: not any(
         part in name for part in ("recording.linux", "ui.preview", "ui.fake_controller")
@@ -14,7 +15,7 @@ hidden = collect_submodules(
 )
 data = copy_metadata("here", recursive=True) + [(str(notices), "notices")]
 options = dict(
-    pathex=[], binaries=[], datas=data, hiddenimports=hidden,
+    pathex=[], binaries=[(str(search_native), "here/memory")], datas=data, hiddenimports=hidden,
     hookspath=[], hooksconfig={}, runtime_hooks=[],
     excludes=["tkinter", "sounddevice", "here.recording.linux", "PySide6.QtMultimedia"],
     noarchive=False,

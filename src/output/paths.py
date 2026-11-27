@@ -9,7 +9,7 @@ from __future__ import annotations
 import os
 import stat
 import tempfile
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from pathlib import Path, PureWindowsPath
 
@@ -37,8 +37,8 @@ def validate_session_directory(directory: Path) -> None:
             raise UnsafeSessionPath(f"Unsafe session directory: {parent}")
 
 
-def session_artifact_path(directory: Path, filename: str) -> Path:
-    validate_session_directory(directory)
+def validate_artifact_filename(filename: str) -> None:
+    """Apply the shared Windows-safe basename policy without accessing the filesystem."""
     windows_path = PureWindowsPath(filename)
     reserved_stems = {"CON", "PRN", "AUX", "NUL", "CONIN$", "CONOUT$"} | {
         f"{prefix}{number}" for prefix in ("COM", "LPT") for number in "123456789¹²³"
@@ -56,16 +56,63 @@ def session_artifact_path(directory: Path, filename: str) -> Path:
         or filename.split(".", 1)[0].upper() in reserved_stems
     ):
         raise UnsafeSessionPath("Artifact must be a filename inside the session")
-    path = directory / filename
+
+
+def _existing_regular_artifact(path: Path) -> bool:
     try:
         info = path.lstat()
     except FileNotFoundError:
-        return path
+        return False
     if _is_redirect(info) or not stat.S_ISREG(info.st_mode) or info.st_nlink > 1:
         raise UnsafeSessionPath(f"Unsafe session artifact: {path}")
-    if not path.resolve().is_relative_to(directory.resolve()):
+    return True
+
+
+def session_artifact_path(directory: Path, filename: str) -> Path:
+    validate_session_directory(directory)
+    validate_artifact_filename(filename)
+    path = directory / filename
+    if _existing_regular_artifact(path) and not path.resolve().is_relative_to(directory.resolve()):
         raise UnsafeSessionPath("Artifact must resolve inside the session")
     return path
+
+
+def _directory_identity(directory: Path) -> tuple[int, int]:
+    info = directory.lstat()
+    if _is_redirect(info) or not stat.S_ISDIR(info.st_mode):
+        raise UnsafeSessionPath(f"Unsafe session directory: {directory}")
+    return info.st_dev, info.st_ino
+
+
+@contextmanager
+def preflight_session_artifacts(directory: Path) -> Iterator[Callable[[str], Path]]:
+    """Validate an ordered batch under the caller's lock before opening its artifacts."""
+    validate_session_directory(directory)
+    try:
+        identity = _directory_identity(directory)
+    except FileNotFoundError:
+        identity = (0, 0)
+    if not all(identity):
+        # The caller decides whether an absent directory is allowed.
+        # Without stable metadata, retain the per-artifact policy.
+        yield lambda filename: session_artifact_path(directory, filename)
+        return
+    resolved_directory = directory.resolve()
+
+    def check(filename: str) -> Path:
+        validate_artifact_filename(filename)
+        path = directory / filename
+        if _existing_regular_artifact(path) and not path.resolve().is_relative_to(
+            resolved_directory
+        ):
+            raise UnsafeSessionPath("Artifact must resolve inside the session")
+        return path
+
+    yield check
+    # The caller consumes payloads only after this revalidation succeeds.
+    validate_session_directory(directory)
+    if _directory_identity(directory) != identity or directory.resolve() != resolved_directory:
+        raise UnsafeSessionPath(f"Session directory changed during preflight: {directory}")
 
 
 def reserve_artifact_path(destination: Path, suffix: str) -> Path:
