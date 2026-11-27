@@ -21,9 +21,11 @@ v2, los límites de rendimiento vigentes y CI Windows en el head exacto.
 | M3 A, RED de distribución | `codex/m3-search-native-windows-red` | `m3-search-native-windows-red/here` | `6acd485`, `native_windows_distribution_red_sol` |
 | M3 A, build Windows e integración del paquete | `codex/m3-search-native-windows-green` | `m3-search-native-windows-green/here` | `c8195de`, orquestador |
 | M3 A, documentación del contrato R75 | `codex/m3-search-native-docs` | `m3-search-native-docs/here` | `fdf4ca6`, `m3_nov27_evidence_sol` |
-| M3 A, candidato integrado | `codex/m3-a-r75-integration` | `m3-a-r75-integration/here` | `2ee8ac6`, orquestador |
-| M3 A, revisión independiente integrada | HEAD separado | `m3-a-r75-exact-review/here` | `2ee8ac6`, `m5_portability_package_io_review_sol` |
-| M3 A, RED de rechazo de carga | `codex/m3-a-r75-load-refusal-red` | `m3-a-r75-load-refusal-red/here` | `2ee8ac6`, `native_windows_distribution_red_sol` |
+| M3 A, candidato FTS integrado | `codex/m3-a-r75-integration` | `m3-a-r75-integration/here` | `4ba043e`, orquestador |
+| M3 A, revisión independiente integrada | HEAD separado | `m3-a-r75-exact-review/here` | `4ba043e`, `m5_portability_package_io_review_sol` |
+| M3 A, RED de rechazo de carga | `codex/m3-a-r75-load-refusal-red` | `m3-a-r75-load-refusal-red/here` | `a0806ed`, `native_windows_distribution_red_sol` |
+| M3 A, perfil de etapas | HEAD separado | `m3-a-r75-phase-diagnostic/here` | `4ba043e`, orquestador. Conserva DLL y manifest generados para reproducir |
+| M3 A, encoding ACTIVE, chat `01a1af04-e779-7363-be61-c840651b0b18` | `codex/m3-search-native-active-v2` | `m3-search-native-active-v2/here` | Base `4ba043e`, chat M3 A |
 | M3 B, integración | `codex/m3-library` | `m3-library-group/here` | `b36162a`, orquestador. Pendiente la integración de M3 A |
 | M5 B, adelanto de portabilidad, chat `01a1af04-b158-75a2-8933-98783880f3e8` | `codex/m5-portability-adapter-integration` | `m5-portability-adapter-integration/here` | `5f6324f`, chat M5 B. Claims esperan M4 B |
 
@@ -41,8 +43,21 @@ dentro de R50 con carga SQL vedada. Recibos en
 aislar el entorno de Zig. Nivel 2 en `build-2ee8ac6.json`: la extensión
 compiló con el entorno controlado aun con rutas Zig y Clang inválidas
 heredadas por el proceso padre. La revisión integrada pidió cubrir el
-rechazo de carga de SQLite y conservar la ruta canónica. RED en curso.
-El arranque congelado, el 5+40 y el heartbeat integrados quedan pendientes.
+rechazo de carga de SQLite y conservar la ruta canónica. RED `7f78f1d`:
+un fallo esperado y dos pases. GREEN: tres pases con el fixture de orden
+físico corregido. La revisión independiente aprobó `4ba043e`.
+
+**Nivel 2: p95 falló en `4ba043e`.** `r75-public-p95-4ba043e` completó
+5+40 sobre 1.000 reuniones y 100.000 segmentos y dio 530,14 ms p95, con
+el límite de 500 ms intacto. El perfil 2+8 `phases-4ba043e.json`
+observó ocho cargas y recorridos FTS nativos completos. Medianas
+246,94 ms en ACTIVE, 116,78 ms en FTS y 2,78 ms en carga. El chat M3 A
+retomó para extender el encoding v2 a ACTIVE por ruling 76.
+El [PR #28](https://github.com/srodriguez-lefebre/here/pull/28)
+sigue abierto en `0c16065` con la evidencia nueva en su descripción.
+El [paquete diagnóstico Windows](https://github.com/srodriguez-lefebre/here/actions/runs/46028557240)
+de `4ba043e` está en curso. El candidato siguiente requiere 5+40, heartbeat
+y gates en su head final.
 
 - M3 A recuperó `2710/here` en `e7f84b0`. Nivel 2 diagnóstico de FTS: la
   mediana de la fase bajó de 404,98 a 320,11 ms. Las ocho muestras conservaron
