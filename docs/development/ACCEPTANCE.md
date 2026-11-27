@@ -1161,3 +1161,40 @@ El PR #28 sigue abierto. [PR #28](https://github.com/srodriguez-lefebre/here/pul
 
 La prueba de dos horas sigue **omitida por ruling 5**. Copilot sigue omitido
 para los PR pendientes por ruling 64.
+
+
+### Seguimiento M3 B · Identidad física del audio de reintento
+
+Nivel 2. En `d12d483`, el RED registró un fallo esperado para archivos
+distintos y un pase para dos nombres del mismo archivo. Duró 30 s en
+shell y 28,523 s en JUnit (`m3-retry-file-identity-red-d12d483-20261127.xml`).
+En `cffa2dec81cd3e13ffdf2daa22559ca9a6142769` pasaron 247 casos, sin fallos,
+errores ni omisiones, en 152,58 s en shell y 152,325 s en JUnit
+(`m3-retry-file-identity-green-cffa2de-20261127.xml`). El lote cubrió captura,
+CLI, Qt, geometría, ownership, supresión y 11 casos de frontera de M3.
+Los dos JUnit están en `%TEMP%`.
+
+La revisión independiente de `m3_retry_audio_resume_review` aprobó ese SHA
+exacto. Se integraron seis commits en `912f63f8191d0312d647806241d352814c52d870`,
+con el mismo árbol verificado `ff1e45c63d55e7bc63bac70bc5ca9468e5ec5c34`.
+La fila de navegación sigue abierta.
+
+### Seguimiento M3 B · Sonda de reproducción Windows
+
+La sonda `1dfa531` compiló, pasó la calibración sintética y arrancó WASAPI
+con el paquete de `f894923`. Antes de pulsar Play devolvió discontinuidad
+o timestamp inválido. Hubo cero mediciones. La reproducción real de nivel 3
+sigue pendiente.
+
+### M4 A · Corpus de recuperación
+
+`a2ce1e1` registró validación sintética del fixture con 50 reuniones y 2.000
+segmentos coincidentes. El frente sigue en preparación, pendiente de habilitar implementación.
+
+### M5 B · RED de adaptadores de portabilidad
+
+Nivel 2 focalizado en la corrida histórica del chat de M5 B. En `b66d15a`
+fallaron los 16 casos esperados por comandos CLI ausentes, con cero errores y
+omisiones en 9,34 s. En `7d7c04d` fallaron los 14 casos esperados por acciones
+Qt ausentes, con cero errores y omisiones en 17,27 s. Los GREEN sobre `bbc1717`
+siguen en curso. Claims sigue pendiente de M4 B.
