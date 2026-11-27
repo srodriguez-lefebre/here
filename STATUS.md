@@ -1,7 +1,35 @@
 # Estado de here
 
-Actualizado: 2026-11-20. Leé CLAUDE.md primero; después este archivo y
+Actualizado: 2026-11-27. Leé CLAUDE.md primero; después este archivo y
 `docs/MASTER_PLAN.md`. Historial y rulings: `docs/development/DELIVERY.md`.
+
+## Reanudación — 2026-11-27
+
+Se reactivaron los chats de M3 A y M5 B con GPT‑6.2 Sol. M2 sigue cerrado en
+0.3.0. Copilot sigue omitido por ruling 64 y dos horas, **omitida por ruling 5**.
+
+- M3 A recuperó `2710/here` en `e7f84b0`. El RED independiente `ae82ec8`
+  prepara nueve controles de orden FTS y un perfil para elegir candidato. El
+  chat tiene la ventana Windows. [PR #28](https://github.com/srodriguez-lefebre/here/pull/28)
+  permanece abierto con el último p95 público de 1.431,6706 ms y el heartbeat
+  de 55,349 ms fuera de presupuesto.
+- M3 B reprodujo en `a31daca` la selección de un WAV normalizado vacío con
+  una fuente cruda válida. Nivel 2 focalizado: 1 fallo y 6 pases. `b2dc640`
+  pasó 35 casos de reintento y geometría. La revisión independiente detectó
+  que también inhabilita un `audio.wav` v1 declarado como fuente de captura.
+  El nuevo RED `e7f9807` en `m3-library-retry-declared-source-red/here` cubre
+  esa compatibilidad y el rechazo de audio sin declarar. Corrida pendiente.
+- Sonda de seek M3 B: build local y calibración PCM sintética pasaron, nivel 2.
+  El artefacto Windows de `f894923`, corrida `44781729845`, coincidió con el
+  checksum del ZIP y las 772 entradas del inventario. El CLI del bundle ingirió
+  el WAV sintético con hash `eac58e90b86607135ad0a30562a36f68b2914b95dc81e77a3553b7b664b4cabc`.
+  La GUI cargó la marca cero. La sonda falló antes de armar la medición con
+  `0x88890021`. `1dfa531` corrige las flags documentadas de WASAPI. Falta
+  repetir el build y medir el audio renderizado para nivel 3.
+- M5 B preparó y revisó estáticamente 16 casos CLI en `b66d15a` y 14 Qt en
+  `7d7c04d`, ramas de adaptadores del checkpoint anterior. Sus RED esperan
+  la ventana Windows. El servicio `41150f5` conserva los 4 + 89 pases.
+  Claims sigue pendiente de M4 B.
 
 ## Pausa solicitada — 2026-11-20
 
