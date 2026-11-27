@@ -17,6 +17,14 @@ fijó el traspaso a M3 B en `8d0b03d` con revisión independiente, CI y
 paquete Windows verdes sobre `d57a43d`. Nivel 2. M3 B rebasó sus 34
 commits sobre ese merge y verifica el candidato `063d974`.
 
+**M3 B, [PR #30](https://github.com/srodriguez-lefebre/here/pull/30) abierto**
+contra `main` en `063d974f66ac42da85a82474cfc900a1335e54f3`, con revisión
+independiente y [CI Windows](https://github.com/srodriguez-lefebre/here/actions/runs/46038832319)
+y [paquete del PR](https://github.com/srodriguez-lefebre/here/actions/runs/46038832317)
+en curso. El seek integrado de nivel 3 espera
+desbloquear el escritorio Windows de desarrollo. La prueba del paquete de 0.3.0
+anterior conserva su alcance histórico. No se hizo el bump 0.4.0.
+
 ### Frentes activos del ruling 75
 
 | Frente | Rama | Worktree bajo `C:/Users/savar/.codex/worktrees/` | Base y responsable |
@@ -36,12 +44,12 @@ commits sobre ese merge y verifica el candidato `063d974`.
 | M3 A, suite completa del candidato R76 | HEAD separado | `m3-a-r76-full-verification/here` | `7b04f76`, orquestador |
 | M3 A, aislamiento de sonda FTS stock | `codex/m3-a-r76-stock-proof` | `m3-a-r76-stock-proof/here` | `c64b22d`, `native_windows_distribution_red_sol` |
 | M3 A, evidencia R75/R76 | `codex/m3-a-r75-evidence` | `m3-a-r75-evidence/here` | `e101914`, `m3_nov27_evidence_sol` |
-| M3 B, integración | `codex/m3-library` | `m3-library-group/here` | `063d974` sobre `8d0b03d`, orquestador |
-| M3 B, suite completa integrada | HEAD separado | `m3-b-r76-full-verification/here` | `063d974`, orquestador y ventana Windows local |
-| M3 B, documentación de cierre | `codex/m3-b-closeout-docs` | `m3-b-closeout-docs/here` | `063d974`, `m3_nov27_evidence_sol`. Borrador verificado, cierre sujeto a corridas |
+| M3 B, integración en PR #30 | `codex/m3-library` → `codex/m3-library-product` remoto | `m3-library-group/here` | `063d974` sobre `8d0b03d`, orquestador |
+| M3 B, suite completa integrada | HEAD separado | `m3-b-r76-full-verification/here` | `063d974`, orquestador. Ventana Windows liberada |
+| M3 B, documentación de cierre | `codex/m3-b-closeout-docs` | `m3-b-closeout-docs/here` | `b3c9557`, `m3_nov27_evidence_sol`. Candidato documentado, cierre sujeto a corridas |
 | M3 B, SPEC y PLAN de traspaso tras R75 | `codex/m3-b-native-handoff-contracts` | `m3-b-native-handoff-contracts/here` | `ad815db`, `m3_b_native_handoff_docs_sol` |
 | M3 B, PR documental #29 mergeado | `codex/m3-b-accepted-native-handoff` | `m3-b-accepted-native-handoff/here` | `d57a43d` → `8d0b03d`, `m3_b_native_handoff_docs_sol` y orquestador |
-| M4 A, preparación de SPEC y PLAN | `codex/m4-grounded-candidate-handoff` | `m4-grounded-candidate-handoff/here` | `277531c`, `m3_b_native_handoff_docs_sol`. Borrador de contratos; vincular al merge final de B |
+| M4 A, preparación de SPEC y PLAN | `codex/m4-grounded-candidate-handoff` | `m4-grounded-candidate-handoff/here` | `f10c3ec`, `m3_b_native_handoff_docs_sol`, revisión estática independiente. Vincular al merge final de B |
 | M4 A, fixtures de respuestas sintéticas | `codex/m4-grounded-verifier-fixtures` | `m4-grounded-verifier-fixtures/here` | `0c35b6b`, `m3_b_native_handoff_docs_sol`. Transferir al RED después del cierre de M3 |
 | M5 B, adelanto de portabilidad, chat `01a1af04-b158-75a2-8933-98783880f3e8` | `codex/m5-portability-adapter-integration` | `m5-portability-adapter-integration/here` | `5f6324f`, chat M5 B. Preparación de integración reanudada, claims esperan M4 B |
 
@@ -114,14 +122,15 @@ conservando R50, ambas rutas nativas y QtMultimedia. La rama de respaldo
 independiente aprobó `063d974`. Los gates integrados pasaron a nivel 2 en
 `m3-b-r76-product-gates-063d974`, con p95 de 395,38 ms y heartbeat de
 13,2683 ms máximo en ocho consultas. La suite local con DLL
-`m3-b-r76-full-063d974` sigue en ejecución en su worktree separado.
+`m3-b-r76-full-063d974` pasó 1.801 casos y omitió 24 en 708,50 s, con
+salida cero y sin workers residuales, nivel 2. XML y recibo de salida en la
+carpeta de evidencia R75.
 El [paquete integrado diagnóstico](https://github.com/srodriguez-lefebre/here/actions/runs/46036939106)
 pasó desde `063d974` en `codex/m3-b-r76-verification`, nivel 2. Incluye
 QtMultimedia, 110 controles nativos, seis smokes congelados, seis hashes
 externos y 776 entradas del inventario verificadas. Recibo
-`package-46036939106-verified.json` en la carpeta de evidencia R75. El seek
-real espera que termine la suite local. El bump a 0.4.0 queda para después
-de esos criterios.
+`package-46036939106-verified.json` en la carpeta de evidencia R75. El
+bump a 0.4.0 queda para después del seek integrado real.
 El fixture de seek ya generado y la identidad de `Probe.dll` se verificaron
 a nivel 2 en `C:/Users/savar/.codex/evidence/here/m3-b-synthetic-seek-fixture-20261127/receipt.json`.
 Conserva los siete insumos sintéticos de la toma anterior para preparar una
@@ -131,6 +140,15 @@ smoke, con el recibo del paquete exacto y los tests de QtMultimedia.
 La raíz descartable ya está preparada. `package-staged.json` y los scripts
 de toma y consolidación están en
 `C:/Users/savar/.codex/evidence/here/m3-b-seek-063d974-20261127/`.
+El CLI del paquete importó la reunión sintética y el WAV catalogado coincide
+con su SHA-256, nivel 2, en `managed-wav.json`. El escritorio bloqueado
+impidió activar la ventana de Here y la sonda de 0 ms agotó la espera
+sin tomar medición. Al desbloquear, retomar la toma con `run-marker.ps1`
+y un nombre de intento distinto para 0 ms. Ejecutar 0/1200/2800/4700 a 1×,
+consolidar con `finish-seek.ps1` y registrar el margen máximo real.
+El borrador M4 A fija la lectura R50, cuotas, vecinos, OR literal y revalidación
+de evidencia. La revisión estática aprobó `f10c3ec`; falta vincularlo a M3
+mergeado y abrir su PR de contrato. M4 A aún no toca producto.
 Los workflows fijan el checkout del head exacto por ruling 77. El PLAN
 preparado de M3 B conserva la ruta nativa cuando incorpora QtMultimedia.
 El orquestador lo vinculará al merge de A en el PR de documentos.
