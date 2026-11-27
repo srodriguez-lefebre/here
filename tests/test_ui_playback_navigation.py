@@ -1,4 +1,4 @@
-"""Exercise evidence navigation and the tracked desktop deletion acknowledgement."""
+"""Exercise evidence navigation, player accessibility, and desktop deletion acknowledgement."""
 
 from __future__ import annotations
 
@@ -15,12 +15,23 @@ from here.memory.service import MemoryService
 from here.ui.app import HereDesktop
 from here.ui.contract import ApplicationUiAdapter
 from here.ui.playback import PlaybackController
+from here.ui.playback_widget import PlaybackWidget
 from memory_fixtures import MEETING_ID, OTHER_MEETING_ID, make_session, write_marked_wav
 from PySide6.QtCore import QSettings, Qt
-from PySide6.QtWidgets import QAbstractButton, QLabel, QLineEdit, QListWidget
+from PySide6.QtGui import QAccessible, QColor, QPalette
+from PySide6.QtWidgets import (
+    QAbstractButton,
+    QComboBox,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QSlider,
+    QWidget,
+)
 from test_ui_library import (
     _detail,
     _load_listing,
+    _luminance,
     _named,
     _select_first_meeting,
     _text,
@@ -107,6 +118,114 @@ def _passive(target):
         revision_id=target.revision_id,
         segment_id=target.segment_id,
     )
+
+
+@pytest.fixture
+def ready_player(fake_media, navigation_library, evidence, qtbot):
+    _, _, view = navigation_library
+    _, target, _ = evidence
+    _, players, actions = fake_media
+    view.open_target(_passive(target))
+    qtbot.waitUntil(lambda: bool(players))
+    media = _player_for(players, target)
+    _ready(media)
+    widget = view.findChild(PlaybackWidget)
+    assert widget is not None and widget.isVisibleTo(view)
+    return view, widget, media, actions
+
+
+def _accessible_name(control):
+    interface = QAccessible.queryAccessibleInterface(control)
+    assert interface is not None
+    return interface.text(QAccessible.Text.Name)
+
+
+def test_player_keyboard_reaches_and_operates_play_pause_seek_and_volume(ready_player, qtbot, qapp):
+    view, widget, media, actions = ready_player
+    (play,) = _buttons(widget, PLAY_FROM)
+    seek = _named(widget, QSlider, r"posici[oó]n")
+    volume = _named(widget, QSlider, r"volumen")
+    speed = _named(widget, QComboBox, r"velocidad")
+    transcript = _transcript(view)
+    transcript.setFocus()
+    qtbot.waitUntil(transcript.hasFocus)
+
+    pending = {play, seek, volume, speed}
+    path = media.source().toLocalFile()
+    for _ in range(40):
+        focused = qapp.focusWidget()
+        assert focused is not None
+        qtbot.keyClick(focused, Qt.Key.Key_Tab)
+        focused = qapp.focusWidget()
+        if focused not in pending:
+            continue
+        pending.remove(focused)
+        if focused is play:
+            actions.clear()
+            qtbot.keyClick(play, Qt.Key.Key_Space)
+            assert ("play", path) in actions
+            assert re.search(r"pausar", _accessible_name(play), re.IGNORECASE)
+            qtbot.keyClick(play, Qt.Key.Key_Space)
+            assert [action for action in actions if action[0] in {"play", "pause"}] == [
+                ("play", path),
+                ("pause", path),
+            ]
+        elif focused is seek:
+            expected = media.position() + seek.singleStep()
+            actions.clear()
+            qtbot.keyClick(seek, Qt.Key.Key_Right)
+            assert ("seek", path, expected) in actions
+            assert media.position() == expected
+        elif focused is volume:
+            actions.clear()
+            qtbot.keyClick(volume, Qt.Key.Key_Left)
+            assert ("volume", pytest.approx(0.99)) in actions
+        elif focused is speed:
+            actions.clear()
+            qtbot.keyClick(speed, Qt.Key.Key_Down)
+            assert ("rate", 1.25) in actions
+        if not pending:
+            break
+    assert not pending, "Tab must reach play, position, volume and speed from the transcript"
+
+
+@pytest.mark.parametrize("dark", [False, True], ids=["light", "dark"])
+def test_player_accessible_names_and_palette_contrast(ready_player, dark):
+    view, widget, _, _ = ready_player
+    palette = QPalette(view.palette())
+    background, foreground, accent = (
+        ("#202020", "#ffffff", "#76baff") if dark else ("#ffffff", "#202020", "#0059b3")
+    )
+    roles = QPalette.ColorRole
+    for role in (roles.Window, roles.Base, roles.Button):
+        palette.setColor(role, QColor(background))
+    for role in (roles.WindowText, roles.Text, roles.ButtonText):
+        palette.setColor(role, QColor(foreground))
+    palette.setColor(roles.Highlight, QColor(accent))
+    view.setPalette(palette)
+
+    controls = [
+        control
+        for control in widget.findChildren(QWidget)
+        if isinstance(control, (QAbstractButton, QSlider, QComboBox))
+        and control.isVisibleTo(widget)
+    ]
+    assert len(controls) == 4
+    names = [_accessible_name(control).strip() for control in controls]
+    assert all(names) and len(set(names)) == len(controls)
+    (clock,) = [label for label in widget.findChildren(QLabel) if label.isVisibleTo(widget)]
+    for control in [*controls, clock]:
+        if isinstance(control, QSlider):
+            text_role, background_role, minimum = roles.Highlight, roles.Window, 3.0
+        elif isinstance(control, (QAbstractButton, QComboBox)):
+            text_role, background_role, minimum = roles.ButtonText, roles.Button, 4.5
+        else:
+            text_role, background_role, minimum = roles.WindowText, roles.Window, 4.5
+        actual = control.palette()
+        low, high = sorted(
+            (_luminance(actual.color(text_role)), _luminance(actual.color(background_role)))
+        )
+        assert (high + 0.05) / (low + 0.05) >= minimum, control.metaObject().className()
 
 
 @pytest.mark.parametrize("route", ["list-segment", "search-hit", "external-citation"])
