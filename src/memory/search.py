@@ -19,6 +19,7 @@ from dataclasses import replace
 from datetime import datetime, timezone
 from typing import Any, TypeVar
 
+from here.memory import _native_search
 from here.memory.database import LibraryConnection, LibraryError
 from here.memory.models import (
     Meeting,
@@ -508,7 +509,10 @@ class SearchService:
         current_fts_schema = False
         for name, sql in sources:
             if name == "fts" and current_fts_schema:
-                trial = _ordered_fts_digest(library, digest)
+                if _native_search.load_fts_encoder(library):
+                    trial = _native_search.fts_digest(library, digest)
+                else:
+                    trial = _ordered_fts_digest(library, digest)
                 if trial is not None:
                     digest = trial
                     continue
