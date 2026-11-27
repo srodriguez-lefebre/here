@@ -8,10 +8,11 @@ Actualizado: 2026-11-27. Leé CLAUDE.md primero; después este archivo y
 Se reactivaron los chats de M3 A y M5 B con GPT‑6.2 Sol. M2 sigue cerrado en
 0.3.0. Copilot sigue omitido por ruling 64 y dos horas, **omitida por ruling 5**.
 
-**M3 A reanudado por ruling 75.** El usuario autorizó la extensión SQLite
-compilada y su toolchain de Windows y pidió seguir hasta cerrar M5. El PR
-#28 sigue abierto mientras se implementa y verifica el candidato con bytes
-v2, los límites de rendimiento vigentes y CI Windows en el head exacto.
+**M3 A mergeado.** [PR #28](https://github.com/srodriguez-lefebre/here/pull/28)
+entró a `main` en `a1a83629cdfab64dd249f877cdd443e7f7d96b08` con el head
+revisado `3a9cc11`. Windows CI y el paquete pasaron en ese head, nivel 2.
+Se conservan los cursores v2 y los gates de rendimiento. El traspaso
+documental a M3 B está en marcha y precede el rebase de la rama B.
 
 ### Frentes activos del ruling 75
 
@@ -32,8 +33,9 @@ v2, los límites de rendimiento vigentes y CI Windows en el head exacto.
 | M3 A, suite completa del candidato R76 | HEAD separado | `m3-a-r76-full-verification/here` | `7b04f76`, orquestador |
 | M3 A, aislamiento de sonda FTS stock | `codex/m3-a-r76-stock-proof` | `m3-a-r76-stock-proof/here` | `c64b22d`, `native_windows_distribution_red_sol` |
 | M3 A, evidencia R75/R76 | `codex/m3-a-r75-evidence` | `m3-a-r75-evidence/here` | `e101914`, `m3_nov27_evidence_sol` |
-| M3 B, integración | `codex/m3-library` | `m3-library-group/here` | `b36162a`, orquestador. Pendiente la integración de M3 A |
+| M3 B, integración | `codex/m3-library` | `m3-library-group/here` | `b36162a`, orquestador. Espera el merge del traspaso documental |
 | M3 B, SPEC y PLAN de traspaso tras R75 | `codex/m3-b-native-handoff-contracts` | `m3-b-native-handoff-contracts/here` | `ad815db`, `m3_b_native_handoff_docs_sol` |
+| M3 B, PR documental sobre A mergeado | `codex/m3-b-accepted-native-handoff` | `m3-b-accepted-native-handoff/here` | Base `a1a8362`, `m3_b_native_handoff_docs_sol` y orquestador |
 | M4 A, fixtures de respuestas sintéticas | `codex/m4-grounded-verifier-fixtures` | `m4-grounded-verifier-fixtures/here` | `0c35b6b`, `m3_b_native_handoff_docs_sol`. Transferir al RED después del cierre de M3 |
 | M5 B, adelanto de portabilidad, chat `01a1af04-b158-75a2-8933-98783880f3e8` | `codex/m5-portability-adapter-integration` | `m5-portability-adapter-integration/here` | `5f6324f`, chat M5 B. Claims esperan M4 B |
 
@@ -61,8 +63,8 @@ el límite de 500 ms intacto. El perfil 2+8 `phases-4ba043e.json`
 observó ocho cargas y recorridos FTS nativos completos. Medianas
 246,94 ms en ACTIVE, 116,78 ms en FTS y 2,78 ms en carga. El chat M3 A
 retomó para extender el encoding v2 a ACTIVE por ruling 76.
-El [PR #28](https://github.com/srodriguez-lefebre/here/pull/28)
-sigue abierto en `0c16065` con la evidencia nueva en su descripción.
+En esa etapa el PR #28 seguía abierto en `0c16065` y su descripción
+conservó la evidencia de diagnóstico.
 El [paquete diagnóstico Windows](https://github.com/srodriguez-lefebre/here/actions/runs/46028557240)
 de `4ba043e` quedó verde, nivel 2. Se verificaron seis hashes, 88 controles
 sin fallos ni omisiones y seis smokes de activación nativa en GUI y CLI,
@@ -95,8 +97,10 @@ la procedencia limpia del head. El wheel de ese artefacto se instaló en
 un entorno no editable separado, encontró el hit sintético por la ruta
 canónica y el lote `r76-wheel-3a9cc11` pasó cinco. Recibos
 `package-46032934126-verified.json`, `r76-wheel-search-3a9cc11.json` y
-`r76-wheel-3a9cc11.xml` bajo evidencia R75. La suite de CI Windows
-`46032934133` sigue en curso antes del merge.
+`r76-wheel-3a9cc11.xml` bajo evidencia R75. CI Windows `46032934133`
+pasó 1.619 casos y omitió 104. El merge protegido usó
+`--merge --admin --match-head-commit` sobre `3a9cc11`. M3 B aún debe
+integrar el reproductor y empaquetado y cerrar la versión 0.4.0.
 Los workflows fijan el checkout del head exacto por ruling 77. El PLAN
 preparado de M3 B conserva la ruta nativa cuando incorpora QtMultimedia.
 El orquestador lo vinculará al merge de A en el PR de documentos.

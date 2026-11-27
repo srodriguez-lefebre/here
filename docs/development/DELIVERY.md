@@ -2984,3 +2984,45 @@ The R66 user decision remains pending. Scratch `33192ac` records a
 conditional design. Product work on that design remains on hold. Copilot
 remains omitted under ruling 64 and the two-hour run remains
 **omitida por ruling 5**.
+
+## 2026-11-27 — M3 A search merged
+
+[PR #28](https://github.com/srodriguez-lefebre/here/pull/28) merged into
+`main` as `a1a83629cdfab64dd249f877cdd443e7f7d96b08` at 13:32
+Montevideo. Independent reviewer `m5_portability_package_io_review_sol`
+approved exact head `3a9cc11afe7e11c76d4bc197968d09b1b1ef9dc7`.
+Copilot review was omitted under ruling 64. Both Windows checks were green
+on that head before
+`gh pr merge 28 --merge --admin --match-head-commit 3a9cc11afe7e11c76d4bc197968d09b1b1ef9dc7`.
+The published merge commit has the reviewed head as its second parent.
+
+Level 2. The compiled search candidate `7b04f76` passed the public 5+40
+gate at 397.39594 ms p95, and delivered eight Qt queries with a 9.462 ms
+maximum heartbeat interval and drained workers. Later product-file changes
+only named the actual buffered-reader type. The earlier local full run
+preserves its 1,699 passes, one stock trace failure and 23 skips.
+The isolated stock/native correction passed 13 cases and the exact final
+head passed five checks on the verified loader and synthetic search hit.
+[Windows CI 46032934133](https://github.com/srodriguez-lefebre/here/actions/runs/46032934133)
+ran the shared suite with 1,619 passes and 104 skips.
+
+Level 2. [Windows package 46032934126](https://github.com/srodriguez-lefebre/here/actions/runs/46032934126)
+records the same clean source commit. The 110 native controls and six
+frozen GUI and CLI activation smokes passed. Independent verification
+matched all six external hashes and 736 entries in the portable inventory.
+The artifact wheel installed noneditably, returned one synthetic search
+hit through the canonical route and passed five distribution smokes.
+Receipts are in
+`C:/Users/savar/.codex/evidence/here/m3-native-windows-distribution-20261127/`.
+
+| Artifact | SHA-256 |
+|---|---|
+| Installer | `639cc43ecc3f5bbc5648bb86b5a4cd0cb986a1985dace9af7ae140fd7232e88c` |
+| Portable ZIP | `d42dd62fc86560e1cd4d02b9dbc6eadb7750d8fc66658c3ad0db32e387ddfc89` |
+| Bundle inventory | `5920e08f860efe7383afa5e59510db03197f9c1eb3126a7e7b77b88275d11723` |
+| Build provenance | `2c6d8a6378886db46ee54c2b7f31e111509b7a738d2a5487ab278e54024290a8` |
+| Native DLL | `2eae69fcdbfcdf42ca0709c8697fa3f434de7bde4eafc606dab175faa456e566` |
+| SHA256SUMS.txt | `3fa614b5a634ce4ca73a3d3f83be604812a05a8d961f067eb3bbf274654e5835` |
+
+The M3 B contract update binds this merge before rebasing the retained
+`b36162a` candidate. The 0.4.0 release remains part of M3 B.
