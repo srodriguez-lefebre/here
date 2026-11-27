@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sys
 from io import BufferedReader
+from os import SEEK_END
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -215,7 +216,7 @@ def test_import_maps_local_integrity_error_to_io_exit(
 
 
 @requires_native_export
-@pytest.mark.parametrize("fault", ["open", "central_directory_read"])
+@pytest.mark.parametrize("fault", ["open", "central_directory_read", "zip_parser_seek"])
 def test_import_maps_package_access_failure_to_io_exit(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, fault: str
 ) -> None:
@@ -229,10 +230,18 @@ def test_import_maps_package_access_failure_to_io_exit(
     class FailingReader(BufferedReader):
         def read(self, size: int = -1) -> bytes:
             nonlocal injected
-            if self.tell() == central_offset:
+            if fault == "central_directory_read" and self.tell() == central_offset:
                 injected = True
                 raise OSError("Synthetic failure reading the ZIP central directory")
             return super().read(size)
+
+        def seek(self, offset: int, whence: int = 0) -> int:
+            nonlocal injected
+            # Only ZipFile seeks backward from EOF. Preflight uses absolute offsets.
+            if fault == "zip_parser_seek" and whence == SEEK_END and offset < 0:
+                injected = True
+                raise OSError("Synthetic seek failure during ZIP metadata parsing")
+            return super().seek(offset, whence)
 
     def open_package(path, mode="r", *args, **kwargs):
         nonlocal injected
