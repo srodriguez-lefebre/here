@@ -7,14 +7,14 @@ import re
 import stat
 import unicodedata
 import zlib
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path, PurePosixPath
 from struct import Struct
 from struct import error as StructError
-from typing import TYPE_CHECKING, BinaryIO
+from typing import TYPE_CHECKING, BinaryIO, ParamSpec, TypeVar
 from uuid import UUID
 from zipfile import ZIP_DEFLATED, ZIP_STORED, BadZipFile, ZipFile, ZipInfo
 
@@ -71,6 +71,8 @@ _UINT16_MAX = 0xFFFF
 _UINT32_MAX = 0xFFFFFFFF
 _UNSUPPORTED_MEMBER_FLAGS = (1 << 0) | (1 << 5) | (1 << 6) | (1 << 13)
 _NONREGULAR_DOS_ATTRIBUTES = 0x10 | 0x08 | stat.FILE_ATTRIBUTE_REPARSE_POINT
+_P = ParamSpec("_P")
+_T = TypeVar("_T")
 
 
 class InvalidPackage(LibraryError):
@@ -117,17 +119,26 @@ class _BoundedZipReader:
         self._opening = False
         self._directory = b""
 
+    def _stream_call(self, operation: Callable[_P, _T], *args: _P.args, **kwargs: _P.kwargs) -> _T:
+        try:
+            return operation(*args, **kwargs)
+        except OSError:
+            if self._opening:
+                # ZipFile can interpret an OSError during EOCD parsing as a malformed ZIP.
+                raise LibraryError("Could not read the portable package") from None
+            raise
+
     def seek(self, offset: int, whence: int = 0) -> int:
-        position = self._stream.seek(offset, whence)
+        position = self._stream_call(self._stream.seek, offset, whence)
         if self._opening and offset == 0 and whence == 2 and position != self._layout.end:
             raise InvalidPackage("ZIP length changed during inspection")
         return position
 
     def tell(self) -> int:
-        return self._stream.tell()
+        return self._stream_call(self._stream.tell)
 
     def seekable(self) -> bool:
-        return self._stream.seekable()
+        return self._stream_call(self._stream.seekable)
 
     def read(self, size: int = -1) -> bytes:
         # ZipFile also reads small fixed EOCD/ZIP64 records and may search the
@@ -136,17 +147,17 @@ class _BoundedZipReader:
             # CPython 3.12 may use read() for the EOCD comment search.
             end = self._layout.end
             if self._opening and size == -1 and self.tell() == max(0, end - _EOCD_SEARCH_BYTES):
-                return self._stream.read(min(end, _EOCD_SEARCH_BYTES))
+                return self._stream_call(self._stream.read, min(end, _EOCD_SEARCH_BYTES))
             raise InvalidPackage("ZIP metadata read exceeds the inspection limit")
         if not self._opening:
             return self._stream.read(size)
         central = self._layout.central
         if size == central.size and self.tell() == central.start:
             self._central_read = True
-            self._stream.seek(central.start + size)
+            self._stream_call(self._stream.seek, central.start + size)
             return self._directory
         if size <= _EOCD_SEARCH_BYTES:
-            return self._stream.read(size)
+            return self._stream_call(self._stream.read, size)
         raise InvalidPackage("ZIP directory changed during inspection")
 
 
