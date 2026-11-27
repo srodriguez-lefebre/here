@@ -49,16 +49,14 @@ _Query = TypeVar("_Query", MeetingQuery, SearchQuery)
 
 
 def _append_generation_batch(digest: Any, rows: list[tuple[object, ...]]) -> None:
-    encoded = json.dumps(
-        rows, ensure_ascii=False, separators=(",", ":"), allow_nan=False
-    ).encode("utf-8")
+    encoded = json.dumps(rows, ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode(
+        "utf-8"
+    )
     digest.update(len(encoded).to_bytes(8, "big"))
     digest.update(encoded)
 
 
-def _ordered_text_batch(
-    rows: list[tuple[object, ...]], previous: tuple[object, ...]
-) -> bool:
+def _ordered_text_batch(rows: list[tuple[object, ...]], previous: tuple[object, ...]) -> bool:
     for row in rows:
         if tuple(map(type, row)) != _FTS_TEXT_TYPES or row < previous:
             return False
@@ -77,9 +75,11 @@ def _ordered_fts_digest(library: LibraryConnection, digest: Any) -> Any:
     try:
         # A cheap suffix check avoids replaying nearly the whole input for
         # common late inserts or an appended replacement of an old revision.
-        with closing(library.execute(
-            _FTS_GENERATION_SELECT + " ORDER BY rowid DESC LIMIT ?", (_GENERATION_BATCH_ROWS,)
-        )) as cursor:
+        with closing(
+            library.execute(
+                _FTS_GENERATION_SELECT + " ORDER BY rowid DESC LIMIT ?", (_GENERATION_BATCH_ROWS,)
+            )
+        ) as cursor:
             cursor.row_factory = None
             tail = cursor.fetchall()
         tail.reverse()
@@ -104,6 +104,7 @@ def _ordered_fts_digest(library: LibraryConnection, digest: Any) -> Any:
         raise
     trial.update(b"\x00" * 8)
     return trial
+
 
 def normalize_query_text(text: str) -> str:
     """Remove controls while retaining whitespace as token boundaries."""
@@ -515,7 +516,9 @@ class SearchService:
                 else:
                     trial = _ordered_fts_digest(library, digest)
             elif name == "active" and native_loaded:
-                active_native_sql = f"SELECT here_search_v2_active_row({_ACTIVE_COLUMNS}){active_from}"
+                active_native_sql = (
+                    f"SELECT here_search_v2_active_row({_ACTIVE_COLUMNS}){active_from}"
+                )
                 trial = _native_search.active_digest(library, digest, active_native_sql)
             if trial is not None:
                 digest = trial

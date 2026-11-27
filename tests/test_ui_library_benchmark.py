@@ -196,6 +196,7 @@ def test_real_guarded_library_query_render_and_worker_drain_keep_all_gaps_below_
     controller = HereApplicationController(
         memory_service=catalog.memory, capture_factory=forbidden, live_factory=forbidden
     )
+
     class QueryWindowRecoveryService(RecoveryService):
         def discover(self) -> list[RecoveryCandidate]:
             # Startup reconciliation mutates this fixture before any query.

@@ -17,8 +17,12 @@ from test_memory_search_native_v2 import (
     _install_real_loader,
     _legacy_cursor,
     _load,
-    loader_module,
-    native_dll,
+)
+from test_memory_search_native_v2 import (
+    loader_module as loader_module,
+)
+from test_memory_search_native_v2 import (
+    native_dll as native_dll,
 )
 from test_memory_search_row_representation import (
     _oracles,
@@ -85,9 +89,9 @@ def test_successful_native_load_routes_active_rows_through_sqlite(
     # This test targets ACTIVE only. Separate real DLL controls cover FTS plus ACTIVE.
     search, _ = _api()
     monkeypatch.setattr(
-        _native_search, "fts_digest", lambda candidate, digest: search._ordered_fts_digest(
-            candidate, digest
-        )
+        _native_search,
+        "fts_digest",
+        lambda candidate, digest: search._ordered_fts_digest(candidate, digest),
     )
     with closing(_vector(tmp_path, "rows257")) as library:
         assert _producer_bytes(library, monkeypatch) == _oracles()["cases"]["rows257"]
@@ -104,10 +108,18 @@ def active_connection(native_dll):
 
 
 def test_active_row_bytes_preserve_types_and_strict_utf8(active_connection):
-    cells = ("", None, "café雪🦊\u2028", -(2**63), 2**63 - 1, 0, -1, 'a\x00\x01\b\t\n\f\r"\\/', None)
-    (row,) = active_connection.execute(
-        f"SELECT {_ACTIVE}(?,?,?,?,?,?,?,?,?)", cells
-    ).fetchone()
+    cells = (
+        "",
+        None,
+        "café雪🦊\u2028",
+        -(2**63),
+        2**63 - 1,
+        0,
+        -1,
+        'a\x00\x01\b\t\n\f\r"\\/',
+        None,
+    )
+    (row,) = active_connection.execute(f"SELECT {_ACTIVE}(?,?,?,?,?,?,?,?,?)", cells).fetchone()
     assert type(row) is bytes
     assert row == _row_json(*cells)
 
