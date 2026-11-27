@@ -1,9 +1,36 @@
 # Estado de here
 
-Actualizado: 2026-11-13. Leé CLAUDE.md primero; después este archivo y
+Actualizado: 2026-11-27. Leé CLAUDE.md primero; después este archivo y
 `docs/MASTER_PLAN.md`. Historial y rulings: `docs/development/DELIVERY.md`.
 
-## Checkpoint vigente — 2026-11-13
+## Checkpoint vigente — 2026-11-27
+
+M2 está cerrado en 0.3.0. M3 A quedó mergeado a `main` por
+[PR #28](https://github.com/srodriguez-lefebre/here/pull/28) en
+`a1a83629cdfab64dd249f877cdd443e7f7d96b08`. El head `3a9cc11` tiene
+revisión independiente, CI Windows y paquete verdes. Nivel 2. Búsqueda
+397,40 ms p95 y heartbeat máximo 9,462 ms en el candidato `7b04f76`.
+La extensión de Windows conserva los cursores v2. El wheel no editable
+pasó sus cinco smokes y ejecutó la búsqueda canónica.
+
+M3 B conserva su candidato `b36162a`. Después de mergear el traspaso
+documental, el orquestador rebasea la rama, verifica el paquete con
+QtMultimedia, completa los gates de B y cierra M3 en 0.4.0. La medición
+del seek en el paquete anterior de B fue nivel 3 en la máquina de
+desarrollo, con cota de 36,245 ms en las cuatro marcas sintéticas.
+
+| Frente | Rama y worktree bajo `C:/Users/savar/.codex/worktrees/` | Responsable |
+| --- | --- | --- |
+| M3 A, chat `01a1af04-e779-7363-be61-c840651b0b18` | `codex/m3-search-native-active-v2` · `m3-search-native-active-v2/here` | Chat M3 A, entregado |
+| M3 B, contrato de traspaso | `codex/m3-b-accepted-native-handoff` · `m3-b-accepted-native-handoff/here` | Orquestador, SPEC y PLAN preparados con `m3_b_native_handoff_docs_sol` |
+| M3 B, integración | `codex/m3-library` · `m3-library-group/here` | Orquestador |
+| M4 A, fixtures sintéticos | `codex/m4-grounded-verifier-fixtures` · `m4-grounded-verifier-fixtures/here` | `m3_b_native_handoff_docs_sol`, preparar transferencia tras M3 |
+| M5 B, portabilidad, chat `01a1af04-b158-75a2-8933-98783880f3e8` | `codex/m5-portability-adapter-integration` · `m5-portability-adapter-integration/here` | Chat M5 B, claims esperan M4 B |
+
+Copilot sigue omitido por ruling 64. La prueba de dos horas sigue
+**omitida por ruling 5**.
+
+## Checkpoint histórico — 2026-11-13
 
 M2 cerrado. Versión 0.3.0 mergeada por [PR #25](https://github.com/srodriguez-lefebre/here/pull/25)
 en `b4b3d1b`, head revisado `55d68e2`. Nivel 2. CI Windows `43461764790` pasó
