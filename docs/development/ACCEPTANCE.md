@@ -1387,3 +1387,42 @@ Recibos `stock-exit.json`, `red-original-dll-exit.json`, `compile.json`,
 `ordered-shared-exit.json`, `performance-summary.json` y JUnit en
 `C:/Users/savar/.codex/evidence/here/m3-native-fts-order-20261127-01/`.
 [PR #28](https://github.com/srodriguez-lefebre/here/pull/28)
+
+
+## 2026-11-27 — M3 B · Accesibilidad del reproductor
+
+Nivel 2 con backend multimedia simulado. En `a82c14e` pasaron tres casos,
+con 13 deseleccionados en 3,60 s de shell. Cubrieron teclado, nombres
+expuestos por QAccessible y contraste de roles en tema claro y oscuro.
+La revisión independiente aprobó el alcance. El commit solo de tests
+`b36162a` integró los controles y el código de producción del paquete
+`912f63f` se mantuvo intacto.
+
+Recibo `%TEMP%/m3-playback-accessibility-a82c14e-20261127.xml`.
+
+## 2026-11-27 — M5 B · Portabilidad, advertencias de Markdown e integración Qt
+
+Nivel 2. El integrado `1498f4c` pasó 140 casos en 125,46 s de shell.
+La revisión detectó que una advertencia posterior a la publicación de
+Markdown se perdía. El RED `9eee8f9` registró dos fallos y diez
+deselecciones en 3,78 s. `b04d30f` corrigió la propagación y pasó 142
+casos en 109,46 s. El fixture del caso nominal en `56166d8` obtuvo
+aprobación en la nueva revisión y pasó 12 casos en 5,88 s. La
+integración `f4a6a6f` comparte su árbol.
+
+El commit solo de tests `28a5ba7` pasó un caso en 3,69 s. Ejercitó
+importación y exportación Markdown desde Qt con catálogo y
+`PortabilityService` reales, raíces temporales y selector simulado.
+La fila de M5 sigue abierta. Quedan pendientes claims, M5 A, setup y upgrade.
+
+Recibos en `%TEMP%`:
+`m5-portability-adapters-1498f4c-20261127.xml`,
+`m5-markdown-warning-red-9eee8f9-20261127.xml`,
+`m5-portability-verified-b04d30f-20261127.xml`,
+`m5-markdown-typed-56166d8-20261127.xml` y
+`m5-portability-qt-core-28a5ba7-20261127.xml`.
+
+M3 A conserva pendiente la decisión del usuario sobre R66. El diseño
+condicional está en el scratch `33192ac` y el producto sigue sin cambios
+por ese diseño. Copilot sigue omitido por ruling 64 y las dos horas
+siguen **omitidas por ruling 5**.

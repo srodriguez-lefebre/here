@@ -2908,3 +2908,40 @@ Receipts `stock-exit.json`, `red-original-dll-exit.json`, `compile.json`,
 `ordered-shared-exit.json`, `performance-summary.json` and JUnit are in
 `C:/Users/savar/.codex/evidence/here/m3-native-fts-order-20261127-01/`.
 [PR #28](https://github.com/srodriguez-lefebre/here/pull/28)
+
+
+## 2026-11-27 — M3 B player accessibility verification
+
+Focused level 2 with the simulated multimedia backend. `a82c14e` passed
+three cases with 13 deselected in 3.60 s shell time, covering keyboard
+operation, names exposed through QAccessible and light/dark role contrast.
+Independent review approved the scope. Test-only integration `b36162a`
+left the production code of package `912f63f` intact.
+
+Receipt `%TEMP%/m3-playback-accessibility-a82c14e-20261127.xml`.
+
+## 2026-11-27 — M5 B portability, Markdown warnings and Qt integration
+
+Level 2. Integrated `1498f4c` passed 140 cases in 125.46 s shell time.
+Review found a dropped post-publication Markdown warning. RED `9eee8f9`
+returned two failures and ten deselections in 3.78 s. `b04d30f` restored
+warning propagation and passed 142 cases in 109.46 s. The success-path
+fixture at `56166d8` passed re-review and 12 cases in 5.88 s. Integration
+`f4a6a6f` shares its verified tree.
+
+Test-only `28a5ba7` passed one case in 3.69 s. It exercised import and
+Markdown export from Qt through the real catalog and `PortabilityService`,
+with temporary roots and a simulated picker. Claims, M5 A, setup and
+upgrade remain pending. The M5 acceptance row stays open.
+
+JUnit receipts in `%TEMP%` are
+`m5-portability-adapters-1498f4c-20261127.xml`,
+`m5-markdown-warning-red-9eee8f9-20261127.xml`,
+`m5-portability-verified-b04d30f-20261127.xml`,
+`m5-markdown-typed-56166d8-20261127.xml` and
+`m5-portability-qt-core-28a5ba7-20261127.xml`.
+
+The R66 user decision remains pending. Scratch `33192ac` records a
+conditional design. Product work on that design remains on hold. Copilot
+remains omitted under ruling 64 and the two-hour run remains
+**omitida por ruling 5**.
