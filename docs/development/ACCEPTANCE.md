@@ -21,7 +21,7 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M2 | Deletion clears managed memory without resurrection | DB/FTS/files/backup inspection after restart | Nivel 2 en `r62-green-3-61a5088c` (110 pases) y CI `43461764790` (1273 pases). Incluye la matriz R42 de kill/reinicio y orígenes externos. Revisión independiente y PR #25 mergeados. |
 | M2 · 0.3.0 | Installed wheel and Windows package | Fresh wheel and stable installer artifact with checksums | Nivel 2. `m2-030-wheel-a4e464a319f7-a98d6f06` pasó 4 smokes. Package `43461764783` pasó la instalación estable con datos sintéticos y publicó el artefacto `14056018512`; sus seis hashes fueron verificados. |
 | M3 | Listing/filter/search and original moment navigation | End-to-end Qt selection and seek plus real WAV marker playback | Abierto. Focos históricos de búsqueda, Biblioteca y ACK de borrado registrados abajo. Resolver, reproducción y seek real pendientes. |
-| M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | Gates locales aprobados, nivel 2 en `7b04f76`. Búsqueda pública 397,395940002 ms p95 (5+40 válidas) y heartbeat Qt con gap máximo de 9,462 ms. Quedan pendientes la suite completa local, los gates Windows finales y el merge. |
+| M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | Gates locales aprobados, nivel 2 en `7b04f76`. Búsqueda pública 397,395940002 ms p95 (5+40 válidas) y heartbeat Qt con gap máximo de 9,462 ms. La suite completa local obtuvo un fallo de arnés. El foco corregido pasó 13 casos. Gates Windows finales y merge pendientes. |
 | M4 | Multi-meeting answers/extractions with valid evidence | Source-resolution and semantic synthetic corpus, provider smoke | Open |
 | M4 | Uncertainty/injection/cancellation/deletion remain honest | No-evidence, invalid-citation, concurrent delete/redaction tests | Open |
 | M5 | Offline first run, settings, tray/startup and safe exit | Qt, process concurrency and Windows settings tests | Open |
@@ -1224,3 +1224,26 @@ SHA-256 del JUnit de gates
 `C8619BBBF4BF5AA418FAF0C31C8BB27562F350ED9C768EF8CC63EF38B573AB28`.
 El foco ACTIVE está en
 `C:/Users/savar/.codex/evidence/here/m3-native-active-v2-20261127-01/`.
+
+
+### R76 · Suite local con DLL real y corrección del control FTS
+
+Nivel 2 en `7b04f76`. La suite `r76-full-7b04f76` terminó con 1.699
+pases, un fallo, 23 omisiones y dos avisos, sin procesos remanentes.
+El control stock de inversión FTS esperaba el SQL de escaneo por rowid
+ascendente cuando se seleccionaba el camino nativo. Las comprobaciones de
+digest y replay canónicos pasaron. `2286bd7` fuerza el camino stock solo
+en ese test y conserva todas sus aserciones. El foco pasó 13 casos con
+el mismo perfil de DLL y cubrió replay stock y nativo.
+`0d45b03` solo cambió el formato del test.
+
+El paquete diagnóstico Windows `46031147574` terminó en verde sobre
+`c7695c791cddd16ced8721b36d297963115dc359`. Los gates Windows finales
+sobre el descendiente con la corrección de test y documentación siguen
+pendientes. [Paquete 46031147574](https://github.com/srodriguez-lefebre/here/actions/runs/46031147574)
+
+Recibos `r76-full-7b04f76.xml`, `r76-full-7b04f76.log` y
+`r76-stock-native-inversion-2286bd7.xml` en
+`C:/Users/savar/.codex/evidence/here/m3-native-windows-distribution-20261127/`.
+SHA-256 del JUnit de la suite
+`533309B72A746F0639940876E0E48468D5C525C0C5BDB12F6BF1FE381C4B9187`.
