@@ -7,8 +7,8 @@ import hashlib
 import importlib
 import json
 import os
-import sqlite3
 import shutil
+import sqlite3
 import struct
 import sys
 from contextlib import closing
@@ -411,3 +411,97 @@ def test_packaged_loader_checks_provenance_before_registration(
         else:
             with pytest.raises(sqlite3.OperationalError, match="no such function"):
                 _aggregate(connection)
+
+
+@pytest.fixture
+def selected_encoder(tmp_path, monkeypatch, loader_module):
+    dll = tmp_path / "_native_search_v2.dll"
+    with closing(sqlite3.connect(":memory:")) as connection:
+        (source_id,) = connection.execute("SELECT sqlite_source_id()").fetchone()
+    # Isolate the SQLite load boundary; artifact verification is covered separately.
+    monkeypatch.setattr(loader_module, "_runtime_supported", lambda: True)
+    monkeypatch.setattr(loader_module, "_packaged_encoder", lambda _files: (dll, source_id))
+    return dll
+
+
+def test_sqlite_load_refusal_replays_canonical_search_in_same_r50(
+    catalog, monkeypatch, loader_module, selected_encoder
+):
+    root, _, repo = catalog
+    search, models = _api()
+    visible = _publish(repo, 83, texts=("needle visible",) * 3)
+    query = models.SearchQuery(text="needle", limit=2)
+    with monkeypatch.context() as stock:
+        stock.setattr(loader_module, "load_fts_encoder", lambda _library: False)
+        expected = search.SearchService(_Factory(root)).search(query)
+    assert expected.next_cursor
+    assert {item.meeting_id for item in expected.items} == {visible[0]}
+
+    setting = sqlite3.SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION
+    events = []
+    config_at_close = []
+    load_attempts = []
+
+    class RefusingConnection(sqlite3.Connection):
+        def load_extension(self, name, /, *, entrypoint=None):
+            assert self.in_transaction
+            assert self.getconfig(setting)
+            load_attempts.append((name, entrypoint))
+            events.append("load refused")
+            raise sqlite3.OperationalError("Synthetic SQLite DLL load refusal")
+
+        def close(self):
+            config_at_close.append(self.getconfig(setting))
+            super().close()
+
+    from here.memory.database import open_library
+
+    connect = sqlite3.connect
+
+    def open_search_view():
+        with monkeypatch.context() as connection_factory:
+            connection_factory.setattr(
+                sqlite3,
+                "connect",
+                lambda *args, **kw: connect(*args, factory=RefusingConnection, **kw),
+            )
+            library = open_library(root)
+        library.connection.set_trace_callback(events.append)
+        return library
+
+    assert search.SearchService(open_search_view).search(query) == expected
+    assert load_attempts == [(str(selected_encoder), _ENTRYPOINT)]
+    assert config_at_close == [False]
+    assert not _native_statements(events)
+    (canonical_sort,) = _canonical_sorts(events)
+    between = events[events.index("load refused") + 1 : events.index(canonical_sort)]
+    assert not any(sql.split()[0].upper() in {"BEGIN", "COMMIT", "ROLLBACK"} for sql in between)
+
+
+@pytest.mark.parametrize("phase", ["enable", "reset"])
+def test_sqlite_load_configuration_failure_is_visible(loader_module, selected_encoder, phase):
+    setting = sqlite3.SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION
+    configuration_error = sqlite3.OperationalError(f"Synthetic load configuration {phase} failure")
+    load_attempts = []
+
+    class ConfigurationFailure(sqlite3.Connection):
+        def setconfig(self, option, enable=True, /):
+            if option == setting and enable and phase == "enable":
+                raise configuration_error
+            super().setconfig(option, enable)
+            if option == setting and not enable and phase == "reset":
+                raise configuration_error
+
+        def load_extension(self, name, /, *, entrypoint=None):
+            load_attempts.append((name, entrypoint))
+            raise sqlite3.OperationalError("Synthetic SQLite DLL load refusal")
+
+    with closing(sqlite3.connect(":memory:", factory=ConfigurationFailure)) as connection:
+        with pytest.raises(sqlite3.OperationalError) as caught:
+            loader_module.load_packaged_encoder(connection)
+        assert caught.value is configuration_error
+        if phase == "reset":
+            assert not connection.getconfig(setting)
+            assert load_attempts == [(str(selected_encoder), _ENTRYPOINT)]
+        else:
+            assert not load_attempts
