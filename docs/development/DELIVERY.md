@@ -2796,3 +2796,46 @@ Ruling 73 records the clock validation for the isolated probe.
 
 Log `%TEMP%/here-m3-audio-4ff2a45044334ee6ac28633fc434a1cd/m3-seek-timing-diagnostic-7472090-b-20261127.log`.
 [Windows package 46015025767](https://github.com/srodriguez-lefebre/here/actions/runs/46015025767)
+
+
+## 2026-11-27 — M3 B real seek certified on the 912f63f Windows package
+
+Level 3 covers 1× Media Foundation rendering through Windows loopback
+scoped to the process tree, on Windows 11 Home Single Language 10.0.26300
+and AMD Ryzen 9 5900HS. Exact package source was
+`912f63f8191d0312d647806241d352814c52d870`, workflow `46015025767`.
+Synthetic WAV SHA-256 was
+`eac58e90b86607135ad0a30562a36f68b2914b95dc81e77a3553b7b664b4cabc`.
+
+The four targets at 0, 1,200, 2,800 and 4,700 ms rendered at 2.1719,
+1,197.0874, 2,801.9962 and 4,701.8670 ms. All four exited 0 with zero
+uncertain packets. Maximum absolute error was 2.912626 ms (under
+2.9127 ms). The largest absolute error plus uncertainty was 36.2448 ms
+against the 250 ms gate.
+
+Independent review approved probe `62f0404c3daa835e19c07e8ac068da98a4a7deb3`.
+Build and calibration passed with zero errors and five warnings (three
+Nullable in Calibration and two Windows CA1416). Probe SHA-256 was
+`2C540F6AE2F2BB3DF555B11482335BE0AE584ED0EB27E10B6D036FC40EAD4D44`.
+Initial UI observation failures yielded no audio or measurements.
+Independent clean installation remains pending for M5. M3 B still needs
+rebase and the full exact-head suite after M3 A merges.
+
+Receipts `0.json`, `1200.json`, `2800.json`, `4700.json` and `result.json`
+are in `C:/Users/savar/.codex/evidence/here/m3-b-seek-912f63f-20261127/`.
+[Windows package 46015025767](https://github.com/srodriguez-lefebre/here/actions/runs/46015025767)
+
+## 2026-11-27 — M3 A Python heartbeat pass and R66 prototype diagnostic
+
+Level 2. The Python heartbeat on `7e3bd56` drained eight searches with a
+maximum gap of 18.65 ms against 50 ms and three matching corpus seals.
+R66 on CPython 3.13.15 and SQLite 3.53.1 measured 570.24 ms p95 with five
+warmups and 40 valid samples. Stock controls returned 126 passes and one
+skip. Native controls returned 126 passes. Cross-backend v2 cursors returned
+`corpus_changed` in both directions. Digests for INTEGER/REAL ties and
+signed zero varied with physical row order. The p95 gate keeps PR #28 open.
+
+Receipts `post.json`, `heartbeat-python-7e3.xml`, `5-plus-40-py313-03.xml`
+and `native-py313-03.xml` are in
+`C:/Users/savar/.codex/evidence/here/m3-native-current-20261127-01/`.
+[PR #28](https://github.com/srodriguez-lefebre/here/pull/28)

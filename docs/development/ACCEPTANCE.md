@@ -20,7 +20,7 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M2 · criterio 15 | Suite completa en CI de Windows sin credencial real ni display | Corrida hospedada sobre el head exacto del PR M2 B | Nivel 2. CI `43461764790` pasó 1273 pruebas y omitió dos smokes de wheel, que pasaron en la corrida no editable. Head `55d68e2`. |
 | M2 | Deletion clears managed memory without resurrection | DB/FTS/files/backup inspection after restart | Nivel 2 en `r62-green-3-61a5088c` (110 pases) y CI `43461764790` (1273 pases). Incluye la matriz R42 de kill/reinicio y orígenes externos. Revisión independiente y PR #25 mergeados. |
 | M2 · 0.3.0 | Installed wheel and Windows package | Fresh wheel and stable installer artifact with checksums | Nivel 2. `m2-030-wheel-a4e464a319f7-a98d6f06` pasó 4 smokes. Package `43461764783` pasó la instalación estable con datos sintéticos y publicó el artefacto `14056018512`; sus seis hashes fueron verificados. |
-| M3 | Listing/filter/search and original moment navigation | End-to-end Qt selection and seek plus real WAV marker playback | Abierto. Focos de citas y controlador Qt en el checkpoint de reanudación. Pendientes la navegación integrada y la prueba audible de seek dentro de 250 ms. |
+| M3 | Listing/filter/search and original moment navigation | End-to-end Qt selection and seek plus real WAV marker playback | Abierto. Focos de citas y controlador Qt en el checkpoint de reanudación. Navegación integrada pendiente. Seek real dentro de 250 ms certificado a nivel 3 para el paquete Windows de `912f63f` en el checkpoint 2026-11-27. |
 | M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | Abierto. El checkpoint de reanudación registra p95 de 1431,6706 ms y un heartbeat sin medición. `r63-query-benchmark-1` en `ca80f49` con fuente `64013ade` falló por p95 de 879,4833999891125 ms frente al límite de 500 ms. Cinco precalentamientos y 40 muestras válidas, mediana 809,5637999940664 ms. Nivel 2 y review independiente aprobada para los focos R63 de oráculo (8), generación (10) y regresión (240). R58 `12774` verificó ocho consultas UI con máximo de 8,9216 ms en su propio alcance. Sin corrida combinada ni certificación nueva. |
 | M4 | Multi-meeting answers/extractions with valid evidence | Source-resolution and semantic synthetic corpus, provider smoke | Open |
 | M4 | Uncertainty/injection/cancellation/deletion remain honest | No-evidence, invalid-citation, concurrent delete/redaction tests | Open |
@@ -1275,3 +1275,54 @@ del seek dentro de 250 ms para nivel 3.
 
 Log `%TEMP%/here-m3-audio-4ff2a45044334ee6ac28633fc434a1cd/m3-seek-timing-diagnostic-7472090-b-20261127.log`.
 [Paquete 46015025767](https://github.com/srodriguez-lefebre/here/actions/runs/46015025767)
+
+
+## 2026-11-27 — M3 B · Seek real certificado para el paquete 912f63f
+
+Nivel 3 para seek a 1× del paquete Windows exacto
+`912f63f8191d0312d647806241d352814c52d870` (corrida `46015025767`).
+Se midió el audio renderizado por Media Foundation mediante loopback Windows
+del árbol del proceso en Windows 11 Home Single Language 10.0.26300,
+AMD Ryzen 9 5900HS. WAV sintético SHA-256
+`eac58e90b86607135ad0a30562a36f68b2914b95dc81e77a3553b7b664b4cabc`.
+
+| Marca (ms) | Medido (ms) | Error absoluto más incertidumbre (ms) |
+|---|---:|---:|
+| 0 | 2,1719 | 35,6349 |
+| 1.200 | 1.197,0874 | 36,2448 |
+| 2.800 | 2.801,9962 | 35,4082 |
+| 4.700 | 4.701,8670 | 35,4082 |
+
+Las cuatro observaciones terminaron con salida 0 y cero paquetes inciertos.
+El error absoluto máximo fue 2,912626 ms (menor que 2,9127 ms) y el mayor
+error absoluto más incertidumbre fue 36,2448 ms, dentro del límite de 250 ms.
+La sonda `62f0404c3daa835e19c07e8ac068da98a4a7deb3` recibió aprobación
+independiente. Compilación y calibración pasaron con cero errores y cinco
+warnings (tres de Nullable en Calibration y dos CA1416 de Windows).
+SHA-256 del ejecutable de la sonda
+`2C540F6AE2F2BB3DF555B11482335BE0AE584ED0EB27E10B6D036FC40EAD4D44`.
+
+Las observaciones iniciales con fallo de UI quedaron sin audio ni medición.
+La certificación se limita al render por proceso de este paquete. Siguen
+pendientes el rebase y la suite completa del head exacto de M3 B tras el
+merge de M3 A, y la instalación limpia independiente de M5.
+Recibos `0.json`, `1200.json`, `2800.json`, `4700.json` y `result.json` en
+`C:/Users/savar/.codex/evidence/here/m3-b-seek-912f63f-20261127/`.
+[Paquete 46015025767](https://github.com/srodriguez-lefebre/here/actions/runs/46015025767)
+
+## 2026-11-27 — M3 A · Heartbeat Python y prototipo R66
+
+Nivel 2. En `7e3bd56`, el heartbeat Python drenó ocho consultas. El gap
+máximo fue 18,65 ms frente al límite de 50 ms y los tres sellos coincidieron.
+R66, con CPython 3.13.15 y SQLite 3.53.1, obtuvo 570,24 ms p95 con cinco
+precalentamientos y 40 muestras válidas. Pasaron 126 controles stock con
+una omisión y los 126 controles nativos. El cruce de cursores v2 devolvió
+`corpus_changed` en ambos sentidos. Los digests de empates INTEGER/REAL y
+ceros con signo variaron al cambiar el orden físico. El PR #28 sigue
+abierto por p95.
+
+Recibos `post.json`, `heartbeat-python-7e3.xml`, `5-plus-40-py313-03.xml` y
+
+ative-py313-03.xml` en
+`C:/Users/savar/.codex/evidence/here/m3-native-current-20261127-01/`.
+[PR #28](https://github.com/srodriguez-lefebre/here/pull/28)
