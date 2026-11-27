@@ -14,8 +14,9 @@ import sysconfig
 from contextlib import ExitStack, closing
 from ctypes import wintypes
 from importlib import import_module
+from io import BufferedReader
 from pathlib import Path
-from typing import Any, BinaryIO
+from typing import Any
 
 from here.memory.database import IntegrityFailure, LibraryConnection, LibraryError
 from here.output.paths import session_artifact_path
@@ -59,7 +60,7 @@ def _runtime_supported() -> bool:
     )
 
 
-def _windows_amd64_dll(file: BinaryIO) -> bool:
+def _windows_amd64_dll(file: BufferedReader) -> bool:
     dos = file.read(64)
     if len(dos) != 64 or dos[:2] != b"MZ":
         return False
@@ -76,7 +77,7 @@ def _windows_amd64_dll(file: BinaryIO) -> bool:
     )
 
 
-def _open_dll_for_load(path: Path) -> BinaryIO:
+def _open_dll_for_load(path: Path) -> BufferedReader:
     # Deny Windows write/delete sharing until SQLite has loaded the verified
     # file. Do not follow a leaf reparse point.
     import msvcrt
