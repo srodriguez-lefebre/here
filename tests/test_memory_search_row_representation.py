@@ -93,14 +93,23 @@ def _producer_bytes(library, monkeypatch):
     search, _ = _api()
     backend = importlib.import_module("here.memory.service")
     original_sha256 = hashlib.sha256
-    observed = []
+    original = []
+    latest = None
 
     class CapturedDigest:
         def __init__(self, data=b"", *args, **kwargs):
             self.actual = original_sha256(data, *args, **kwargs)
             self.parts = [bytes(data)]
 
+        def copy(self):
+            trial = object.__new__(type(self))
+            trial.actual = self.actual.copy()
+            trial.parts = self.parts.copy()
+            return trial
+
         def update(self, data):
+            nonlocal latest
+            latest = self
             self.parts.append(bytes(data))
             return self.actual.update(data)
 
@@ -109,7 +118,7 @@ def _producer_bytes(library, monkeypatch):
 
     def capture(data=b"", *args, **kwargs):
         digest = CapturedDigest(data, *args, **kwargs)
-        observed.append(digest)
+        original.append(digest)
         return digest
 
     error = None
@@ -131,12 +140,12 @@ def _producer_bytes(library, monkeypatch):
         assert library.connection.row_factory is sqlite3.Row
         named = library.execute("SELECT 42 AS named_value").fetchone()
         assert isinstance(named, sqlite3.Row) and named["named_value"] == 42
-    assert len(observed) == 1
+    assert len(original) == 1 and latest is not None
     return {
-        "stream_b64": base64.b64encode(b"".join(observed[0].parts)).decode("ascii"),
+        "stream_b64": base64.b64encode(b"".join(latest.parts)).decode("ascii"),
         "digest": result,
         "error": error,
-        "actual_hash_hexdigest": observed[0].hexdigest(),
+        "actual_hash_hexdigest": latest.hexdigest(),
     }
 
 

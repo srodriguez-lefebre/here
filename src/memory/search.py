@@ -11,9 +11,10 @@ import binascii
 import hashlib
 import json
 import math
+import sqlite3
 import unicodedata
 from collections.abc import Callable, Iterator
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from dataclasses import replace
 from datetime import datetime, timezone
 from typing import Any, TypeVar
@@ -39,8 +40,68 @@ _SEARCH_ORDER = "rank-asc/date-desc-null-last/id-asc/segment-asc"
 _CURSOR_VERSION = 2
 _ROUTES = {"fts", "hybrid", "literal", "literal-partial"}
 _GENERATION_BATCH_ROWS = 256
+_FTS_GENERATION_SELECT = "SELECT meeting_id,revision_id,segment_id,text,title FROM segments_fts"
+_FTS_SCHEMA_PREFIX = "CREATE VIRTUAL TABLE segments_fts USING fts5("
+_FTS_TEXT_TYPES = (str, str, str, str, str)
 _Query = TypeVar("_Query", MeetingQuery, SearchQuery)
 
+
+def _append_generation_batch(digest: Any, rows: list[tuple[object, ...]]) -> None:
+    encoded = json.dumps(
+        rows, ensure_ascii=False, separators=(",", ":"), allow_nan=False
+    ).encode("utf-8")
+    digest.update(len(encoded).to_bytes(8, "big"))
+    digest.update(encoded)
+
+
+def _ordered_text_batch(
+    rows: list[tuple[object, ...]], previous: tuple[object, ...]
+) -> bool:
+    for row in rows:
+        if tuple(map(type, row)) != _FTS_TEXT_TYPES or row < previous:
+            return False
+        previous = row
+    return True
+
+
+def _ordered_fts_digest(library: LibraryConnection, digest: Any) -> Any:
+    with closing(library.execute("PRAGMA encoding")) as cursor:
+        cursor.row_factory = None
+        if cursor.fetchone() != ("UTF-8",) or cursor.connection.text_factory is not str:
+            return None
+
+    # FTS5 provides the rowid ordering. Prove BINARY order in this view; the
+    # order of UTF-8 bytes for valid text is the same as Python's str order.
+    try:
+        # A cheap suffix check avoids replaying nearly the whole input for
+        # common late inserts or an appended replacement of an old revision.
+        with closing(library.execute(
+            _FTS_GENERATION_SELECT + " ORDER BY rowid DESC LIMIT ?", (_GENERATION_BATCH_ROWS,)
+        )) as cursor:
+            cursor.row_factory = None
+            tail = cursor.fetchall()
+        tail.reverse()
+        if not _ordered_text_batch(tail, ()):
+            return None
+
+        trial = digest.copy()
+        trial.update(b"fts\x00")
+        previous: tuple[object, ...] = ()
+        with closing(library.execute(_FTS_GENERATION_SELECT + " ORDER BY rowid")) as cursor:
+            cursor.row_factory = None
+            while rows := cursor.fetchmany(_GENERATION_BATCH_ROWS):
+                if not _ordered_text_batch(rows, previous):
+                    return None
+                previous = rows[-1]
+                _append_generation_batch(trial, rows)
+    except sqlite3.OperationalError as exc:
+        # An earlier canonical frame can fail to encode before a later
+        # malformed cell is decoded. Replay to restore that error ordering.
+        if str(exc).startswith("Could not decode to UTF-8 column"):
+            return None
+        raise
+    trial.update(b"\x00" * 8)
+    return trial
 
 def normalize_query_text(text: str) -> str:
     """Remove controls while retaining whitespace as token boundaries."""
@@ -428,8 +489,8 @@ class SearchService:
             sources.append(
                 (
                     "fts",
-                    "SELECT meeting_id,revision_id,segment_id,text,title "
-                    "FROM segments_fts ORDER BY meeting_id,revision_id,segment_id,text,title",
+                    _FTS_GENERATION_SELECT
+                    + " ORDER BY meeting_id,revision_id,segment_id,text,title",
                 )
             )
         allowed = "('complete','partial')" if partial else "('complete')"
@@ -444,21 +505,26 @@ class SearchService:
                 + " ORDER BY m.id,r.id,s.ordinal,s.id",
             )
         )
+        current_fts_schema = False
         for name, sql in sources:
+            if name == "fts" and current_fts_schema:
+                trial = _ordered_fts_digest(library, digest)
+                if trial is not None:
+                    digest = trial
+                    continue
             digest.update(name.encode("ascii") + b"\x00")
-            cursor = library.execute(sql)
-            cursor.row_factory = None
-            # Fixed row batches retain every ordered cell without a JSON encoder
-            # and frame per row. Working state never grows to the whole corpus.
-            while rows := cursor.fetchmany(_GENERATION_BATCH_ROWS):
-                encoded = json.dumps(
-                    rows,
-                    ensure_ascii=False,
-                    separators=(",", ":"),
-                    allow_nan=False,
-                ).encode("utf-8")
-                digest.update(len(encoded).to_bytes(8, "big"))
-                digest.update(encoded)
+            with closing(library.execute(sql)) as cursor:
+                cursor.row_factory = None
+                # Fixed row batches retain every ordered cell. Working state
+                # remains bounded on both the scan and the canonical replay.
+                while rows := cursor.fetchmany(_GENERATION_BATCH_ROWS):
+                    if name == "fts-schema":
+                        current_fts_schema = (
+                            len(rows) == 1
+                            and isinstance(rows[0][0], str)
+                            and rows[0][0].startswith(_FTS_SCHEMA_PREFIX)
+                        )
+                    _append_generation_batch(digest, rows)
             # Positive-length JSON frames cannot collide with this source boundary.
             digest.update(b"\x00" * 8)
         encoded_suppression = json.dumps(
