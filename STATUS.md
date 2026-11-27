@@ -8,17 +8,28 @@ Actualizado: 2026-11-27. Leé CLAUDE.md primero; después este archivo y
 Se reactivaron los chats de M3 A y M5 B con GPT‑6.2 Sol. M2 sigue cerrado en
 0.3.0. Copilot sigue omitido por ruling 64 y dos horas, **omitida por ruling 5**.
 
-- M3 A recuperó `2710/here` en `e7f84b0`. El RED independiente `ae82ec8`
-  prepara nueve controles de orden FTS y un perfil para elegir candidato. El
-  chat tiene la ventana Windows. [PR #28](https://github.com/srodriguez-lefebre/here/pull/28)
+- M3 A recuperó `2710/here` en `e7f84b0`. Nivel 2 diagnóstico de FTS: la
+  mediana de la fase bajó de 404,98 a 320,11 ms. Las ocho muestras conservaron
+  el mismo SHA sobre 98.901 filas y 387 frames. El RED `ae82ec8` produjo siete
+  pases, un fallo esperado de la ruta y un fallo del arnés corregido en
+  `f04a5f3`, pendiente de ejecución. El chat prepara estáticamente perfiles
+  de ingesta y fallback. [PR #28](https://github.com/srodriguez-lefebre/here/pull/28)
   permanece abierto con el último p95 público de 1.431,6706 ms y el heartbeat
   de 55,349 ms fuera de presupuesto.
 - M3 B reprodujo en `a31daca` la selección de un WAV normalizado vacío con
   una fuente cruda válida. Nivel 2 focalizado: 1 fallo y 6 pases. `b2dc640`
   pasó 35 casos de reintento y geometría. La revisión independiente detectó
   que también inhabilita un `audio.wav` v1 declarado como fuente de captura.
-  El nuevo RED `e7f9807` en `m3-library-retry-declared-source-red/here` cubre
-  esa compatibilidad y el rechazo de audio sin declarar. Corrida pendiente.
+  El RED `e7f9807` en `m3-library-retry-declared-source-red/here` confirmó
+  el fallo de compatibilidad y el rechazo de audio sin declarar (1 fallo y
+  1 pase, nivel 2). `m3_retry_audio_resume_green` entregó `5edb571` en
+  `codex/m3-library-retry-declared-source-green`, worktree
+  `m3-library-retry-declared-source-green/here`. La re-review de
+  `m3_retry_audio_resume_review` señaló archivos distintos con nombres que
+  Windows `Path` iguala. `m3_retry_declared_source_red` cubrió ese caso y los
+  aliases del mismo archivo en `d12d483`, rama
+  `codex/m3-library-retry-file-identity-red`, worktree
+  `m3-library-retry-file-identity-red/here`. Corrida pendiente.
 - Sonda de seek M3 B: build local y calibración PCM sintética pasaron, nivel 2.
   El artefacto Windows de `f894923`, corrida `44781729845`, coincidió con el
   checksum del ZIP y las 772 entradas del inventario. El CLI del bundle ingirió
@@ -27,9 +38,13 @@ Se reactivaron los chats de M3 A y M5 B con GPT‑6.2 Sol. M2 sigue cerrado en
   `0x88890021`. `1dfa531` corrige las flags documentadas de WASAPI. Falta
   repetir el build y medir el audio renderizado para nivel 3.
 - M5 B preparó y revisó estáticamente 16 casos CLI en `b66d15a` y 14 Qt en
-  `7d7c04d`, ramas de adaptadores del checkpoint anterior. Sus RED esperan
-  la ventana Windows. El servicio `41150f5` conserva los 4 + 89 pases.
-  Claims sigue pendiente de M4 B.
+  `7d7c04d`, ramas de adaptadores del checkpoint anterior. Su chat tiene la
+  ventana Windows para ejecutar ambos RED en serie. El servicio `41150f5`
+  conserva los 4 + 89 pases. Claims sigue pendiente de M4 B.
+- La preparación de M4 A conserva `99f1ec8`. En paralelo,
+  `m4_grounded_fixture_sol` prepara solo el corpus sintético en
+  `codex/m4-grounded-fixture`, worktree `m4-grounded-fixture/here`.
+  La implementación espera el cierre de M3.
 
 ## Pausa solicitada — 2026-11-20
 
