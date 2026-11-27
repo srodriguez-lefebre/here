@@ -42,7 +42,8 @@ jobs:
         run: >-
           uv run --frozen --managed-python --python 3.13.15
           pytest tests/test_windows_search_native_distribution.py
-          tests/test_memory_search_native_v2.py --junitxml=dist/windows/evidence/native-search.xml
+          tests/test_memory_search_native_v2.py tests/test_memory_search_native_active_v2.py
+          --junitxml=dist/windows/evidence/native-search.xml
       - name: Verify actual delivered stable-AppId installation and data preservation
         shell: pwsh
         run: ./scripts/smoke_windows.ps1 -BundlePath ./dist/windows/here -InstallerPath ./dist/windows/here-0.3.0-windows-x64-setup.exe

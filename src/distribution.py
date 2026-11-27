@@ -109,7 +109,7 @@ def _helper_proof() -> dict[str, bool]:
 
 
 def _native_search_proof(data_dir: Path) -> bool:
-    """Observe the native aggregate during a real search of an owned empty catalog."""
+    """Observe both native encoders during a real search of an owned empty catalog."""
     from here.memory.database import LibraryConnection, open_library
     from here.memory.models import SearchPage, SearchQuery
     from here.memory.search import SearchService
@@ -117,11 +117,14 @@ def _native_search_proof(data_dir: Path) -> bool:
 
     MemoryService(data_dir).reindex()
     aggregate_seen = False
+    active_seen = False
 
     def observe(statement: str) -> None:
-        nonlocal aggregate_seen
+        nonlocal aggregate_seen, active_seen
         if statement.startswith("SELECT here_search_v2_fts_batch("):
             aggregate_seen = True
+        elif statement.startswith("SELECT here_search_v2_active_row("):
+            active_seen = True
 
     def connect() -> LibraryConnection:
         library = open_library(data_dir)
@@ -129,7 +132,7 @@ def _native_search_proof(data_dir: Path) -> bool:
         return library
 
     page = SearchService(connect).search(SearchQuery(text="synthetic smoke"))
-    return aggregate_seen and page == SearchPage()
+    return aggregate_seen and active_seen and page == SearchPage()
 
 
 @contextlib.contextmanager
