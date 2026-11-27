@@ -21,13 +21,13 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M2 | Deletion clears managed memory without resurrection | DB/FTS/files/backup inspection after restart | Nivel 2 en `r62-green-3-61a5088c` (110 pases) y CI `43461764790` (1273 pases). Incluye la matriz R42 de kill/reinicio y orígenes externos. Revisión independiente y PR #25 mergeados. |
 | M2 · 0.3.0 | Installed wheel and Windows package | Fresh wheel and stable installer artifact with checksums | Nivel 2. `m2-030-wheel-a4e464a319f7-a98d6f06` pasó 4 smokes. Package `43461764783` pasó la instalación estable con datos sintéticos y publicó el artefacto `14056018512`; sus seis hashes fueron verificados. |
 | M3 | Listing/filter/search and original moment navigation | End-to-end Qt selection and seek plus real WAV marker playback | Abierto. Focos históricos de búsqueda, Biblioteca y ACK de borrado registrados abajo. Resolver, reproducción y seek real pendientes. |
-| M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | Gates locales aprobados, nivel 2 en `7b04f76`. Búsqueda pública 397,395940002 ms p95 (5+40 válidas) y heartbeat Qt con gap máximo de 9,462 ms. La suite completa local obtuvo un fallo de arnés. El foco corregido pasó 13 casos. Gates Windows finales y merge pendientes. |
+| M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | M3 A cerrado a nivel 2 por PR #28, merge `a1a8362`. Gates locales en `7b04f76`: 397,395940002 ms p95 (5+40 válidas) y heartbeat Qt de 9,462 ms. CI Windows `46032934133` y paquete `46032934126` verdes en el head exacto revisado `3a9cc11`. |
 | M4 | Multi-meeting answers/extractions with valid evidence | Source-resolution and semantic synthetic corpus, provider smoke | Open |
 | M4 | Uncertainty/injection/cancellation/deletion remain honest | No-evidence, invalid-citation, concurrent delete/redaction tests | Open |
 | M5 | Offline first run, settings, tray/startup and safe exit | Qt, process concurrency and Windows settings tests | Open |
 | M5 | Portable data including optional audio and citations | Export/import on a fresh root, hashes and hostile ZIP tests | Open |
 | M5 | Install/update/uninstall preserve user memory | N to N+1 installation and separate uninstall test | Open |
-| All | PR groups reviewed and merged | PR URLs, reviewed heads, CI and merge SHAs, applicable review threads | M2 A mergeado en `53712c5` (PR21), M2 B en `b4b3d1b` (PR25). Siete grupos pendientes con revisión independiente, CI Windows y merge protegido. Ruling 64 omite Copilot. |
+| All | PR groups reviewed and merged | PR URLs, reviewed heads, CI and merge SHAs, applicable review threads | M2 A mergeado en `53712c5` (PR21), M2 B en `b4b3d1b` (PR25). M3 A mergeado en `a1a8362` (PR28). Seis grupos pendientes con revisión independiente, CI Windows y merge protegido. Ruling 64 omite Copilot. |
 
 ## Checkpoint de integración M3 A · 2026-11-13
 
@@ -1247,3 +1247,42 @@ Recibos `r76-full-7b04f76.xml`, `r76-full-7b04f76.log` y
 `C:/Users/savar/.codex/evidence/here/m3-native-windows-distribution-20261127/`.
 SHA-256 del JUnit de la suite
 `533309B72A746F0639940876E0E48468D5C525C0C5BDB12F6BF1FE381C4B9187`.
+
+
+### Cierre de M3 A · PR #28
+
+Nivel 2 para búsqueda y Biblioteca de M3 A. El merge protegido
+`a1a83629cdfab64dd249f877cdd443e7f7d96b08` coincidió con el head
+revisado `3a9cc11afe7e11c76d4bc197968d09b1b1ef9dc7`. Ambos tienen el
+árbol `f40b16f902f5f7313aff7d04fa5a77cf846e21a5`. En ese head exacto,
+CI Windows pasó con 1.619 casos y 104 omisiones. El paquete Windows
+0.3.0 pasó 110 casos nativos y seis smokes de activación real en
+ejecutables congelados, con CLI y GUI fuera del repo, instaladas y
+reinstaladas. La procedencia identifica el head exacto y un árbol
+limpio. Se comprobaron seis hashes externos y las 736 entradas
+del inventario del ZIP.
+[PR #28](https://github.com/srodriguez-lefebre/here/pull/28) ·
+[CI Windows 46032934133](https://github.com/srodriguez-lefebre/here/actions/runs/46032934133) ·
+[Paquete Windows 46032934126](https://github.com/srodriguez-lefebre/here/actions/runs/46032934126)
+
+El wheel no editable del mismo head pasó cinco casos y devolvió un
+resultado real sobre un corpus sintético. El wheel ordinario se publicó
+sin manifiesto ni DLL nativos y la búsqueda usó la ruta Python.
+
+| Componente o recibo | SHA-256 |
+|---|---|
+| DLL Windows | `2eae69fcdbfcdf42ca0709c8697fa3f434de7bde4eafc606dab175faa456e566` |
+| Instalador | `639cc43ecc3f5bbc5648bb86b5a4cd0cb986a1985dace9af7ae140fd7232e88c` |
+| ZIP portable | `d42dd62fc86560e1cd4d02b9dbc6eadb7750d8fc66658c3ad0db32e387ddfc89` |
+| Inventario | `5920e08f860efe7383afa5e59510db03197f9c1eb3126a7e7b77b88275d11723` |
+| JUnit nativo | `ddba77068d9115aab1d57e332323ae0fd8e9fbed6d0a091255c9e87ba7249e2d` |
+| `package-46032934126-verified.json` | `af049dadb41acf542bdf9828d1352ce52b0528241c2ef46f925cd3ca699fd67a` |
+| `r76-wheel-search-3a9cc11.json` | `3908660974d4d9b244de650ddbf78b33e460aa61f52f79a65b3ce541cf68df64` |
+| `r76-wheel-3a9cc11.xml` | `3892e83d7999c345bb0580e26c6fba2ba60ddf55efa6431aa81703a558526877` |
+
+Los recibos están en
+`C:/Users/savar/.codex/evidence/here/m3-native-windows-distribution-20261127/`.
+Los gates de p95 y heartbeat conservan el recibo local de `7b04f76`.
+La suite histórica de 1.699 pases, un fallo y 23 omisiones y el
+foco corregido de 13 pases conservan sus propios resultados.
+La navegación integrada de M3 B y el release 0.4 siguen pendientes.
