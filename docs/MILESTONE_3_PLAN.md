@@ -1,16 +1,12 @@
 # Hito 3 — Memoria navegable
 
-Estado: M3 A en integración y verificación sobre M2 B mergeado en `b4b3d1b`.
-Los focos GREEN de búsqueda y Qt verificaron deduplicación FTS antes de paginar,
-cursores largos y recuperación con el catálogo inyectado. Un foco con el
-entorno corregido verificó los 19 casos que fallaron en la primera suite. La
-suite completa sobre el candidato corregido sigue pendiente. El benchmark de
-producto medido en `ca80f49` y el diagnóstico aislado R66 superaron el
-presupuesto. El contrato de M3 B se mergeó en PR #27 (`94e175f`). B espera el
-PR revisado de A abierto y el despacho de root según CLAUDE §11. El diseño está en
-[`development/PRODUCT_DESIGN.md`](development/PRODUCT_DESIGN.md), secciones 2, 3 y 5,
-que es decisión tomada (ruling 3). Este plan no lo repite: fija alcance, orden,
-criterios verificables y lo que queda fuera.
+Estado: M3 cerrado en 0.4.0 por el merge protegido del PR #30
+(`7239ba64e03e7e3230b36b5d8d952cefbbe54e47`). El head exacto revisado
+`d29f83a1c7f69caa3261bb7ddab579a75d4bc4b9` pasó CI y distribución
+Windows a nivel 2. El seek real de nivel 3 se adjudicó por R78 según
+la medición y el alcance registrados en aceptación. El diseño está en
+[`development/PRODUCT_DESIGN.md`](development/PRODUCT_DESIGN.md),
+secciones 2, 3 y 5 (ruling 3).
 
 M2 A se mergeó en `53712c5` (PR #21). M2 B agregó edición, participantes,
 reindexado y la barrera de borrado (PR #25). Las corridas históricas de M3
@@ -179,7 +175,7 @@ El hito se considera terminado cuando se cumplen conjuntamente:
     implementado, con las filas M3 de `ACCEPTANCE.md` nombrando la corrida que las
     cierra.
 
-## Estado de verificación del candidato 0.4.0
+## Cierre de verificación de 0.4.0
 
 | Criterios | Evidencia y estado |
 |---|---|
@@ -187,10 +183,12 @@ El hito se considera terminado cuando se cumplen conjuntamente:
 | 5 | Nivel 2 en el candidato integrado. p95 de 395,381 ms y heartbeat Qt de 13,2683 ms. |
 | 11–12 y 14–17 | Nivel 2 en la suite local exacta. Cubre resolver, navegación, reproducción, CLI y accesibilidad con backend simulado para los controles de reproducción. |
 | 13 | Aceptado por R78. Medición real de nivel 3 en `912f63f` con cota de 36,244753 ms frente a 250 ms. Equivalencia de reproducción de nivel 2 en `063d974`; el render se midió en el paquete histórico. |
-| 18 | Suite exacta local `m3-b-r76-full-063d974` de nivel 2, 1.801 pases y 24 omisiones. Paquete integrado aprobado en `063d974`. CI Windows sobre el head final de PR #30, merge y release 0.4.0 pendientes. |
+| 18 | Suite exacta local `m3-b-r76-full-063d974` de nivel 2, 1.801 pases y 24 omisiones. Paquete integrado aprobado en `063d974`. CI Windows `46039586001` y paquete `46039585947` aprobados a nivel 2 en el head exacto `d29f83a`. Criterio cerrado con el merge `7239ba64` de PR #30 y la documentación de 0.4.0. |
 
 Los resultados y recibos están en [ACCEPTANCE.md](development/ACCEPTANCE.md).
-[Paquete integrado 46036939106](https://github.com/srodriguez-lefebre/here/actions/runs/46036939106)
+[PR #30](https://github.com/srodriguez-lefebre/here/pull/30) ·
+[CI Windows 46039586001](https://github.com/srodriguez-lefebre/here/actions/runs/46039586001) ·
+[Paquete Windows 46039585947](https://github.com/srodriguez-lefebre/here/actions/runs/46039585947)
 
 ## Lo que queda pendiente de decidir
 

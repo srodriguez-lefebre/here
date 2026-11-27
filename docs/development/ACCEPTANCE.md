@@ -20,14 +20,14 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M2 · criterio 15 | Suite completa en CI de Windows sin credencial real ni display | Corrida hospedada sobre el head exacto del PR M2 B | Nivel 2. CI `43461764790` pasó 1273 pruebas y omitió dos smokes de wheel, que pasaron en la corrida no editable. Head `55d68e2`. |
 | M2 | Deletion clears managed memory without resurrection | DB/FTS/files/backup inspection after restart | Nivel 2 en `r62-green-3-61a5088c` (110 pases) y CI `43461764790` (1273 pases). Incluye la matriz R42 de kill/reinicio y orígenes externos. Revisión independiente y PR #25 mergeados. |
 | M2 · 0.3.0 | Installed wheel and Windows package | Fresh wheel and stable installer artifact with checksums | Nivel 2. `m2-030-wheel-a4e464a319f7-a98d6f06` pasó 4 smokes. Package `43461764783` pasó la instalación estable con datos sintéticos y publicó el artefacto `14056018512`; sus seis hashes fueron verificados. |
-| M3 | Listing/filter/search and original moment navigation | End-to-end Qt selection and seek plus real WAV marker playback | Abierto. Navegación, resolver, reproducción, CLI y accesibilidad verificados a nivel 2 en la suite local de `063d974`. Seek aceptado por R78 a partir del render real de nivel 3 en `912f63f` y equivalencia de nivel 2 en `063d974`. CI Windows exacta de PR #30 y merge pendientes. |
-| M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | M3 A cerrado a nivel 2 por PR #28, merge `a1a8362`. Gates locales en `7b04f76`: 397,395940002 ms p95 (5+40 válidas) y heartbeat Qt de 9,462 ms. CI Windows `46032934133` y paquete `46032934126` verdes en el head exacto revisado `3a9cc11`. |
+| M3 | Listing/filter/search and original moment navigation | End-to-end Qt selection and seek plus real WAV marker playback | Cerrado en 0.4.0 con PR #30, merge `7239ba64`. Suite local `m3-b-r76-full-063d974`, CI Windows `46039586001` y paquete `46039585947` de nivel 2. Seek aceptado por R78 a partir de `m3-b-seek-912f63f-20261127` (nivel 3) y equivalencia comprobada (nivel 2). |
+| M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | M3 A cerrado a nivel 2 por PR #28, merge `a1a8362`. Gates locales en `7b04f76`: 397,395940002 ms p95 (5+40 válidas) y heartbeat Qt de 9,462 ms. CI Windows `46032934133` y paquete `46032934126` verdes en el head exacto revisado `3a9cc11`. En M3 B, `063d974` pasó con 395,381 ms p95 y 13,2683 ms de heartbeat. |
 | M4 | Multi-meeting answers/extractions with valid evidence | Source-resolution and semantic synthetic corpus, provider smoke | Open |
 | M4 | Uncertainty/injection/cancellation/deletion remain honest | No-evidence, invalid-citation, concurrent delete/redaction tests | Open |
 | M5 | Offline first run, settings, tray/startup and safe exit | Qt, process concurrency and Windows settings tests | Open |
 | M5 | Portable data including optional audio and citations | Export/import on a fresh root, hashes and hostile ZIP tests | Open |
 | M5 | Install/update/uninstall preserve user memory | N to N+1 installation and separate uninstall test | Open |
-| All | PR groups reviewed and merged | PR URLs, reviewed heads, CI and merge SHAs, applicable review threads | M2 A mergeado en `53712c5` (PR21), M2 B en `b4b3d1b` (PR25). M3 A mergeado en `a1a8362` (PR28). Seis grupos pendientes con revisión independiente, CI Windows y merge protegido. Ruling 64 omite Copilot. |
+| All | PR groups reviewed and merged | PR URLs, reviewed heads, CI and merge SHAs, applicable review threads | M2 A mergeado en `53712c5` (PR21), M2 B en `b4b3d1b` (PR25). M3 A mergeado en `a1a8362` (PR28). M3 B mergeado en `7239ba64` (PR30). Cinco grupos pendientes con revisión independiente, CI Windows y merge protegido. Ruling 64 omite Copilot. |
 
 ## Checkpoint de integración M3 A · 2026-11-13
 
@@ -1341,3 +1341,33 @@ Recibos `playback-package-equivalence.json` y
 `frozen-stdlib-equivalence.json` en
 `C:/Users/savar/.codex/evidence/here/m3-b-seek-063d974-20261127/`.
 [PR #30](https://github.com/srodriguez-lefebre/here/pull/30)
+
+### Cierre de M3 · 0.4.0 · Criterio 18
+
+El PR #30 mergeó a las 14:21 de Montevideo como
+`7239ba64e03e7e3230b36b5d8d952cefbbe54e47`. El head revisado
+`d29f83a1c7f69caa3261bb7ddab579a75d4bc4b9` y el merge comparten el
+árbol `edd59e8088c01d1343e32f58e69f85509ea51f4a`.
+
+CI Windows pasó en modo offscreen con credencial sintética, con
+1.720 pases, 105 omisiones y dos avisos en 633,87 s. También pasó la
+construcción de wheel y sdist. El paquete Windows 0.4.0 del mismo head
+publicó el artefacto `15219935874` con procedencia de árbol limpio.
+Se verificaron seis hashes externos, 776 entradas del inventario del
+ZIP, 110 controles nativos y seis smokes con activación nativa sin
+credencial real. Pasaron el control QtMultimedia, instalación y
+reinstalación con conservación de datos.
+[PR #30](https://github.com/srodriguez-lefebre/here/pull/30) ·
+[CI 46039586001](https://github.com/srodriguez-lefebre/here/actions/runs/46039586001) ·
+[Paquete 46039585947](https://github.com/srodriguez-lefebre/here/actions/runs/46039585947)
+
+La distribución y CI aportan nivel 2. La comparación con el paquete
+`46036939106` verificó 156 rutas de ejecución con hashes idénticos,
+incluido el único plugin Media Foundation. El nivel 3 corresponde al
+render de `m3-b-seek-912f63f-20261127`, adjudicado por R78. La instalación
+limpia independiente de M5 conserva su gate abierto.
+
+Recibos `ci-46039586001-verified.json`,
+`package-46039585947-verified.json` y
+`package-46039585947-playback-equivalence.json` en
+`C:/Users/savar/.codex/evidence/here/m3-native-windows-distribution-20261127/`.
