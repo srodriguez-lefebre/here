@@ -19,17 +19,13 @@ instructions. Missing evidence produces an honest abstention, not a guess.
 ## Inherited foundation and handoff boundary
 
 Foundation: M2 A merge `53712c5beedafc2d40e2abf10c13362a1c3c9f78` and contract
-merge `73d3cb384bd422de6899d8c7b761f3f3159ea3f1`. This preparation applies root
-DELIVERY through `03f31ba` (R20/35/39–52) and the frozen M3 B preparation contracts
-(SPEC `03207dd`, PLAN `9c177e5`). Those drafts are not implemented M3 B APIs.
-M3 A checkpoint `00cf0ea` has real SearchService/query DTOs and local evidence;
-its B5 integration, full group gates and M3 closure remain pending. None is
-substituted by this document or a prepared fixture. Root owns handoffs and leases.
-The earlier inspection used M3 A `0c16065` and M3 B `7323613`. The later
-candidate inspection uses M3 A `7e3bd56` and M3 B
-`912f63f8191d0312d647806241d352814c52d870`. Final source binding still
-requires M3 closure, reconciliation on the integrated base and the contract
-document PR.
+merge `73d3cb384bd422de6899d8c7b761f3f3159ea3f1`. M3 A merged in PR #28 at
+`a1a83629cdfab64dd249f877cdd443e7f7d96b08`. The M3 B handoff contracts merged
+in PR #29 at `8d0b03d92524c78ca6983db0fc64e1048e7b2a6c`. This preparation
+inspects the provisional M3 B integration at `063d974f66ac42da85a82474cfc900a1335e54f3`,
+with the 34 transferred commits on that handoff base. M3 B acceptance, merge
+and 0.4.0 closure remain pending. Root owns handoffs and leases and will bind
+M4 to the final integrated M3 base before the M4 contract-document PR.
 
 ## Decisions
 
@@ -82,13 +78,16 @@ intact, not invented SearchHits or segments. That page is not evidence and canno
 widen the explicit M4 scope. Removing stopwords must not turn an empty retrieval
 expression into an implicit whole-library request.
 
-M3 A's inspected `SearchQuery` exposes text and listing filters. Its FTS builder
-quotes each input token and joins tokens with spaces; its literal fallback combines
-term predicates with AND. The M3 B candidate adds `meeting_id: str | None`:
-one canonical UUID, applied before keyset and LIMIT, bound to the cursor scope
-and ranked over the global FTS index. Both candidates expose paged search hits
-rather than a batched evidence-and-neighbor snapshot. Selected sets and literal
-OR remain unresolved. The **pending memory-owned handoff** must apply
+Merged M3 A exposes text and listing filters. Its FTS builder quotes each input
+token and joins tokens with spaces, and its literal fallback combines term predicates
+with AND. The inspected M3 B `SearchQuery.meeting_id: str | None = None` accepts
+one canonical UUID, applies it before keyset and LIMIT, and binds it to cursor scope.
+FTS ranking still uses global BM25. Empty search carries the same scope into listing.
+R75/R76 use private Windows SQLite encoders for FTS and ACTIVE generation, preserving
+generation bytes, public v2 cursors and canonical fallback within R50. Retrieval
+consumes the public search contracts and has no native-loader dependency.
+The inspected interfaces expose paged hits. The **pending memory-owned handoff**
+for literal OR and selected-set evidence with neighbors must apply
 the selected set, filters and suppression to candidate eligibility before keyset
 and LIMIT, preserve global BM25 for ranked matches, and fetch bounded matches
 and adjacent context from one coherent view. It must support fair per-meeting
@@ -106,9 +105,10 @@ through generation/fetch. Its immutable snapshot IDs/fingerprint include registr
 UUIDs and exact normalized-origin/fingerprint aliases resolved in that DB view.
 Pending and complete suppress; invalid/inaccessible state fails closed. The memory
 boundary owns this integration, not an intelligence-side parser or nested transaction.
-Actual B5/M3 interoperability is pending. Do not hold a DB transaction/ownership lock
-across a provider call; use the accepted snapshot/revalidation contract before
-publication without treating disappeared or changed evidence as success.
+Search and citation resolution both use this guard in `063d974`. The M4 scoped
+retrieval and revalidation bindings still need acceptance. Do not hold a DB
+transaction/ownership lock across a provider call. Use the accepted revalidation
+contract before publication and reject disappeared or changed evidence.
 
 ### Local mode
 

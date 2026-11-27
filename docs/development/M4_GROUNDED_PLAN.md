@@ -38,20 +38,20 @@ schemas, the existing OpenAI SDK, pytest with mock transport; no new dependency.
 ## Actual contracts and pending handoffs
 
 Foundation is merged M2 A `53712c5beedafc2d40e2abf10c13362a1c3c9f78` and contracts
-`73d3cb384bd422de6899d8c7b761f3f3159ea3f1`; root DELIVERY `03f31ba` supplies
-R20/35/39–52. M3 checkpoint `00cf0ea` established the query DTOs and
-`SearchService`. The 2026-11-20 follow-up inspects the M3 A query handoff at
-`0c16065` and the M3 B resolver candidate at `7323613`. The later candidate
-inspection uses M3 A `7e3bd56` and M3 B `912f63f8191d0312d647806241d352814c52d870`.
-Neither candidate represents the integrated tree. Root binds signatures, base
-and owners after M3 closes, reconciles the handoff on that base, and merges the
-required contract-document PR before source work.
+`73d3cb384bd422de6899d8c7b761f3f3159ea3f1`. M3 A search merged in PR #28 at
+`a1a83629cdfab64dd249f877cdd443e7f7d96b08` and the M3 B handoff contracts merged
+in PR #29 at `8d0b03d92524c78ca6983db0fc64e1048e7b2a6c`. The provisional B
+integration inspected here is `063d974f66ac42da85a82474cfc900a1335e54f3`, with the
+34 transferred commits on that handoff base. B acceptance, merge and M3's
+0.4.0 closure are pending. Root confirms the interfaces on the final integrated
+base and merges the M4 contract-document PR before source work.
 
 | Boundary | Current contract and unresolved handoff |
 |---|---|
 | Query owner | `memory.search.SearchService(connection_factory)`, `search(SearchQuery) -> SearchPage \| MeetingPage`; fresh LibraryConnection per operation, closed by the service. No presumed MemoryService.search. |
-| Scoped evidence | M3 B implements optional canonical UUID `SearchQuery.meeting_id` before keyset and LIMIT, with scope bound to the cursor and complete FTS ranks computed over the global index. M3 A's inspected head has no such field. The M4 selected-set and literal OR handoff remains open, with global BM25, fair allocation, deterministic order, adjacent context and one coherent bounded snapshot. Root binds the adapter signature and selection order. |
-| Read suppression | R50 `catalog_read_view` owns lock-before-BEGIN and one transaction. The caller owns the fresh connection and closes it. The snapshot carries resolved suppressed IDs and a fingerprint covering registry records and alias resolution. The A candidate preflights all registry roles and paths under the lock before reading final records; the existing fail-closed boundary still applies. The resolver candidate uses it; scoped evidence and source revalidation still need their own accepted binding. |
+| Scoped evidence | Provisional B `SearchQuery.meeting_id` scopes one canonical UUID before keyset and LIMIT and binds it to the cursor. Empty search passes scope through to listing. The M4 selected-set and literal OR handoff remains open, with global BM25, fair allocation, deterministic order, adjacent context and one coherent bounded snapshot. Root binds the adapter signature and selection order. |
+| Read suppression | Search and citation resolution at `063d974` share R50 `catalog_read_view`, which owns lock-before-BEGIN and one transaction. The caller opens and closes the fresh connection. The snapshot carries resolved suppressed IDs and a fingerprint covering registry records and alias resolution. Registry roles and paths are preflighted under the lock and the boundary fails closed. Scoped evidence and source revalidation still need their own accepted binding. |
+| Native search generation | R75/R76 are private Windows SQLite encoders for FTS and ACTIVE generation. Consume public v2 cursors and preserve canonical fallback inside R50. Retrieval requires no native-loader binding. |
 | Citation source | Candidate `MemoryService.resolve_citation(Citation) -> CitationTarget` validates membership, literal quotes, paired Unicode bounds, and exact revision/audio links with artifact role guards. Unvalidated audio yields `status="missing"` without a path, possibly with verified text. The resolver can return historical evidence; M4 still has to revalidate the selected active revision before publication. Confirm both bindings on the integrated M3 head. |
 | Participants/root | R48 real IDs/roles/nullable assignments, request-scoped speakers; R40/R52 same injected service/configured root. No new .env reader or origin-derived root probing. |
 | Future persistence | R51 private SQL purger on B's same final cleanup transaction; future M4 B only, never a citation resolver or an M4 A migration/task. |
@@ -105,6 +105,14 @@ still ingests the data through accepted memory APIs and temporary roots, supplie
 lifecycle and suppression cases, and writes the retrieval assertions and missing
 English/mocked-provider/verifier cases. The pure corpus supplies inputs and counts;
 ingestion, ranking, budget enforcement and coverage require tests on the bound head.
+
+The prepared verifier payloads at `0c35b6b` in
+`tests/fixtures/intelligence_provider_payloads.py` include bilingual E1/E2
+quotes with original Unicode coordinates, isolated invalid responses and empty
+claim/extraction arrays. Root transfers the fixture once to the RED owner with
+its provenance. The mock claims use `false` provisionally for `uncertainty`.
+The eventual schema owns that type and the exact size limits. The fixture supplies
+mock response values and source anchors for verifier tests on the bound head.
 
 All existing acceptance and complete checkbox blocks remain binding. Registering the
 future package in pyproject is a later root-serialized task, not permission to edit
