@@ -49,7 +49,7 @@ The main flow is:
 
 ## Windows Presentation Layer
 
-Windows distribution starts with a locked noneditable 0.3.0 wheel installed into
+Windows distribution starts with a locked noneditable 0.4.0 wheel installed into
 a dedicated CPython 3.13.15 AMD64 build environment. PyInstaller creates windowed
 `here.exe` and console `here-cli.exe` sharing one inspectable `_internal` directory.
 The fixed audio child dispatch runs before Qt/provider bootstrap and uses the

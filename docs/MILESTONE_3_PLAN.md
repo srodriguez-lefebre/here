@@ -186,8 +186,8 @@ El hito se considera terminado cuando se cumplen conjuntamente:
 | 1–4 y 6–10 | Nivel 2 en M3 A, PR #28, y suite local del candidato integrado. |
 | 5 | Nivel 2 en el candidato integrado. p95 de 395,381 ms y heartbeat Qt de 13,2683 ms. |
 | 11–12 y 14–17 | Nivel 2 en la suite local exacta. Cubre resolver, navegación, reproducción, CLI y accesibilidad con backend simulado para los controles de reproducción. |
-| 13 | Nivel 3 histórico para el paquete de `912f63f`. Medición sobre el candidato integrado pendiente. |
-| 18 | Suite local Windows de nivel 2, 1.801 pases y 24 omisiones, y paquete exacto aprobado. CI Windows del PR y release 0.4.0 pendientes. |
+| 13 | Aceptado por R78. Medición real de nivel 3 en `912f63f` con cota de 36,244753 ms frente a 250 ms. Equivalencia de reproducción de nivel 2 en `063d974`; el render se midió en el paquete histórico. |
+| 18 | Suite exacta local `m3-b-r76-full-063d974` de nivel 2, 1.801 pases y 24 omisiones. Paquete integrado aprobado en `063d974`. CI Windows sobre el head final de PR #30, merge y release 0.4.0 pendientes. |
 
 Los resultados y recibos están en [ACCEPTANCE.md](development/ACCEPTANCE.md).
 [Paquete integrado 46036939106](https://github.com/srodriguez-lefebre/here/actions/runs/46036939106)

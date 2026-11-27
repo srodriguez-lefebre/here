@@ -19,7 +19,7 @@ offline fallback if the live transcription pipeline fails.
 ## Installation
 
 For the Windows 11 x64 packaged application, run the generated
-`here-0.3.0-windows-x64-setup.exe`. It installs for the current user under
+`here-0.4.0-windows-x64-setup.exe`. It installs for the current user under
 `%LOCALAPPDATA%\Programs\here` and creates Start entries for here and its
 uninstaller. Exit here before reinstalling or updating: the installer refuses
 to replace a running application. Uninstalling preserves `%LOCALAPPDATA%\here`
@@ -225,7 +225,7 @@ deletion record prevents automatic restoration or reimport of the deleted
 meeting. Named runs and their scope are in
 [ACCEPTANCE.md](docs/development/ACCEPTANCE.md).
 
-### Library tab (0.4.0 candidate)
+### Library tab
 
 Open **Biblioteca** alongside the capture tab in
 `here-gui`. With the search box empty, it lists saved meetings. Enter words to

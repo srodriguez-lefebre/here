@@ -1,6 +1,6 @@
 # What's new
 
-## Upcoming in 0.4.0 — Find a meeting and return to the original moment
+## 0.4.0 — Find a meeting and return to the original moment
 
 Open **Biblioteca** to find a saved meeting by title or transcript and filter
 by date, status or participant. Open a result to read the original segment and
