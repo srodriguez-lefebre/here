@@ -1165,3 +1165,27 @@ Recibos `build-2ee8ac6.json`, `package-red.xml`,
 `C:/Users/savar/.codex/evidence/here/m3-native-windows-distribution-20261127/`.
 Los recibos `green-focused-fixed.xml` y `staged-package-smoke.xml` están en
 `C:/Users/savar/.codex/evidence/here/m3-search-native-v2-equivalence-01/`.
+
+
+### Seguimiento R75 · Paquete diagnóstico Windows 46028557240
+
+Nivel 2 para el paquete construido sobre el head exacto
+`4ba043ec4a4ee0f55281fde78a1678eb237f0aa4`, con
+`tracked_tree_dirty: false`. El workflow terminó en verde. El foco
+Windows pasó 88 casos con cero fallos, errores u omisiones. Los seis
+recibos de CLI y GUI confirmaron activación nativa sin API key, fuera
+del repo, tras instalar y tras reinstalar. Se verificaron los SHA-256 de
+los seis archivos publicados, incluidos wheel y archivos de procedencia.
+
+| Componente | SHA-256 |
+|---|---|
+| DLL nativa | `a5d7b4e9fa6e54705645ed0a3047c7a0662ba2021ce165d62376a9cb92331e0b` |
+| Instalador | `e47793c9435f884c828c81c8df47587253e162be42f7aa6967ef75998842f6c0` |
+| ZIP portable | `6d5d6bae825cc79adfae704623c6cedb1feb777b89fd0d3057a49b1b3ec68e10` |
+| Inventario | `7fe85bc3a939e0d840d146e86760c13737a2baa7b55710c58fafa5480cac139a` |
+
+El p95 público de 530,14 ms sigue fallido. Quedan pendientes los gates
+Windows, el p95 público y el heartbeat Qt del head combinado con ACTIVE.
+Recibo `package-46028557240-receipt.json` en
+`C:/Users/savar/.codex/evidence/here/m3-native-windows-distribution-20261127/`.
+[Paquete 46028557240](https://github.com/srodriguez-lefebre/here/actions/runs/46028557240)
