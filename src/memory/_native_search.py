@@ -27,7 +27,8 @@ _BATCH_ROWS = 256
 _MAX_PACKET_BYTES = 8 * 1024 * 1024
 _HEADER = struct.Struct(">4sHq")
 _LENGTH = struct.Struct(">I")
-_UNSUPPORTED = "here search v2: FTS input unsupported"
+_FTS_UNSUPPORTED = "here search v2: FTS input unsupported"
+_ACTIVE_UNSUPPORTED = "here search v2: ACTIVE input unsupported"
 _FTS_DDL = (
     "CREATE VIRTUAL TABLE segments_fts USING fts5("
     "meeting_id UNINDEXED, revision_id UNINDEXED, segment_id UNINDEXED, text, title, "
@@ -229,12 +230,12 @@ def _decode_packet(packet: object) -> tuple[int, int, _Key, _Key, memoryview]:
     return count, last_rowid, first, last, body
 
 
-def _is_unsupported(error: sqlite3.Error | LibraryError) -> bool:
+def _is_unsupported(error: sqlite3.Error | LibraryError, message: str) -> bool:
     original = error if isinstance(error, sqlite3.Error) else error.__cause__
     return (
         isinstance(original, sqlite3.Error)
         and getattr(original, "sqlite_errorcode", None) == sqlite3.SQLITE_MISMATCH
-        and original.args == (_UNSUPPORTED,)
+        and original.args == (message,)
     )
 
 
@@ -253,7 +254,7 @@ def fts_digest(library: LibraryConnection, digest: Any) -> Any:
                 cursor.row_factory = None
                 row = cursor.fetchone()
         except (sqlite3.Error, LibraryError) as error:
-            if _is_unsupported(error):
+            if _is_unsupported(error, _FTS_UNSUPPORTED):
                 return None
             raise
         if row is None:
@@ -270,5 +271,33 @@ def fts_digest(library: LibraryConnection, digest: Any) -> Any:
         last_rowid, previous = end, last
         if count < _BATCH_ROWS or end == (1 << 63) - 1:
             break
+    trial.update(b"\x00" * 8)
+    return trial
+
+
+def active_digest(library: LibraryConnection, digest: Any, sql: str) -> Any:
+    """Hash the native ACTIVE projection, or abandon the trial for canonical replay."""
+    trial = digest.copy()
+    trial.update(b"active\x00")
+    try:
+        with closing(library.execute(sql)) as cursor:
+            cursor.row_factory = None
+            while rows := cursor.fetchmany(_BATCH_ROWS):
+                encoded = [row[0] for row in rows]
+                if any(
+                    type(row) is not bytes
+                    or not 19 <= len(row) <= _MAX_PACKET_BYTES
+                    or row[0] != ord("[")
+                    or row[-1] != ord("]")
+                    for row in encoded
+                ):
+                    raise IntegrityFailure("Native ACTIVE encoder returned an invalid row")
+                body = b"[%s]" % b",".join(encoded)
+                trial.update(len(body).to_bytes(8, "big"))
+                trial.update(body)
+    except (sqlite3.Error, LibraryError) as error:
+        if _is_unsupported(error, _ACTIVE_UNSUPPORTED):
+            return None
+        raise
     trial.update(b"\x00" * 8)
     return trial

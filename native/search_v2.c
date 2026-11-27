@@ -1,4 +1,4 @@
-/* Private aggregate for the canonical search corpus v2 JSON frame. */
+/* Private encoders for the canonical search corpus v2 JSON frames. */
 #include <stdatomic.h>
 #include <stdint.h>
 #include <string.h>
@@ -11,6 +11,7 @@ static _Atomic(const sqlite3_api_routines *) sqlite_api;
 
 enum {
     FTS_COLUMNS = 5,
+    ACTIVE_COLUMNS = 9,
     BATCH_ROWS = 256,
     EMPTY_TUPLE_BYTES = FTS_COLUMNS * sizeof(uint32_t),
     ENVELOPE_HEADER_BYTES = 14,
@@ -209,6 +210,72 @@ static int append_json_text(Buffer *buffer, Text cell, size_t limit) {
     return error;
 }
 
+/* Format the signed value using unsigned magnitude, including INT64_MIN. */
+static int append_json_integer(Buffer *buffer, sqlite3_int64 value) {
+    char digits[20];
+    char *end = digits + sizeof(digits);
+    char *start = end;
+    uint64_t magnitude = (uint64_t)value;
+    if (value < 0) {
+        magnitude = UINT64_C(0) - magnitude;
+    }
+    do {
+        *--start = (char)('0' + magnitude % 10);
+        magnitude /= 10;
+    } while (magnitude != 0);
+    if (value < 0) {
+        *--start = '-';
+    }
+    return append(buffer, start, (size_t)(end - start), ENVELOPE_LIMIT);
+}
+
+static int append_active_value(Buffer *buffer, sqlite3_value *value) {
+    switch (sqlite3_value_type(value)) {
+    case SQLITE_NULL:
+        return append(buffer, "null", 4, ENVELOPE_LIMIT);
+    case SQLITE_INTEGER:
+        return append_json_integer(buffer, sqlite3_value_int64(value));
+    case SQLITE_TEXT: {
+        const unsigned char *bytes = sqlite3_value_text(value);
+        if (bytes == NULL) {
+            return SQLITE_NOMEM;
+        }
+        size_t length = (size_t)sqlite3_value_bytes(value);
+        if (length > ENVELOPE_LIMIT || !valid_utf8(bytes, length)) {
+            return SQLITE_MISMATCH;
+        }
+        return append_json_text(buffer, (Text){bytes, length}, ENVELOPE_LIMIT);
+    }
+    default:
+        return SQLITE_MISMATCH;
+    }
+}
+
+static void active_row(sqlite3_context *context, int argc, sqlite3_value **args) {
+    Buffer row = {0};
+    int error = SQLITE_OK;
+    for (int column = 0; column < argc && error == SQLITE_OK; ++column) {
+        error = append(&row, column == 0 ? "[" : ",", 1, ENVELOPE_LIMIT);
+        if (error == SQLITE_OK) {
+            error = append_active_value(&row, args[column]);
+        }
+    }
+    if (error == SQLITE_OK) {
+        error = append(&row, "]", 1, ENVELOPE_LIMIT);
+    }
+    if (error == SQLITE_OK) {
+        sqlite3_result_blob64(context, row.bytes, row.length, sqlite3_free);
+        return;
+    }
+    sqlite3_free(row.bytes);
+    if (error == SQLITE_MISMATCH) {
+        sqlite3_result_error(context, "here search v2: ACTIVE input unsupported", -1);
+        sqlite3_result_error_code(context, error);
+    } else {
+        sqlite3_result_error_nomem(context);
+    }
+}
+
 static int append_row(Batch *batch, sqlite3_value **args) {
     if (batch->rows == BATCH_ROWS || sqlite3_value_type(args[0]) != SQLITE_INTEGER) {
         return SQLITE_MISMATCH;
@@ -359,7 +426,30 @@ __declspec(dllexport) int sqlite3_here_search_v2_init(
         expected != api) {
         return SQLITE_MISUSE;
     }
-    return sqlite3_create_function_v2(
-        db, "here_search_v2_fts_batch", FTS_COLUMNS + 1, SQLITE_UTF8 | SQLITE_DIRECTONLY,
+    /* SQLite holds the connection mutex throughout extension initialization.
+       An active VM could prevent removal of the first registration on failure. */
+    for (sqlite3_stmt *stmt = sqlite3_next_stmt(db, NULL); stmt != NULL;
+         stmt = sqlite3_next_stmt(db, stmt)) {
+        if (sqlite3_stmt_busy(stmt)) {
+            return SQLITE_BUSY;
+        }
+    }
+    const int flags = SQLITE_UTF8 | SQLITE_DIRECTONLY;
+    const char *fts_name = "here_search_v2_fts_batch";
+    int error = sqlite3_create_function_v2(
+        db, fts_name, FTS_COLUMNS + 1, flags,
         NULL, NULL, batch_step, batch_final, NULL);
+    if (error != SQLITE_OK) {
+        return error;
+    }
+    error = sqlite3_create_function_v2(
+        db, "here_search_v2_active_row", ACTIVE_COLUMNS, flags,
+        NULL, active_row, NULL, NULL, NULL);
+    if (error != SQLITE_OK) {
+        /* On the pinned SQLite, deleting this exact FuncDef reuses its slot.
+           With no active VM or destructor it cannot fail, even after OOM. */
+        sqlite3_create_function_v2(db, fts_name, FTS_COLUMNS + 1, flags,
+                                  NULL, NULL, NULL, NULL, NULL);
+    }
+    return error;
 }

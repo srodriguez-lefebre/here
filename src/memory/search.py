@@ -44,6 +44,7 @@ _GENERATION_BATCH_ROWS = 256
 _FTS_GENERATION_SELECT = "SELECT meeting_id,revision_id,segment_id,text,title FROM segments_fts"
 _FTS_SCHEMA_PREFIX = "CREATE VIRTUAL TABLE segments_fts USING fts5("
 _FTS_TEXT_TYPES = (str, str, str, str, str)
+_ACTIVE_COLUMNS = "m.id,r.id,r.status,s.id,s.ordinal,s.text,s.start_ms,s.end_ms,s.timing_source"
 _Query = TypeVar("_Query", MeetingQuery, SearchQuery)
 
 
@@ -495,27 +496,30 @@ class SearchService:
                 )
             )
         allowed = "('complete','partial')" if partial else "('complete')"
-        sources.append(
-            (
-                "active",
-                "SELECT m.id,r.id,r.status,s.id,s.ordinal,s.text,s.start_ms,"
-                "s.end_ms,s.timing_source FROM meetings m JOIN transcript_revisions r "
-                "ON r.meeting_id=m.id AND r.id=m.active_revision_id "
-                "LEFT JOIN segments s ON s.revision_id=r.id WHERE r.status IN "
-                + allowed
-                + " ORDER BY m.id,r.id,s.ordinal,s.id",
-            )
+        active_from = (
+            " FROM meetings m JOIN transcript_revisions r "
+            "ON r.meeting_id=m.id AND r.id=m.active_revision_id "
+            "LEFT JOIN segments s ON s.revision_id=r.id WHERE r.status IN "
+            + allowed
+            + " ORDER BY m.id,r.id,s.ordinal,s.id"
         )
+        sources.append(("active", f"SELECT {_ACTIVE_COLUMNS}{active_from}"))
         current_fts_schema = False
+        native_loaded = False
         for name, sql in sources:
+            trial = None
             if name == "fts" and current_fts_schema:
-                if _native_search.load_fts_encoder(library):
+                native_loaded = _native_search.load_fts_encoder(library)
+                if native_loaded:
                     trial = _native_search.fts_digest(library, digest)
                 else:
                     trial = _ordered_fts_digest(library, digest)
-                if trial is not None:
-                    digest = trial
-                    continue
+            elif name == "active" and native_loaded:
+                active_native_sql = f"SELECT here_search_v2_active_row({_ACTIVE_COLUMNS}){active_from}"
+                trial = _native_search.active_digest(library, digest, active_native_sql)
+            if trial is not None:
+                digest = trial
+                continue
             digest.update(name.encode("ascii") + b"\x00")
             with closing(library.execute(sql)) as cursor:
                 cursor.row_factory = None
