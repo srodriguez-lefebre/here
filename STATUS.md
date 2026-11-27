@@ -20,8 +20,13 @@ Se reactivaron los chats de M3 A y M5 B con GPT‑6.2 Sol. M2 sigue cerrado en
   en `cf80ea2`, `codex/m3-native-current-probe`, dio 570,24 ms p95 en 5+40
   con CPython 3.13.15 y SQLite 3.53.1. Sus cursores v2 y los empates de
   valores numéricos siguen abiertos. El chat M3 A entregó `7087d13`
-  en `codex/m3-native-fts-order-probe`, worktree del mismo nombre. Root
-  verifica controles, compila y mide el nuevo diagnóstico R66 en serie.
+  en `codex/m3-native-fts-order-probe`, worktree del mismo nombre. Nivel 2
+  diagnóstico R66: pasó 25 controles de orden y 126 compartidos. El par
+  5+40 dio 437,93 ms p95 con el agregado nativo canónico y 333,78 ms con
+  el ordenado. Hubo 50 intentos y cero fallbacks. Siguiente decisión del
+  usuario: autorizar la extensión compilada y su toolchain en el producto,
+  condicionada a preservar v2 y pasar los gates exactos. El PR #28 sigue
+  abierto con la evidencia y no cambia su head.
 - M3 B reprodujo en `a31daca` la selección de un WAV normalizado vacío con
   una fuente cruda válida. Nivel 2 focalizado: 1 fallo y 6 pases. `b2dc640`
   pasó 35 casos de reintento y geometría. La revisión independiente detectó
@@ -63,9 +68,9 @@ Se reactivaron los chats de M3 A y M5 B con GPT‑6.2 Sol. M2 sigue cerrado en
   máximo |error| más incertidumbre 36,245 ms frente a 250 ms. Recibos en
   `C:/Users/savar/.codex/evidence/here/m3-b-seek-912f63f-20261127/`.
   M3 B espera rebase y suite en su head definitivo después de M3 A.
-  `m3_b_player_accessibility_red_sol` preparó tres casos de teclado y
-  contraste en `a82c14e`, `codex/m3-library-playback-accessibility`,
-  con ejecución pendiente de la ventana Windows.
+  `a82c14e`, `codex/m3-library-playback-accessibility`, pasó tres controles
+  de teclado, accesibilidad y contraste. Revisión independiente aprobada.
+  Root integró los tests en `b36162a`, sin cambios a la fuente del paquete.
 - M5 B nivel 2 RED: `b66d15a` dio 16 fallos esperados en CLI. `7d7c04d` dio
   14 fallos esperados en Qt. La base común `bbc1717` en
   `codex/m5-portability-adapter-integration`, `m5-portability-adapter-integration/here`,
@@ -82,9 +87,13 @@ Se reactivaron los chats de M3 A y M5 B con GPT‑6.2 Sol. M2 sigue cerrado en
   los adaptadores e I/O en `769bc28`. El chat prepara Markdown desde el
   detalle. `974f39a`, `codex/m5-portability-markdown-core-red`, reprodujo
   10 fallos esperados en Qt y la fachada de exportación. El renderizador
-  `412bb49` pasó revisión estática. El chat coordina GREEN de fachada
-  (`codex/m5-portability-markdown-service-green`, base `0ad4369`) y Qt
-  (`codex/m5-portability-markdown-qt-green`, base `01b5b97`) en paralelo.
+  `412bb49` pasó revisión estática. Fachada `ca4b652`, guard de destino
+  `ad02a06` y Qt `3713784` se integraron en `1498f4c`, rama
+  `codex/m5-portability-adapter-integration`. Pasaron 140 pruebas Windows.
+  La revisión detectó un aviso perdido si falla la limpieza después de
+  guardar. `9eee8f9` reprodujo los dos fallos esperados y `73cd5c2` alineó
+  el fake normal. `m5_portability_package_io_green_sol` corrige el aviso en
+  `codex/m5-portability-markdown-warning-green`, con worktree homónimo.
   `d35f31a` pasó 46 casos de reporte parcial y recuperación. El guard
   del orden de manifiesto `0a3f0ea` pasó 22, obtuvo revisión independiente
   y está integrado en `eb63749` con árbol idéntico. Todas las ramas usan
