@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
+from io import BufferedReader
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -211,3 +212,48 @@ def test_import_maps_local_integrity_error_to_io_exit(
     assert "meetings" not in error
     assert all(target.show(identity) is None for identity in MANIFEST_ORDER)
     assert package.read_bytes() == before
+
+
+@requires_native_export
+@pytest.mark.parametrize("fault", ["open", "central_directory_read"])
+def test_import_maps_package_access_failure_to_io_exit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, fault: str
+) -> None:
+    _require_command()
+    package = _package(_origin(tmp_path), tmp_path / "inaccessible.here.zip")
+    original_open = Path.open
+    with ZipFile(package) as archive:
+        central_offset = archive.start_dir
+    injected = False
+
+    class FailingReader(BufferedReader):
+        def read(self, size: int = -1) -> bytes:
+            nonlocal injected
+            if self.tell() == central_offset:
+                injected = True
+                raise OSError("Synthetic failure reading the ZIP central directory")
+            return super().read(size)
+
+    def open_package(path, mode="r", *args, **kwargs):
+        nonlocal injected
+        if path == package and mode == "rb":
+            if fault == "open":
+                injected = True
+                raise PermissionError("Synthetic failure opening the package")
+            return FailingReader(original_open(path, "rb", buffering=0))
+        return original_open(path, mode, *args, **kwargs)
+
+    before = package.read_bytes()
+    with monkeypatch.context() as patch:
+        patch.setattr(Path, "open", open_package)
+        result = runner.invoke(app, ["meetings", "import", str(package), "--json"])
+
+    assert injected
+    target = _target(tmp_path)
+    assert all(target.show(identity) is None for identity in MANIFEST_ORDER)
+    assert package.read_bytes() == before
+    assert result.exit_code == 4, result.output + repr(result.exception)
+    error = json.loads(result.stdout)
+    assert error["error_category"] == "io"
+    assert error["error"]
+    assert "meetings" not in error
