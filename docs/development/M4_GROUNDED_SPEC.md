@@ -87,25 +87,47 @@ R75/R76 use private Windows SQLite encoders for FTS and ACTIVE generation, prese
 generation bytes, public v2 cursors and canonical fallback within R50. Retrieval
 consumes the public search contracts and has no native-loader dependency.
 M4 A adds the memory-owned `SearchService.evidence_snapshot(query: EvidenceQuery)`
-returning `EvidenceSnapshot`. `EvidenceQuery` carries normalized literal OR terms,
-mutually exclusive `meeting_ids` or explicit `whole_library`, inherited date/status/
-participant filters and `include_partial`, and the `per_meeting`, `total` and
-`evidence_chars` limits from `Budget`. The memory boundary constructs MATCH from
-literal terms. Scoped eligibility and suppression apply before keyset or LIMIT.
-BM25 uses the global index. A normal query with no terms yields no evidence and
-preserves scope. An explicit single-meeting summary retains bounded ordinal traversal.
+returning `EvidenceSnapshot`. `EvidenceQuery` carries an explicit `match` or `summary`
+purpose, normalized literal terms, mutually exclusive `meeting_ids` or explicit
+`whole_library`, inherited date/status/participant filters and `include_partial`, and
+the `per_meeting`, `total` and `evidence_chars` limits from `Budget`. Apply scope
+and suppression to candidate eligibility before ranked rounds and limits.
+
+`match` with no terms yields no evidence and preserves scope. When FTS is available,
+complete revisions use global BM25 and MATCH built from escaped literal OR terms.
+Eligible opt-in partials use escaped literal OR, carry the partial flag and receive
+neutral rank 0, as in M3. When FTS is unavailable, all eligible matches use escaped
+literal OR and neutral rank 0. Preserve the date/ID tie-breakers and ranked rounds
+for these routes, and surface degraded coverage in fallback. Source evidence is exact
+transcript text. The memory boundary constructs both query forms from bound terms.
 
 Use one R50 view for matching and context. Deduplicate segments. Within a meeting,
 take ranked matches in order. Consume the first match of each meeting before the
 second and sort each round by M3 order (rank, date descending with NULL last,
-meeting ID, segment ID). Probe one additional row or use a count to detect truncation
-after eligibility. Give matches priority, then consider each match's immediate
-predecessor and successor by ordinal in the same revision, in reproducible order.
-Deduplicate neighbors and apply the same limits. Omit an entire segment that cannot
-fit, mark truncation, and continue if another candidate fits. Compute coverage from
-the actual set included in the snapshot. The snapshot carries exact segment text,
+meeting ID, segment ID). Rank and return only IDs, ordinals, metadata and length
+information in the candidate phase. Bound consideration in SQL before returning
+rows to Python to `candidate_limit = 4 * Budget.total` overall and per meeting.
+Use a metadata-only sentinel row to detect eligible candidates beyond the window.
+Give matches priority, then consider at most two neighbors per selected match, its
+immediate predecessor and successor by ordinal in the same revision. Deduplicate
+and apply the same limits and bounded reads in reproducible order.
+
+Fetch complete text only for selected candidates that pass the remaining-character
+preflight. Account for embedded NUL in the length calculation, since SQLite's text
+`length()` stops there. A byte-length preflight for such values may bound the read
+to at most four UTF-8 bytes per remaining character, followed by an exact Unicode
+character count. Recheck the exact text length before charging the budget. Omit
+segments that cannot fit, mark truncation, and continue within the window if another
+candidate fits. A sentinel marks truncation and contributes no evidence or coverage.
+Compute coverage from the actual set included. The snapshot carries exact segment text,
 meeting/revision/segment identity, revision content hash and citation timing metadata.
 It carries no paths. Preserve public M3 search and cursor contracts and the schema.
+
+`summary` requires exactly one selected meeting and no terms. Traverse its revision
+in bounded ordinal batches. Bind continuation to the same `revision_id` and the last
+considered ordinal, and keep source IDs on the blocks. The service reports progress
+and checks cancellation between batches, surfaces truncation and revalidates the
+evidence before publication. A revision change cannot continue an earlier batch.
 
 R42/R50 suppression must guard all source/context reads and revalidation, before
 exposure and keyset/LIMIT. The approved `catalog_read_view(library)` contract has

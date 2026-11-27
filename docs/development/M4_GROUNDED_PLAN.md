@@ -69,6 +69,15 @@ revalidation must precede publication; concurrent loss/change does not certify a
 stale result. R42/R50 pending/complete suppression also applies to adjacent context,
 with aliases resolved before exposure; invalid registry state fails closed.
 
+Use the SPEC's metadata-only window (`4 * Budget.total` overall and per meeting,
+plus a sentinel) before reading full text. Charge exact Unicode characters and
+cover embedded NUL without an unbounded read. Restrict neighbor reads to the two
+immediate ordinals of each selected match. Preserve R41 for `match`: global BM25
+for indexed complete revisions, escaped literal OR and neutral rank for opted-in
+partials and the degraded fallback, and literal transcript evidence for all routes.
+For explicit `summary`, continue from the last considered ordinal on the same
+revision with bounded batches, progress and cancellation between batches.
+
 M3 B accepts `Citation` for desktop navigation and re-resolves identity through
 the injected memory backend even when called with a `CitationTarget`. Navigation
 uses the service passed to `create_default_controller(memory_service=...)`;
@@ -159,9 +168,12 @@ These intelligence interfaces remain planned; no existing memory API is invented
   `Coverage` equals the sent set and flags truncation; only active complete revisions
   unless requested. Include mixed selected/unselected hits, literal OR terms and
   skewed meeting volumes. Verify selected-set eligibility before limits, global
-  ranking, ranked rounds, stable ordering and context counted once. Cover truncation
-  when a whole segment cannot fit and a later candidate can. Check bounded ordinal
-  summary traversal and no-evidence behavior for an empty normal match. Exercise
+  ranking, ranked rounds, stable ordering and context counted once. Cover a run of
+  oversized candidates with the next fitting match inside and outside the window,
+  sentinel truncation and exact lengths for text with embedded NUL. Assert partial
+  and degraded literal OR routing, neutral ranks, canonical ties and source text.
+  Check empty `match` abstention and explicit `summary` continuation, cancellation
+  and progress across bounded batches, including a changed revision. Exercise
   `revalidate_evidence` against changed and absent sources and suppression failures.
 - [ ] Implement models, retrieval, diversification and coverage; register the package.
 - [ ] Run focused tests and the full offscreen suite; self-review; commit as
