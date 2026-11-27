@@ -2809,3 +2809,21 @@ Media Foundation plugin.
 
 Receipts are in `package-46039585947-verified.json` and
 `package-46039585947-playback-equivalence.json` under the M3 evidence directory.
+
+## 2026-11-27 — M3 B merged and 0.4.0 closed
+
+[PR #30](https://github.com/srodriguez-lefebre/here/pull/30) merged into
+`main` as `7239ba64e03e7e3230b36b5d8d952cefbbe54e47` at 14:21 Montevideo.
+Independent reviewer `m5_portability_package_io_review_sol` approved
+source `d29f83a1c7f69caa3261bb7ddab579a75d4bc4b9`. Copilot was omitted
+under ruling 64. Windows CI passed 1,720 cases with 105 skips and two
+warnings in 633.87 seconds. The verified distribution job also passed
+on the same SHA. Root ran
+`gh pr merge 30 --merge --admin --match-head-commit d29f83a1c7f69caa3261bb7ddab579a75d4bc4b9`
+and verified the exact reviewed second parent and equal merge tree.
+[Windows CI 46039586001](https://github.com/srodriguez-lefebre/here/actions/runs/46039586001)
+[Windows package 46039585947](https://github.com/srodriguez-lefebre/here/actions/runs/46039585947)
+
+M3 is closed at 0.4.0. CI and package verification are level 2. The
+four-marker real seek run remains level 3 on `912f63f` under ruling 78.
+M4 A consumes the accepted search, citation and guarded read contracts.
