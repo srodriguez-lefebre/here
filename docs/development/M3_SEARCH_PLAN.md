@@ -360,6 +360,13 @@ El candidato revisado requiere su propio 5+40 público y heartbeat Qt.
   y revisión del head exacto con la verificación R75 del paquete. Conservar
   esquema, formato, toolchain y presupuestos.
 
+**Checkpoint local R76.** En `7b04f76`, la corrida serial de gates
+pasó con 397,395940002 ms p95 (5+40 válidas) y 9,462 ms de gap máximo
+del heartbeat Qt. La revisión estática independiente aprobó el mismo
+head. El checkpoint de [aceptación](ACCEPTANCE.md) registra los recibos
+de nivel 2. La suite completa local, los gates Windows finales y el
+merge siguen pendientes.
+
 ## Closing the group
 
 - Update `README.md` (library tab), `ARCHITECTURE.md` (search service and request

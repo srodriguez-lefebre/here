@@ -21,7 +21,7 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M2 | Deletion clears managed memory without resurrection | DB/FTS/files/backup inspection after restart | Nivel 2 en `r62-green-3-61a5088c` (110 pases) y CI `43461764790` (1273 pases). Incluye la matriz R42 de kill/reinicio y orígenes externos. Revisión independiente y PR #25 mergeados. |
 | M2 · 0.3.0 | Installed wheel and Windows package | Fresh wheel and stable installer artifact with checksums | Nivel 2. `m2-030-wheel-a4e464a319f7-a98d6f06` pasó 4 smokes. Package `43461764783` pasó la instalación estable con datos sintéticos y publicó el artefacto `14056018512`; sus seis hashes fueron verificados. |
 | M3 | Listing/filter/search and original moment navigation | End-to-end Qt selection and seek plus real WAV marker playback | Abierto. Focos históricos de búsqueda, Biblioteca y ACK de borrado registrados abajo. Resolver, reproducción y seek real pendientes. |
-| M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | Abierto. Nivel 2 R75 en `4ba043e`: p95 de 530,14 ms frente a <500 ms, con cinco precalentamientos y 40 muestras válidas. Pendientes el p95 público y el heartbeat Qt del candidato combinado. Los resultados anteriores se conservan en sus checkpoints. |
+| M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | Gates locales aprobados, nivel 2 en `7b04f76`. Búsqueda pública 397,395940002 ms p95 (5+40 válidas) y heartbeat Qt con gap máximo de 9,462 ms. Quedan pendientes la suite completa local, los gates Windows finales y el merge. |
 | M4 | Multi-meeting answers/extractions with valid evidence | Source-resolution and semantic synthetic corpus, provider smoke | Open |
 | M4 | Uncertainty/injection/cancellation/deletion remain honest | No-evidence, invalid-citation, concurrent delete/redaction tests | Open |
 | M5 | Offline first run, settings, tray/startup and safe exit | Qt, process concurrency and Windows settings tests | Open |
@@ -1189,3 +1189,38 @@ Windows, el p95 público y el heartbeat Qt del head combinado con ACTIVE.
 Recibo `package-46028557240-receipt.json` en
 `C:/Users/savar/.codex/evidence/here/m3-native-windows-distribution-20261127/`.
 [Paquete 46028557240](https://github.com/srodriguez-lefebre/here/actions/runs/46028557240)
+
+
+### R76 · Gates locales de búsqueda en el candidato combinado
+
+Nivel 2 en `7b04f768ca633a2e42e52b65fe92328721e99aef`, con aprobación
+estática independiente. Un solo proceso ejecutó ambos gates en serie
+sobre el mismo candidato. El JUnit registró dos pases, cero fallos,
+errores u omisiones. Pytest emitió dos avisos por la marca `slow`.
+
+- Búsqueda pública: 397,395940002 ms p95 frente al límite de 500 ms,
+  con cinco precalentamientos y las 40 muestras válidas.
+- Heartbeat Qt: gap máximo de 9,462 ms frente al límite de 50 ms,
+  988 ticks, ocho consultas entregadas, cero errores, todos los workers
+  drenados y tres sellos de corpus iguales.
+
+El foco ACTIVE `r76-active-green-02.xml` de `44c1bc1` registró 175 pases
+y una omisión. El SHA-256 del C compilado, idéntico en la integración, fue
+`7a860838c875bf4d25b95c98558ef465f9d5a1474b5af4f0e72d40ad28b0981b`.
+El RED de la semilla del smoke `91417c5` produjo un fallo. El GREEN
+obtuvo un pase con un único resultado real de búsqueda sin degradación.
+SHA-256 de la DLL staged
+`62a302398c119baa1b2db4d508a9b6cd76ebe210aa2433a375754684bbef7ab4`.
+
+Los gates locales de rendimiento pasaron. La suite completa local
+`r76-full-7b04f76` seguía en curso al registrar este checkpoint.
+Quedan pendientes los gates Windows finales y el merge. La corrida
+fallida de `4ba043e` sigue registrada como evidencia histórica.
+
+Recibos `r76-product-gates-7b04f76.xml`, su log y exit JSON,
+`r76-active-smoke-red-91417c5.xml` y `r76-active-smoke-green-01.xml` en
+`C:/Users/savar/.codex/evidence/here/m3-native-windows-distribution-20261127/`.
+SHA-256 del JUnit de gates
+`C8619BBBF4BF5AA418FAF0C31C8BB27562F350ED9C768EF8CC63EF38B573AB28`.
+El foco ACTIVE está en
+`C:/Users/savar/.codex/evidence/here/m3-native-active-v2-20261127-01/`.
