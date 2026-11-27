@@ -345,3 +345,29 @@ def test_active_loader_refusal_and_invalid_r50_stay_outside_native_sql(
         search.SearchService(rejected).search(query)
     assert len(calls) == 1
     assert not _active_statements(rejected.trace)
+
+
+def test_active_uses_stock_when_json_exceeds_connection_limit(
+    tmp_path, monkeypatch, loader_module, native_dll
+):
+    text = "\x01" * 1000
+    limit = 4096
+    assert len(text.encode("utf-8")) < limit < len(_row_json(text))
+    with closing(_vector(tmp_path, "one-empty")) as library:
+        library.execute("UPDATE segments SET text=?", (text,))
+        library.connection.commit()
+        library.connection.setlimit(sqlite3.SQLITE_LIMIT_LENGTH, limit)
+        assert library.connection.getlimit(sqlite3.SQLITE_LIMIT_LENGTH) == limit
+        with monkeypatch.context() as stock:
+            stock.setattr(loader_module, "load_fts_encoder", lambda _library: False)
+            expected = _producer_bytes(library, stock)
+        assert expected["digest"]
+        calls = _install_real_loader(monkeypatch, loader_module, native_dll)
+        trace = []
+        library.connection.set_trace_callback(trace.append)
+        assert _producer_bytes(library, monkeypatch) == expected
+        assert calls == [library]
+        assert any(_AGGREGATE in sql.lower() for sql in trace)
+        (active,) = _active_statements(trace)
+        assert _ACTIVE not in active
+        assert library.execute("SELECT text FROM segments").fetchone()[0] == text
