@@ -335,6 +335,31 @@ y el contrato de consultas de M3.
   `ACCEPTANCE.md` y `DELIVERY.md` antes del merge protegido.
 
 
+### Encoding nativo acotado de ACTIVE (R76)
+
+R76 prioriza ACTIVE tras el p95 de 530,14 ms de R75. La corrida de fases
+2+8 diagnosticó tiempo de encoding y conserva alcance diagnóstico.
+El candidato revisado requiere su propio 5+40 público y heartbeat Qt.
+
+- [ ] Usar el encoder nativo por fila como ruta predeterminada de ACTIVE
+  solo cuando la conexión de búsqueda haya activado la extensión R75 y
+  pueda ejecutar la misma consulta canónica con el mismo ORDER BY. Python
+  conserva la proyección lógica, las relaciones, filtros, bindings, orden,
+  batch256, framing y SHA; SQLite devuelve bytes JSON para TEXT, INTEGER
+  y NULL. Acotar la vida de filas y buffers al lote en curso, dentro de
+  la vista R50. El camino Python sigue disponible.
+- [ ] Conservar byte por byte el JSON y la generación v2. Probar NULL,
+  Unicode, escape JSON, límites INTEGER, empates y límites de lote.
+  Una fila fuera del dominio descarta el estado parcial de ACTIVE, cierra
+  el cursor nativo y repite esa sección desde el inicio por la ruta canónica
+  dentro de la misma vista R50. Cubrir rechazo tardío después de un frame
+  y verificar un digest limpio, orden canónico de errores y rollback/cierre
+  de la vista en errores que deban propagarse.
+- [ ] Verificar generación, páginas, ranking, cursores v2 cruzados,
+  continuaciones legadas y supresión R50 en la integración. Repetir gates
+  y revisión del head exacto con la verificación R75 del paquete. Conservar
+  esquema, formato, toolchain y presupuestos.
+
 ## Closing the group
 
 - Update `README.md` (library tab), `ARCHITECTURE.md` (search service and request

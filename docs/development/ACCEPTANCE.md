@@ -21,7 +21,7 @@ must be synthetic; credentials and private conversations never enter evidence fi
 | M2 | Deletion clears managed memory without resurrection | DB/FTS/files/backup inspection after restart | Nivel 2 en `r62-green-3-61a5088c` (110 pases) y CI `43461764790` (1273 pases). Incluye la matriz R42 de kill/reinicio y orígenes externos. Revisión independiente y PR #25 mergeados. |
 | M2 · 0.3.0 | Installed wheel and Windows package | Fresh wheel and stable installer artifact with checksums | Nivel 2. `m2-030-wheel-a4e464a319f7-a98d6f06` pasó 4 smokes. Package `43461764783` pasó la instalación estable con datos sintéticos y publicó el artefacto `14056018512`; sus seis hashes fueron verificados. |
 | M3 | Listing/filter/search and original moment navigation | End-to-end Qt selection and seek plus real WAV marker playback | Abierto. Focos históricos de búsqueda, Biblioteca y ACK de borrado registrados abajo. Resolver, reproducción y seek real pendientes. |
-| M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | Abierto. `r63-query-benchmark-1` en `ca80f49` con fuente `64013ade` falló por p95 de 879,4833999891125 ms frente al límite de 500 ms. Cinco precalentamientos y 40 muestras válidas, mediana 809,5637999940664 ms. Nivel 2 y review independiente aprobada para los focos R63 de oráculo (8), generación (10) y regresión (240). R58 `12774` verificó ocho consultas UI con máximo de 8,9216 ms en su propio alcance. Sin corrida combinada ni certificación nueva. |
+| M3 | Large library remains responsive | 1,000 meetings/100,000 segments benchmark and event-loop check | Abierto. Nivel 2 R75 en `4ba043e`: p95 de 530,14 ms frente a <500 ms, con cinco precalentamientos y 40 muestras válidas. Pendientes el p95 público y el heartbeat Qt del candidato combinado. Los resultados anteriores se conservan en sus checkpoints. |
 | M4 | Multi-meeting answers/extractions with valid evidence | Source-resolution and semantic synthetic corpus, provider smoke | Open |
 | M4 | Uncertainty/injection/cancellation/deletion remain honest | No-evidence, invalid-citation, concurrent delete/redaction tests | Open |
 | M5 | Offline first run, settings, tray/startup and safe exit | Qt, process concurrency and Windows settings tests | Open |
@@ -1130,3 +1130,38 @@ the bundled application's idle baseline, and report baseline plus delta.
 Clean-install verification must use an independent Windows environment without the
 developer virtual environment or repo on PATH. A bundled executable launched from a
 temporary directory tests independence but alone does not prove a clean installation.
+
+
+## 2026-11-27 — M3 A · R75 distribución nativa Windows y rendimiento
+
+Nivel 2 en el candidato local `4ba043ec4a4ee0f55281fde78a1678eb237f0aa4`.
+La revisión independiente estática aprobó ese head. Su corrida pública
+`r75-public-p95-4ba043e` falló con p95 de 530,14 ms frente al límite
+estricto de 500 ms. Completó cinco precalentamientos y 40 muestras
+válidas. SHA-256 del JUnit
+`d6ee080d7f82121b6e09ab5c113a47a39b7b3150e7451e1baf0a0d177230fd6e`.
+
+- Paridad v2 y R50 en `ed571ed`: 160 pases y una omisión intencional
+  de captura de oráculo. El smoke del paquete staged ejercitó dos lotes
+  nativos FTS para 257 filas y reprodujo el oráculo v2.
+- El build aislado de `2ee8ac6` compiló con Zig fijado y descartó
+  variables de compilación inválidas del entorno padre. El RED del
+  bundle anterior registró dos errores de setup por ausencia de la DLL.
+  El RED de carga `7f78f1d` dio un fallo y dos pases. Su GREEN dio tres
+  pases e incluyó la recuperación canónica dentro de la misma vista R50
+  ante el rechazo de SQLite y errores visibles de configuración.
+- Diagnóstico instrumentado separado del mismo head, 2+8. Medianas
+  de 246,94 ms para ACTIVE, 116,78 ms para FTS nativo y 2,78 ms para carga
+  de la DLL. R76 aborda el encoding de ACTIVE. La instrumentación queda
+  acotada al diagnóstico de nivel 2.
+
+La corrida diagnóstica de paquete real `46028557240` sigue pendiente en
+este checkpoint. El candidato combinado todavía debe medir p95 público y
+heartbeat Qt. [Paquete 46028557240](https://github.com/srodriguez-lefebre/here/actions/runs/46028557240)
+
+Recibos `build-2ee8ac6.json`, `package-red.xml`,
+`load-refusal-red-7f78f1d.xml`, `load-refusal-green-02.xml`,
+`r75-public-p95-4ba043e{.log,.xml,-exit.json}` y `phases-4ba043e.json` en
+`C:/Users/savar/.codex/evidence/here/m3-native-windows-distribution-20261127/`.
+Los recibos `green-focused-fixed.xml` y `staged-package-smoke.xml` están en
+`C:/Users/savar/.codex/evidence/here/m3-search-native-v2-equivalence-01/`.
