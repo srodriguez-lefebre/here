@@ -11,7 +11,13 @@ from pathlib import Path
 import pytest
 from here.memory.models import MeetingPatch
 from here.memory.portability import ExportCancelled, PortabilityService
-from here.memory.service import Conflict, MemoryService, NotFound, _PortableExportView
+from here.memory.service import (
+    Conflict,
+    MemoryService,
+    NotFound,
+    _ExportCleanupPending,
+    _PortableExportView,
+)
 from here.output.export_binding import WindowsExportSibling
 from memory_fixtures import MEETING_ID, OTHER_MEETING_ID, make_session, write_json
 
@@ -172,3 +178,39 @@ def test_markdown_revalidates_catalog_through_guarded_publication(
     assert memory.get_meeting(MEETING_ID).meeting.title == published_title
     assert destination.read_bytes() == _EXISTING
     assert set(destination.parent.iterdir()) == {destination}
+
+
+def test_markdown_reports_cleanup_pending_after_publishing(
+    memory: MemoryService, destination: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fail_retirement(service: MemoryService, registration: Path) -> None:
+        assert service is memory
+        assert registration.is_file()
+        assert _OLD_TEXT in destination.read_text(encoding="utf-8")
+        raise _ExportCleanupPending()
+
+    with monkeypatch.context() as failure:
+        failure.setattr(MemoryService, "_retire_export", fail_retirement)
+        result = PortabilityService(memory).export_markdown(
+            MEETING_ID, destination, cancellation=lambda: False
+        )
+
+    [registration] = (memory.data_dir / ".exports").glob("*.json")
+    published = destination.read_bytes()
+    assert _OLD_TEXT.encode("utf-8") in published
+    assert set(destination.parent.iterdir()) == {destination}
+
+    MemoryService(
+        memory.data_dir, sessions_root=memory.data_dir.parent / "synthetic-sources"
+    ).reconcile()
+    assert not registration.exists()
+    assert destination.read_bytes() == published
+
+    assert result.path == destination
+    assert result.warnings
+    for warning in result.warnings:
+        assert warning.strip()
+        assert destination.name not in warning
+        assert registration.name not in warning
+        assert str(destination.parent) not in warning
+        assert str(memory.data_dir) not in warning

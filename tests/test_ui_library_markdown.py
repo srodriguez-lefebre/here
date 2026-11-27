@@ -6,6 +6,7 @@ import re
 import threading
 from collections.abc import Callable
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Literal
 
 import pytest
@@ -30,10 +31,11 @@ from PySide6.QtWidgets import (
 )
 from pytestqt.qtbot import QtBot
 
-Outcome = Literal["saved", "cancelled", "unavailable", "write_error"]
+Outcome = Literal["saved", "saved_warning", "cancelled", "unavailable", "write_error"]
 MARKDOWN_ACTION = r"markdown|\.md\b"
 FRESH_TRANSCRIPT = "La revisión vigente contiene una síntesis nueva."
 FRESH_TITLE = "Reunión de revisión"
+CLEANUP_WARNING = "Limpieza pendiente tras guardar el documento."
 
 
 class MarkdownController(ApplicationUiAdapter):
@@ -56,7 +58,7 @@ class MarkdownController(ApplicationUiAdapter):
     # Proposed UI seam. The fake supplies the worker outcome, not the cached detail.
     def export_meeting_markdown(
         self, meeting_id: str, destination: Path, cancellation: Callable[[], bool]
-    ) -> Path:
+    ) -> Path | SimpleNamespace:
         self.calls.append((meeting_id, destination, threading.get_ident()))
         self.entered.set()
         assert self.release.wait(5), "Test did not release the export worker"
@@ -70,6 +72,8 @@ class MarkdownController(ApplicationUiAdapter):
         if self.outcome == "cancelled":
             raise AssertionError("The cancellation did not reach the export worker")
         destination.write_text(f"# {FRESH_TITLE}\n\n{FRESH_TRANSCRIPT}\n", encoding="utf-8")
+        if self.outcome == "saved_warning":
+            return SimpleNamespace(path=destination, warnings=(CLEANUP_WARNING,))
         return destination
 
 
@@ -122,8 +126,10 @@ def detail_state(view: LibraryView) -> tuple[tuple[object, ...], str, tuple[str,
         if items.isVisible() and re.search(r"transcripci", items.accessibleName(), re.I)
     ]
     selected = tuple(index.data() for index in results(view).selectionModel().selectedRows())
-    return selected, title.text(), tuple(
-        transcript.item(row).text() for row in range(transcript.count())
+    return (
+        selected,
+        title.text(),
+        tuple(transcript.item(row).text() for row in range(transcript.count())),
     )
 
 
@@ -203,7 +209,9 @@ def test_markdown_picker_cancel_keeps_open_detail_idle(
     assert not any(button.isEnabled() for button in buttons(view, MARKDOWN_ACTION))
 
 
-@pytest.mark.parametrize("outcome", ["saved", "cancelled", "unavailable", "write_error"])
+@pytest.mark.parametrize(
+    "outcome", ["saved", "saved_warning", "cancelled", "unavailable", "write_error"]
+)
 def test_markdown_export_delegates_current_identity_and_preserves_detail(
     library,
     qtbot: QtBot,
@@ -249,7 +257,7 @@ def test_markdown_export_delegates_current_identity_and_preserves_detail(
     assert action.isEnabled()
     assert controller.core.command_log == []
     assert controller.cancellation_seen is (outcome == "cancelled")
-    if outcome == "saved":
+    if outcome in {"saved", "saved_warning"}:
         exported = destination.read_text(encoding="utf-8")
         assert FRESH_TITLE in exported
         assert FRESH_TRANSCRIPT in exported
@@ -259,10 +267,15 @@ def test_markdown_export_delegates_current_identity_and_preserves_detail(
         assert not destination.exists()
     else:
         assert destination.read_bytes() == previous
-    if outcome in {"unavailable", "write_error"}:
-        labels_after = {
+    if outcome == "saved_warning":
+        visible = "\n".join(
             label.text() for label in view.findChildren(QLabel) if label.isVisible()
-        }
+        )
+        assert re.search(r"finalizad|guardad[oa]|exportad[oa]", visible, re.I)
+        assert CLEANUP_WARNING in visible
+        assert not notices
+    elif outcome in {"unavailable", "write_error"}:
+        labels_after = {label.text() for label in view.findChildren(QLabel) if label.isVisible()}
         assert notices or any(text.strip() for text in labels_after - labels_before)
     else:
         assert not notices
