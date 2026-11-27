@@ -1087,6 +1087,20 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Cost if wrong:** habría que corregir los reportes de CLI y Qt y
     repetir los controles de rollback, COMMIT incierto y cleanup.
 
+75. **2026-11-27 — Extensión SQLite compilada para M3 A.** El usuario
+    autoriza incorporar la extensión y su toolchain de Windows al producto
+    y pide continuar hasta cerrar M5. Ruling 66 conserva el alcance histórico
+    de los prototipos. El candidato de producto mantiene los bytes, los
+    cursores v2 y la compatibilidad legada, la vista y supresión R50, el
+    ranking y la ruta canónica ante entradas fuera del dominio nativo.
+    El binario se construye con insumos fijados y verificables, con procedencia
+    y avisos en la distribución. La aceptación exige equivalencia, p95 de
+    búsqueda <500 ms, heartbeat <50 ms, revisión independiente y CI Windows
+    con el head exacto antes del merge protegido. Los demás gates de M3–M5,
+    ruling 64 y la omisión por ruling 5 conservan su alcance.
+    **Cost if wrong:** corregir o retirar el acelerador y repetir los controles
+    y gates sobre el candidato resultante, conservando los resultados previos.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings

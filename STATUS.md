@@ -8,10 +8,10 @@ Actualizado: 2026-11-27. Leé CLAUDE.md primero; después este archivo y
 Se reactivaron los chats de M3 A y M5 B con GPT‑6.2 Sol. M2 sigue cerrado en
 0.3.0. Copilot sigue omitido por ruling 64 y dos horas, **omitida por ruling 5**.
 
-**Bloqueo de M3 A.** El PR #28 espera la decisión del usuario sobre una
-extensión SQLite compilada y su toolchain de Windows. La autorización del
-ruling 66 cubre los diagnósticos. La integración requiere conservar los
-bytes v2 y verificar el candidato de producto contra sus gates exactos.
+**M3 A reanudado por ruling 75.** El usuario autorizó la extensión SQLite
+compilada y su toolchain de Windows y pidió seguir hasta cerrar M5. El PR
+#28 sigue abierto mientras se implementa y verifica el candidato con bytes
+v2, los límites de rendimiento vigentes y CI Windows en el head exacto.
 
 - M3 A recuperó `2710/here` en `e7f84b0`. Nivel 2 diagnóstico de FTS: la
   mediana de la fase bajó de 404,98 a 320,11 ms. Las ocho muestras conservaron
