@@ -17,10 +17,13 @@ v2, los límites de rendimiento vigentes y CI Windows en el head exacto.
 
 | Frente | Rama | Worktree bajo `C:/Users/savar/.codex/worktrees/` | Base y responsable |
 | --- | --- | --- | --- |
-| M3 A, extensión y equivalencia v2, chat `01a1af04-e779-7363-be61-c840651b0b18` | `codex/m3-search-native-v2` | `m3-search-native-v2/here` | `7e3bd56`, chat M3 A |
+| M3 A, extensión y equivalencia v2, chat `01a1af04-e779-7363-be61-c840651b0b18` | `codex/m3-search-native-v2` | `m3-search-native-v2/here` | `ed571ed`, chat M3 A |
 | M3 A, RED de distribución | `codex/m3-search-native-windows-red` | `m3-search-native-windows-red/here` | `6acd485`, `native_windows_distribution_red_sol` |
-| M3 A, build Windows e integración del paquete | `codex/m3-search-native-windows-green` | `m3-search-native-windows-green/here` | `6acd485`, orquestador |
-| M3 A, documentación del contrato R75 | `codex/m3-search-native-docs` | `m3-search-native-docs/here` | `95e66e7`, `m3_nov27_evidence_sol` |
+| M3 A, build Windows e integración del paquete | `codex/m3-search-native-windows-green` | `m3-search-native-windows-green/here` | `c8195de`, orquestador |
+| M3 A, documentación del contrato R75 | `codex/m3-search-native-docs` | `m3-search-native-docs/here` | `fdf4ca6`, `m3_nov27_evidence_sol` |
+| M3 A, candidato integrado | `codex/m3-a-r75-integration` | `m3-a-r75-integration/here` | `2ee8ac6`, orquestador |
+| M3 A, revisión independiente integrada | HEAD separado | `m3-a-r75-exact-review/here` | `2ee8ac6`, `m5_portability_package_io_review_sol` |
+| M3 A, RED de rechazo de carga | `codex/m3-a-r75-load-refusal-red` | `m3-a-r75-load-refusal-red/here` | `2ee8ac6`, `native_windows_distribution_red_sol` |
 | M3 B, integración | `codex/m3-library` | `m3-library-group/here` | `b36162a`, orquestador. Pendiente la integración de M3 A |
 | M5 B, adelanto de portabilidad, chat `01a1af04-b158-75a2-8933-98783880f3e8` | `codex/m5-portability-adapter-integration` | `m5-portability-adapter-integration/here` | `5f6324f`, chat M5 B. Claims esperan M4 B |
 
@@ -29,7 +32,17 @@ benchmarks y builds pesados. RED de distribución **nivel 2** en `6acd485`:
 dos errores de setup esperados al verificar el ZIP real de la corrida
 `46015025767`, que carece de la DLL nueva. Recibo `package-red.xml` en
 `C:/Users/savar/.codex/evidence/here/m3-native-windows-distribution-20261127/`.
-La carga desde el binario congelado y el 5+40 del candidato están pendientes.
+El RED de dispatch del chat falló por ausencia del loader. El recorrido corregido
+en `ed571ed` pasó 160 controles con una omisión prevista, nivel 2. El smoke
+local del módulo en un paquete de prueba verificó dos batches y bytes v2 de 257 filas
+dentro de R50 con carga SQL vedada. Recibos en
+`C:/Users/savar/.codex/evidence/here/m3-search-native-v2-equivalence-01/`.
+`c8195de` pasó revisión independiente estática del empaque después de
+aislar el entorno de Zig. Nivel 2 en `build-2ee8ac6.json`: la extensión
+compiló con el entorno controlado aun con rutas Zig y Clang inválidas
+heredadas por el proceso padre. La revisión integrada pidió cubrir el
+rechazo de carga de SQLite y conservar la ruta canónica. RED en curso.
+El arranque congelado, el 5+40 y el heartbeat integrados quedan pendientes.
 
 - M3 A recuperó `2710/here` en `e7f84b0`. Nivel 2 diagnóstico de FTS: la
   mediana de la fase bajó de 404,98 a 320,11 ms. Las ocho muestras conservaron
