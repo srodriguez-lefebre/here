@@ -1101,6 +1101,21 @@ Los rulings nuevos se escriben en español por el ruling 6.
     **Cost if wrong:** corregir o retirar el acelerador y repetir los controles
     y gates sobre el candidato resultante, conservando los resultados previos.
 
+76. **2026-11-27 — Acelerar el encoding de ACTIVE dentro de R75.** El
+    5+40 sin instrumentación de `4ba043e` dio 530,14 ms p95 y falló. La
+    medición 2+8 separada en el mismo head registró 246,94 ms de mediana
+    para ACTIVE, 116,78 ms para FTS nativo y 2,78 ms para cargar la DLL.
+    Se prioriza el encoding de filas ACTIVE en la extensión ya autorizada.
+    Python conserva la consulta y el ORDER BY canónicos, batch256, framing
+    y SHA; SQLite entrega bytes JSON idénticos para TEXT/INTEGER/NULL.
+    Todo valor fuera del dominio reinicia la sección canónica dentro
+    de la misma vista R50, conservando el orden de errores. Sin cambios de
+    esquema, formato, supresión, ranking, presupuestos o toolchain. La
+    medición instrumentada es nivel 2 diagnóstico. Solo un 5+40 público
+    nuevo y un heartbeat nuevo del candidato pueden satisfacer los gates.
+    **Cost if wrong:** corregir o retirar esta ruta y repetir equivalencia,
+    regresiones y los gates del candidato con recibos nuevos.
+
 ## Ledger histórico (append-only)
 
 Todo lo que sigue es historia de la entrega de M1: objetivos de cada momento, rulings
