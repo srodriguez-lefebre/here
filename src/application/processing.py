@@ -189,8 +189,16 @@ def _validated_recovery_source(
 def _declared_recovery_source(
     audio_path: Path, sources: list[RecordedAudioSource]
 ) -> RecordedAudioSource | None:
-    """Match a recovery path to a validated capture source."""
-    return next((source for source in sources if source.path == audio_path), None)
+    """Match a guarded recovery path to the same file as a validated capture source."""
+    # Windows Path equality folds case even in case-sensitive directories.
+    return next(
+        (
+            source
+            for source in sources
+            if source.path == audio_path and audio_path.samefile(source.path)
+        ),
+        None,
+    )
 
 
 def _cleanup_capture_after_commit(cleanup: Callable[[], None], session_dir: Path) -> None:
