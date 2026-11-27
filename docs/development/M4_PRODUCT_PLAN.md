@@ -1,15 +1,16 @@
 # M4 answers persistence, UI and CLI implementation plan
 
 > **For agentic workers:** read `CLAUDE.md` first. Task-by-task, red/green tests, self
-> review, then independent agent review. The author merges after Copilot review, CI and independent subagent review (rulings 16 and 17). Steps use checkbox
-> syntax. **Status: not in execution (ruling 15).** Start only on an explicit user
-> instruction after M4 group A is merged.
+> review, then independent agent review. Root owns leases, integration and merges.
+> Steps use checkbox syntax. **Status: contract preparation only (ruling 20).**
+> Bind to the reviewed A head with its PR open, land any required contract PR and
+> await root dispatch. Rebase after A merges (CLAUDE §11).
 
 **Goal:** Durable, honestly invalidated answers and extractions, and the user-facing
 "Preguntar" view, extraction view and CLI commands over the grounded core.
-**Architecture:** three catalog tables with cascading FKs; a cache key over revision
-hashes; Qt views on `BackgroundJobs` workers with request identities; CLI as a thin
-adapter over the same service.
+**Architecture:** three catalog tables with FKs and an R51 whole-answer SQL purger;
+a guarded cache over revision hashes; Qt views on `BackgroundJobs` workers with
+request identities; CLI as a thin adapter over the same service.
 **Tech Stack:** Python 3.13, `sqlite3`, Pydantic, PySide6, Typer, pytest-qt; no new
 dependency.
 **Spec:** `docs/development/M4_PRODUCT_SPEC.md`.
@@ -30,46 +31,65 @@ dependency.
 - `intelligence/` and `memory/` stay free of Qt and Typer. Touched files leave ruff
   clean and formatted; no new mypy errors in them (`CLAUDE.md` §6).
 
+## Handoff and file ownership
+
+- M3 0.4.0 (`7239ba6`, PR #30) supplies R42/R50 suppression, the R51 deletion
+  lifecycle and R52 composition, the Qt deletion ACK, and passive `Citation`
+  navigation. Use the same injected memory service, roots and jobs. Root assigns
+  leases on `src/ui/app.py` or `src/ui/library.py` if composition or ACK wiring
+  needs edits there.
+- At A handoff, verify the actual R79 snapshot/revalidation and `ask`/`extract`
+  APIs, result/claim shapes (including local evidence), source and revision hash
+  inventory, coverage, typed outcomes and cancellation/progress hooks. Confirm
+  writer-side source revalidation and ownership of cache/history invalidation and
+  deletion request matching. Resolve those interfaces before freezing T4/T5 tests.
+- T4 owns schema, storage and cleanup. T5 consumes the T4 store, cache, guarded
+  publication and invalidation interfaces. Root serializes the migration, shared
+  `service.py` integration with A and the 0.5.0 bump. M5 B claims/answers remain a
+  future consumer of accepted R51 cleanup and storage contracts.
+
 ## Review focus
 
-- Cascade on deletion reaching `claim_citations` and `claims` through `answers`.
+- The R51 purger deletes whole affected answers before core relationships vanish.
+  A failed cleanup rolls back together and R42 suppression hides pending records.
 - A result arriving after its meeting was deleted or its view closed.
 - Cache key omitting a revision hash because of adjacent context segments.
 - Historical marking when only one of several cited meetings was retried.
 - Canary leakage into logs through `str(exc)` on provider errors.
 - CLI scope parsing and exit codes.
 
-### Task 1: Persistence, cache and invalidation
+### Task 4: Persistence, cache and invalidation
 
 **Files:** `src/memory/database.py` (migration), `src/memory/models.py`,
-`src/memory/repository.py`, `src/memory/service.py` (deletion extended),
+`src/memory/repository.py`, `src/memory/service.py` (existing R51 purger binding),
 `src/intelligence/store.py`, `src/intelligence/service.py`; tests in
 `tests/test_intelligence_store.py`, `tests/test_memory_service.py`.
 
 **Interfaces:** `AnswerStore.save(answer) -> AnswerRecord`, `find_cached(cache_key)`,
-`mark_historical(revision_id)`, `discard_for_meeting(meeting_id)`; `cache_key(request,
-revisions) -> str`; `MemoryService.delete_meeting` extended to remove citing answers
-inside the same journaled operation; a deletion event the service exposes for
-in-flight invalidation.
+`mark_historical(revision_id)`; `cache_key(request, revisions) -> str`; bind the
+private SQL purger to the existing `MemoryService` cleanup and use the deletion
+ACK/invalidation boundary for in-flight results. Confirm final store interfaces
+against A before implementation.
 
-- [ ] Write failing migration tests: three tables, FKs, cascade from `meetings`
-  through `answers` to `claims` and `claim_citations`; checks pass; M2 future-schema
-  rejection intact.
+- [ ] Write failing migration tests: three tables, FKs, answer-to-claim/citation
+  cascades, integrity checks and future-schema rejection.
 - [ ] Write failing tests: cache key changes with any cited revision hash; same key
   returns the cached answer flagged cached; retry on one meeting marks only answers
   citing it historical.
 - [ ] Write failing deletion tests: delete a cited meeting, restart, search a canary
   phrase in `answers`, `claims`, FTS, managed backups and caches, expect zero hits;
-  delete during an in-flight request discards the result.
+  delete during an in-flight request discards the result. Cover rollback and pending
+  replay, whole-answer removal across meetings, suppression before cache exposure,
+  and a source change between validation and save.
 - [ ] Write failing redaction tests: canary key and canary prompt phrase absent from
   database, logs and artifacts after a mock-transport provider run, including provider
   error paths.
-- [ ] Implement store, migration, cascade, cache key, historical marking and in-flight
-  discard; sanitize provider exception messages before logging.
+- [ ] Implement store, migration, SQL purger, cache key, historical marking and
+  in-flight discard. Sanitize provider exception messages before logging.
 - [ ] Run focused tests and the full suite; self-review; commit as "intelligence:
   persist answers with honest invalidation".
 
-### Task 2: "Preguntar" view, extraction view and CLI
+### Task 5: "Preguntar" view, extraction view and CLI
 
 **Files:** `src/ui/intelligence.py`, `src/ui/main_window.py`, `src/ui/contract.py`,
 `src/ui/bridge.py`, `src/ui/preferences.py` (mode preference, notice shown flag),
@@ -77,9 +97,9 @@ in-flight invalidation.
 
 **Interfaces:** `IntelligenceView` with scope control, question field, mode selector,
 progress, cancellation, answer cards and evidence panel; `ExtractionView` from the
-meeting detail; `ApplicationUiAdapter` gains `ask`, `extract`, `cancel_request` and
-`open_citation(target)` delegating to M3's `LibraryView.open_target(target)` (the same
-entry list, search results and citations use; it never starts playback); CLI commands `ask`
+meeting detail; planned `ApplicationUiAdapter` operations `ask`, `extract` and
+`cancel_request`; route navigation from a passive `Citation` to M3's
+`LibraryView.open_target`, preserving user-initiated playback. CLI commands `ask`
 and `extract` with `--meeting`, `--all`, `--mode`, `--json` and exit codes
 0/2/3/4/5.
 
@@ -89,7 +109,7 @@ and `extract` with `--meeting`, `--all`, `--mode`, `--json` and exit codes
   tiempo" otherwise; stale result after view close is dropped; provider error offers
   local mode; historical badge and explicit regenerate.
 - [ ] Implement the views on `BackgroundJobs` with request identities and the
-  deletion-event hook; wire navigation to the M3 `CitationTarget` opener.
+  deletion ACK/invalidation path. Wire navigation to the M3 citation opener.
 - [ ] Write failing CLI tests: missing scope exits 2; `--mode provider` without key
   exits 5 with a hint; stable JSON for both commands; `--json` contains resolved
   citation targets and no secrets.
@@ -105,6 +125,7 @@ and `extract` with `--meeting`, `--all`, `--mode`, `--json` and exit codes
   and `WHATS_NEW.md` with a short note on asking the memory with citations.
 - Bump version to 0.5.0 (ruling 9) when all M4 criteria are verified.
 - Open one PR with the two task commits, self-review and independent agent review in
-  the description, CI green. The author merges per rulings 16 and 17. Then the agent writes
-  `docs/MILESTONE_5_PLAN.md` and the first M5 SPEC/PLAN (ruling 14) if they do not
-  exist yet.
+  the description. Root verifies Windows CI on the exact head and merges under
+  CLAUDE §7. Ruling 64 omits Copilot for the pending PRs. Reconcile the existing M5
+  plan and contracts against merged M4 (ruling 14), including the future M5 B claims
+  and answers handoff.

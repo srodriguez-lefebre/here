@@ -1,7 +1,9 @@
 # M4 answers persistence, UI and CLI specification
 
-Status: written 2026-11-05, not in execution (ruling 15). Implementation starts only
-on an explicit user instruction after M4 group A is merged. Governing design:
+Status: contract preparation on M3 0.4.0 (`7239ba6`, PR #30). Ruling 20 authorizes
+M4. Root confirms the actual A handoff and lands the required contract PR before
+dispatch. Under CLAUDE §11, B may start on the reviewed A branch with its PR open
+and rebase after A merges. Governing design:
 `PRODUCT_DESIGN.md` §3, §5, §6 and §8, a taken decision (ruling 3). Spanish plan and
 acceptance criteria: `../MILESTONE_4_PLAN.md`.
 
@@ -15,6 +17,23 @@ meeting; nothing shown can hide which claims are synthesis.
 
 ## Decisions
 
+### Inherited contracts and A handoff
+
+M3 0.4.0 supplies the R42 durable suppression registry, R50 `catalog_read_view`,
+phase-aware R51 deletion and the R52 same-service ownership boundary. M3's
+`LibraryView.open_target` accepts a passive `Citation` and resolves it against
+memory, including historical revisions. A missing or unvalidated WAV can leave
+verified segment text available. Seek uses original timing and playback stays
+user-initiated.
+
+R79 defines A's planned `EvidenceSnapshot` and `revalidate_evidence`. Bind the
+actual verified answer/extraction DTOs and exact evidence dependencies (including
+context), historical status and cache metadata, cancellation/publication boundary,
+and typed errors against A's reviewed head. Confirm how A transfers source identity
+and revision hashes without passing raw prompts or unused transcript text to B's
+store. A's active-revision revalidation and M3's historical navigation are separate
+contracts.
+
 ### Persistence
 
 A migration adds `answers`, `claims` and `claim_citations` to the M2 catalog.
@@ -24,11 +43,22 @@ A migration adds `answers`, `claims` and `claim_citations` to the M2 catalog.
 fields nullable. `claims`: UUID, answer FK, kind (`fact`, `synthesis`,
 `uncertainty`, `decision`, `task`, `blocker`), text, owner_text and due_text nullable,
 ordinal. `claim_citations`: claim FK, meeting FK, revision FK, segment FK, quote,
-offsets nullable. Foreign keys cascade so that deleting a meeting removes every answer
-that cites it, with its claims, in the same operation that M2 already journals in
-`pending_operations`. No raw provider payloads, prompts with evidence text, headers or
-secrets are persisted. Usage and cost fields are stored only when the provider returns
-them; never a monetary estimate presented as a bill.
+offsets nullable. Use FKs for integrity and dependent claim/citation cleanup.
+Deleting a meeting removes the entire answer, including claims and citations for
+other meetings, through R51's private SQL purger. Register it on the same composed
+`MemoryService`. The purger identifies affected answer IDs before core relationships
+are removed and deletes them in the existing final cleanup transaction on the
+supplied repository connection. It runs no transaction control, other connection,
+I/O or provider call. Failure rolls core and derived rows back together and keeps
+the deletion pending and hidden for replay. Preserve the R52 roots and leases and
+the existing cleanup of DB/WAL and managed backups before durable completion.
+
+Persist only the intended answer record and its verifiable source associations.
+Every retained transcript-derived part must be attributable to a guarded source for
+invalidation and whole-answer purge. The A handoff must account for evidence used
+in a result, including context that contributes to a claim or cache key. Keep raw
+provider payloads, evidence-bearing prompts, headers and secrets out of storage and
+logs. Store usage and cost only when supplied by the provider.
 
 ### Cache and invalidation
 
@@ -36,10 +66,19 @@ them; never a monetary estimate presented as a bill.
 budget, scope and the `content_hash` of every revision used. A repeated question with
 the same key returns the stored answer marked as cached. When a retry activates a new
 revision for any cited meeting, answers citing the old revision become `historical`;
-the UI shows them as such and offers explicit regeneration. Before showing or saving,
-the service revalidates that no cited meeting is `deleting` or gone; if one is, the
-answer is discarded entirely. A deletion notified while a request is in flight
-discards that request's result and clears its text from the UI.
+the UI shows them as such and offers explicit regeneration. Before saving and
+publishing a fresh result, use A's active-source validation and guard the save
+against a revision switch or deletion between validation and write. Bind the
+writer-side validation with the memory owner. Use the existing serialized write
+boundary and common suppression parser, without nesting R50 inside a write or
+holding a view during a provider call.
+
+Read cached and historical records under R50. Suppress the entire record if any
+source meeting is pending/complete suppressed, deleting or absent, before cache
+reuse or presentation. Historical display requires guarded, still-resolvable source
+identity; it does not satisfy active-evidence publication or a fresh cache lookup.
+An invalid guard fails closed. A deletion invalidates affected in-flight requests
+and clears the corresponding displayed text; the UI callback does not own purge.
 
 ### Qt "Preguntar" view
 
@@ -50,7 +89,7 @@ application session notice of what provider mode sends, progress with cancellati
 and the result as answer cards. Each card shows the claim kind as a visible label,
 the text, and citations rendered as buttons with real title, real date and timestamp
 only when the segment has one. A citation button opens the M3 detail and player at
-that segment through the shared `CitationTarget`; without a timestamp it opens the
+that segment by passing the passive `Citation` to M3; without a timestamp it opens the
 text with "Sin marca de tiempo". Coverage reads "Se consultaron N fragmentos de M
 reuniones" and marks truncation. Historical answers carry a badge and a regenerate
 action. Errors from the provider show their state and a button to switch to local
@@ -66,8 +105,9 @@ local mode labels items "Candidato detectado".
 
 All service calls run in `BackgroundJobs` workers from `src/ui/bridge.py`; the Qt
 thread never blocks. Each request has an identity; results for a superseded request
-or a closed view are dropped. A deletion event invalidates pending requests that cite
-the deleted meeting.
+or a closed view are dropped. Extend the existing deletion acknowledgement path for
+affected view/request invalidation. Keep the worker-side bounded ACK and Qt-thread
+ownership. After an accepted deletion, callbacks may not restore suppressed text.
 
 ### CLI
 
