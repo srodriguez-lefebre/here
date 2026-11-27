@@ -22,16 +22,18 @@ v2, los límites de rendimiento vigentes y CI Windows en el head exacto.
 | M3 A, build Windows e integración del paquete | `codex/m3-search-native-windows-green` | `m3-search-native-windows-green/here` | `c8195de`, orquestador |
 | M3 A, documentación del contrato R75 | `codex/m3-search-native-docs` | `m3-search-native-docs/here` | `fdf4ca6`, `m3_nov27_evidence_sol` |
 | M3 A, candidato FTS integrado | `codex/m3-a-r75-integration` | `m3-a-r75-integration/here` | `4ba043e`, orquestador |
-| M3 A, revisión independiente integrada | HEAD separado | `m3-a-r75-exact-review/here` | `7b04f76`, `m5_portability_package_io_review_sol` |
+| M3 A, candidato R76 publicado en PR #28 | `codex/m3-a-r75-integration` → `codex/m3-a-product` remoto | `m3-a-r75-integration/here` | `c7695c7`, orquestador |
+| M3 A, revisión independiente integrada | HEAD separado | `m3-a-r75-exact-review/here` | `c7695c7`, `m5_portability_package_io_review_sol` |
 | M3 A, RED de rechazo de carga | `codex/m3-a-r75-load-refusal-red` | `m3-a-r75-load-refusal-red/here` | `a0806ed`, `native_windows_distribution_red_sol` |
 | M3 A, perfil de etapas | HEAD separado | `m3-a-r75-phase-diagnostic/here` | `4ba043e`, orquestador. Conserva DLL y manifest generados para reproducir |
 | M3 A, encoding ACTIVE, chat `01a1af04-e779-7363-be61-c840651b0b18` | `codex/m3-search-native-active-v2` | `m3-search-native-active-v2/here` | `44c1bc1`, chat M3 A. Lease devuelto |
 | M3 A, RED de encoding ACTIVE | `codex/m3-search-native-active-v2-red` | `m3-search-native-active-v2-red/here` | `ad9763d`, subagente RED del chat M3 A |
 | M3 A, RED de smoke con segmento sintético | `codex/m3-a-r76-active-smoke-red` | `m3-a-r76-active-smoke-red/here` | `91417c5`, `native_windows_distribution_red_sol` |
 | M3 A, suite completa del candidato R76 | HEAD separado | `m3-a-r76-full-verification/here` | `7b04f76`, orquestador |
-| M3 A, evidencia R75/R76 | `codex/m3-a-r75-evidence` | `m3-a-r75-evidence/here` | `9362b21`, `m3_nov27_evidence_sol` |
+| M3 A, evidencia R75/R76 | `codex/m3-a-r75-evidence` | `m3-a-r75-evidence/here` | `bfa84da`, `m3_nov27_evidence_sol` |
 | M3 B, integración | `codex/m3-library` | `m3-library-group/here` | `b36162a`, orquestador. Pendiente la integración de M3 A |
 | M3 B, PLAN de traspaso tras R75 | `codex/m3-b-native-handoff-contracts` | `m3-b-native-handoff-contracts/here` | `2a1f850`, `m3_b_native_handoff_docs_sol` |
+| M4 A, fixtures de respuestas sintéticas | `codex/m4-grounded-verifier-fixtures` | `m4-grounded-verifier-fixtures/here` | `0c35b6b`, `m3_b_native_handoff_docs_sol`. Transferir al RED después del cierre de M3 |
 | M5 B, adelanto de portabilidad, chat `01a1af04-b158-75a2-8933-98783880f3e8` | `codex/m5-portability-adapter-integration` | `m5-portability-adapter-integration/here` | `5f6324f`, chat M5 B. Claims esperan M4 B |
 
 El orquestador administra la ventana Windows exclusiva para candidato,
@@ -73,9 +75,12 @@ integrado pasó `r76-product-gates-7b04f76` con 397,40 ms p95 en 5+40 y
 workers drenados. El smoke ahora usa un segmento sintético de un
 catálogo temporal y exige ese resultado y la activación de ambos
 encoders. El RED `91417c5` falló por cero hits y el foco GREEN pasó.
-La revisión independiente aprobó `7b04f76`. La suite completa
-`r76-full-7b04f76` sigue en curso. El PR #28 espera evidencia final y
-los gates Windows del head publicado.
+La revisión independiente aprobó el código de `7b04f76` y el
+head exacto `c7695c7` con los recibos en la documentación. La suite
+completa local `r76-full-7b04f76` sigue en curso. [PR #28](https://github.com/srodriguez-lefebre/here/pull/28)
+publica `c7695c7` con [CI Windows](https://github.com/srodriguez-lefebre/here/actions/runs/46031147690)
+y [workflow de paquete](https://github.com/srodriguez-lefebre/here/actions/runs/46031147574)
+en curso sobre ese SHA.
 Los workflows fijan el checkout del head exacto por ruling 77. El PLAN
 preparado de M3 B conserva la ruta nativa cuando incorpora QtMultimedia.
 El orquestador lo vinculará al merge de A en el PR de documentos.
