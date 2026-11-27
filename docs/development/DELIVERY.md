@@ -2827,3 +2827,19 @@ and verified the exact reviewed second parent and equal merge tree.
 M3 is closed at 0.4.0. CI and package verification are level 2. The
 four-marker real seek run remains level 3 on `912f63f` under ruling 78.
 M4 A consumes the accepted search, citation and guarded read contracts.
+
+## 2026-11-27 — M4 A contract merged
+
+[PR #31](https://github.com/srodriguez-lefebre/here/pull/31) merged into
+`main` at `5792a080544688e7d7da59056128748c28f276b7` at 14:33 Montevideo.
+Independent reviewer `m5_portability_package_io_review_sol` approved exact
+head `f900d1101bc2004fa66aa799e12663810d62e7da`. Copilot was omitted under
+ruling 64. Both Windows gates succeeded on that head. The suite passed
+1,720 tests with 105 skips and two warnings in 520.46 seconds. Level 2.
+[Windows CI 46041541216](https://github.com/srodriguez-lefebre/here/actions/runs/46041541216)
+[Windows package 46041541205](https://github.com/srodriguez-lefebre/here/actions/runs/46041541205)
+
+Root used `gh pr merge 31 --merge --admin --match-head-commit f900d1101bc2004fa66aa799e12663810d62e7da`
+and verified the reviewed second parent and unchanged merge tree.
+The first implementation work is independent T1 RED on this base.
+The separate M5 B chat continues the authorized pre-claims integration.
